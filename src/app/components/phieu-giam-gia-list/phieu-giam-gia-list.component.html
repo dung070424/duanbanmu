@@ -185,16 +185,19 @@
             <td>{{ formatDate(phieu.ngayBatDau) }}</td>
             <td>{{ formatDate(phieu.ngayKetThuc) }}</td>
             <td class="actions">
-              <div class="toggle-switch" [class.active]="phieu.trangThai">
+              <div class="toggle-switch" [class.active]="phieu.trangThai" [class.updating]="phieu.isUpdating">
                 <input
                   type="checkbox"
                   [checked]="phieu.trangThai"
                   (change)="toggleStatus(phieu)"
                   class="toggle-input"
+                  [disabled]="phieu.isUpdating"
                 />
-                <span class="toggle-slider"></span>
+                <span class="toggle-slider">
+                  <span *ngIf="phieu.isUpdating" class="loading-spinner"></span>
+                </span>
               </div>
-              <button class="btn-edit" (click)="editPhieuGiamGia(phieu)" title="Chỉnh sửa">
+              <button class="btn-edit" (click)="editPhieuGiamGia(phieu)" title="Chỉnh sửa" [disabled]="phieu.isUpdating">
                 <i class="bi bi-pencil"></i>
               </button>
             </td>
@@ -228,11 +231,7 @@
     </div>
   </div>
 
-  <!-- Error State -->
-  <div *ngIf="error" class="error-message">
-    <i class="bi bi-exclamation-triangle"></i>
-    <span>{{ error }}</span>
-  </div>
+  <!-- Error State - Removed to avoid affecting table structure -->
 
   <!-- Edit Modal -->
   <div *ngIf="showEditModal" class="modal-overlay" (click)="closeEditModal()">
@@ -245,6 +244,12 @@
       </div>
 
       <div class="modal-body">
+        <!-- General error message -->
+        <div *ngIf="hasEditFieldError('general')" class="alert alert-danger" style="margin-bottom: 20px;">
+          <i class="bi bi-exclamation-triangle"></i>
+          {{ getEditFieldError('general') }}
+        </div>
+        
         <form>
           <div class="form-row">
             <div class="form-group">
@@ -253,8 +258,13 @@
                 type="text"
                 [(ngModel)]="editForm.maPhieu"
                 class="form-control"
+                [class.is-invalid]="hasEditFieldError('maPhieu')"
                 name="maPhieu"
+                (blur)="onEditFieldBlur('maPhieu')"
               />
+              <div *ngIf="hasEditFieldError('maPhieu')" class="invalid-feedback">
+                {{ getEditFieldError('maPhieu') }}
+              </div>
             </div>
             <div class="form-group">
               <label>Tên Phiếu</label>
@@ -262,8 +272,14 @@
                 type="text"
                 [(ngModel)]="editForm.tenPhieuGiamGia"
                 class="form-control"
+                [class.is-invalid]="hasEditFieldError('tenPhieuGiamGia')"
                 name="tenPhieuGiamGia"
+                (blur)="onEditFieldBlur('tenPhieuGiamGia')"
+                (input)="onEditFieldChange('tenPhieuGiamGia')"
               />
+              <div *ngIf="hasEditFieldError('tenPhieuGiamGia')" class="invalid-feedback">
+                {{ getEditFieldError('tenPhieuGiamGia') }}
+              </div>
             </div>
           </div>
 
@@ -296,10 +312,15 @@
                   type="number"
                   [(ngModel)]="editForm.giaTriGiam"
                   class="form-control"
+                  [class.is-invalid]="hasEditFieldError('giaTriGiam')"
                   name="giaTriGiam"
                   min="0"
+                  (blur)="onEditFieldBlur('giaTriGiam')"
                 />
                 <span class="input-group-text">{{ editForm.loaiPhieuGiamGia ? 'VND' : '%' }}</span>
+              </div>
+              <div *ngIf="hasEditFieldError('giaTriGiam')" class="invalid-feedback">
+                {{ getEditFieldError('giaTriGiam') }}
               </div>
             </div>
             <div class="form-group">
@@ -309,10 +330,15 @@
                   type="number"
                   [(ngModel)]="editForm.giaTriToiThieu"
                   class="form-control"
+                  [class.is-invalid]="hasEditFieldError('giaTriToiThieu')"
                   name="giaTriToiThieu"
                   min="0"
+                  (blur)="onEditFieldBlur('giaTriToiThieu')"
                 />
                 <span class="input-group-text">{{ editForm.loaiPhieuGiamGia ? 'VND' : '%' }}</span>
+              </div>
+              <div *ngIf="hasEditFieldError('giaTriToiThieu')" class="invalid-feedback">
+                {{ getEditFieldError('giaTriToiThieu') }}
               </div>
             </div>
           </div>
@@ -325,10 +351,15 @@
                   type="number"
                   [(ngModel)]="editForm.soTienToiDa"
                   class="form-control"
+                  [class.is-invalid]="hasEditFieldError('soTienToiDa')"
                   name="soTienToiDa"
                   min="0"
+                  (blur)="onEditFieldBlur('soTienToiDa')"
                 />
                 <span class="input-group-text">VND</span>
+              </div>
+              <div *ngIf="hasEditFieldError('soTienToiDa')" class="invalid-feedback">
+                {{ getEditFieldError('soTienToiDa') }}
               </div>
             </div>
             <div class="form-group">
@@ -338,10 +369,15 @@
                   type="number"
                   [(ngModel)]="editForm.hoaDonToiThieu"
                   class="form-control"
+                  [class.is-invalid]="hasEditFieldError('hoaDonToiThieu')"
                   name="hoaDonToiThieu"
                   min="0"
+                  (blur)="onEditFieldBlur('hoaDonToiThieu')"
                 />
                 <span class="input-group-text">VND</span>
+              </div>
+              <div *ngIf="hasEditFieldError('hoaDonToiThieu')" class="invalid-feedback">
+                {{ getEditFieldError('hoaDonToiThieu') }}
               </div>
             </div>
           </div>
@@ -353,9 +389,14 @@
                 type="number"
                 [(ngModel)]="editForm.soLuongDung"
                 class="form-control"
+                [class.is-invalid]="hasEditFieldError('soLuongDung')"
                 name="soLuongDung"
                 min="0"
+                (blur)="onEditFieldBlur('soLuongDung')"
               />
+              <div *ngIf="hasEditFieldError('soLuongDung')" class="invalid-feedback">
+                {{ getEditFieldError('soLuongDung') }}
+              </div>
             </div>
           </div>
 
@@ -366,8 +407,13 @@
                 type="date"
                 [(ngModel)]="editForm.ngayBatDau"
                 class="form-control"
+                [class.is-invalid]="hasEditFieldError('ngayBatDau')"
                 name="ngayBatDau"
+                (blur)="onEditFieldBlur('ngayBatDau')"
               />
+              <div *ngIf="hasEditFieldError('ngayBatDau')" class="invalid-feedback">
+                {{ getEditFieldError('ngayBatDau') }}
+              </div>
             </div>
             <div class="form-group">
               <label>Ngày kết thúc</label>
@@ -375,8 +421,13 @@
                 type="date"
                 [(ngModel)]="editForm.ngayKetThuc"
                 class="form-control"
+                [class.is-invalid]="hasEditFieldError('ngayKetThuc')"
                 name="ngayKetThuc"
+                (blur)="onEditFieldBlur('ngayKetThuc')"
               />
+              <div *ngIf="hasEditFieldError('ngayKetThuc')" class="invalid-feedback">
+                {{ getEditFieldError('ngayKetThuc') }}
+              </div>
             </div>
           </div>
         </form>
@@ -390,6 +441,15 @@
           [disabled]="isUpdating"
         >
           Hủy
+        </button>
+        <button
+          type="button"
+          class="btn btn-warning"
+          (click)="testValidation()"
+          style="margin-right: 10px;"
+          *ngIf="false"
+        >
+          Test Validation
         </button>
         <button
           type="button"

@@ -49,6 +49,10 @@ export class PhieuGiamGiaListComponent implements OnInit {
     trangThai: true,
   };
   isUpdating = false;
+  
+  // Validation
+  editValidationErrors: { [key: string]: string } = {};
+  editTouchedFields = new Set<string>();
 
   // Pagination
   currentPage = 1;
@@ -186,12 +190,61 @@ export class PhieuGiamGiaListComponent implements OnInit {
       ngayKetThuc: phieu.ngayKetThuc,
       trangThai: phieu.trangThai,
     };
+    
+    // Reset validation state khi mở modal
+    this.editValidationErrors = {};
+    this.editTouchedFields.clear();
+    this.isUpdating = false;
+    
     this.showEditModal = true;
   }
 
   toggleStatus(phieu: PhieuGiamGiaResponse) {
-    // TODO: Implement toggle status
-    console.log('Toggle status for:', phieu);
+    if (!phieu.id) {
+      console.error('Không có ID cho phiếu giảm giá');
+      return;
+    }
+
+    // Hiển thị loading state
+    phieu.isUpdating = true;
+
+    // Toggle trạng thái ngay lập tức để test UI
+    phieu.trangThai = !phieu.trangThai;
+    phieu.trangThaiText = phieu.trangThai ? 'Đang diễn ra' : 'Không hoạt động';
+    phieu.isActive = phieu.trangThai;
+
+    // Cập nhật trong danh sách
+    const index = this.phieuGiamGiaList.findIndex(p => p.id === phieu.id);
+    if (index !== -1) {
+      this.phieuGiamGiaList[index].trangThai = phieu.trangThai;
+      this.phieuGiamGiaList[index].trangThaiText = phieu.trangThaiText;
+      this.phieuGiamGiaList[index].isActive = phieu.isActive;
+    }
+    
+    // Cập nhật filtered list
+    this.applyFilters();
+    
+    console.log('Toggle status thành công (local):', phieu);
+    
+    // Reset loading state
+    phieu.isUpdating = false;
+    this.cdr.detectChanges();
+
+    // Gọi API để cập nhật database (nếu backend hoạt động)
+    this.phieuGiamGiaService.togglePhieuGiamGiaStatus(phieu).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Toggle status thành công (server):', response.data);
+        } else {
+          console.error('Lỗi khi toggle status:', response.message);
+          this.error = response.message || 'Lỗi khi cập nhật trạng thái';
+        }
+      },
+      error: (error) => {
+        console.error('Lỗi API khi toggle status:', error);
+        this.error = 'Lỗi khi cập nhật trạng thái phiếu giảm giá: ' + (error.error?.message || error.message);
+      }
+    });
   }
 
   // Utility methods
@@ -272,10 +325,226 @@ export class PhieuGiamGiaListComponent implements OnInit {
     this.showEditModal = false;
     this.editingPhieu = null;
     this.isUpdating = false;
+    this.editValidationErrors = {};
+    this.editTouchedFields.clear();
+    this.error = ''; // Clear general error message
+  }
+
+  // Validation methods
+  validateEditForm(): boolean {
+    this.editValidationErrors = {};
+    let isValid = true;
+
+    console.log('Validating form with data:', this.editForm);
+
+    // Mã Phiếu validation
+    if (!this.editForm.maPhieu || this.editForm.maPhieu.trim() === '') {
+      this.editValidationErrors['maPhieu'] = 'Mã phiếu không được để trống';
+      isValid = false;
+    } else if (this.editForm.maPhieu.length < 3) {
+      this.editValidationErrors['maPhieu'] = 'Mã phiếu phải có ít nhất 3 ký tự';
+      isValid = false;
+    }
+
+    // Tên Phiếu validation
+    if (!this.editForm.tenPhieuGiamGia || this.editForm.tenPhieuGiamGia.trim() === '') {
+      this.editValidationErrors['tenPhieuGiamGia'] = 'Tên phiếu không được để trống';
+      isValid = false;
+    } else if (this.editForm.tenPhieuGiamGia.length < 5) {
+      this.editValidationErrors['tenPhieuGiamGia'] = 'Tên phiếu phải có ít nhất 5 ký tự';
+      isValid = false;
+    }
+
+    // Giá trị giảm validation
+    if (this.editForm.giaTriGiam <= 0) {
+      this.editValidationErrors['giaTriGiam'] = 'Giá trị giảm phải lớn hơn 0';
+      isValid = false;
+    } else if (this.editForm.loaiPhieuGiamGia && this.editForm.giaTriGiam > 1000000) {
+      this.editValidationErrors['giaTriGiam'] = 'Giá trị giảm tiền mặt không được vượt quá 1,000,000 VND';
+      isValid = false;
+    } else if (!this.editForm.loaiPhieuGiamGia && this.editForm.giaTriGiam > 100) {
+      this.editValidationErrors['giaTriGiam'] = 'Phần trăm giảm không được vượt quá 100%';
+      isValid = false;
+    }
+
+    // Giá trị tối thiểu validation
+    if (this.editForm.giaTriToiThieu < 0) {
+      this.editValidationErrors['giaTriToiThieu'] = 'Giá trị tối thiểu không được âm';
+      isValid = false;
+    } else if (this.editForm.giaTriToiThieu > this.editForm.giaTriGiam) {
+      this.editValidationErrors['giaTriToiThieu'] = 'Giá trị tối thiểu không được lớn hơn giá trị giảm';
+      isValid = false;
+    }
+
+    // Số tiền tối đa validation
+    if (this.editForm.soTienToiDa < 0) {
+      this.editValidationErrors['soTienToiDa'] = 'Số tiền tối đa không được âm';
+      isValid = false;
+    }
+
+    // Hóa đơn tối thiểu validation
+    if (this.editForm.hoaDonToiThieu < 0) {
+      this.editValidationErrors['hoaDonToiThieu'] = 'Hóa đơn tối thiểu không được âm';
+      isValid = false;
+    }
+
+    // Số lượng validation
+    if (this.editForm.soLuongDung <= 0) {
+      this.editValidationErrors['soLuongDung'] = 'Số lượng phải lớn hơn 0';
+      isValid = false;
+    }
+
+    // Ngày bắt đầu validation
+    if (!this.editForm.ngayBatDau) {
+      this.editValidationErrors['ngayBatDau'] = 'Ngày bắt đầu không được để trống';
+      isValid = false;
+    }
+
+    // Ngày kết thúc validation
+    if (!this.editForm.ngayKetThuc) {
+      this.editValidationErrors['ngayKetThuc'] = 'Ngày kết thúc không được để trống';
+      isValid = false;
+    }
+
+    // Kiểm tra ngày bắt đầu phải trước ngày kết thúc
+    if (this.editForm.ngayBatDau && this.editForm.ngayKetThuc) {
+      const startDate = new Date(this.editForm.ngayBatDau);
+      const endDate = new Date(this.editForm.ngayKetThuc);
+      
+      if (startDate >= endDate) {
+        this.editValidationErrors['ngayKetThuc'] = 'Ngày kết thúc phải sau ngày bắt đầu';
+        isValid = false;
+      }
+    }
+
+    console.log('Validation result:', { isValid, errors: this.editValidationErrors });
+    return isValid;
+  }
+
+  hasEditFieldError(field: string): boolean {
+    return this.editTouchedFields.has(field) && !!this.editValidationErrors[field];
+  }
+
+  getEditFieldError(field: string): string | null {
+    if (!this.hasEditFieldError(field)) {
+      return null;
+    }
+    return this.editValidationErrors[field];
+  }
+
+  onEditFieldBlur(field: string) {
+    this.editTouchedFields.add(field);
+    this.validateEditForm();
+  }
+
+  onEditFieldChange(field: string) {
+    // Validate ngay khi người dùng thay đổi giá trị
+    if (this.editTouchedFields.has(field)) {
+      this.validateEditForm();
+    }
+  }
+
+  // Method để test validation (có thể xóa sau khi test xong)
+  testValidation() {
+    console.log('Testing validation...');
+    this.editForm.tenPhieuGiamGia = 'ab'; // Nhập tên ngắn để test
+    this.editTouchedFields.add('tenPhieuGiamGia');
+    this.validateEditForm();
+    console.log('Has error for tenPhieuGiamGia:', this.hasEditFieldError('tenPhieuGiamGia'));
+    console.log('Error message:', this.getEditFieldError('tenPhieuGiamGia'));
+  }
+
+  // Parse server error và map về các trường cụ thể
+  parseServerError(errorMessage: string) {
+    console.log('Parsing server error:', errorMessage);
+    
+    // Clear existing errors
+    this.editValidationErrors = {};
+    
+    // Map các lỗi phổ biến từ server
+    if (errorMessage.includes('Mã phiếu giảm giá đã tồn tại')) {
+      this.editValidationErrors['maPhieu'] = 'Mã phiếu này đã được sử dụng';
+      this.editTouchedFields.add('maPhieu');
+    } else if (errorMessage.includes('Mã phiếu giảm giá không được để trống')) {
+      this.editValidationErrors['maPhieu'] = 'Mã phiếu không được để trống';
+      this.editTouchedFields.add('maPhieu');
+    } else if (errorMessage.includes('Tên phiếu giảm giá không được để trống')) {
+      this.editValidationErrors['tenPhieuGiamGia'] = 'Tên phiếu không được để trống';
+      this.editTouchedFields.add('tenPhieuGiamGia');
+    } else if (errorMessage.includes('Giá trị giảm phải lớn hơn 0')) {
+      this.editValidationErrors['giaTriGiam'] = 'Giá trị giảm phải lớn hơn 0';
+      this.editTouchedFields.add('giaTriGiam');
+    } else if (errorMessage.includes('Giá trị tối thiểu không được âm')) {
+      this.editValidationErrors['giaTriToiThieu'] = 'Giá trị tối thiểu không được âm';
+      this.editTouchedFields.add('giaTriToiThieu');
+    } else if (errorMessage.includes('Số tiền tối đa không được âm')) {
+      this.editValidationErrors['soTienToiDa'] = 'Số tiền tối đa không được âm';
+      this.editTouchedFields.add('soTienToiDa');
+    } else if (errorMessage.includes('Hóa đơn tối thiểu không được âm')) {
+      this.editValidationErrors['hoaDonToiThieu'] = 'Hóa đơn tối thiểu không được âm';
+      this.editTouchedFields.add('hoaDonToiThieu');
+    } else if (errorMessage.includes('Số lượng dùng phải lớn hơn 0')) {
+      this.editValidationErrors['soLuongDung'] = 'Số lượng phải lớn hơn 0';
+      this.editTouchedFields.add('soLuongDung');
+    } else if (errorMessage.includes('Ngày bắt đầu không được để trống')) {
+      this.editValidationErrors['ngayBatDau'] = 'Ngày bắt đầu không được để trống';
+      this.editTouchedFields.add('ngayBatDau');
+    } else if (errorMessage.includes('Ngày kết thúc không được để trống')) {
+      this.editValidationErrors['ngayKetThuc'] = 'Ngày kết thúc không được để trống';
+      this.editTouchedFields.add('ngayKetThuc');
+    } else if (errorMessage.includes('Ngày bắt đầu phải trước ngày kết thúc')) {
+      this.editValidationErrors['ngayKetThuc'] = 'Ngày kết thúc phải sau ngày bắt đầu';
+      this.editTouchedFields.add('ngayKetThuc');
+    } else {
+      // Nếu không map được lỗi cụ thể, hiển thị lỗi chung ở đầu form
+      this.editValidationErrors['general'] = errorMessage;
+    }
+  }
+
+  // Parse HTTP error (400, 500, etc.)
+  parseHttpError(error: any) {
+    console.log('Parsing HTTP error:', error);
+    
+    // Clear existing errors
+    this.editValidationErrors = {};
+    
+    let errorMessage = 'Lỗi không xác định';
+    
+    if (error.error && error.error.message) {
+      errorMessage = error.error.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    } else if (error.status === 400) {
+      errorMessage = 'Dữ liệu không hợp lệ';
+    } else if (error.status === 404) {
+      errorMessage = 'Không tìm thấy phiếu giảm giá';
+    } else if (error.status === 500) {
+      errorMessage = 'Lỗi server nội bộ';
+    }
+    
+    // Hiển thị lỗi chung ở đầu form
+    this.editValidationErrors['general'] = errorMessage;
   }
 
   updatePhieuGiamGia() {
     if (!this.editingPhieu) return;
+
+    // Mark all fields as touched để hiển thị tất cả lỗi validation
+    this.editTouchedFields.add('maPhieu');
+    this.editTouchedFields.add('tenPhieuGiamGia');
+    this.editTouchedFields.add('giaTriGiam');
+    this.editTouchedFields.add('giaTriToiThieu');
+    this.editTouchedFields.add('soTienToiDa');
+    this.editTouchedFields.add('hoaDonToiThieu');
+    this.editTouchedFields.add('soLuongDung');
+    this.editTouchedFields.add('ngayBatDau');
+    this.editTouchedFields.add('ngayKetThuc');
+
+    // Validate form trước khi submit
+    if (!this.validateEditForm()) {
+      console.log('Validation failed:', this.editValidationErrors);
+      return; // Không submit nếu validation fail
+    }
 
     this.isUpdating = true;
 
@@ -293,20 +562,25 @@ export class PhieuGiamGiaListComponent implements OnInit {
       trangThai: this.editForm.trangThai,
     };
 
+    console.log('Submitting update data:', updateData);
+
     this.phieuGiamGiaService.updatePhieuGiamGia(this.editingPhieu.id, updateData).subscribe({
       next: (response: any) => {
+        console.log('Update response:', response);
         if (response.success) {
           // Reload data
           this.loadPhieuGiamGiaList();
           this.closeEditModal();
         } else {
-          this.error = response.message || 'Không thể cập nhật phiếu giảm giá';
+          // Parse server error và map về các trường cụ thể
+          this.parseServerError(response.message);
         }
         this.isUpdating = false;
       },
       error: (error: any) => {
         console.error('Error updating phiếu giảm giá:', error);
-        this.error = 'Lỗi khi cập nhật phiếu giảm giá: ' + error.message;
+        // Parse HTTP error và map về các trường cụ thể
+        this.parseHttpError(error);
         this.isUpdating = false;
       },
     });

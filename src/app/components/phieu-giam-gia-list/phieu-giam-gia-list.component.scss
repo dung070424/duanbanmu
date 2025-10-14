@@ -475,6 +475,24 @@
                   &.active .toggle-slider {
                     transform: translateX(26px);
                   }
+
+                  &.updating {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                  }
+
+                  .loading-spinner {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 12px;
+                    height: 12px;
+                    border: 2px solid #f3f3f3;
+                    border-top: 2px solid #007bff;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                  }
                 }
 
                 .btn-edit {
@@ -488,6 +506,11 @@
 
                   &:hover {
                     color: #28a745;
+                  }
+
+                  &:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
                   }
                 }
               }
@@ -724,6 +747,25 @@
       .modal-body {
         padding: 25px;
 
+        .alert {
+          padding: 12px 16px;
+          border-radius: 6px;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          &.alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+          }
+
+          i {
+            font-size: 16px;
+          }
+        }
+
         .form-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -757,6 +799,24 @@
                 border-color: #007bff;
                 box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
               }
+
+              &.is-invalid {
+                border-color: #dc3545;
+                
+                &:focus {
+                  border-color: #dc3545;
+                  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+                }
+              }
+            }
+
+            .invalid-feedback {
+              display: block;
+              width: 100%;
+              margin-top: 5px;
+              font-size: 12px;
+              color: #dc3545;
+              font-weight: 500;
             }
 
             .input-group {
@@ -766,6 +826,10 @@
                 border-top-right-radius: 0;
                 border-bottom-right-radius: 0;
                 border-right: none;
+
+                &.is-invalid {
+                  border-right: 1px solid #dc3545;
+                }
               }
 
               .input-group-text {
@@ -778,6 +842,10 @@
                 font-size: 14px;
                 color: #6c757d;
                 white-space: nowrap;
+
+                .form-control.is-invalid + & {
+                  border-color: #dc3545;
+                }
               }
             }
           }
@@ -884,4 +952,10 @@
       }
     }
   }
+}
+
+// Keyframes animation cho loading spinner
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }

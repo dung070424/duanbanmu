@@ -7,10 +7,9 @@ interface Customer {
   id: string;
   code: string;
   name: string;
-  gender: string;
-  birthDate: string;
-  totalPurchases: number;
-  lastPurchase: string;
+  phoneNumber: string;
+  loyaltyPoints: number;
+  status: string;
 }
 
 @Component({
@@ -36,48 +35,43 @@ export class VoucherFormComponent {
   customers: Customer[] = [
     {
       id: '1',
-      code: 'KH00002',
-      name: 'Đình Thế Mạnh',
-      gender: 'Nữ',
-      birthDate: '12/9/1998',
-      totalPurchases: 19,
-      lastPurchase: '28/8/2025'
+      code: 'KH00001',
+      name: 'Nguyễn Văn A',
+      phoneNumber: '0123456789',
+      loyaltyPoints: 150,
+      status: 'Hoạt động'
     },
     {
       id: '2',
-      code: 'KH00003',
-      name: 'Trịnh Châu Anh',
-      gender: 'Nam',
-      birthDate: '17/4/1986',
-      totalPurchases: 2,
-      lastPurchase: '9/3/2025'
+      code: 'KH00002',
+      name: 'Đình Thế Mạnh',
+      phoneNumber: '0987654321',
+      loyaltyPoints: 200,
+      status: 'Hoạt động'
     },
     {
       id: '3',
-      code: 'KH00004',
-      name: 'Nguyễn Hoàng...',
-      gender: 'Nữ',
-      birthDate: '6/8/2000',
-      totalPurchases: 13,
-      lastPurchase: '2/8/2025'
+      code: 'KH00003',
+      name: 'Trịnh Châu Anh',
+      phoneNumber: '0369258147',
+      loyaltyPoints: 75,
+      status: 'Hoạt động'
     },
     {
       id: '4',
-      code: 'KH00005',
-      name: 'Nguyễn Minh ...',
-      gender: 'Nam',
-      birthDate: '19/12/2001',
-      totalPurchases: 2,
-      lastPurchase: '9/3/2025'
+      code: 'KH00004',
+      name: 'Nguyễn Hoàng',
+      phoneNumber: '0912345678',
+      loyaltyPoints: 300,
+      status: 'Hoạt động'
     },
     {
       id: '5',
-      code: 'KH00006',
-      name: 'Nguyễn Hải Lo...',
-      gender: 'Nữ',
-      birthDate: '20/10/1994',
-      totalPurchases: 1,
-      lastPurchase: '9/3/2025'
+      code: 'KH00005',
+      name: 'Nguyễn Minh',
+      phoneNumber: '0923456789',
+      loyaltyPoints: 50,
+      status: 'Tạm khóa'
     }
   ];
 
@@ -111,7 +105,8 @@ export class VoucherFormComponent {
     } else {
       this.filteredCustomers = this.customers.filter(customer =>
         customer.code.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        customer.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+        customer.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        customer.phoneNumber.includes(this.searchTerm)
       );
     }
   }

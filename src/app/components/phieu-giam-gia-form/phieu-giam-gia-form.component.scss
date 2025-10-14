@@ -7,11 +7,17 @@
   min-height: 100vh;
 
   .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
+    padding: 15px 0;
     
     .breadcrumb {
       font-size: 14px;
       color: #6c757d;
+      display: flex;
+      align-items: center;
       
       .separator {
         margin: 0 8px;
@@ -23,6 +29,41 @@
         font-weight: 500;
       }
     }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .btn-back-small {
+        padding: 6px 12px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+
+        i {
+          font-size: 14px;
+        }
+
+        &:hover {
+          background-color: #5a6268;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
   }
 
   .main-content {
@@ -31,7 +72,7 @@
     gap: 30px;
     margin-bottom: 30px;
 
-    .left-section, .right-section {
+    .left-column, .right-column {
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -50,6 +91,15 @@
         font-weight: 600;
       }
     }
+  }
+
+  // Full width section
+  .full-width-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 20px;
   }
 
   // Form Styles
@@ -102,6 +152,115 @@
         border-bottom-right-radius: 6px;
         font-size: 14px;
         color: #6c757d;
+      }
+    }
+  }
+
+  // Two column form layout
+  .two-column-form {
+    .form-group {
+      margin-bottom: 16px;
+      
+      label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 6px;
+        display: block;
+      }
+      
+      .form-control {
+        height: 36px;
+        font-size: 14px;
+        padding: 8px 12px;
+        
+        &.error {
+          border-color: #dc3545;
+          box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+      }
+      
+      .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 4px;
+        display: block;
+      }
+      
+      .input-group {
+        .form-control {
+          height: 36px;
+        }
+        
+        .input-group-text {
+          height: 36px;
+          font-size: 12px;
+          padding: 8px 10px;
+        }
+      }
+      
+      &.full-width {
+        grid-column: 1 / -1;
+      }
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+      
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        
+        i {
+          font-size: 16px;
+        }
+        
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+      
+      .btn-save {
+        background-color: #28a745;
+        color: white;
+        
+        &:hover:not(:disabled) {
+          background-color: #218838;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+      }
+      
+      .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+        
+        &:hover {
+          background-color: #5a6268;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+        }
       }
     }
   }
@@ -375,6 +534,13 @@
       grid-template-columns: 1fr;
       gap: 20px;
     }
+    
+    .two-column-form {
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+    }
   }
 
   @media (max-width: 768px) {
@@ -507,6 +673,369 @@
           opacity: 1;
         }
       }
+    }
+  }
+}
+
+// Status badges - Legacy (for other tables)
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  
+  &.status-active {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  &.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
+}
+
+// Phiếu Giảm Giá Cá Nhân - Copy exact styling from Selected Customers
+.phieu-giam-gia-ca-nhan-container {
+  h4 {
+    margin: 0 0 15px 0;
+    color: #343a40;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .table-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+
+    .phieu-giam-gia-ca-nhan-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+
+      thead {
+        background-color: #e9ecef;
+
+        th {
+          padding: 10px 8px;
+          text-align: left;
+          font-weight: 600;
+          color: #495057;
+          border-bottom: 1px solid #dee2e6;
+          white-space: nowrap;
+        }
+      }
+
+      tbody {
+        .phieu-ca-nhan-row {
+          border-bottom: 1px solid #dee2e6;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          td {
+            padding: 8px;
+            color: #495057;
+            white-space: nowrap;
+            
+            &:nth-child(4) {
+              text-align: center;
+              font-weight: 600;
+              color: #28a745;
+            }
+          }
+        }
+
+        .no-selection {
+          text-align: center;
+          padding: 20px;
+          color: #6c757d;
+          font-style: italic;
+        }
+      }
+    }
+  }
+}
+
+// Status badges for Phiếu Giảm Giá Cá Nhân - exact copy from other tables
+.phieu-giam-gia-ca-nhan-table .status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  
+  &.status-active {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  &.status-used {
+    background: #d1ecf1;
+    color: #0c5460;
+  }
+  
+  &.status-expired {
+    background: #f8d7da;
+    color: #721c24;
+  }
+  
+  &.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
+}
+
+// Action buttons for Phiếu Giảm Giá Cá Nhân
+.phieu-giam-gia-ca-nhan-table .action-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+
+  button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+
+    i {
+      font-size: 12px;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .btn-toggle {
+    background-color: #6c757d;
+    color: white;
+
+    &.active {
+      background-color: #28a745;
+    }
+
+    &:hover {
+      background-color: #5a6268;
+      
+      &.active {
+        background-color: #218838;
+      }
+    }
+  }
+
+  .btn-edit {
+    background-color: #007bff;
+    color: white;
+
+    &:hover {
+      background-color: #0056b3;
+    }
+  }
+
+  .btn-view {
+    background-color: #17a2b8;
+    color: white;
+
+    &:hover {
+      background-color: #138496;
+    }
+  }
+
+  .btn-delete {
+    background-color: #dc3545;
+    color: white;
+
+    &:hover {
+      background-color: #c82333;
+    }
+  }
+}
+
+// Modal chỉnh sửa phiếu giảm giá cá nhân
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+
+  h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+  }
+
+  .btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      color: #dc3545;
+    }
+  }
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.edit-personal-voucher-form {
+  .form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    label {
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .form-control {
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+
+      &:read-only {
+        background-color: #f8f9fa;
+        color: #6c757d;
+      }
+    }
+
+    select.form-control {
+      cursor: pointer;
+    }
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: #5a6268;
+    }
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+  }
+
+  .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 5px;
+  }
+}
+
+// Responsive cho modal
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .edit-personal-voucher-form .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    
+    .btn {
+      width: 100%;
     }
   }
 }
