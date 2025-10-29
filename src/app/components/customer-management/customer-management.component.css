@@ -544,6 +544,13 @@
   border-radius: 0 0 12px 12px;
 }
 
+.address-modal-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Dim parent modal when child (address) modal is open */
 .modal.blurred .modal-content {
   position: relative; /* to anchor overlay */
@@ -894,6 +901,517 @@
 
   .detail-card {
     padding: 16px;
+  }
+}
+
+/* ===== NEW CUSTOMER FORM MODAL STYLES ===== */
+.customer-form-modal {
+  z-index: 1055;
+}
+
+.customer-form-modal.show {
+  display: block;
+}
+
+.customer-form-modal .modal-content {
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+  background-color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.modal-breadcrumb {
+  padding: 10px 24px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 400;
+}
+
+.breadcrumb-separator {
+  color: #adb5bd;
+  font-weight: 300;
+  margin: 0 4px;
+}
+
+.modal-header-custom {
+  padding: 16px 24px;
+  background-color: white;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title-custom {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #febc49;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.btn-close-custom {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px;
+  width: auto;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+  line-height: 1;
+}
+
+.btn-close-custom:hover {
+  color: #333;
+}
+
+.modal-body-custom {
+  padding: 24px;
+  background-color: white;
+  min-height: 400px;
+}
+
+.form-row-custom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.form-left-section,
+.form-right-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-left-section .form-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  display: block;
+}
+
+.form-left-section .form-control {
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+  background-color: white;
+  width: 100%;
+}
+
+.form-left-section .form-control:focus {
+  outline: none;
+  border-color: #febc49;
+  box-shadow: 0 0 0 3px rgba(254, 188, 73, 0.1);
+}
+
+.date-input-wrapper {
+  position: relative;
+}
+
+.date-input {
+  padding-right: 40px;
+}
+
+.date-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  pointer-events: none;
+}
+
+.gender-radio-group {
+  display: flex;
+  gap: 20px;
+}
+
+.gender-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.gender-radio-item input[type='radio'] {
+  display: none;
+}
+
+.gender-radio-item .radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #febc49;
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.gender-radio-item input[type='radio']:checked + .radio-custom {
+  background-color: #febc49;
+}
+
+.gender-radio-item input[type='radio']:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border-radius: 50%;
+}
+
+.gender-radio-item .radio-text {
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.btn-cancel {
+  padding: 10px 24px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.btn-cancel:hover {
+  background-color: #5a6268;
+}
+
+.btn-add-new {
+  padding: 10px 24px;
+  background-color: #febc49;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-add-new i {
+  font-size: 0.8rem;
+  margin-left: 4px;
+  opacity: 0.9;
+}
+
+.btn-add-new:hover:not(:disabled) {
+  background-color: #e6a742;
+}
+
+.btn-add-new:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Address Management Section */
+.address-management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.address-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.address-title-icon {
+  color: #febc49;
+  font-size: 1.1rem;
+}
+
+.address-count-badge {
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.btn-add-address {
+  padding: 8px 16px;
+  background-color: #febc49;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-add-address:hover {
+  background-color: #e6a742;
+}
+
+.address-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  margin-bottom: 12px;
+  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.btn-nav {
+  padding: 6px 12px;
+  background-color: white;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.btn-nav:hover:not(:disabled) {
+  border-color: #febc49;
+  color: #febc49;
+}
+
+.btn-nav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.address-counter {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.address-card {
+  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.address-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.address-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.address-card-title .address-icon {
+  color: #febc49;
+  font-size: 1rem;
+}
+
+.address-default-badge {
+  background-color: #febc49;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+.address-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon-edit,
+.btn-icon-delete {
+  width: 32px;
+  height: 32px;
+  background-color: #febc49;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.btn-icon-edit:hover {
+  background-color: #e6a742;
+}
+
+.btn-icon-delete {
+  background-color: #febc49;
+}
+
+.btn-icon-delete:hover {
+  background-color: #e6a742;
+}
+
+.btn-icon-edit i,
+.btn-icon-delete i {
+  font-size: 0.9rem;
+}
+
+.address-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.address-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.address-detail-icon {
+  color: #6c757d;
+  font-size: 0.95rem;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.address-card-footer {
+  padding-top: 10px;
+  border-top: 1px solid #e9ecef;
+}
+
+.default-address-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.default-address-checkbox input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #febc49;
+  margin: 0;
+}
+
+.default-address-checkbox span {
+  color: #333;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.address-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.empty-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.address-empty-state i {
+  font-size: 2.5rem;
+  opacity: 0.4;
+  color: #adb5bd;
+}
+
+.address-empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #adb5bd;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .form-row-custom {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-body-custom {
+    padding: 16px;
+  }
+
+  .address-management-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .btn-add-address {
+    width: 100%;
+    justify-content: center;
   }
 }
 

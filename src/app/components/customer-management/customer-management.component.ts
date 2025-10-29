@@ -87,6 +87,11 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   errorMessage = '';
   fieldErrors: { [key: string]: string } = {};
 
+  // New UI properties for address navigation
+  currentAddressIndex = 0;
+  formattedNgaySinh = '';
+  currentAddressMacDinh = false;
+
   constructor(
     private khachHangService: KhachHangService,
     private diaChiKhachHangService: DiaChiKhachHangService,
@@ -531,6 +536,9 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     this.fieldErrors = {};
     this.addressList = []; // Reset address list for new customer
     this.pendingAddresses = []; // Reset pending addresses
+    this.currentAddressIndex = 0;
+    this.formattedNgaySinh = '';
+    this.currentAddressMacDinh = false;
     this.showModal = true;
     this.cdr.detectChanges();
   }
@@ -553,12 +561,26 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       trangThai: khachHang.trangThai !== undefined ? khachHang.trangThai : true,
     };
 
+    // Format date for display
+    if (this.form.ngaySinh) {
+      const dateParts = this.form.ngaySinh.split('-');
+      if (dateParts.length === 3) {
+        this.formattedNgaySinh = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+      }
+    } else {
+      this.formattedNgaySinh = '';
+    }
+
     // Load addresses for existing customer
     if (khachHang.id) {
       this.loadAddressListForCustomer(khachHang.id);
     } else {
       this.addressList = [];
     }
+
+    // Reset address navigation
+    this.currentAddressIndex = 0;
+    this.updateCurrentAddressMacDinh();
 
     // Also reload all addresses to ensure table display is updated
     this.loadAllAddresses();
@@ -596,6 +618,9 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     this.loading = false;
     this.addressList = []; // Reset address list
     this.pendingAddresses = []; // Reset pending addresses
+    this.currentAddressIndex = 0;
+    this.formattedNgaySinh = '';
+    this.currentAddressMacDinh = false;
 
     // Reload all addresses to ensure table display is updated
     this.loadAllAddresses();
@@ -615,6 +640,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       ngaySinh: '',
       trangThai: true,
     };
+    this.formattedNgaySinh = '';
     this.cdr.detectChanges();
   }
 
@@ -646,7 +672,16 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.loading = false;
 
-        // Nếu là thêm khách hàng mới và có địa chỉ cần lưu
+        // Update address list after save and reset navigation
+      if (this.isEditMode && response.id) {
+        this.loadAddressListForCustomer(response.id);
+        setTimeout(() => {
+          this.currentAddressIndex = 0;
+          this.updateCurrentAddressMacDinh();
+        }, 300);
+      }
+
+      // Nếu là thêm khách hàng mới và có địa chỉ cần lưu
         if (!this.isEditMode && response.id) {
           let hasAddressToSave = false;
 
@@ -930,11 +965,18 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (addresses) => {
           this.addressList = addresses;
+          // Reset to first address if index is out of bounds
+          if (this.currentAddressIndex >= addresses.length) {
+            this.currentAddressIndex = 0;
+          }
+          this.updateCurrentAddressMacDinh();
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Error loading addresses for customer:', error);
           this.addressList = [];
+          this.currentAddressIndex = 0;
+          this.updateCurrentAddressMacDinh();
           this.cdr.detectChanges();
         },
       });
@@ -1009,6 +1051,23 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
 
       // Cập nhật danh sách hiển thị
       this.updateAddressListFromPending();
+      
+      // Update current address index
+      if (this.isEditAddressMode && this.selectedAddress) {
+        const index = this.pendingAddresses.findIndex(
+          (addr) =>
+            addr.diaChiChiTiet === this.addressForm.diaChiChiTiet &&
+            addr.tinhThanh === this.addressForm.tinhThanh &&
+            addr.quanHuyen === this.addressForm.quanHuyen &&
+            addr.phuongXa === this.addressForm.phuongXa
+        );
+        if (index !== -1) {
+          this.currentAddressIndex = index;
+        }
+      } else {
+        this.currentAddressIndex = this.pendingAddresses.length - 1;
+      }
+      this.updateCurrentAddressMacDinh();
 
       const successMessage = this.isEditAddressMode
         ? 'Cập nhật địa chỉ thành công!'
@@ -1062,7 +1121,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         alert(successMessage);
         this.closeAddressModal();
 
-        // Update addressList immediately for edit mode
+          // Update addressList immediately for edit mode
         if (this.isEditMode && this.selectedKhachHang?.id) {
           console.log('Updating addressList for edit mode...', {
             isEditAddressMode: this.isEditAddressMode,
@@ -1079,13 +1138,40 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             if (index !== -1) {
               this.addressList[index] = { ...response, khachHangId: this.selectedKhachHang.id };
               console.log('Updated address in addressList:', this.addressList[index]);
+              this.currentAddressIndex = index;
             }
           } else {
             // Add new address to addressList
             const newAddress = { ...response, khachHangId: this.selectedKhachHang.id };
             this.addressList.push(newAddress);
             console.log('Added new address to addressList:', newAddress);
+            this.currentAddressIndex = this.addressList.length - 1;
           }
+          this.updateCurrentAddressMacDinh();
+        }
+        
+        // Update pending addresses for new customer
+        if (!this.isEditMode && !this.selectedKhachHang?.id) {
+          if (this.isEditAddressMode && this.selectedAddress) {
+            // Update existing pending address
+            const index = this.pendingAddresses.findIndex(
+              (addr) =>
+                addr.diaChiChiTiet === this.selectedAddress?.diaChiChiTiet &&
+                addr.tinhThanh === this.selectedAddress?.tinhThanh &&
+                addr.quanHuyen === this.selectedAddress?.quanHuyen &&
+                addr.phuongXa === this.selectedAddress?.phuongXa
+            );
+            if (index !== -1) {
+              this.pendingAddresses[index] = { ...this.addressForm };
+              this.currentAddressIndex = index;
+            }
+          } else {
+            // Add new pending address
+            this.pendingAddresses.push({ ...this.addressForm });
+            this.currentAddressIndex = this.pendingAddresses.length - 1;
+          }
+          this.updateAddressListFromPending();
+          this.updateCurrentAddressMacDinh();
         }
 
         // Reload address list based on context
@@ -1242,6 +1328,11 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       ngayTao: new Date().toISOString(),
       ngayCapNhat: new Date().toISOString(),
     }));
+    // Ensure current index is within bounds
+    if (this.currentAddressIndex >= this.addressList.length) {
+      this.currentAddressIndex = Math.max(0, this.addressList.length - 1);
+    }
+    this.updateCurrentAddressMacDinh();
     this.cdr.detectChanges();
   }
 
@@ -1520,6 +1611,12 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   deletePendingAddress(index: number): void {
     if (index >= 0 && index < this.pendingAddresses.length) {
       this.pendingAddresses.splice(index, 1);
+      this.updateAddressListFromPending();
+      // Adjust current index if needed
+      if (this.currentAddressIndex >= this.pendingAddresses.length && this.currentAddressIndex > 0) {
+        this.currentAddressIndex = this.pendingAddresses.length - 1;
+      }
+      this.updateCurrentAddressMacDinh();
       this.cdr.detectChanges();
     }
   }
@@ -1638,5 +1735,111 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
           this.allAddresses = [];
         },
       });
+  }
+
+  // New UI methods for address navigation and management
+  getCurrentAddress(): DiaChiKhachHang | DiaChiKhachHangFormData | null {
+    const addresses = this.isEditMode ? this.addressList : this.pendingAddresses;
+    if (addresses.length > 0 && this.currentAddressIndex >= 0 && this.currentAddressIndex < addresses.length) {
+      return addresses[this.currentAddressIndex];
+    }
+    return null;
+  }
+
+  previousAddress(): void {
+    if (this.currentAddressIndex > 0) {
+      this.currentAddressIndex--;
+      this.updateCurrentAddressMacDinh();
+    }
+    this.cdr.detectChanges();
+  }
+
+  nextAddress(): void {
+    const totalCount = this.getTotalAddressCount();
+    if (this.currentAddressIndex < totalCount - 1) {
+      this.currentAddressIndex++;
+      this.updateCurrentAddressMacDinh();
+    }
+    this.cdr.detectChanges();
+  }
+
+  editCurrentAddress(): void {
+    const currentAddress = this.getCurrentAddress();
+    if (currentAddress) {
+      if (this.isEditMode && 'id' in currentAddress) {
+        this.editAddress(currentAddress as DiaChiKhachHang);
+      } else {
+        this.editPendingAddress(this.currentAddressIndex);
+      }
+    }
+  }
+
+  deleteCurrentAddress(): void {
+    const currentAddress = this.getCurrentAddress();
+    if (currentAddress) {
+      if (this.isEditMode && 'id' in currentAddress) {
+        this.deleteAddress(currentAddress as DiaChiKhachHang);
+      } else {
+        this.deletePendingAddress(this.currentAddressIndex);
+      }
+      // Adjust index if needed
+      const totalCount = this.getTotalAddressCount();
+      if (this.currentAddressIndex >= totalCount && this.currentAddressIndex > 0) {
+        this.currentAddressIndex = totalCount - 1;
+      }
+      this.updateCurrentAddressMacDinh();
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleCurrentAddressDefault(): void {
+    const currentAddress = this.getCurrentAddress();
+    if (currentAddress) {
+      // If setting as default, unset all others
+      if (this.currentAddressMacDinh) {
+        if (this.isEditMode) {
+          this.addressList.forEach((addr, index) => {
+            if (index !== this.currentAddressIndex) {
+              addr.macDinh = false;
+            }
+          });
+          currentAddress.macDinh = true;
+        } else {
+          this.pendingAddresses.forEach((addr, index) => {
+            if (index !== this.currentAddressIndex) {
+              addr.macDinh = false;
+            }
+          });
+          (currentAddress as DiaChiKhachHangFormData).macDinh = true;
+        }
+      } else {
+        if (this.isEditMode) {
+          (currentAddress as DiaChiKhachHang).macDinh = false;
+        } else {
+          (currentAddress as DiaChiKhachHangFormData).macDinh = false;
+        }
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  updateCurrentAddressMacDinh(): void {
+    const currentAddress = this.getCurrentAddress();
+    this.currentAddressMacDinh = currentAddress?.macDinh || false;
+    this.cdr.detectChanges();
+  }
+
+  onDateBlur(): void {
+    // Parse dd/mm/yyyy format to yyyy-mm-dd
+    if (this.formattedNgaySinh) {
+      const parts = this.formattedNgaySinh.split('/');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        this.form.ngaySinh = `${year}-${month}-${day}`;
+      }
+    }
+    this.cdr.detectChanges();
   }
 }
