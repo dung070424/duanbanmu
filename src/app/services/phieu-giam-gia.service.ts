@@ -92,7 +92,7 @@ export class PhieuGiamGiaService {
   // Lấy danh sách khách hàng từ API thật
   getAllCustomers(): Observable<KhachHangResponse> {
     return this.http.get<KhachHangResponse>(
-      `${this.API_BASE_URL}/khach-hang/for-voucher`,
+      `${this.API_BASE_URL}/phieu-giam-gia/customers`,
       { headers: this.getHeaders() }
     );
   }
