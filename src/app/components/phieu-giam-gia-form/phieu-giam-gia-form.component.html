@@ -25,7 +25,7 @@
         <!-- Privacy Selection Row - Moved above Tên field -->
         <div class="form-row">
           <div class="form-group privacy-group">
-            <label>Trạng thái Phiếu</label>
+            <label>Loại phiếu</label>
             <div class="radio-group">
               <div class="radio-item">
                 <input 
@@ -73,25 +73,17 @@
                 [(ngModel)]="phieuCode"
                 class="form-control"
                 [class.error]="getFieldError('phieuCode')"
-                placeholder="Nhập mã phiếu hoặc chọn từ gợi ý"
+                placeholder="Nhập mã phiếu hoặc click 💡 để tạo mã"
                 (input)="clearFieldError('phieuCode')">
               <span 
                 class="input-icon-inside"
-                (click)="toggleSuggestions()"
-                title="Xem gợi ý">
-                <i class="bi bi-lightbulb"></i>
+                (click)="generateAndFillCode()"
+                title="Tạo mã phiếu tự động">
+                <i class="bi bi-lightbulb-fill"></i>
               </span>
             </div>
             <div class="error-message" *ngIf="getFieldError('phieuCode')">
               {{ getFieldError('phieuCode') }}
-            </div>
-            <div class="suggestions-dropdown" *ngIf="showSuggestions && suggestedCodes.length > 0">
-              <div class="suggestion-item" *ngFor="let code of suggestedCodes" (click)="selectSuggestedCode(code)">
-                {{ code }}
-              </div>
-              <div class="suggestion-item" (click)="generateNewSuggestions()">
-                <i class="bi bi-arrow-clockwise"></i> Tạo mã mới
-              </div>
             </div>
           </div>
           
@@ -114,14 +106,14 @@
         <!-- Hàng 2: Loại và Số lượng -->
         <div class="form-row">
           <div class="form-group flex-item">
-            <label for="phieuType">Loại</label>
+            <label for="phieuType">Loại giảm giá</label>
             <select 
               id="phieuType"
               [(ngModel)]="phieuType"
               (change)="onPhieuTypeChange()"
               class="form-control">
-              <option [value]="true">Tiền mặt</option>
-              <option [value]="false">Phần trăm</option>
+              <option [ngValue]="true">Tiền mặt</option>
+              <option [ngValue]="false">Phần trăm</option>
             </select>
           </div>
           
@@ -162,7 +154,8 @@
               class="form-control"
               [class.error]="getFieldError('maxDiscount')"
               [placeholder]="phieuType ? 'Nhập giá trị giảm (VND)' : 'Nhập % giảm (1-100%)'"
-              (input)="clearFieldError('maxDiscount')">
+              (input)="clearFieldError('maxDiscount')"
+              (blur)="validateMaxDiscount()">
             <div class="error-message" *ngIf="getFieldError('maxDiscount')">
               {{ getFieldError('maxDiscount') }}
             </div>
@@ -181,7 +174,8 @@
               class="form-control"
               [class.error]="getFieldError('minDiscount')"
               placeholder="Nhập số tiền giảm tối thiểu (VND)"
-              (input)="clearFieldError('minDiscount')">
+              (input)="clearFieldError('minDiscount')"
+              (blur)="validateMinDiscount()">
             <div class="error-message" *ngIf="getFieldError('minDiscount')">
               {{ getFieldError('minDiscount') }}
             </div>
@@ -281,16 +275,90 @@
         <h3 class="section-title">Chọn Khách Hàng</h3>
       </div>
 
-      <!-- Search -->
+      <!-- Search and Filters -->
       <div class="search-container">
-        <div class="search-box">
-          <i class="search-icon">🔍</i>
-          <input 
-            type="text" 
-            [(ngModel)]="searchTerm"
-            (input)="filterCustomers()"
-            class="search-input"
-            placeholder="Tìm theo mã, tên, email hoặc số điện thoại...">
+        <div class="search-with-filter">
+          <div class="search-box">
+            <i class="search-icon">🔍</i>
+            <input 
+              type="text" 
+              [(ngModel)]="searchTerm"
+              (input)="filterCustomers()"
+              class="search-input"
+              placeholder="Tìm theo mã, tên, email hoặc số điện thoại...">
+          </div>
+          
+          <!-- Toggle Filter Button -->
+          <button class="btn-toggle-filter" (click)="toggleFilterOptions()" title="Bộ lọc nâng cao">
+            <i class="bi" [ngClass]="showFilterOptions ? 'bi-funnel-fill' : 'bi-funnel'"></i>
+            <i class="bi" [ngClass]="showFilterOptions ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Options -->
+      <div class="filter-options" *ngIf="showFilterOptions">
+        <div class="filter-row">
+          <div class="filter-item">
+            <label>Giới tính</label>
+            <select [(ngModel)]="filterGender" (change)="filterCustomers()" class="filter-select">
+              <option [ngValue]="null">Tất cả</option>
+              <option [ngValue]="true">Nam</option>
+              <option [ngValue]="false">Nữ</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label>Trạng thái</label>
+            <select [(ngModel)]="filterStatus" (change)="filterCustomers()" class="filter-select">
+              <option [ngValue]="null">Tất cả</option>
+              <option [ngValue]="true">Hoạt động</option>
+              <option [ngValue]="false">Không hoạt động</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label>Độ tuổi</label>
+            <select [(ngModel)]="filterAgeRange" (change)="filterCustomers()" class="filter-select">
+              <option value="">Tất cả</option>
+              <option value="0-18">Dưới 18 tuổi</option>
+              <option value="18-25">18-25 tuổi</option>
+              <option value="26-35">26-35 tuổi</option>
+              <option value="36-50">36-50 tuổi</option>
+              <option value="51-100">Trên 50 tuổi</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-item">
+            <label>Số lần mua</label>
+            <select [(ngModel)]="filterPurchaseRange" (change)="filterCustomers()" class="filter-select">
+              <option value="">Tất cả</option>
+              <option value="0-0">Chưa mua lần nào</option>
+              <option value="1-5">1-5 lần</option>
+              <option value="6-10">6-10 lần</option>
+              <option value="11-20">11-20 lần</option>
+              <option value="21-9999">Trên 20 lần</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label>Điểm tích lũy</label>
+            <select [(ngModel)]="filterPointRange" (change)="filterCustomers()" class="filter-select">
+              <option value="">Tất cả</option>
+              <option value="0-100">0-100 điểm</option>
+              <option value="101-500">101-500 điểm</option>
+              <option value="501-1000">501-1,000 điểm</option>
+              <option value="1001-9999999">Trên 1,000 điểm</option>
+            </select>
+          </div>
+
+          <div class="filter-item filter-actions-btn">
+            <button class="btn-clear-filter" (click)="clearAllFilters()" title="Xóa tất cả bộ lọc">
+              <i class="bi bi-x-circle"></i> Xóa bộ lọc
+            </button>
+          </div>
         </div>
       </div>
 
@@ -306,27 +374,25 @@
                 <th>Giới Tính</th>
                 <th>Ngày Sinh</th>
                 <th>Số lần mua</th>
+                <th>Điểm tích lũy</th>
                 <th>Lần mua gần nhất</th>
-                <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let customer of filteredCustomers; let i = index" class="customer-row">
+              <tr *ngFor="let customer of filteredCustomers; let i = index" 
+                  class="customer-row"
+                  [class.selected]="isCustomerSelected(customer)"
+                  (click)="selectCustomer(customer)"
+                  [style.cursor]="'pointer'"
+                  title="Click để chọn khách hàng">
                 <td>{{ i + 1 }}</td>
                 <td>{{ customer.maKhachHang }}</td>
                 <td>{{ customer.tenKhachHang }}</td>
                 <td>{{ getGenderText(customer.gioiTinh) }}</td>
                 <td>{{ formatDate(customer.ngaySinh) }}</td>
                 <td>{{ customer.soLanMua }}</td>
+                <td>{{ customer.diemTichLuy || 0 }}</td>
                 <td>{{ formatDate(customer.lanMuaGanNhat) }}</td>
-                <td>
-                  <button 
-                    class="btn-select"
-                    (click)="selectCustomer(customer)"
-                    [disabled]="isCustomerSelected(customer)">
-                    {{ isCustomerSelected(customer) ? 'Đã chọn' : 'Chọn' }}
-                  </button>
-                </td>
               </tr>
             </tbody>
           </table>
@@ -346,26 +412,24 @@
                 <th>Giới Tính</th>
                 <th>Ngày Sinh</th>
                 <th>Số lần mua</th>
+                <th>Điểm tích lũy</th>
                 <th>Lần mua gần nhất</th>
-                <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let customer of selectedCustomers; let i = index" class="selected-row">
+              <tr *ngFor="let customer of selectedCustomers; let i = index" 
+                  class="selected-row"
+                  (click)="removeCustomer(customer)"
+                  [style.cursor]="'pointer'"
+                  title="Click để bỏ chọn khách hàng">
                 <td>{{ i + 1 }}</td>
                 <td>{{ customer.maKhachHang }}</td>
                 <td>{{ customer.tenKhachHang }}</td>
                 <td>{{ getGenderText(customer.gioiTinh) }}</td>
                 <td>{{ formatDate(customer.ngaySinh) }}</td>
                 <td>{{ customer.soLanMua }}</td>
+                <td>{{ customer.diemTichLuy || 0 }}</td>
                 <td>{{ formatDate(customer.lanMuaGanNhat) }}</td>
-                <td>
-                  <button 
-                    class="btn-remove"
-                    (click)="removeCustomer(customer)">
-                    Xóa
-                  </button>
-                </td>
               </tr>
               <tr *ngIf="selectedCustomers.length === 0">
                 <td colspan="8" class="no-selection">
@@ -379,12 +443,34 @@
     </div>
   </div>
 
-  <!-- Messages -->
-  <div *ngIf="errorMessage" class="error-message">
-    {{ errorMessage }}
-  </div>
-  
-  <div *ngIf="successMessage" class="success-message">
-    {{ successMessage }}
+  <!-- Toast Notifications -->
+  <div class="toast-container">
+    <!-- Success Toast -->
+    <div *ngIf="successMessage" class="toast toast-success">
+      <div class="toast-icon">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">Thành công!</div>
+        <div class="toast-message">{{ successMessage }}</div>
+      </div>
+      <button class="toast-close" (click)="clearSuccessMessage()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+
+    <!-- Error Toast -->
+    <div *ngIf="errorMessage" class="toast toast-error">
+      <div class="toast-icon">
+        <i class="bi bi-exclamation-circle-fill"></i>
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">Lỗi!</div>
+        <div class="toast-message">{{ errorMessage }}</div>
+      </div>
+      <button class="toast-close" (click)="clearErrorMessage()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
   </div>
 </div>

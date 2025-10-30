@@ -26,8 +26,8 @@
         <label>Loại phiếu</label>
         <select [(ngModel)]="selectedType" (change)="applyFilters()" class="filter-select">
           <option value="all">Tất cả loại phiếu</option>
-          <option value="tien_mat">Tiền mặt</option>
-          <option value="phan_tram">Phần trăm</option>
+          <option value="cong_khai">Công khai</option>
+          <option value="ca_nhan">Cá nhân</option>
         </select>
       </div>
 
@@ -41,36 +41,39 @@
         </select>
       </div>
 
-      <!-- Row 2: Date Range and Value Range -->
-      <div class="filter-group date-range-group">
+      <!-- Row 2: Tất cả thẳng hàng -->
+      <div class="filter-group">
         <label>Khoảng thời gian</label>
-        <div class="date-range">
-          <div class="date-input-group">
-            <input
-              type="date"
-              [(ngModel)]="startDate"
-              (change)="applyFilters()"
-              class="date-input"
-            />
-            <i class="bi bi-calendar-date calendar-icon"></i>
-          </div>
-          <span class="date-separator">đến</span>
-          <div class="date-input-group">
-            <input type="date" [(ngModel)]="endDate" (change)="applyFilters()" class="date-input" />
-            <i class="bi bi-calendar-date calendar-icon"></i>
-          </div>
+        <div class="date-range-inline">
+          <input
+            type="date"
+            [(ngModel)]="startDate"
+            (change)="applyFilters()"
+            class="date-input-inline"
+          />
+          <span class="date-separator-inline">đến</span>
+          <input 
+            type="date" 
+            [(ngModel)]="endDate" 
+            (change)="applyFilters()" 
+            class="date-input-inline" 
+          />
         </div>
       </div>
 
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn-action" (click)="resetFilters()" title="Đặt lại bộ lọc">Đặt lại bộ lọc</button>
+      </div>
 
-      <!-- Empty div to maintain grid layout -->
-      <div class="filter-group"></div>
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn-action btn-export" (click)="exportToExcel()" title="Xuất Excel">Xuất Excel</button>
+      </div>
 
-      <!-- Action Buttons -->
-      <div class="filter-actions">
-        <button class="btn-reset" (click)="resetFilters()">Đặt lại bộ lọc</button>
-        <button class="btn-export" (click)="exportToExcel()">Xuất Excel</button>
-        <button class="btn-add" (click)="addPhieuGiamGia()">Thêm Phiếu Giảm Giá</button>
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn-action btn-add" (click)="addPhieuGiamGia()" title="Thêm Phiếu Giảm Giá">Thêm Phiếu Giảm Giá</button>
       </div>
     </div>
   </div>
@@ -110,7 +113,7 @@
             <th>Mã Phiếu</th>
             <th>Giá Trị</th>
             <th>Số lượng</th>
-            <th>Loại Phiếu</th>
+            <th>Loại Giảm Giá</th>
             <th>Trạng Thái</th>
             <th>Ngày Bắt Đầu</th>
             <th>Ngày Kết Thúc</th>
@@ -226,10 +229,12 @@
               <input
                 type="text"
                 [(ngModel)]="editForm.maPhieu"
-                class="form-control"
+                class="form-control disabled-input"
                 [class.is-invalid]="hasEditFieldError('maPhieu')"
                 name="maPhieu"
-                (blur)="onEditFieldBlur('maPhieu')"
+                readonly
+                disabled
+                title="Mã phiếu không thể chỉnh sửa"
               />
               <div *ngIf="hasEditFieldError('maPhieu')" class="invalid-feedback">
                 {{ getEditFieldError('maPhieu') }}
@@ -254,7 +259,7 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label>Loại Phiếu</label>
+              <label>Loại Giảm Giá</label>
               <select
                 [(ngModel)]="editForm.loaiPhieuGiamGia"
                 class="form-control"
@@ -368,6 +373,28 @@
                 {{ getEditFieldError('soLuongDung') }}
               </div>
             </div>
+            <div class="form-group">
+              <label>Khách Hàng</label>
+              <div class="input-group">
+                <input
+                  type="text"
+                  [(ngModel)]="editForm.khachHang"
+                  class="form-control"
+                  name="khachHang"
+                  placeholder="Tên khách hàng (nếu có)"
+                  readonly
+                  title="Thông tin khách hàng (chỉ xem)"
+                />
+                <button 
+                  type="button"
+                  class="btn-edit-customer"
+                  (click)="openEditCustomerModal()"
+                  *ngIf="editingPhieu?.isPublic === false"
+                  title="Chỉnh sửa khách hàng">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="form-row">
@@ -433,6 +460,158 @@
           {{ isUpdating ? 'Đang cập nhật...' : 'Cập nhật' }}
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Edit Customer Modal -->
+  <div *ngIf="showEditCustomerModal" class="modal-overlay" (click)="closeEditCustomerModal()">
+    <div class="modal-content modal-customer" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h4>Chỉnh sửa Khách Hàng</h4>
+        <button type="button" class="btn-close" (click)="closeEditCustomerModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="customer-dual-tables">
+          <!-- Bảng 1: Danh sách khách hàng -->
+          <div class="customer-table-section">
+            <h5 class="table-title">Danh sách khách hàng</h5>
+            <p class="table-subtitle">Click vào dòng để chọn khách hàng</p>
+            <div class="customer-list-edit">
+              <table class="table-customer-edit">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Mã Khách Hàng</th>
+                    <th>Tên Khách Hàng</th>
+                    <th>Giới Tính</th>
+                    <th>Ngày Sinh</th>
+                    <th>Số lần mua</th>
+                    <th>Điểm tích lũy</th>
+                    <th>Lần mua gần nhất</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    *ngFor="let customer of availableCustomersForEdit; let i = index"
+                    (click)="selectCustomerForEdit(customer)"
+                    class="customer-row-edit"
+                    title="Click để chọn khách hàng"
+                  >
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ customer.maKhachHang }}</td>
+                    <td>{{ customer.tenKhachHang }}</td>
+                    <td>{{ customer.gioiTinh === true ? 'Nam' : (customer.gioiTinh === false ? 'Nữ' : 'N/A') }}</td>
+                    <td>{{ customer.ngaySinh || 'N/A' }}</td>
+                    <td>{{ customer.soLanMua || 0 }}</td>
+                    <td>{{ customer.diemTichLuy || 0 }}</td>
+                    <td>{{ customer.lanMuaGanNhat || 'N/A' }}</td>
+                  </tr>
+                  <tr *ngIf="availableCustomersForEdit.length === 0">
+                    <td colspan="8" style="text-align: center; color: #999;">
+                      Không có khách hàng nào
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bảng 2: Khách hàng đã chọn -->
+          <div class="customer-table-section">
+            <h5 class="table-title">Khách hàng đã chọn</h5>
+            <p class="table-subtitle">Click vào dòng để bỏ chọn khách hàng</p>
+            <div class="customer-list-edit">
+              <table class="table-customer-edit">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Mã Khách Hàng</th>
+                    <th>Tên Khách Hàng</th>
+                    <th>Giới Tính</th>
+                    <th>Ngày Sinh</th>
+                    <th>Số lần mua</th>
+                    <th>Điểm tích lũy</th>
+                    <th>Lần mua gần nhất</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    *ngFor="let customer of selectedCustomersForEdit; let i = index"
+                    (click)="deselectCustomerForEdit(customer)"
+                    class="customer-row-edit selected-row-edit"
+                    title="Click để bỏ chọn khách hàng"
+                  >
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ customer.maKhachHang }}</td>
+                    <td>{{ customer.tenKhachHang }}</td>
+                    <td>{{ customer.gioiTinh === true ? 'Nam' : (customer.gioiTinh === false ? 'Nữ' : 'N/A') }}</td>
+                    <td>{{ customer.ngaySinh || 'N/A' }}</td>
+                    <td>{{ customer.soLanMua || 0 }}</td>
+                    <td>{{ customer.diemTichLuy || 0 }}</td>
+                    <td>{{ customer.lanMuaGanNhat || 'N/A' }}</td>
+                  </tr>
+                  <tr *ngIf="selectedCustomersForEdit.length === 0">
+                    <td colspan="8" style="text-align: center; color: #999;">
+                      Chưa chọn khách hàng nào
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeEditCustomerModal()"
+        >
+          Hủy
+        </button>
+        <button
+          type="button"
+          class="btn btn-warning"
+          (click)="saveEditCustomer()"
+        >
+          Cập Nhật
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container">
+    <!-- Success Toast -->
+    <div *ngIf="successMessage" class="toast toast-success">
+      <div class="toast-icon">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">Thành công!</div>
+        <div class="toast-message">{{ successMessage }}</div>
+      </div>
+      <button class="toast-close" (click)="clearSuccessMessage()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+
+    <!-- Error Toast -->
+    <div *ngIf="errorMessage" class="toast toast-error">
+      <div class="toast-icon">
+        <i class="bi bi-exclamation-circle-fill"></i>
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">Lỗi!</div>
+        <div class="toast-message">{{ errorMessage }}</div>
+      </div>
+      <button class="toast-close" (click)="clearErrorMessage()">
+        <i class="bi bi-x"></i>
+      </button>
     </div>
   </div>
 </div>
