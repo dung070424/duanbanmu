@@ -1,0 +1,30 @@
+<div class="invoice-status-timeline">
+  <div class="timeline-header">
+    <i class="fas fa-clock timeline-icon"></i>
+    <h6 class="timeline-title">Trạng Thái Hóa Đơn</h6>
+  </div>
+  
+  <div class="timeline-container">
+    <div class="timeline-line">
+      <div class="timeline-progress" 
+           [style.width.%]="getProgressPercentage()"
+           [class.progress-stopped]="getProgressPercentage() > 0"></div>
+    </div>
+    
+    <div class="timeline-steps">
+      <div 
+        *ngFor="let step of statusSteps; let i = index" 
+        class="timeline-step"
+        [ngClass]="getStepClass(step)"
+      >
+        <div class="step-circle">
+          <i [ngClass]="getStepIconClass(step)"></i>
+        </div>
+        
+        <div class="step-content">
+          <div class="step-label">{{ step.label }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
