@@ -1,172 +1,321 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-
-export interface CustomerDTO {
-  id: number;
-  tenKhachHang: string;
-  email: string;
-  soDienThoai: string;
-  ngaySinh?: string;
-  gioiTinh?: boolean;
-  diemTichLuy?: number;
-  ngayTao?: string;
-  trangThai?: boolean;
-  userId?: number;
-  username?: string;
-  fullName?: string;
-  danhSachDiaChi?: AddressDTO[];
-}
-
-export interface AddressDTO {
-  id: number;
-  khachHangId: number;
-  tenNguoiNhan: string;
-  soDienThoai: string;
-  diaChi: string;
-  tinhThanh: string;
-  quanHuyen: string;
-  phuongXa: string;
-  macDinh: boolean;
-  trangThai: boolean;
-}
-
-export interface CustomerPaginatedResponse {
-  content: CustomerDTO[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
-}
+import { Customer, CustomerCreateRequest } from '../interfaces/customer.interface';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class CustomerService {
-  private apiUrl = `${environment.apiBaseUrl}/api/khach-hang`;
+  private apiUrl = `${environment.apiUrl}/khach-hang`;
 
   constructor(private http: HttpClient) {}
 
-  // Lấy tất cả khách hàng với phân trang
-  getAllCustomers(
-    page: number = 0,
-    size: number = 10,
-    sortBy: string = 'id',
-    sortDir: string = 'asc'
-  ): Observable<CustomerPaginatedResponse> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString())
-      .set('sortBy', sortBy)
-      .set('sortDir', sortDir);
-
-    return this.http.get<CustomerPaginatedResponse>(this.apiUrl, { params });
+  /**
+   * Tìm kiếm khách hàng theo email
+   */
+  findByEmail(email: string): Observable<Customer[]> {
+    console.log('🔍 Searching customer by email:', email);
+    console.log('📡 API URL:', `${this.apiUrl}/search?email=${encodeURIComponent(email)}`);
+    
+    return this.http.get<any>(`${this.apiUrl}/search?email=${encodeURIComponent(email)}`).pipe(
+      map(response => {
+        console.log('📥 Search response:', response);
+        if (response && response.content) {
+          const customers = response.content.map((customer: any) => ({
+            id: customer.id,
+            tenKhachHang: customer.tenKhachHang,
+            email: customer.email,
+            soDienThoai: customer.soDienThoai,
+            ngaySinh: customer.ngaySinh,
+            gioiTinh: customer.gioiTinh,
+            diemTichLuy: customer.diemTichLuy,
+            ngayTao: customer.ngayTao,
+            trangThai: customer.trangThai
+          }));
+          console.log('✅ Mapped customers:', customers);
+          return customers;
+        }
+        console.log('⚠️ No content in response');
+        return [];
+      }),
+      catchError((error: any) => {
+        console.error('❌ Error searching customer by email:', error);
+        return of([]);
+      })
+    );
   }
 
-  // Lấy khách hàng theo ID
-  getCustomerById(id: number): Observable<CustomerDTO> {
-    return this.http.get<CustomerDTO>(`${this.apiUrl}/${id}`);
+  /**
+   * Tìm kiếm khách hàng theo số điện thoại
+   */
+  findByPhone(phone: string): Observable<Customer[]> {
+    console.log('🔍 Searching customer by phone:', phone);
+    console.log('📡 API URL:', `${this.apiUrl}/search?soDienThoai=${encodeURIComponent(phone)}`);
+    
+    return this.http.get<any>(`${this.apiUrl}/search?soDienThoai=${encodeURIComponent(phone)}`).pipe(
+      map(response => {
+        console.log('📥 Search response:', response);
+        if (response && response.content) {
+          const customers = response.content.map((customer: any) => ({
+            id: customer.id,
+            tenKhachHang: customer.tenKhachHang,
+            email: customer.email,
+            soDienThoai: customer.soDienThoai,
+            ngaySinh: customer.ngaySinh,
+            gioiTinh: customer.gioiTinh,
+            diemTichLuy: customer.diemTichLuy,
+            ngayTao: customer.ngayTao,
+            trangThai: customer.trangThai
+          }));
+          console.log('✅ Mapped customers:', customers);
+          return customers;
+        }
+        console.log('⚠️ No content in response');
+        return [];
+      }),
+      catchError((error: any) => {
+        console.error('❌ Error searching customer by phone:', error);
+        return of([]);
+      })
+    );
   }
 
-  // Tìm kiếm khách hàng
-  searchCustomers(
-    tenKhachHang?: string,
-    email?: string,
-    soDienThoai?: string,
-    trangThai?: boolean,
-    page: number = 0,
-    size: number = 10,
-    sortBy: string = 'id',
-    sortDir: string = 'asc'
-  ): Observable<CustomerPaginatedResponse> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString())
-      .set('sortBy', sortBy)
-      .set('sortDir', sortDir);
+  /**
+   * Tạo khách hàng mới
+   */
+  createCustomer(customer: CustomerCreateRequest): Observable<Customer> {
+    // Map CustomerCreateRequest to backend format
+    const backendCustomer = {
+      tenKhachHang: customer.tenKhachHang,
+      email: customer.email || null,
+      soDienThoai: customer.soDienThoai || null,
+      ngaySinh: customer.ngaySinh || '1990-01-01',
+      gioiTinh: customer.gioiTinh || true,
+      diemTichLuy: customer.diemTichLuy || 0,
+      trangThai: customer.trangThai !== undefined ? customer.trangThai : true,
+      userId: customer.userId || null,
+      username: customer.username || null,
+      fullName: customer.fullName || null
+    };
 
-    if (tenKhachHang) params = params.set('tenKhachHang', tenKhachHang);
-    if (email) params = params.set('email', email);
-    if (soDienThoai) params = params.set('soDienThoai', soDienThoai);
-    if (trangThai !== undefined) params = params.set('trangThai', trangThai.toString());
+    console.log('🔄 Creating customer with data:', backendCustomer);
+    console.log('📡 API URL:', this.apiUrl);
 
-    return this.http.get<CustomerPaginatedResponse>(`${this.apiUrl}/search`, { params });
+    return this.http.post<any>(this.apiUrl, backendCustomer).pipe(
+      map(response => {
+        console.log('✅ Customer created successfully:', response);
+        const mappedCustomer = {
+          id: response.id,
+          tenKhachHang: response.tenKhachHang,
+          email: response.email,
+          soDienThoai: response.soDienThoai,
+          ngaySinh: response.ngaySinh,
+          gioiTinh: response.gioiTinh,
+          diemTichLuy: response.diemTichLuy,
+          ngayTao: response.ngayTao,
+          trangThai: response.trangThai
+        };
+        console.log('📋 Mapped customer:', mappedCustomer);
+        return mappedCustomer;
+      })
+    );
   }
 
-  // Tạo khách hàng mới
-  createCustomer(customer: Partial<CustomerDTO>): Observable<CustomerDTO> {
-    return this.http.post<CustomerDTO>(this.apiUrl, customer);
+  // Test tạo khách hàng đơn giản
+  testCreateCustomer(): Observable<any> {
+    const testCustomer = {
+      tenKhachHang: 'Test Customer ' + Date.now(),
+      email: 'test' + Date.now() + '@example.com',
+      soDienThoai: '090' + Math.floor(Math.random() * 10000000),
+      ngaySinh: '1990-01-01',
+      gioiTinh: true,
+      diemTichLuy: 0,
+      trangThai: true
+    };
+    
+    console.log('🧪 Testing customer creation with:', testCustomer);
+    return this.http.post(this.apiUrl, testCustomer);
   }
 
-  // Cập nhật khách hàng
-  updateCustomer(id: number, customer: Partial<CustomerDTO>): Observable<CustomerDTO> {
-    return this.http.put<CustomerDTO>(`${this.apiUrl}/${id}`, customer);
+  /**
+   * Cập nhật thông tin khách hàng
+   */
+  updateCustomer(id: number, customer: Partial<Customer>): Observable<Customer> {
+    return this.http.put<Customer>(`${this.apiUrl}/${id}`, customer);
   }
 
-  // Xóa khách hàng (soft delete)
+  /**
+   * Lấy danh sách tất cả khách hàng
+   */
+  getAllCustomers(): Observable<Customer[]> {
+    return this.http.get<any>(this.apiUrl).pipe(
+      map(response => {
+        if (response && response.content) {
+          return response.content.map((customer: any) => ({
+            id: customer.id,
+            tenKhachHang: customer.tenKhachHang,
+            email: customer.email,
+            soDienThoai: customer.soDienThoai,
+            ngaySinh: customer.ngaySinh,
+            gioiTinh: customer.gioiTinh,
+            diemTichLuy: customer.diemTichLuy,
+            ngayTao: customer.ngayTao,
+            trangThai: customer.trangThai
+          }));
+        }
+        return [];
+      })
+    );
+  }
+
+  /**
+   * Lấy thông tin khách hàng theo ID
+   */
+  getCustomerById(id: number): Observable<Customer> {
+    return this.http.get<Customer>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Xóa khách hàng
+   */
   deleteCustomer(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  // Xóa vĩnh viễn khách hàng
-  permanentlyDeleteCustomer(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}/permanent`);
+  /**
+   * Kiểm tra khách hàng đã tồn tại chưa (theo email hoặc số điện thoại)
+   */
+  checkCustomerExists(email?: string, phone?: string): Observable<Customer | null> {
+    if (email) {
+      return this.findByEmail(email).pipe(
+        map(customers => customers && customers.length > 0 ? customers[0] : null)
+      );
+    } else if (phone) {
+      return this.findByPhone(phone).pipe(
+        map(customers => customers && customers.length > 0 ? customers[0] : null)
+      );
+    }
+    
+    // Return empty observable if no search criteria
+    return new Observable(observer => {
+      observer.next(null);
+      observer.complete();
+    });
   }
 
-  // Lấy khách hàng theo email
-  getCustomerByEmail(email: string): Observable<CustomerDTO> {
-    return this.http.get<CustomerDTO>(`${this.apiUrl}/email/${email}`);
-  }
-
-  // Lấy khách hàng theo số điện thoại
-  getCustomerByPhone(phone: string): Observable<CustomerDTO> {
-    return this.http.get<CustomerDTO>(`${this.apiUrl}/phone/${phone}`);
-  }
-
-  // Lấy khách hàng VIP
-  getVIPCustomers(limit: number = 10): Observable<CustomerDTO[]> {
-    return this.http.get<CustomerDTO[]>(`${this.apiUrl}/vip?limit=${limit}`);
-  }
-
-  // Thống kê khách hàng
-  getCustomerStats(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/stats`);
-  }
-
-  // Lấy khách hàng theo khoảng thời gian
-  getCustomersByDateRange(startDate: string, endDate: string): Observable<CustomerDTO[]> {
-    return this.http.get<CustomerDTO[]>(
-      `${this.apiUrl}/date-range?startDate=${startDate}&endDate=${endDate}`
-    );
-  }
-
-  // Cập nhật điểm tích lũy
-  updateLoyaltyPoints(id: number, points: number): Observable<CustomerDTO> {
-    return this.http.patch<CustomerDTO>(`${this.apiUrl}/${id}/diem-tich-luy`, points);
-  }
-
-  // Kiểm tra email đã tồn tại
-  checkEmailExists(email: string): Observable<{ exists: boolean }> {
-    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/check-email/${email}`);
-  }
-
-  // Kiểm tra số điện thoại đã tồn tại
-  checkPhoneExists(phone: string): Observable<{ exists: boolean }> {
-    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/check-phone/${phone}`);
-  }
-
-  // Lấy tất cả khách hàng (không phân trang) - cho dropdown/select
-  getAllCustomersSimple(): Observable<CustomerDTO[]> {
-    console.log('CustomerService: Calling API:', this.apiUrl);
-    return this.http.get<CustomerPaginatedResponse>(this.apiUrl).pipe(
-      map((response) => {
-        console.log('CustomerService: API Response:', response);
-        return response.content;
-      })
-    );
+  /**
+   * Tạo hoặc tìm khách hàng dựa trên thông tin từ hóa đơn
+   */
+  createOrFindCustomer(customerInfo: {
+    tenKhachHang: string;
+    soDienThoai?: string;
+    email?: string;
+    diaChi?: string;
+  }): Observable<Customer> {
+    console.log('🔄 Creating or finding customer with info:', customerInfo);
+    
+    return new Observable(observer => {
+      // Tìm kiếm khách hàng theo email trước
+      if (customerInfo.email) {
+        this.findByEmail(customerInfo.email).subscribe({
+          next: (customers) => {
+            if (customers && customers.length > 0) {
+              console.log('✅ Found existing customer:', customers[0]);
+              observer.next(customers[0]);
+              observer.complete();
+            } else {
+              console.log('🆕 No existing customer found, creating new one...');
+              // Không tìm thấy, tạo mới
+              const customerToCreate: CustomerCreateRequest = {
+                tenKhachHang: customerInfo.tenKhachHang,
+                email: customerInfo.email, // Sử dụng email gốc không thêm timestamp
+                soDienThoai: customerInfo.soDienThoai, // Sử dụng số điện thoại gốc không thêm timestamp
+                ngaySinh: '1990-01-01',
+                gioiTinh: true,
+                diemTichLuy: 0,
+                trangThai: true
+              };
+              
+              console.log('📝 Creating customer with data:', customerToCreate);
+              this.createCustomer(customerToCreate).subscribe({
+                next: (newCustomer) => {
+                  console.log('✅ New customer created successfully:', newCustomer);
+                  observer.next(newCustomer);
+                  observer.complete();
+                },
+                error: (error) => {
+                  observer.error(error);
+                }
+              });
+            }
+          },
+          error: (error) => {
+            observer.error(error);
+          }
+        });
+      } else if (customerInfo.soDienThoai) {
+        // Tìm kiếm theo số điện thoại nếu không có email
+        this.findByPhone(customerInfo.soDienThoai).subscribe({
+          next: (customers) => {
+            if (customers && customers.length > 0) {
+              console.log('✅ Found existing customer:', customers[0]);
+              observer.next(customers[0]);
+              observer.complete();
+            } else {
+              console.log('🆕 No existing customer found, creating new one...');
+              // Không tìm thấy, tạo mới
+              const customerToCreate: CustomerCreateRequest = {
+                tenKhachHang: customerInfo.tenKhachHang,
+                email: customerInfo.email, // Sử dụng email gốc không thêm timestamp
+                soDienThoai: customerInfo.soDienThoai, // Sử dụng số điện thoại gốc không thêm timestamp
+                ngaySinh: '1990-01-01',
+                gioiTinh: true,
+                diemTichLuy: 0,
+                trangThai: true
+              };
+              
+              console.log('📝 Creating customer with data:', customerToCreate);
+              this.createCustomer(customerToCreate).subscribe({
+                next: (newCustomer) => {
+                  console.log('✅ New customer created successfully:', newCustomer);
+                  observer.next(newCustomer);
+                  observer.complete();
+                },
+                error: (error) => {
+                  observer.error(error);
+                }
+              });
+            }
+          },
+          error: (error) => {
+            observer.error(error);
+          }
+        });
+      } else {
+        // Không có email hoặc số điện thoại, tạo mới luôn
+        const customerToCreate: CustomerCreateRequest = {
+          tenKhachHang: customerInfo.tenKhachHang,
+          email: customerInfo.email ? `${customerInfo.email.split('@')[0]}_${Date.now()}@${customerInfo.email.split('@')[1]}` : undefined,
+          soDienThoai: customerInfo.soDienThoai ? `${customerInfo.soDienThoai}_${Date.now()}` : undefined,
+          ngaySinh: '1990-01-01',
+          gioiTinh: true,
+          diemTichLuy: 0,
+          trangThai: true
+        };
+        
+        this.createCustomer(customerToCreate).subscribe({
+          next: (newCustomer) => {
+            observer.next(newCustomer);
+            observer.complete();
+          },
+          error: (error) => {
+            observer.error(error);
+          }
+        });
+      }
+    });
   }
 }

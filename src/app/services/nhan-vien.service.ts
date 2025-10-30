@@ -14,7 +14,7 @@ import {
   providedIn: 'root',
 })
 export class NhanVienService {
-  private readonly baseUrl = 'http://localhost:8080/api/nhan-vien';
+  private readonly baseUrl = 'http://localhost:8081/api/nhan-vien';
   private nhanVienSubject = new BehaviorSubject<NhanVien[]>([]);
   public nhanVien$ = this.nhanVienSubject.asObservable();
 

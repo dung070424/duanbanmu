@@ -7,7 +7,7 @@ import { PhieuGiamGia, PhieuGiamGiaRequest, PhieuGiamGiaResponse, ApiResponse, K
   providedIn: 'root'
 })
 export class PhieuGiamGiaService {
-  private readonly API_BASE_URL = 'http://localhost:8080/api';
+  private readonly API_BASE_URL = 'http://localhost:8081/api';
 
   constructor(private http: HttpClient) { }
 

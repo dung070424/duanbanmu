@@ -11,6 +11,7 @@ export interface HoaDonDTO {
   ngayThanhToan?: string; // ISO 8601 string
   tongTien: number;
   tienGiamGia?: number;
+  giamGiaPhanTram?: number; // Thêm field giảm giá phần trăm
   thanhTien: number;
   ghiChu?: string;
   trangThai: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY';
@@ -22,6 +23,11 @@ export interface HoaDonDTO {
   email?: string;
   diaChiGiaoHang?: string;
   phuongThucThanhToan?: string;
+  // Địa chỉ khách hàng
+  tinhThanh?: string;
+  quanHuyen?: string;
+  phuongXa?: string;
+  diaChiChiTiet?: string;
 }
 
 export interface SanPhamTrongHoaDon {
@@ -33,6 +39,9 @@ export interface SanPhamTrongHoaDon {
   ghiChu?: string;
   sanPhamId?: number; // ID sản phẩm từ database
   soLuongTon?: number; // Số lượng tồn kho
+  maSanPham?: string; // Mã sản phẩm
+  danhMuc?: string; // Danh mục sản phẩm
+  thuongHieu?: string; // Thương hiệu sản phẩm
 }
 
 export interface HoaDonPaginatedResponse {

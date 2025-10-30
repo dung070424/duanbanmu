@@ -1,226 +1,372 @@
-// Invoice Management Styles
+// Color variables
+$primary-color: #febc49;
+$primary-dark: #e6a942;
+$primary-light: #ffd166;
+$secondary-color: #2c3e50;
+$success-color: #27ae60;
+$danger-color: #e74c3c;
+$warning-color: #f39c12;
+$info-color: #3498db;
+$light-bg: #f8f9fa;
+$white: #ffffff;
+$text-dark: #2c3e50;
+$text-light: #6c757d;
+
+// Main container
+.invoice-management-container {
+  background: linear-gradient(135deg, rgba(254, 188, 73, 0.05) 0%, rgba(254, 188, 73, 0.02) 100%);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+// Page header
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e9ecef;
-
-  h2 {
-    margin: 0;
-    color: #2c3e50;
-    font-weight: 600;
+  background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+  color: $white;
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 25px rgba(254, 188, 73, 0.3);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
   }
-
-  .btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    font-weight: 500;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    i {
+      margin-right: 15px;
+      opacity: 0.9;
     }
   }
 }
 
+// Filter section
 .filter-section {
-  background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: $white;
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(254, 188, 73, 0.1);
+  border: 1px solid rgba(254, 188, 73, 0.2);
 
   .form-group {
-    margin-bottom: 0;
+    margin-bottom: 20px;
 
     label {
       font-weight: 600;
-      color: #495057;
-      margin-bottom: 0.5rem;
-      display: block;
+      color: $text-dark;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
     }
-
-    .form-control {
-      border-radius: 8px;
+    
+    .form-control, .form-select {
       border: 2px solid #e9ecef;
-      padding: 0.75rem;
+      border-radius: 10px;
+      padding: 12px 15px;
       transition: all 0.3s ease;
+      font-size: 0.9rem;
 
       &:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        border-color: $primary-color;
+        box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25);
+        outline: none;
       }
-    }
-
-    .btn {
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
-      font-weight: 500;
-      transition: all 0.3s ease;
 
       &:hover {
-        transform: translateY(-1px);
+        border-color: rgba(254, 188, 73, 0.5);
       }
+    }
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, $primary-color, $primary-dark);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(254, 188, 73, 0.3);
     }
   }
 }
 
-.table-responsive {
-  background: white;
-  border-radius: 12px;
+// Button tạo hóa đơn mới sát bên phải
+.create-invoice-button-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  
+  .btn-primary {
+    margin-left: auto; // Đẩy button sát bên phải
+    margin-right: 0;   // Loại bỏ margin phải
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(254, 188, 73, 0.3);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
+    }
+    
+    i {
+      margin-right: 8px;
+    }
+  }
+}
+
+// Table styles
+.table-container {
+  background: $white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 8px 25px rgba(254, 188, 73, 0.15);
+  border: 1px solid rgba(254, 188, 73, 0.2);
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
 
   .table {
     margin-bottom: 0;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
 
     thead {
-      th {
-        background: linear-gradient(135deg, #343a40, #495057);
-        color: white;
-        font-weight: 600;
-        padding: 1rem;
-        border: none;
-        position: sticky;
+      background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+      position: relative;
+      
+      &::before {
+        content: '';
+        position: absolute;
         top: 0;
-        z-index: 10;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+        pointer-events: none;
+      }
+      
+      th {
+        border: none;
+        color: $white;
+        font-weight: 700;
+        padding: 18px 15px;
+        font-size: 0.95rem;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 
         &.sortable {
           cursor: pointer;
-          user-select: none;
-          position: relative;
           transition: all 0.3s ease;
 
           &:hover {
-            background: linear-gradient(135deg, #495057, #6c757d);
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
           }
-
+          
           i {
-            margin-left: 0.5rem;
-            font-size: 0.8rem;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
+            margin-left: 5px;
+            opacity: 0.8;
+            transition: all 0.3s ease;
           }
 
           &:hover i {
             opacity: 1;
+            transform: scale(1.1);
           }
         }
       }
     }
 
-    //hh
     tbody {
       tr {
         transition: all 0.3s ease;
-
-        &:hover {
-          background-color: #f8f9fa;
-          transform: translateY(-1px);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-bottom: 1px solid rgba(254, 188, 73, 0.1);
+        position: relative;
+        
+        &:nth-child(even) {
+          background: rgba(254, 188, 73, 0.02);
         }
 
+        &:hover {
+          background: linear-gradient(135deg, rgba(254, 188, 73, 0.08) 0%, rgba(254, 188, 73, 0.05) 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(254, 188, 73, 0.2);
+          border-left: 4px solid $primary-color;
+        }
+        
         td {
-          padding: 1rem;
+          padding: 18px 15px;
           vertical-align: middle;
-          border-top: 1px solid #e9ecef;
+          font-size: 0.9rem;
+          border: none;
+          position: relative;
 
-          .invoice-number {
-            font-family: 'Courier New', monospace;
+          // STT column
+          &:first-child {
+            text-align: center;
             font-weight: 600;
-            color: #007bff;
-            background: #e3f2fd;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.9rem;
+            
+            .badge {
+              background: linear-gradient(135deg, $secondary-color, #34495e);
+              color: $white;
+              padding: 8px 12px;
+              border-radius: 20px;
+              font-size: 0.8rem;
+              font-weight: 600;
+              box-shadow: 0 2px 8px rgba(52, 73, 94, 0.3);
+            }
           }
-
+          
+          // Invoice number
+          .invoice-number {
+            font-weight: 700;
+            color: $primary-color;
+            font-size: 0.95rem;
+            text-shadow: 0 1px 2px rgba(254, 188, 73, 0.2);
+          }
+          
+          // Customer info
           .customer-info {
             .customer-name {
               font-weight: 600;
-              color: #2c3e50;
-              margin-bottom: 0.25rem;
+              color: $text-dark;
+              margin-bottom: 3px;
             }
 
             .customer-phone {
-              font-size: 0.85rem;
+              font-size: 0.8rem;
+              color: $text-light;
             }
           }
 
+          // Total amount
           .total-amount {
             font-weight: 700;
-            color: #28a745;
-            font-size: 1.1rem;
+            color: $success-color;
+            font-size: 1rem;
+            text-shadow: 0 1px 2px rgba(39, 174, 96, 0.2);
           }
 
+          // Status badges
           .badge {
-            font-size: 0.8rem;
-            padding: 0.5rem 0.75rem;
+            padding: 8px 12px;
             border-radius: 20px;
-            font-weight: 500;
-
-            &.badge-secondary {
-              background-color: #6c757d;
-              color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            
+            &.bg-warning {
+              background: linear-gradient(135deg, $warning-color, #f1c40f) !important;
+              color: $white;
             }
-
-            &.badge-primary {
-              background-color: #007bff;
-              color: white;
+            
+            &.bg-info {
+              background: linear-gradient(135deg, $info-color, #5dade2) !important;
+              color: $white;
             }
-
-            &.badge-info {
-              background-color: #17a2b8;
-              color: white;
+            
+            &.bg-primary {
+              background: linear-gradient(135deg, $primary-color, $primary-dark) !important;
+              color: $white;
             }
-
-            &.badge-success {
-              background-color: #28a745;
-              color: white;
+            
+            &.bg-success {
+              background: linear-gradient(135deg, $success-color, #58d68d) !important;
+              color: $white;
             }
-
-            &.badge-danger {
-              background-color: #dc3545;
-              color: white;
-            }
-
-            &.badge-warning {
-              background-color: #ffc107;
-              color: #212529;
+            
+            &.bg-danger {
+              background: linear-gradient(135deg, $danger-color, #e67e22) !important;
+              color: $white;
             }
           }
-
+          
+          // Payment method
           .payment-method {
-            font-weight: 500;
-            color: #495057;
-          }
-
-          .created-date {
-            color: #6c757d;
+            font-weight: 600;
+            color: $text-dark;
             font-size: 0.9rem;
           }
 
+          // Created date
+          .created-date {
+            color: $text-light;
+            font-size: 0.85rem;
+            font-weight: 500;
+          }
+
+          // Action buttons
           .action-buttons {
             display: flex;
-            gap: 0.25rem;
+            gap: 8px;
+            justify-content: center;
 
             .btn {
-              padding: 0.375rem 0.75rem;
-              border-radius: 6px;
+              padding: 8px 12px;
+              border-radius: 8px;
+              font-size: 0.8rem;
+              font-weight: 600;
               transition: all 0.3s ease;
+              border-width: 2px;
+              
+              &.btn-outline-info {
+                color: $info-color;
+                border-color: $info-color;
+                
+                &:hover {
+                  background: $info-color;
+                  color: $white;
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+                }
+              }
+              
+              &.btn-outline-warning {
+                color: $warning-color;
+                border-color: $warning-color;
+                
+                &:hover {
+                  background: $warning-color;
+                  color: $white;
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);
+                }
+              }
+              
+              &.btn-outline-danger {
+                color: $danger-color;
+                border-color: $danger-color;
 
               &:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                  background: $danger-color;
+                  color: $white;
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+                }
               }
             }
           }
@@ -230,195 +376,106 @@
   }
 }
 
-// Pagination styles
-.pagination-info {
-  color: #6c757d;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
+// Pagination
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(254, 188, 73, 0.05) 0%, rgba(254, 188, 73, 0.02) 100%);
+  border-radius: 15px;
+  border: 1px solid rgba(254, 188, 73, 0.1);
 
 .pagination {
+    margin: 0;
+    
+    .page-item {
+      margin: 0 3px;
+      
   .page-link {
-    border-radius: 8px;
-    margin: 0 0.25rem;
-    border: 2px solid #e9ecef;
-    color: #007bff;
-    font-weight: 500;
+        border: 2px solid rgba(254, 188, 73, 0.2);
+        color: $text-dark;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-weight: 600;
     transition: all 0.3s ease;
+        background: $white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
     &:hover {
-      background-color: #007bff;
-      border-color: #007bff;
-      color: white;
-      transform: translateY(-1px);
-    }
-
-    &:focus {
-      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-  }
-
-  .page-item.active .page-link {
-    background-color: #007bff;
-    border-color: #007bff;
-    color: white;
-  }
-
-  .page-item.disabled .page-link {
-    color: #6c757d;
-    background-color: #f8f9fa;
+          background: linear-gradient(135deg, $primary-color, $primary-dark);
+          color: $white;
+          border-color: $primary-color;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(254, 188, 73, 0.3);
+        }
+      }
+      
+      &.active .page-link {
+        background: linear-gradient(135deg, $primary-color, $primary-dark);
+        color: $white;
+        border-color: $primary-color;
+        box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
+      }
+      
+      &.disabled .page-link {
+        background: #f8f9fa;
+        color: $text-light;
     border-color: #e9ecef;
     cursor: not-allowed;
-  }
-}
-
-// Empty state
-.text-center {
-  .display-1 {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-
-  h4 {
-    margin-bottom: 1rem;
-  }
-
-  p {
-    margin-bottom: 2rem;
-  }
-
-  .btn {
-    padding: 0.75rem 2rem;
-    font-weight: 500;
-    border-radius: 8px;
-    transition: all 0.3s ease;
 
     &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-    }
-  }
-}
-
-// Responsive design
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-
-    h2 {
-      text-align: center;
-    }
-  }
-
-  .filter-section {
-    .row {
-      .col-md-3,
-      .col-md-2 {
-        margin-bottom: 1rem;
-      }
-    }
-  }
-
-  .table-responsive {
-    font-size: 0.85rem;
-
-    .table {
-      thead th,
-      tbody td {
-        padding: 0.75rem 0.5rem;
+          transform: none;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
       }
     }
   }
 
   .pagination-info {
-    display: none;
-  }
-}
-
-@media (max-width: 576px) {
-  .filter-section {
-    padding: 1rem;
-
-    .form-group {
-      .btn {
-        width: 100%;
-        margin-bottom: 0.5rem;
-      }
-    }
-  }
-
-  .action-buttons {
-    flex-direction: column;
-    gap: 0.5rem;
-
-    .btn {
-      width: 100%;
+    margin-left: 20px;
+    color: $text-dark;
+    font-weight: 600;
+    font-size: 0.9rem;
+    
+    .badge {
+      background: linear-gradient(135deg, $primary-color, $primary-dark);
+      color: $white;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      margin: 0 5px;
     }
   }
 }
 
 // Modal styles
-.modal {
-  &.fade {
-    &.show {
-      display: flex !important;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-
-  .modal-dialog {
-    margin: 0;
-    max-width: 90vw;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 1rem;
-
-    &.modal-lg {
-      max-width: 800px;
-      width: 100%;
-    }
-
-    &.modal-xl {
-      max-width: 1200px;
-      width: 100%;
-    }
-  }
-
   .modal-content {
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
     border: none;
-    max-height: 90vh;
-    overflow-y: auto;
-    width: 100%;
-  }
+  box-shadow: 0 10px 30px rgba(254, 188, 73, 0.2);
 
   .modal-header {
-    border-bottom: 2px solid #e9ecef;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+    color: $white;
+    border-radius: 15px 15px 0 0;
+    padding: 20px 25px;
+    border-bottom: none;
 
     .modal-title {
-      font-weight: 600;
-      color: #2c3e50;
-      margin: 0;
+      font-weight: 700;
+      font-size: 1.2rem;
+      
+      i {
+        margin-right: 10px;
+        opacity: 0.9;
+      }
     }
 
     .btn-close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: #6c757d;
-      opacity: 0.7;
-      transition: opacity 0.3s ease;
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
 
       &:hover {
         opacity: 1;
@@ -427,49 +484,124 @@
   }
 
   .modal-body {
-    padding: 2rem;
-    background: white;
+    padding: 25px;
+    background: $white;
   }
 
   .modal-footer {
-    border-top: 2px solid #e9ecef;
-    padding: 1.5rem;
-    background: #f8f9fa;
-    border-radius: 0 0 12px 12px;
+    background: rgba(254, 188, 73, 0.05);
+    border-radius: 0 0 15px 15px;
+    padding: 20px 25px;
+    border-top: 1px solid rgba(254, 188, 73, 0.1);
 
     .btn {
-      padding: 0.75rem 1.5rem;
+      padding: 10px 20px;
       border-radius: 8px;
-      font-weight: 500;
+      font-weight: 600;
       transition: all 0.3s ease;
 
-      &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      &.btn-primary {
+        background: linear-gradient(135deg, $primary-color, $primary-dark);
+        border: none;
+    
+    &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(254, 188, 73, 0.3);
+        }
+      }
+      
+      &.btn-secondary {
+        background: linear-gradient(135deg, $secondary-color, #34495e);
+        border: none;
+        color: $white;
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(52, 73, 94, 0.3);
+        }
       }
     }
   }
 }
 
-// Modal backdrop
-.modal-backdrop {
-  &.fade {
-    opacity: 0;
+// Toast notifications
+.toast {
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  
+  &.bg-success {
+    background: linear-gradient(135deg, $success-color, #58d68d) !important;
   }
-
-  &.show {
-    opacity: 0.5;
+  
+  &.bg-danger {
+    background: linear-gradient(135deg, $danger-color, #e67e22) !important;
+  }
+  
+  &.bg-warning {
+    background: linear-gradient(135deg, $warning-color, #f1c40f) !important;
   }
 }
 
-// Product selection modal specific styles
-.modal-xl {
-  .modal-content {
-    max-height: 85vh;
-  }
+// Loading spinner
+.spinner-border {
+  color: $primary-color;
+}
 
-  .modal-body {
-    max-height: 60vh;
-    overflow-y: auto;
+// Responsive design
+@media (max-width: 768px) {
+  .invoice-management-container {
+    padding: 15px;
+  }
+  
+  .page-header {
+    padding: 20px 15px;
+    
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+  
+  .filter-section {
+    padding: 15px;
+    
+    .row {
+      margin: 0;
+      
+      .col-md-3 {
+        margin-bottom: 15px;
+      }
+    }
+  }
+  
+  .table-container {
+    padding: 15px;
+    overflow-x: auto;
+    
+    .table {
+      font-size: 0.8rem;
+      
+      th, td {
+        padding: 10px 8px;
+      }
+    }
+  }
+  
+  .pagination-container {
+    flex-direction: column;
+    gap: 15px;
+    
+    .pagination-info {
+      margin-left: 0;
+    }
+  }
+  
+  .create-invoice-button-container {
+    justify-content: flex-end;
+    margin-top: 15px;
+    
+    .btn-primary {
+      width: auto;
+      min-width: 150px;
+    }
   }
 }

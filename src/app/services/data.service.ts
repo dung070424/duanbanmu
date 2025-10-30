@@ -176,7 +176,7 @@ export class DataService {
 
   // Cập nhật hóa đơn qua API
   updateInvoiceInAPI(id: number, hoaDonDTO: HoaDonDTO): Observable<HoaDonDTO> {
-    return this.hoaDonService.updateHoaDon(id, hoaDonDTO);
+    return this.hoaDonService.updateHoaDonNew(id, hoaDonDTO);
   }
 
   deleteInvoice(id: string): void {

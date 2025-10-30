@@ -11,6 +11,38 @@
   color: #111827;
   border-right: 1px solid #e5e7eb;
   transition: width 0.3s ease;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  
+  // Ensure all text elements inherit the same font
+  *, *::before, *::after {
+    font-family: inherit;
+  }
+  
+  // Standardize font weights
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+  }
+  
+  p, span, div, td, th, label, input, textarea, select {
+    font-weight: 400;
+  }
+  
+  .btn {
+    font-weight: 500;
+  }
+  
+  .badge {
+    font-weight: 500;
+  }
+  
+  // Remove bold from data values
+  .text-success, .text-primary, .text-danger, .text-warning, .text-info {
+    font-weight: 400 !important;
+  }
+  
+  .fw-bold {
+    font-weight: 500 !important;
+  }
 }
 
 /* Compact mode styles */

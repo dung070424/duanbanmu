@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { HoaDonDTO, HoaDonPaginatedResponse, HoaDonFilter, HoaDonAdvancedFilter } from '../interfaces/hoa-don.interface';
 
@@ -15,7 +15,7 @@ export class HoaDonService {
 
 
 //kkhja
-  getAllHoaDon(filterParams?: any): Observable<HoaDonDTO[]> {
+  getAllHoaDon(filterParams?: any): Observable<any> {
     let params = new HttpParams();
     
     if (filterParams) {
@@ -52,7 +52,7 @@ export class HoaDonService {
       }
     }
     
-    return this.http.get<HoaDonDTO[]>(this.apiUrl, { params });
+    return this.http.get<any>(`${this.apiUrl}/page`, { params });
   }
 
   getHoaDonPaginated(filter: HoaDonFilter): Observable<any> {
@@ -64,7 +64,7 @@ export class HoaDonService {
     if (filter.search) params = params.append('search', filter.search);
     if (filter.trangThai) params = params.append('trangThai', filter.trangThai);
 
-    return this.http.get<any>(`${this.apiUrl}/paginated`, { params });
+    return this.http.get<any>(`${this.apiUrl}/page`, { params });
   }
 
   getHoaDonById(id: number): Observable<HoaDonDTO> {
@@ -72,11 +72,52 @@ export class HoaDonService {
   }
 
   createHoaDon(hoaDon: Partial<HoaDonDTO>): Observable<HoaDonDTO> {
-    return this.http.post<HoaDonDTO>(this.apiUrl, hoaDon);
+    console.log('🔄 Sending invoice data to backend:', hoaDon);
+    console.log('📡 API URL:', this.apiUrl);
+    
+    // Test connection first
+    this.testConnection().subscribe({
+      next: () => console.log('✅ Backend connection successful'),
+      error: (error) => console.error('❌ Backend connection failed:', error)
+    });
+    
+    return this.http.post<HoaDonDTO>(this.apiUrl, hoaDon).pipe(
+      map(result => {
+        console.log('✅ Invoice saved to database successfully:', result);
+        return result;
+      }),
+      tap({
+        error: (error) => {
+          console.error('❌ Error saving invoice to database:', error);
+          console.error('📝 Invoice data that failed:', hoaDon);
+        }
+      })
+    );
   }
 
-  updateHoaDon(id: number, hoaDon: Partial<HoaDonDTO>): Observable<HoaDonDTO> {
-    return this.http.put<HoaDonDTO>(`${this.apiUrl}/${id}`, hoaDon);
+  // Test backend connection
+  private testConnection(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/test`).pipe(
+      catchError(() => {
+        // If test endpoint doesn't exist, try a simple GET to the base URL
+        return this.http.get(`${environment.apiBaseUrl}/actuator/health`);
+      })
+    );
+  }
+
+  // Test tạo hóa đơn đơn giản
+  testCreateInvoice(): Observable<any> {
+    const testInvoice = {
+      maHoaDon: 'TEST_' + Date.now(),
+      tenKhachHang: 'Test Customer',
+      tongTien: 100000,
+      thanhTien: 100000,
+      trangThai: 'CHO_XAC_NHAN',
+      ngayTao: new Date().toISOString()
+    };
+    
+    console.log('🧪 Testing invoice creation with:', testInvoice);
+    return this.http.post(this.apiUrl, testInvoice);
   }
 
   deleteHoaDon(id: number): Observable<void> {
@@ -146,7 +187,7 @@ export class HoaDonService {
 
   // SanPham API methods
   getAllSanPham(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiBaseUrl}/api/san-pham/all`);
+    return this.http.get<any[]>(`${environment.apiBaseUrl}/san-pham/all`);
   }
 
   getActiveSanPham(): Observable<any[]> {
@@ -162,9 +203,7 @@ export class HoaDonService {
   }
 
   getProducts(): Observable<any[]> {
-    return this.http.get<any>(`${environment.apiBaseUrl}/san-pham`).pipe(
-      map(response => response.content || [])
-    );
+    return this.getAllSanPham();
   }
 
   // Methods for DataService compatibility

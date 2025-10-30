@@ -1,28 +1,27 @@
-import { Address } from './address.interface';
-
 export interface Customer {
-  id: number;
-  customerCode?: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  addresses?: Address[]; // Danh sách địa chỉ chi tiết
-  dateOfBirth: Date;
-  gender: 'Nam' | 'Nữ' | 'Khác';
-  registrationDate: Date;
-  totalOrders: number;
-  totalSpent: number;
-  status: 'Active' | 'Inactive';
-  notes?: string;
+  id?: number;
+  tenKhachHang: string;
+  soDienThoai?: string;
+  email?: string;
+  diaChi?: string;
+  ngayTao?: string;
+  trangThai?: string;
 }
 
-export interface CustomerFormData {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  dateOfBirth: Date;
-  gender: 'Nam' | 'Nữ' | 'Khác';
-  notes?: string;
+export interface CustomerCreateRequest {
+  tenKhachHang: string;
+  soDienThoai?: string;
+  email?: string;
+  ngaySinh?: string;
+  gioiTinh?: boolean;
+  diemTichLuy?: number;
+  trangThai?: boolean;
+  userId?: number;
+  username?: string;
+  fullName?: string;
+}
+
+export interface CustomerSearchResult {
+  customers: Customer[];
+  total: number;
 }

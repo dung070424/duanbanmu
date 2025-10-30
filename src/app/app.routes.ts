@@ -44,7 +44,7 @@ export const routes: Routes = [
   {
     path: 'invoices',
     component: InvoiceManagementComponent,
-    canActivate: [AuthGuard],
+    // canActivate: [AuthGuard], // Tạm thời bỏ để test
   },
   {
     path: 'invoices/:id',

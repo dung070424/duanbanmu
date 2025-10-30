@@ -1,9 +1,47 @@
-/* Helmets Management Component Styles - Giống y đúc với customer-management */
+/* Helmets Management Component Styles - Font Synchronization */
 
 .container-fluid {
   background-color: #f5f5f5;
   min-height: 100vh;
   padding: 20px;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  
+  // Ensure all text elements inherit the same font
+  *, *::before, *::after {
+    font-family: inherit;
+  }
+  
+  // Standardize font weights
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+  }
+  
+  p, span, div, td, th, label, input, textarea, select {
+    font-weight: 400;
+  }
+  
+  .btn {
+    font-weight: 500;
+  }
+  
+  .badge {
+    font-weight: 500;
+  }
+  
+  // Remove bold from data values
+  .text-success, .text-primary, .text-danger, .text-warning, .text-info {
+    font-weight: 400 !important;
+  }
+  
+  .fw-bold {
+    font-weight: 500 !important;
+  }
+  
+  // Currency and number formatting
+  .currency, .number {
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+  }
 }
 
 /* ===== BỘ LỌC TÌM KIẾM SECTION ===== */
