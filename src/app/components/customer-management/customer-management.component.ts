@@ -673,15 +673,15 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         this.loading = false;
 
         // Update address list after save and reset navigation
-      if (this.isEditMode && response.id) {
-        this.loadAddressListForCustomer(response.id);
-        setTimeout(() => {
-          this.currentAddressIndex = 0;
-          this.updateCurrentAddressMacDinh();
-        }, 300);
-      }
+        if (this.isEditMode && response.id) {
+          this.loadAddressListForCustomer(response.id);
+          setTimeout(() => {
+            this.currentAddressIndex = 0;
+            this.updateCurrentAddressMacDinh();
+          }, 300);
+        }
 
-      // Nếu là thêm khách hàng mới và có địa chỉ cần lưu
+        // Nếu là thêm khách hàng mới và có địa chỉ cần lưu
         if (!this.isEditMode && response.id) {
           let hasAddressToSave = false;
 
@@ -1051,7 +1051,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
 
       // Cập nhật danh sách hiển thị
       this.updateAddressListFromPending();
-      
+
       // Update current address index
       if (this.isEditAddressMode && this.selectedAddress) {
         const index = this.pendingAddresses.findIndex(
@@ -1121,7 +1121,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         alert(successMessage);
         this.closeAddressModal();
 
-          // Update addressList immediately for edit mode
+        // Update addressList immediately for edit mode
         if (this.isEditMode && this.selectedKhachHang?.id) {
           console.log('Updating addressList for edit mode...', {
             isEditAddressMode: this.isEditAddressMode,
@@ -1149,7 +1149,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
           }
           this.updateCurrentAddressMacDinh();
         }
-        
+
         // Update pending addresses for new customer
         if (!this.isEditMode && !this.selectedKhachHang?.id) {
           if (this.isEditAddressMode && this.selectedAddress) {
@@ -1577,6 +1577,68 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
+  // Export current list to Excel (CSV)
+  exportToExcel(): void {
+    // Prefer filtered list if present; else fall back to full list
+    const dataSource =
+      this.filteredList && this.filteredList.length > 0 ? this.filteredList : this.khachHangList;
+
+    if (!dataSource || dataSource.length === 0) {
+      alert('Không có dữ liệu để xuất Excel!');
+      return;
+    }
+
+    const headers = [
+      'STT',
+      'Mã KH',
+      'Tên khách hàng',
+      'Số điện thoại',
+      'Email',
+      'Địa chỉ',
+      'Giới tính',
+      'Trạng thái',
+    ];
+
+    const rows = dataSource.map((kh, index) => [
+      (index + 1).toString(),
+      kh.maKhachHang || '',
+      kh.tenKhachHang || '',
+      kh.soDienThoai || '',
+      kh.email || '',
+      this.getCustomerAddress(kh) || '',
+      getGioiTinhText(kh.gioiTinh),
+      getTrangThaiText(kh.trangThai),
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) =>
+        row
+          .map((cell) => {
+            const cellStr = String(cell ?? '');
+            return cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')
+              ? '"' + cellStr.replace(/"/g, '""') + '"'
+              : cellStr;
+          })
+          .join(',')
+      ),
+    ].join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `Danh_sach_khach_hang_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // Address management methods for new customer form
   openAddressModalForNewCustomer(): void {
     this.showAddressModal = true;
@@ -1613,7 +1675,10 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       this.pendingAddresses.splice(index, 1);
       this.updateAddressListFromPending();
       // Adjust current index if needed
-      if (this.currentAddressIndex >= this.pendingAddresses.length && this.currentAddressIndex > 0) {
+      if (
+        this.currentAddressIndex >= this.pendingAddresses.length &&
+        this.currentAddressIndex > 0
+      ) {
         this.currentAddressIndex = this.pendingAddresses.length - 1;
       }
       this.updateCurrentAddressMacDinh();
@@ -1740,7 +1805,11 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   // New UI methods for address navigation and management
   getCurrentAddress(): DiaChiKhachHang | DiaChiKhachHangFormData | null {
     const addresses = this.isEditMode ? this.addressList : this.pendingAddresses;
-    if (addresses.length > 0 && this.currentAddressIndex >= 0 && this.currentAddressIndex < addresses.length) {
+    if (
+      addresses.length > 0 &&
+      this.currentAddressIndex >= 0 &&
+      this.currentAddressIndex < addresses.length
+    ) {
       return addresses[this.currentAddressIndex];
     }
     return null;

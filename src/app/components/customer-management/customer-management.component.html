@@ -67,6 +67,7 @@
         <div class="total-customers">Tổng số khách hàng: {{ totalCustomers }}</div>
         <div class="action-buttons">
           <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
+          <button class="btn-export" (click)="exportToExcel()">Xuất Excel</button>
           <button class="btn-add" (click)="openAdd()">Thêm Khách Hàng</button>
         </div>
       </div>
@@ -291,22 +292,6 @@
               </div>
 
               <div class="mb-3">
-                <label for="ngaySinh" class="form-label">Ngày sinh</label>
-                <div class="date-input-wrapper">
-                  <input
-                    type="text"
-                    class="form-control date-input"
-                    id="ngaySinh"
-                    [(ngModel)]="formattedNgaySinh"
-                    name="ngaySinh"
-                    placeholder="dd/mm/yyyy"
-                    (blur)="onDateBlur()"
-                  />
-                  <i class="bi bi-calendar date-icon"></i>
-                </div>
-              </div>
-
-              <div class="mb-3">
                 <label class="form-label">Giới tính</label>
                 <div class="gender-radio-group">
                   <label class="gender-radio-item">
@@ -341,7 +326,7 @@
                   (click)="save()"
                   [disabled]="loading || !isFormValid()"
                 >
-                  Thêm mới
+                  {{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}
                   <i class="bi bi-chevron-down"></i>
                 </button>
               </div>
@@ -390,10 +375,7 @@
                   <div class="address-card-title">
                     <i class="bi bi-geo-alt-fill address-icon"></i>
                     <span>Địa chỉ {{ currentAddressIndex + 1 }}</span>
-                    <span
-                      class="address-default-badge"
-                      *ngIf="getCurrentAddress()?.macDinh"
-                    >
+                    <span class="address-default-badge" *ngIf="getCurrentAddress()?.macDinh">
                       Mặc định
                     </span>
                   </div>
@@ -886,4 +868,3 @@
   class="modal-backdrop fade show"
   (click)="closeAllModals()"
 ></div>
-

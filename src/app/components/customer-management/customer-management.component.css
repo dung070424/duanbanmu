@@ -199,7 +199,7 @@
 
 .btn-export {
   padding: 10px 20px;
-  background-color: #28a745;
+  background-color: #febc49; /* match Add button */
   color: white;
   border: none;
   border-radius: 8px;
@@ -210,7 +210,7 @@
 }
 
 .btn-export:hover {
-  background-color: #218838;
+  background-color: #e6a742;
   transform: translateY(-1px);
 }
 
