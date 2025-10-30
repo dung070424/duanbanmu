@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError, map } from 'rxjs/operators';
 import { PhieuGiamGia, PhieuGiamGiaRequest, PhieuGiamGiaResponse, ApiResponse, KhachHangResponse } from '../interfaces/phieu-giam-gia.interface';
 
 @Injectable({
@@ -33,7 +34,7 @@ export class PhieuGiamGiaService {
     params.set('page', page.toString());
     params.set('size', size.toString());
     params.set('sortBy', sortBy);
-    params.set('sortOrder', sortOrder);
+    params.set('sortDir', sortOrder); // Sửa từ sortOrder thành sortDir để khớp với backend
     
     return this.http.get<any>(`${this.API_BASE_URL}/phieu-giam-gia?${params.toString()}`, { headers: this.getHeaders() });
   }
@@ -92,6 +93,61 @@ export class PhieuGiamGiaService {
     return this.http.get<KhachHangResponse>(
       `${this.API_BASE_URL}/khach-hang/for-voucher`,
       { headers: this.getHeaders() }
+    );
+  }
+
+  // Lấy danh sách phiếu giảm giá cá nhân
+  getAllPhieuGiamGiaCaNhan(): Observable<any> {
+    return this.http.get<any>(
+      `${this.API_BASE_URL}/phieu-giam-gia-ca-nhan`,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Delete all customers for a specific phieu giam gia
+  deleteCustomersByPhieuId(phieuGiamGiaId: number): Observable<any> {
+    return this.http.delete<any>(
+      `${this.API_BASE_URL}/phieu-giam-gia-ca-nhan/phieu/${phieuGiamGiaId}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Add customer to phieu giam gia
+  addCustomerToPhieu(phieuGiamGiaId: number, khachHangId: number): Observable<any> {
+    return this.http.post<any>(
+      `${this.API_BASE_URL}/phieu-giam-gia-ca-nhan`,
+      { phieuGiamGiaId, khachHangId },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Update customers for a phieu giam gia (delete all old and add new)
+  updateCustomersForPhieu(phieuGiamGiaId: number, khachHangIds: number[]): Observable<any> {
+    const url = `${this.API_BASE_URL}/phieu-giam-gia-ca-nhan/phieu/${phieuGiamGiaId}`;
+    const body = { khachHangIds };
+    
+    console.log('🔵 Calling updateCustomersForPhieu API:');
+    console.log('  URL:', url);
+    console.log('  Body:', body);
+    console.log('  Headers:', this.getHeaders());
+    
+    return this.http.put<any>(url, body, { 
+      headers: this.getHeaders(),
+      withCredentials: true,
+      observe: 'response'
+    }).pipe(
+      tap((response: any) => {
+        console.log('✅ API Response:', response);
+      }),
+      catchError((error: any) => {
+        console.error('❌ API Error:', error);
+        console.error('  Status:', error.status);
+        console.error('  StatusText:', error.statusText);
+        console.error('  Error Body:', error.error);
+        console.error('  URL:', error.url);
+        throw error;
+      }),
+      map((response: any) => response.body)
     );
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,7 +12,7 @@ import { PhieuGiamGiaResponse } from '../../interfaces/phieu-giam-gia.interface'
   templateUrl: './phieu-giam-gia-list.component.html',
   styleUrls: ['./phieu-giam-gia-list.component.scss'],
 })
-export class PhieuGiamGiaListComponent implements OnInit {
+export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
   private phieuGiamGiaService = inject(PhieuGiamGiaService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -29,6 +29,12 @@ export class PhieuGiamGiaListComponent implements OnInit {
   filteredList: PhieuGiamGiaResponse[] = [];
   loading = true; // Bắt đầu với loading = true
   error = '';
+  
+  // Toast notifications
+  successMessage = '';
+  errorMessage = '';
+  private successTimeout: any;
+  private errorTimeout: any;
 
   // Edit modal
   showEditModal = false;
@@ -42,11 +48,17 @@ export class PhieuGiamGiaListComponent implements OnInit {
     soTienToiDa: 0,
     hoaDonToiThieu: 0,
     soLuongDung: 0,
+    khachHang: '', // Thông tin khách hàng (nếu là phiếu cá nhân)
     ngayBatDau: '',
     ngayKetThuc: '',
     trangThai: 'sap_dien_ra', // Thay đổi từ boolean thành string
   };
   isUpdating = false;
+  
+  // Edit customer modal
+  showEditCustomerModal = false;
+  selectedCustomersForEdit: any[] = [];
+  availableCustomersForEdit: any[] = [];
   
   // Validation
   editValidationErrors: { [key: string]: string } = {};
@@ -131,27 +143,85 @@ export class PhieuGiamGiaListComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.phieuGiamGiaService.getAllPhieuGiamGia(0, 1000, 'id', 'desc').subscribe({
-      next: (response: any) => {
-        if (response.success && response.data) {
-          this.phieuGiamGiaList = response.data.data || [];
-          this.filteredList = [...this.phieuGiamGiaList];
-          this.totalItems = this.filteredList.length;
-          this.currentPage = 1; // Reset về trang đầu tiên
-
-          // Force change detection để UI update ngay lập tức
-          this.cdr.detectChanges();
-        } else {
-          this.error = response.message || 'Không có dữ liệu phiếu giảm giá';
+    // Load danh sách phiếu giảm giá cá nhân trước để map isPublic
+    this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+      next: (caNhanResponse: any) => {
+        // Lấy danh sách phieuGiamGiaId từ phiếu cá nhân
+        const privatePhieuIds = new Set<number>();
+        if (caNhanResponse.success && caNhanResponse.data) {
+          const caNhanList = caNhanResponse.data.data || caNhanResponse.data || [];
+          caNhanList.forEach((item: any) => {
+            if (item.phieuGiamGiaId) {
+              privatePhieuIds.add(item.phieuGiamGiaId);
+            }
+          });
         }
-        this.loading = false;
-        this.cdr.detectChanges();
+
+        // Load danh sách phiếu giảm giá
+        this.phieuGiamGiaService.getAllPhieuGiamGia(0, 1000, 'id', 'desc').subscribe({
+          next: (response: any) => {
+            if (response.success && response.data) {
+              this.phieuGiamGiaList = response.data.data || [];
+              
+              // Map isPublic field cho mỗi phiếu
+              this.phieuGiamGiaList = this.phieuGiamGiaList.map(phieu => ({
+                ...phieu,
+                isPublic: !privatePhieuIds.has(phieu.id) // Nếu có trong danh sách cá nhân thì là false (cá nhân), ngược lại là true (công khai)
+              }));
+              
+              // Sắp xếp theo ID giảm dần (phiếu mới nhất ở đầu)
+              this.phieuGiamGiaList.sort((a, b) => b.id - a.id);
+              
+              this.filteredList = [...this.phieuGiamGiaList];
+              this.totalItems = this.filteredList.length;
+              this.currentPage = 1; // Reset về trang đầu tiên
+
+              // Force change detection để UI update ngay lập tức
+              this.cdr.detectChanges();
+            } else {
+              this.error = response.message || 'Không có dữ liệu phiếu giảm giá';
+            }
+            this.loading = false;
+            this.cdr.detectChanges();
+          },
+          error: (error: any) => {
+            console.error('Error loading phiếu giảm giá:', error);
+            this.error = 'Không thể tải danh sách phiếu giảm giá: ' + (error.message || error);
+            this.loading = false;
+            this.cdr.detectChanges();
+          },
+        });
       },
       error: (error: any) => {
-        console.error('Error loading phiếu giảm giá:', error);
-        this.error = 'Không thể tải danh sách phiếu giảm giá: ' + (error.message || error);
-        this.loading = false;
-        this.cdr.detectChanges();
+        console.error('Error loading phiếu giảm giá cá nhân:', error);
+        // Nếu lỗi khi load phiếu cá nhân, vẫn load phiếu giảm giá nhưng tất cả sẽ là công khai
+        this.phieuGiamGiaService.getAllPhieuGiamGia(0, 1000, 'id', 'desc').subscribe({
+          next: (response: any) => {
+            if (response.success && response.data) {
+              this.phieuGiamGiaList = response.data.data || [];
+              
+              // Mặc định tất cả là công khai
+              this.phieuGiamGiaList = this.phieuGiamGiaList.map(phieu => ({
+                ...phieu,
+                isPublic: true
+              }));
+              
+              this.phieuGiamGiaList.sort((a, b) => b.id - a.id);
+              this.filteredList = [...this.phieuGiamGiaList];
+              this.totalItems = this.filteredList.length;
+              this.currentPage = 1;
+              this.cdr.detectChanges();
+            }
+            this.loading = false;
+            this.cdr.detectChanges();
+          },
+          error: (error: any) => {
+            console.error('Error loading phiếu giảm giá:', error);
+            this.error = 'Không thể tải danh sách phiếu giảm giá: ' + (error.message || error);
+            this.loading = false;
+            this.cdr.detectChanges();
+          },
+        });
       },
     });
   }
@@ -185,11 +255,18 @@ export class PhieuGiamGiaListComponent implements OnInit {
         }
       }
 
-      // Type filter
+      // Type filter - Filter theo loại phiếu (công khai/cá nhân)
       if (this.selectedType !== 'all') {
-        const isTienMat = this.selectedType === 'tien_mat';
-        if (phieu.loaiPhieuGiamGia !== isTienMat) {
-          return false;
+        if (this.selectedType === 'cong_khai') {
+          // Chỉ hiển thị phiếu công khai (isPublic = true hoặc undefined)
+          if (phieu.isPublic === false) {
+            return false;
+          }
+        } else if (this.selectedType === 'ca_nhan') {
+          // Chỉ hiển thị phiếu cá nhân (isPublic = false)
+          if (phieu.isPublic !== false) {
+            return false;
+          }
         }
       }
 
@@ -215,6 +292,9 @@ export class PhieuGiamGiaListComponent implements OnInit {
 
       return true;
     });
+
+    // Sắp xếp kết quả lọc theo ID giảm dần (phiếu mới nhất ở đầu)
+    this.filteredList.sort((a, b) => b.id - a.id);
 
     this.totalItems = this.filteredList.length;
     this.currentPage = 1;
@@ -245,6 +325,7 @@ export class PhieuGiamGiaListComponent implements OnInit {
   editPhieuGiamGia(phieu: PhieuGiamGiaResponse) {
     console.log('=== EDIT PHIEU GIAM GIA ===');
     console.log('phieu:', phieu);
+    console.log('phieu.isPublic:', phieu.isPublic);
     
     this.editingPhieu = phieu;
     
@@ -252,6 +333,7 @@ export class PhieuGiamGiaListComponent implements OnInit {
     const calculatedStatus = this.calculateTrangThaiBasedOnTime(phieu.ngayBatDau, phieu.ngayKetThuc);
     console.log('calculatedStatus:', calculatedStatus);
     
+    // Khởi tạo form với giá trị mặc định
     this.editForm = {
       maPhieu: phieu.maPhieu,
       tenPhieuGiamGia: phieu.tenPhieuGiamGia,
@@ -261,10 +343,108 @@ export class PhieuGiamGiaListComponent implements OnInit {
       soTienToiDa: phieu.soTienToiDa,
       hoaDonToiThieu: phieu.hoaDonToiThieu,
       soLuongDung: phieu.soLuongDung,
+      khachHang: phieu.isPublic === false ? 'Đang tải...' : '(Phiếu công khai)',
       ngayBatDau: phieu.ngayBatDau,
       ngayKetThuc: phieu.ngayKetThuc,
-      trangThai: calculatedStatus, // Sử dụng trạng thái được tính toán
+      trangThai: calculatedStatus,
     };
+    
+    // Load thông tin khách hàng nếu là phiếu cá nhân
+    if (phieu.isPublic === false) {
+      console.log('Loading customer info for phieu.id:', phieu.id);
+      // Đây là phiếu cá nhân, cần load thông tin khách hàng
+      
+      // Load cả 2 API: phiếu cá nhân và danh sách khách hàng
+      this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+        next: (caNhanResponse: any) => {
+          console.log('getAllPhieuGiamGiaCaNhan response:', caNhanResponse);
+          if (caNhanResponse.success && caNhanResponse.data) {
+            const caNhanList = caNhanResponse.data.data || caNhanResponse.data || [];
+            console.log('caNhanList:', caNhanList);
+            
+            // Tìm các khách hàng có phieuGiamGiaId trùng với phieu.id
+            const relatedCustomers = caNhanList.filter((item: any) => item.phieuGiamGiaId === phieu.id);
+            console.log('relatedCustomers:', relatedCustomers);
+            
+            if (relatedCustomers.length > 0) {
+              // Lấy danh sách khach_hang_id
+              const khachHangIds = relatedCustomers.map((item: any) => item.khachHangId);
+              console.log('khachHangIds:', khachHangIds);
+              
+              // Load danh sách tất cả khách hàng để map ID -> Tên
+              this.phieuGiamGiaService.getAllCustomers().subscribe({
+                next: (customerResponse: any) => {
+                  console.log('=== getAllCustomers response ===');
+                  console.log('Full response:', customerResponse);
+                  console.log('customerResponse.success:', customerResponse.success);
+                  console.log('customerResponse.data:', customerResponse.data);
+                  
+                  // Xử lý nhiều cấu trúc response khác nhau
+                  let allCustomers: any[] = [];
+                  
+                  if (Array.isArray(customerResponse)) {
+                    // Response trực tiếp là array
+                    allCustomers = customerResponse;
+                  } else if (customerResponse.success && customerResponse.data) {
+                    // Response có structure {success, data}
+                    if (Array.isArray(customerResponse.data)) {
+                      allCustomers = customerResponse.data;
+                    } else if (customerResponse.data.data && Array.isArray(customerResponse.data.data)) {
+                      allCustomers = customerResponse.data.data;
+                    }
+                  } else if (customerResponse.data && Array.isArray(customerResponse.data)) {
+                    // Response có data là array
+                    allCustomers = customerResponse.data;
+                  }
+                  
+                  console.log('Processed allCustomers:', allCustomers);
+                  console.log('allCustomers length:', allCustomers.length);
+                  
+                  if (allCustomers.length > 0) {
+                    // Map ID sang tên thật
+                    const customerNames = khachHangIds.map((id: number) => {
+                      console.log('Looking for customer with id:', id);
+                      const customer = allCustomers.find((c: any) => c.id === id);
+                      console.log('Found customer:', customer);
+                      return customer ? customer.tenKhachHang : `ID: ${id}`;
+                    });
+                    
+                    const khachHangText = customerNames.join(', ');
+                    console.log('Final khachHangText:', khachHangText);
+                    
+                    this.editForm.khachHang = khachHangText;
+                    this.cdr.detectChanges();
+                  } else {
+                    console.warn('No customers found in response');
+                    this.editForm.khachHang = '(Không có danh sách khách hàng)';
+                    this.cdr.detectChanges();
+                  }
+                },
+                error: (error: any) => {
+                  console.error('=== Error loading all customers ===');
+                  console.error('Error:', error);
+                  console.error('Error message:', error.message);
+                  console.error('Error status:', error.status);
+                  this.editForm.khachHang = `(Lỗi: ${error.message || 'Không thể tải danh sách khách hàng'})`;
+                  this.cdr.detectChanges();
+                }
+              });
+            } else {
+              this.editForm.khachHang = '(Không tìm thấy khách hàng)';
+              this.cdr.detectChanges();
+            }
+          } else {
+            this.editForm.khachHang = '(Lỗi tải dữ liệu)';
+            this.cdr.detectChanges();
+          }
+        },
+        error: (error: any) => {
+          console.error('Error loading customer info:', error);
+          this.editForm.khachHang = '(Lỗi tải dữ liệu)';
+          this.cdr.detectChanges();
+        }
+      });
+    }
     
     console.log('editForm after setting:', this.editForm);
     
@@ -487,6 +667,179 @@ export class PhieuGiamGiaListComponent implements OnInit {
     this.editValidationErrors = {};
     this.editTouchedFields.clear();
     this.error = ''; // Clear general error message
+  }
+
+  // Edit customer modal methods
+  openEditCustomerModal() {
+    console.log('=== OPEN EDIT CUSTOMER MODAL ===');
+    console.log('editingPhieu:', this.editingPhieu);
+    
+    if (!this.editingPhieu) {
+      console.warn('No editing phieu found');
+      return;
+    }
+
+    // Load danh sách khách hàng cho phiếu này
+    this.selectedCustomersForEdit = [];
+    this.availableCustomersForEdit = [];
+    
+    // Gọi API phiếu giảm giá cá nhân
+    this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+      next: (caNhanResponse: any) => {
+        console.log('getAllPhieuGiamGiaCaNhan response:', caNhanResponse);
+        if (caNhanResponse.success && caNhanResponse.data) {
+          const caNhanList = caNhanResponse.data.data || caNhanResponse.data || [];
+          
+          // Filter theo phieuGiamGiaId
+          const relatedCustomers = caNhanList.filter((item: any) => 
+            item.phieuGiamGiaId === this.editingPhieu!.id
+          );
+          
+          console.log('relatedCustomers:', relatedCustomers);
+          
+          // Lấy danh sách khachHangId đã được gán
+          const khachHangIds = relatedCustomers.map((item: any) => item.khachHangId);
+          
+          // Load thông tin chi tiết khách hàng
+          this.phieuGiamGiaService.getAllCustomers().subscribe({
+            next: (customerResponse: any) => {
+              console.log('getAllCustomers response:', customerResponse);
+              
+              // Xử lý nhiều cấu trúc response
+              let allCustomers: any[] = [];
+              if (Array.isArray(customerResponse)) {
+                allCustomers = customerResponse;
+              } else if (customerResponse.success && customerResponse.data) {
+                if (Array.isArray(customerResponse.data)) {
+                  allCustomers = customerResponse.data;
+                } else if (customerResponse.data.data && Array.isArray(customerResponse.data.data)) {
+                  allCustomers = customerResponse.data.data;
+                }
+              } else if (customerResponse.data && Array.isArray(customerResponse.data)) {
+                allCustomers = customerResponse.data;
+              }
+              
+              console.log('allCustomers:', allCustomers);
+              
+              // Phân chia khách hàng: đã chọn và chưa chọn
+              this.selectedCustomersForEdit = allCustomers.filter((c: any) => 
+                khachHangIds.includes(c.id)
+              );
+              
+              this.availableCustomersForEdit = allCustomers.filter((c: any) => 
+                !khachHangIds.includes(c.id)
+              );
+              
+              console.log('selectedCustomersForEdit:', this.selectedCustomersForEdit);
+              console.log('availableCustomersForEdit:', this.availableCustomersForEdit);
+              this.showEditCustomerModal = true;
+              this.cdr.detectChanges();
+            },
+            error: (error: any) => {
+              console.error('Error loading customers:', error);
+              this.showErrorMessage('Không thể tải danh sách khách hàng');
+            }
+          });
+        }
+      },
+      error: (error: any) => {
+        console.error('Error loading phieu ca nhan:', error);
+        this.showErrorMessage('Không thể tải thông tin phiếu cá nhân');
+      }
+    });
+  }
+
+  closeEditCustomerModal() {
+    this.showEditCustomerModal = false;
+    this.selectedCustomersForEdit = [];
+    this.availableCustomersForEdit = [];
+  }
+
+  // Select customer from available list
+  selectCustomerForEdit(customer: any) {
+    // Remove from available list
+    this.availableCustomersForEdit = this.availableCustomersForEdit.filter(c => c.id !== customer.id);
+    // Add to selected list
+    this.selectedCustomersForEdit.push(customer);
+  }
+
+  // Deselect customer from selected list
+  deselectCustomerForEdit(customer: any) {
+    // Remove from selected list
+    this.selectedCustomersForEdit = this.selectedCustomersForEdit.filter(c => c.id !== customer.id);
+    // Add to available list
+    this.availableCustomersForEdit.push(customer);
+  }
+
+  // Save edited customers
+  saveEditCustomer() {
+    console.log('=== SAVE EDIT CUSTOMER ===');
+    console.log('Selected customers:', this.selectedCustomersForEdit);
+    
+    // Validation: Check if editingPhieu exists
+    if (!this.editingPhieu) {
+      console.error('❌ No editing phieu found');
+      this.showErrorMessage('Không tìm thấy thông tin phiếu giảm giá');
+      return;
+    }
+
+    // Validation: Check if phieu is private (isPublic === false)
+    if (this.editingPhieu.isPublic !== false) {
+      console.error('❌ This phieu is not private (isPublic:', this.editingPhieu.isPublic, ')');
+      this.showErrorMessage('Chỉ có thể cập nhật khách hàng cho phiếu cá nhân');
+      return;
+    }
+
+    const phieuGiamGiaId = this.editingPhieu.id;
+    
+    // Extract customer IDs and ensure they are numbers
+    const khachHangIds = this.selectedCustomersForEdit
+      .map(customer => customer.id)
+      .filter(id => id != null && !isNaN(Number(id)));
+    
+    console.log('📋 Phieu Giam Gia ID:', phieuGiamGiaId);
+    console.log('📋 Selected Customer IDs:', khachHangIds);
+    console.log('📊 Total customers to update:', khachHangIds.length);
+
+    // Confirmation message
+    const message = khachHangIds.length > 0 
+      ? `Cập nhật ${khachHangIds.length} khách hàng cho phiếu giảm giá`
+      : 'Xóa tất cả khách hàng khỏi phiếu giảm giá';
+    
+    console.log('ℹ️', message);
+
+    // Call API to update customers
+    this.phieuGiamGiaService.updateCustomersForPhieu(phieuGiamGiaId, khachHangIds).subscribe({
+      next: (response: any) => {
+        console.log('✅ Update customers response:', response);
+        
+        // Show success message with details
+        const successMsg = response.message || 'Cập nhật khách hàng thành công';
+        this.showSuccessMessage(successMsg);
+        
+        // Close modal
+        this.closeEditCustomerModal();
+        
+        // Reload the phieu list to reflect changes
+        console.log('🔄 Reloading phieu list...');
+        this.loadPhieuGiamGiaList();
+      },
+      error: (error: any) => {
+        console.error('❌ Error updating customers:', error);
+        
+        // Show detailed error message
+        let errorMsg = 'Cập nhật khách hàng thất bại. Vui lòng thử lại.';
+        
+        if (error.error && error.error.message) {
+          errorMsg = error.error.message;
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        console.error('Error details:', errorMsg);
+        this.showErrorMessage(errorMsg);
+      }
+    });
   }
 
   // Validation methods
@@ -727,21 +1080,32 @@ export class PhieuGiamGiaListComponent implements OnInit {
     this.phieuGiamGiaService.updatePhieuGiamGia(this.editingPhieu.id, updateData).subscribe({
       next: (response: any) => {
         console.log('Update response:', response);
+        this.isUpdating = false;
+        
         if (response.success) {
-          // Reload data
+          // Hiển thị toast thành công
+          this.showSuccessMessage('Cập nhật phiếu giảm giá thành công!');
+          
+          // Reload data và đóng modal
           this.loadPhieuGiamGiaList();
           this.closeEditModal();
         } else {
           // Parse server error và map về các trường cụ thể
           this.parseServerError(response.message);
+          // Hiển thị toast lỗi
+          this.showErrorMessage(response.message || 'Có lỗi xảy ra khi cập nhật phiếu giảm giá!');
         }
-        this.isUpdating = false;
       },
       error: (error: any) => {
         console.error('Error updating phiếu giảm giá:', error);
+        this.isUpdating = false;
+        
         // Parse HTTP error và map về các trường cụ thể
         this.parseHttpError(error);
-        this.isUpdating = false;
+        
+        // Hiển thị toast lỗi
+        const errorMsg = error.error?.message || error.message || 'Có lỗi xảy ra khi cập nhật phiếu giảm giá!';
+        this.showErrorMessage(errorMsg);
       },
     });
   }
@@ -761,7 +1125,7 @@ export class PhieuGiamGiaListComponent implements OnInit {
       'STT': index + 1,
       'Mã Phiếu': phieu.maPhieu,
       'Tên Phiếu': phieu.tenPhieuGiamGia,
-      'Loại Phiếu': phieu.loaiPhieuGiamGia ? 'Tiền mặt' : 'Phần trăm',
+      'Loại Giảm Giá': phieu.loaiPhieuGiamGia ? 'Tiền mặt' : 'Phần trăm',
       'Giá Trị Giảm': phieu.giaTriGiam,
       'Giá Trị Tối Thiểu': phieu.giaTriToiThieu,
       'Số Tiền Tối Đa': phieu.soTienToiDa,
@@ -824,5 +1188,57 @@ export class PhieuGiamGiaListComponent implements OnInit {
     // Chuyển đổi trạng thái string thành boolean
     // Có thể tùy chỉnh logic này dựa trên yêu cầu business
     return trangThai === 'dang_dien_ra' || trangThai === 'active' || trangThai === 'true';
+  }
+
+  // Toast notification methods
+  showSuccessMessage(message: string) {
+    console.log('✅ showSuccessMessage called:', message);
+    this.clearSuccessTimeout();
+    this.successMessage = message;
+    this.cdr.markForCheck();
+    this.successTimeout = setTimeout(() => {
+      this.successMessage = '';
+      this.cdr.markForCheck();
+    }, 5000); // Auto hide after 5 seconds
+  }
+
+  showErrorMessage(message: string) {
+    console.log('❌ showErrorMessage called:', message);
+    this.clearErrorTimeout();
+    this.errorMessage = message;
+    this.cdr.markForCheck();
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.cdr.markForCheck();
+    }, 5000); // Auto hide after 5 seconds
+  }
+
+  clearSuccessMessage() {
+    this.clearSuccessTimeout();
+    this.successMessage = '';
+  }
+
+  clearErrorMessage() {
+    this.clearErrorTimeout();
+    this.errorMessage = '';
+  }
+
+  private clearSuccessTimeout() {
+    if (this.successTimeout) {
+      clearTimeout(this.successTimeout);
+      this.successTimeout = null;
+    }
+  }
+
+  private clearErrorTimeout() {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+  }
+
+  ngOnDestroy() {
+    this.clearSuccessTimeout();
+    this.clearErrorTimeout();
   }
 }

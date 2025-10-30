@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,7 +12,7 @@ import { PhieuGiamGiaRequest, KhachHang } from '../../interfaces/phieu-giam-gia.
   templateUrl: './phieu-giam-gia-form.component.html',
   styleUrls: ['./phieu-giam-gia-form.component.scss']
 })
-export class PhieuGiamGiaFormComponent implements OnInit {
+export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   
   private phieuGiamGiaService = inject(PhieuGiamGiaService);
   private router = inject(Router);
@@ -42,6 +42,8 @@ export class PhieuGiamGiaFormComponent implements OnInit {
   // Error handling
   errorMessage = '';
   successMessage = '';
+  private successTimeout: any;
+  private errorTimeout: any;
   
   // Validation errors
   validationErrors: { [key: string]: string } = {};
@@ -51,6 +53,14 @@ export class PhieuGiamGiaFormComponent implements OnInit {
   selectedCustomers: KhachHang[] = [];
   customers: KhachHang[] = [];
   filteredCustomers: KhachHang[] = [];
+  
+  // Filter options
+  filterGender: boolean | null = null;
+  filterStatus: boolean | null = null;
+  filterAgeRange = '';
+  filterPurchaseRange = '';
+  filterPointRange = '';
+  showFilterOptions = false; // Toggle filter visibility
 
   ngOnInit() {
     this.initializeForm();
@@ -118,23 +128,149 @@ export class PhieuGiamGiaFormComponent implements OnInit {
 
   // Customer search and selection
   filterCustomers() {
-    if (!this.searchTerm.trim()) {
-      this.filteredCustomers = [...this.customers];
-    } else {
+    console.log('=== filterCustomers called ===');
+    console.log('Total customers:', this.customers.length);
+    console.log('Filters:', {
+      searchTerm: this.searchTerm,
+      filterGender: this.filterGender,
+      filterStatus: this.filterStatus,
+      filterAgeRange: this.filterAgeRange,
+      filterPurchaseRange: this.filterPurchaseRange,
+      filterPointRange: this.filterPointRange
+    });
+    
+    let result = [...this.customers];
+    
+    // Apply search term filter
+    if (this.searchTerm && this.searchTerm.trim()) {
       const searchLower = this.searchTerm.toLowerCase();
-      this.filteredCustomers = this.customers.filter(customer =>
-        customer.maKhachHang?.toLowerCase().includes(searchLower) ||
-        customer.tenKhachHang.toLowerCase().includes(searchLower) ||
-        customer.email.toLowerCase().includes(searchLower) ||
-        customer.soDienThoai.includes(this.searchTerm)
+      result = result.filter(customer =>
+        (customer.maKhachHang && customer.maKhachHang.toLowerCase().includes(searchLower)) ||
+        (customer.tenKhachHang && customer.tenKhachHang.toLowerCase().includes(searchLower)) ||
+        (customer.email && customer.email.toLowerCase().includes(searchLower)) ||
+        (customer.soDienThoai && customer.soDienThoai.includes(this.searchTerm))
       );
+      console.log('After search filter:', result.length);
     }
+    
+    // Apply gender filter
+    if (this.filterGender !== null && this.filterGender !== undefined) {
+      const beforeCount = result.length;
+      result = result.filter(customer => customer.gioiTinh === this.filterGender);
+      console.log(`After gender filter (${this.filterGender}):`, result.length, '(was', beforeCount, ')');
+    }
+    
+    // Apply status filter
+    if (this.filterStatus !== null && this.filterStatus !== undefined) {
+      const beforeCount = result.length;
+      result = result.filter(customer => customer.trangThai === this.filterStatus);
+      console.log(`After status filter (${this.filterStatus}):`, result.length, '(was', beforeCount, ')');
+    }
+    
+    // Apply age range filter
+    if (this.filterAgeRange && this.filterAgeRange.trim()) {
+      const beforeCount = result.length;
+      result = result.filter(customer => this.isInAgeRange(customer));
+      console.log(`After age range filter (${this.filterAgeRange}):`, result.length, '(was', beforeCount, ')');
+    }
+    
+    // Apply purchase range filter
+    if (this.filterPurchaseRange && this.filterPurchaseRange.trim()) {
+      const beforeCount = result.length;
+      result = result.filter(customer => this.isInPurchaseRange(customer));
+      console.log(`After purchase range filter (${this.filterPurchaseRange}):`, result.length, '(was', beforeCount, ')');
+    }
+    
+    // Apply point range filter
+    if (this.filterPointRange && this.filterPointRange.trim()) {
+      const beforeCount = result.length;
+      result = result.filter(customer => this.isInPointRange(customer));
+      console.log(`After point range filter (${this.filterPointRange}):`, result.length, '(was', beforeCount, ')');
+    }
+    
+    this.filteredCustomers = result;
+    console.log('Final filtered customers:', this.filteredCustomers.length);
+    console.log('=== filterCustomers end ===');
+    
     // Trigger change detection để cập nhật UI
     this.cdr.markForCheck();
   }
+  
+  // Helper method to check if customer is in age range
+  isInAgeRange(customer: KhachHang): boolean {
+    if (!customer.ngaySinh) {
+      console.log('Customer has no birth date:', customer.tenKhachHang);
+      return false;
+    }
+    
+    const today = new Date();
+    const birthDate = new Date(customer.ngaySinh);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    const [minAge, maxAge] = this.filterAgeRange.split('-').map(Number);
+    const inRange = age >= minAge && age <= maxAge;
+    
+    if (!inRange) {
+      console.log(`Customer ${customer.tenKhachHang} age ${age} not in range ${minAge}-${maxAge}`);
+    }
+    
+    return inRange;
+  }
+  
+  // Helper method to check if customer is in purchase range
+  isInPurchaseRange(customer: KhachHang): boolean {
+    const purchaseCount = customer.soLanMua || 0;
+    const [min, max] = this.filterPurchaseRange.split('-').map(Number);
+    const inRange = purchaseCount >= min && purchaseCount <= max;
+    
+    if (!inRange) {
+      console.log(`Customer ${customer.tenKhachHang} purchases ${purchaseCount} not in range ${min}-${max}`);
+    }
+    
+    return inRange;
+  }
+  
+  // Helper method to check if customer is in point range
+  isInPointRange(customer: KhachHang): boolean {
+    const points = customer.diemTichLuy || 0;
+    const [min, max] = this.filterPointRange.split('-').map(Number);
+    const inRange = points >= min && points <= max;
+    
+    if (!inRange) {
+      console.log(`Customer ${customer.tenKhachHang} points ${points} not in range ${min}-${max}`);
+    }
+    
+    return inRange;
+  }
+  
+  // Clear all filters
+  clearAllFilters() {
+    this.searchTerm = '';
+    this.filterGender = null;
+    this.filterStatus = null;
+    this.filterAgeRange = '';
+    this.filterPurchaseRange = '';
+    this.filterPointRange = '';
+    this.filterCustomers();
+  }
+  
+  // Toggle filter options visibility
+  toggleFilterOptions() {
+    this.showFilterOptions = !this.showFilterOptions;
+  }
 
   selectCustomer(customer: KhachHang) {
-    if (!this.selectedCustomers.find(c => c.id === customer.id)) {
+    // Toggle: Nếu đã chọn thì bỏ chọn, nếu chưa chọn thì chọn
+    if (this.isCustomerSelected(customer)) {
+      // Đã chọn rồi -> Bỏ chọn
+      this.removeCustomer(customer);
+    } else {
+      // Chưa chọn -> Thêm vào danh sách
       this.selectedCustomers = [...this.selectedCustomers, customer]; // Tạo new array để trigger change detection
       // Clear privacy validation error when selecting a customer
       this.clearPrivacyError();
@@ -162,13 +298,30 @@ export class PhieuGiamGiaFormComponent implements OnInit {
 
   // Save phiếu giảm giá
   savePhieuGiamGia() {
+    // Clear messages trước
+    this.clearSuccessMessage();
+    this.clearErrorMessage();
+    
     if (!this.validateForm()) {
+      this.showErrorMessage('Vui lòng kiểm tra lại thông tin nhập vào!');
       return;
     }
 
+    // Thông báo xác nhận trước khi thêm mới
+    const confirmMessage = this.isPublic 
+      ? `Bạn có chắc chắn muốn tạo phiếu giảm giá công khai "${this.phieuName}" không?`
+      : `Bạn có chắc chắn muốn tạo phiếu giảm giá cá nhân "${this.phieuName}" cho ${this.selectedCustomers.length} khách hàng không?`;
+    
+    const confirmed = window.confirm(confirmMessage);
+    
+    if (!confirmed) {
+      // Người dùng nhấn Hủy - không thực hiện thêm mới
+      console.log('Người dùng đã hủy thao tác thêm phiếu giảm giá');
+      return;
+    }
+
+    // Người dùng đã xác nhận - tiếp tục thêm mới
     this.isSaving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     // Tự động tính toán trạng thái dựa trên thời gian thực tế
     this.trangThai = this.calculateTrangThaiBasedOnTime();
@@ -195,25 +348,30 @@ export class PhieuGiamGiaFormComponent implements OnInit {
       next: (response) => {
         console.log('Save success:', response);
         
-        // Hiển thị message phù hợp với chế độ
-        if (this.isPublic) {
-          this.successMessage = 'Tạo phiếu giảm giá công khai thành công!';
-        } else {
-          this.successMessage = `Tạo phiếu giảm giá cá nhân thành công cho ${this.selectedCustomers.length} khách hàng!`;
-        }
-        
-        this.resetForm();
         this.isSaving = false;
+        
+        // Hiển thị toast message phù hợp với chế độ
+        if (this.isPublic) {
+          this.showSuccessMessage('Tạo phiếu giảm giá công khai thành công!');
+        } else {
+          this.showSuccessMessage(`Tạo phiếu giảm giá cá nhân thành công cho ${this.selectedCustomers.length} khách hàng! Email thông báo đang được gửi.`);
+        }
         
         // Navigate to phiếu giảm giá list page after 2 seconds
         setTimeout(() => {
           this.router.navigate(['/phieu-giam-gia']);
         }, 2000);
+        
+        // Reset form sau 500ms để user còn thấy thông báo
+        setTimeout(() => {
+          this.resetForm();
+        }, 500);
       },
       error: (error) => {
         console.error('Save error:', error);
-        this.errorMessage = error.error?.message || 'Lỗi khi tạo phiếu giảm giá';
         this.isSaving = false;
+        const errorMsg = error.error?.message || error.message || 'Lỗi khi tạo phiếu giảm giá. Vui lòng thử lại!';
+        this.showErrorMessage(errorMsg);
       }
     });
   }
@@ -260,14 +418,17 @@ export class PhieuGiamGiaFormComponent implements OnInit {
     }
 
     // Validate Giá trị giảm (maxDiscount) theo loại phiếu
+    // Convert phieuType về boolean để đảm bảo so sánh chính xác
+    const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
+    
     if (this.maxDiscount === null || this.maxDiscount === undefined) {
       this.validationErrors['maxDiscount'] = 'Giá trị giảm không được để trống';
       isValid = false;
     } else if (!Number.isFinite(this.maxDiscount)) {
       this.validationErrors['maxDiscount'] = 'Giá trị giảm phải là số hợp lệ';
       isValid = false;
-    } else if (this.phieuType) {
-      // Tiền mặt
+    } else if (isMoneyType) {
+      // Tiền mặt (phieuType = true)
       if (this.maxDiscount <= 0) {
         this.validationErrors['maxDiscount'] = 'Giá trị giảm phải lớn hơn 0';
         isValid = false;
@@ -279,7 +440,7 @@ export class PhieuGiamGiaFormComponent implements OnInit {
         isValid = false;
       }
     } else {
-      // Phần trăm
+      // Phần trăm (phieuType = false)
       if (this.maxDiscount < 1 || this.maxDiscount > 100) {
         this.validationErrors['maxDiscount'] = 'Giá trị giảm phần trăm phải từ 1% đến 100%';
         isValid = false;
@@ -287,7 +448,7 @@ export class PhieuGiamGiaFormComponent implements OnInit {
     }
 
     // Validate Số tiền giảm tối thiểu (chỉ áp dụng cho Tiền mặt)
-    if (this.phieuType) {
+    if (isMoneyType) {
       if (this.minDiscount === null || this.minDiscount === undefined) {
         this.validationErrors['minDiscount'] = 'Số tiền giảm tối thiểu không được để trống';
         isValid = false;
@@ -595,12 +756,87 @@ export class PhieuGiamGiaFormComponent implements OnInit {
   }
 
   onPhieuTypeChange() {
+    console.log('onPhieuTypeChange - phieuType value:', this.phieuType, 'type:', typeof this.phieuType);
+    
     // Xóa lỗi liên quan khi đổi loại
     this.clearFieldError('maxDiscount');
     this.clearFieldError('minDiscount');
+    
+    // Convert phieuType về boolean để đảm bảo so sánh chính xác
+    const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
+    
     // Nếu chuyển sang phần trăm thì ẩn và reset minDiscount
-    if (!this.phieuType) {
+    if (!isMoneyType) {
       this.minDiscount = 0;
+    }
+    // Validate lại maxDiscount với loại mới
+    this.validateMaxDiscount();
+  }
+
+  // Validate riêng cho trường Giá trị giảm
+  validateMaxDiscount() {
+    // Xóa lỗi cũ trước
+    this.clearFieldError('maxDiscount');
+    
+    // Nếu trường rỗng hoặc = 0, không validate (sẽ validate khi submit)
+    if (!this.maxDiscount || this.maxDiscount === 0) {
+      return;
+    }
+
+    // Convert phieuType về boolean để đảm bảo so sánh chính xác
+    const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
+    
+    console.log('validateMaxDiscount - phieuType:', this.phieuType, 'isMoneyType:', isMoneyType, 'maxDiscount:', this.maxDiscount);
+
+    if (this.maxDiscount === null || this.maxDiscount === undefined) {
+      this.validationErrors['maxDiscount'] = 'Giá trị giảm không được để trống';
+    } else if (!Number.isFinite(this.maxDiscount)) {
+      this.validationErrors['maxDiscount'] = 'Giá trị giảm phải là số hợp lệ';
+    } else if (isMoneyType) {
+      // Tiền mặt (phieuType = true)
+      if (this.maxDiscount <= 0) {
+        this.validationErrors['maxDiscount'] = 'Giá trị giảm phải lớn hơn 0';
+      } else if (this.maxDiscount < 1000) {
+        this.validationErrors['maxDiscount'] = 'Giá trị giảm tiền mặt phải từ 1,000 VND trở lên';
+      } else if (this.maxDiscount > 999999999) {
+        this.validationErrors['maxDiscount'] = 'Giá trị giảm quá lớn (tối đa 999,999,999)';
+      }
+    } else {
+      // Phần trăm (phieuType = false)
+      if (this.maxDiscount < 1 || this.maxDiscount > 100) {
+        this.validationErrors['maxDiscount'] = 'Giá trị giảm phần trăm phải từ 1% đến 100%';
+      }
+    }
+  }
+
+  // Validate riêng cho trường Số tiền giảm tối thiểu
+  validateMinDiscount() {
+    // Xóa lỗi cũ trước
+    this.clearFieldError('minDiscount');
+    
+    // Convert phieuType về boolean để đảm bảo so sánh chính xác
+    const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
+    
+    // Chỉ validate khi là Tiền mặt
+    if (!isMoneyType) {
+      return;
+    }
+    
+    // Nếu trường rỗng hoặc = 0, không validate (sẽ validate khi submit)
+    if (this.minDiscount === null || this.minDiscount === undefined || this.minDiscount === 0) {
+      return;
+    }
+
+    if (!Number.isFinite(this.minDiscount)) {
+      this.validationErrors['minDiscount'] = 'Số tiền giảm tối thiểu phải là số hợp lệ';
+    } else if (this.minDiscount < 0) {
+      this.validationErrors['minDiscount'] = 'Số tiền giảm tối thiểu không được âm';
+    } else if (this.minDiscount > this.maxDiscount) {
+      this.validationErrors['minDiscount'] = 'Số tiền giảm tối thiểu không được lớn hơn giá trị giảm';
+    } else if (this.minDiscount > 999999999) {
+      this.validationErrors['minDiscount'] = 'Số tiền giảm tối thiểu quá lớn (tối đa 999,999,999)';
+    } else if (this.minDiscount > 0 && this.minDiscount < 100) {
+      this.validationErrors['minDiscount'] = 'Số tiền giảm tối thiểu tiền mặt phải từ 100 VND trở lên';
     }
   }
 
@@ -614,7 +850,21 @@ export class PhieuGiamGiaFormComponent implements OnInit {
     }
   }
 
-  // Generate suggested codes
+  // Generate and fill a single code directly
+  generateAndFillCode() {
+    // Tạo mã mới
+    const newCode = this.phieuGiamGiaService.generatePhieuCode();
+    
+    // Điền vào ô input
+    this.phieuCode = newCode;
+    
+    // Clear error nếu có
+    this.clearFieldError('phieuCode');
+    
+    console.log('Generated code:', newCode);
+  }
+
+  // Generate suggested codes (kept for backward compatibility if needed)
   generateSuggestedCodes() {
     this.suggestedCodes = [
       this.phieuGiamGiaService.generatePhieuCode(),
@@ -625,22 +875,21 @@ export class PhieuGiamGiaFormComponent implements OnInit {
     ];
   }
 
-  // Select suggested code
+  // Select suggested code (kept for backward compatibility)
   selectSuggestedCode(code: string) {
     this.phieuCode = code;
     this.showSuggestions = false;
   }
 
-  // Toggle suggestions (chỉ hiển thị khi click nút gợi ý)
+  // Toggle suggestions (not used anymore but kept for backward compatibility)
   toggleSuggestions() {
     if (!this.showSuggestions) {
-      // Nếu chưa có gợi ý, tạo mới
       this.generateSuggestedCodes();
     }
     this.showSuggestions = !this.showSuggestions;
   }
 
-  // Generate new suggestions
+  // Generate new suggestions (not used anymore but kept for backward compatibility)
   generateNewSuggestions() {
     this.generateSuggestedCodes();
   }
@@ -675,5 +924,70 @@ export class PhieuGiamGiaFormComponent implements OnInit {
     
     // Trigger change detection để cập nhật UI
     this.cdr.markForCheck();
+  }
+
+  // Toast notification methods
+  showSuccessMessage(message: string) {
+    console.log('✅ showSuccessMessage called:', message);
+    this.clearSuccessTimeout();
+    this.successMessage = message;
+    console.log('✅ successMessage set to:', this.successMessage);
+    this.cdr.markForCheck(); // Trigger change detection immediately
+    this.successTimeout = setTimeout(() => {
+      this.successMessage = '';
+      this.cdr.markForCheck();
+    }, 5000); // Auto hide after 5 seconds
+  }
+
+  showErrorMessage(message: string) {
+    console.log('❌ showErrorMessage called:', message);
+    this.clearErrorTimeout();
+    this.errorMessage = message;
+    console.log('❌ errorMessage set to:', this.errorMessage);
+    this.cdr.markForCheck(); // Trigger change detection immediately
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.cdr.markForCheck();
+    }, 5000); // Auto hide after 5 seconds
+  }
+
+  clearSuccessMessage() {
+    this.clearSuccessTimeout();
+    this.successMessage = '';
+  }
+
+  clearErrorMessage() {
+    this.clearErrorTimeout();
+    this.errorMessage = '';
+  }
+
+  private clearSuccessTimeout() {
+    if (this.successTimeout) {
+      clearTimeout(this.successTimeout);
+      this.successTimeout = null;
+    }
+  }
+
+  private clearErrorTimeout() {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+  }
+
+  ngOnDestroy() {
+    this.clearSuccessTimeout();
+    this.clearErrorTimeout();
+  }
+
+  // Test methods (tạm thời để test toast)
+  testSuccessToast() {
+    console.log('🧪 Testing success toast...');
+    this.showSuccessMessage('Đây là thông báo thành công để test! Toast notification đang hoạt động tốt. 🎉');
+  }
+
+  testErrorToast() {
+    console.log('🧪 Testing error toast...');
+    this.showErrorMessage('Đây là thông báo lỗi để test! Toast notification đang hoạt động tốt. ⚠️');
   }
 }

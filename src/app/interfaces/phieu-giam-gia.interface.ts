@@ -47,6 +47,7 @@ export interface PhieuGiamGiaResponse {
   isActive: boolean;
   isExpired: boolean;
   isNotStarted: boolean;
+  isPublic?: boolean; // true = công khai, false = cá nhân (nếu có trong bảng phiếu giảm giá cá nhân)
   isUpdating?: boolean; // Thêm property để hỗ trợ loading state
   createdAt?: string; // Thêm thuộc tính createdAt
   updatedAt?: string; // Thêm thuộc tính updatedAt
