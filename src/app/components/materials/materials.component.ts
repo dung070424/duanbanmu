@@ -25,6 +25,7 @@ export class MaterialsComponent implements OnInit {
   items: MaterialVM[] = [];
   filtered: MaterialVM[] = [];
   searchTerm = '';
+  selectedStatus = 'all';
   showModal = false;
   isEditMode = false;
   isViewMode = false;
@@ -57,16 +58,16 @@ export class MaterialsComponent implements OnInit {
           description: m.moTa,
           status: !!m.trangThai,
         }));
-        this.filtered = [...this.items];
         this.totalPages = res.totalPages;
         this.totalElements = res.totalElements;
         this.currentPage = res.number;
+        this.applyFilters();
         this.cdr.detectChanges();
       });
   }
 
   onSearchChange() {
-    this.fetch(0);
+    this.applyFilters();
   }
   openAddModal() {
     this.isEditMode = false;
@@ -209,9 +210,11 @@ export class MaterialsComponent implements OnInit {
 
     switch (field) {
       case 'name':
-        return !this.newItem.name?.trim() || 
-               this.newItem.name.trim().length < 2 || 
-               this.newItem.name.trim().length > 100;
+        return (
+          !this.newItem.name?.trim() ||
+          this.newItem.name.trim().length < 2 ||
+          this.newItem.name.trim().length > 100
+        );
       case 'description':
         return !!(this.newItem.description?.trim() && this.newItem.description.trim().length > 500);
       default:
@@ -228,7 +231,8 @@ export class MaterialsComponent implements OnInit {
       case 'name':
         if (!this.newItem.name?.trim()) return 'Tên chất liệu không được để trống';
         if (this.newItem.name.trim().length < 2) return 'Tên chất liệu phải có ít nhất 2 ký tự';
-        if (this.newItem.name.trim().length > 100) return 'Tên chất liệu không được vượt quá 100 ký tự';
+        if (this.newItem.name.trim().length > 100)
+          return 'Tên chất liệu không được vượt quá 100 ký tự';
         break;
       case 'description':
         return 'Mô tả không được vượt quá 500 ký tự';
@@ -239,4 +243,63 @@ export class MaterialsComponent implements OnInit {
   resetTouchedFields() {
     this.touchedFields.clear();
   }
+
+  // New methods for the updated UI
+  onStatusChange() {
+    this.applyFilters();
+  }
+
+  resetFilter() {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    let filtered = [...this.items];
+
+    // Apply search filter
+    if (this.searchTerm?.trim()) {
+      const term = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(term) ||
+          (item.description && item.description.toLowerCase().includes(term))
+      );
+    }
+
+    // Apply status filter
+    if (this.selectedStatus !== 'all') {
+      const status = this.selectedStatus === 'true';
+      filtered = filtered.filter((item) => item.status === status);
+    }
+
+    this.filtered = filtered;
+  }
+
+  onPageSizeChange(event: any) {
+    this.pageSize = parseInt(event.target.value);
+    this.fetch(0);
+  }
+
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages) {
+      this.fetch(page);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    const startPage = Math.max(0, this.currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(this.totalPages - 1, startPage + maxVisiblePages - 1);
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i + 1);
+    }
+    return pages;
+  }
+
+  // Add Math object for template
+  Math = Math;
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import {
   ProductApiService,
   SanPhamResponse,
@@ -129,6 +129,7 @@ export class HelmetsComponent implements OnInit {
   constructor(
     private productApi: ProductApiService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
     private loaiMuBaoHiemApi: LoaiMuBaoHiemApiService,
     private colorApi: ColorApiService,
     private manufacturerApi: ManufacturerApiService,
@@ -355,51 +356,6 @@ export class HelmetsComponent implements OnInit {
     this.selectedStatus = 'all';
     this.page = 0;
     this.fetchProducts();
-  }
-
-  toggleStatus(product: HelmetProduct) {
-    const newStatus = product.status === 'Đang bán' ? 'Ngừng bán' : 'Đang bán';
-
-    // Chỉ gửi những thông tin cần thiết
-    const payload = {
-      id: product.id,
-      name: product.name,
-      code: product.code,
-      price: product.price,
-      quantity: product.quantity,
-      status: newStatus,
-      loaiMuBaoHiemId: product.loaiMuBaoHiemId,
-      nhaSanXuatId: product.nhaSanXuatId,
-      chatLieuVoId: product.chatLieuVoId,
-      trongLuongId: product.trongLuongId,
-      xuatXuId: product.xuatXuId,
-      kieuDangMuId: product.kieuDangMuId,
-      congNgheAnToanId: product.congNgheAnToanId,
-      mauSacId: product.mauSacId,
-      description: product.description,
-      anhSanPham: product.anhSanPham,
-    };
-
-    console.log('Payload gửi lên:', payload);
-
-    this.productApi.update(product.id, payload).subscribe({
-      next: () => {
-        // Cập nhật trạng thái ngay lập tức
-        product.status = newStatus;
-        console.log(`Đã cập nhật trạng thái sản phẩm ${product.name} thành: ${newStatus}`);
-        // Refresh danh sách để đảm bảo UI được cập nhật
-        this.fetchProducts();
-      },
-      error: (error: any) => {
-        console.error('Cập nhật trạng thái thất bại:', error);
-        console.error('Chi tiết lỗi:', error.error);
-        alert(
-          `Cập nhật trạng thái thất bại: ${
-            error.error?.message || error.message || 'Lỗi không xác định'
-          }`
-        );
-      },
-    });
   }
 
   // removed manufacturer filter
@@ -681,7 +637,7 @@ export class HelmetsComponent implements OnInit {
       error: (err) => {
         console.error(err);
         if (err?.status === 409) {
-          alert('Mã sản phẩm đã tồn tại. Vui lòng dùng mã khác.');
+          // Xóa thông báo lỗi mã sản phẩm trùng lặp
           return;
         }
         if (err?.status === 400) {
@@ -753,6 +709,10 @@ export class HelmetsComponent implements OnInit {
     }
 
     this.showModal = true;
+  }
+
+  navigateToAddForm() {
+    this.router.navigate(['/products/helmets/new']);
   }
 
   loadHelmetTypes() {

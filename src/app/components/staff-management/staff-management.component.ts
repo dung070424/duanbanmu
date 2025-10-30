@@ -21,6 +21,9 @@ import {
 export class StaffManagementComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
+  // Expose Math to template
+  Math = Math;
+
   // Search and filter properties
   searchTerm = '';
   selectedStatus = 'all';
@@ -45,6 +48,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     hoTen: '',
     email: '',
     soDienThoai: '',
+    soCanCuocCongDan: '',
     diaChi: '',
     gioiTinh: true,
     ngaySinh: '',
@@ -130,7 +134,23 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
     // Add search filters
     if (this.searchTerm.trim()) {
-      searchParams.hoTen = this.searchTerm.trim();
+      const keyword = this.searchTerm.trim();
+      const lower = keyword.toLowerCase();
+      const isEmail = /@/.test(keyword);
+      const isPhone = /^[0-9]{9,11}$/.test(keyword);
+      const isCccd = /^[0-9]{12}$/.test(keyword);
+      const isMaNV = /^nv\d+$/i.test(keyword);
+
+      if (isMaNV) {
+        searchParams.maNhanVien = keyword.toUpperCase();
+      } else if (isEmail) {
+        searchParams.email = lower;
+      } else if (isPhone) {
+        searchParams.soDienThoai = keyword;
+      } else if (!isCccd) {
+        // CCCD chưa có API filter riêng; giữ lại lọc FE
+        searchParams.hoTen = keyword;
+      }
     }
 
     if (this.selectedStatus !== 'all') {
@@ -143,7 +163,26 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: PageResponse<NhanVien>) => {
           this.nhanVienList = response.content;
-          this.filteredList = [...this.nhanVienList];
+          // Lọc lại trên FE để đảm bảo tìm kiếm hoạt động ổn định và cả trạng thái
+          if (this.searchTerm.trim()) {
+            const q = this.normalizeText(this.searchTerm.trim());
+            this.filteredList = this.nhanVienList.filter((nv) => {
+              const fields = [
+                (nv.maNhanVien || '').toLowerCase(),
+                this.normalizeText(nv.hoTen),
+                (nv.email || '').toLowerCase(),
+                (nv.soDienThoai || '').toLowerCase(),
+                (nv.soCanCuocCongDan || '').toLowerCase(),
+              ];
+              const textMatch = fields.some((v) => v.includes(q));
+              const statusMatch =
+                this.selectedStatus === 'all' ||
+                (this.selectedStatus === 'Hoạt động' ? nv.trangThai : !nv.trangThai);
+              return textMatch && statusMatch;
+            });
+          } else {
+            this.filteredList = [...this.nhanVienList];
+          }
           this.totalElements = response.totalElements;
           this.totalPages = response.totalPages;
           this.loading = false;
@@ -165,14 +204,55 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
   // Pagination
   onPageChange(page: number): void {
-    this.currentPage = page;
+    if (page >= 0 && page < this.totalPages) {
+      this.currentPage = page;
+      this.performSearch();
+    }
+  }
+
+  onPageSizeChange(event: any): void {
+    this.pageSize = parseInt(event.target.value);
+    this.currentPage = 0;
     this.performSearch();
   }
 
-  onPageSizeChange(newSize: number): void {
-    this.pageSize = newSize;
+  getPageNumbers(): number[] {
+    const maxPagesToShow = 5;
+    const pages: number[] = [];
+
+    if (this.totalPages <= maxPagesToShow) {
+      // Show all pages if total is less than max
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show current page and surrounding pages
+      let startPage = Math.max(1, this.currentPage - 1);
+      let endPage = Math.min(this.totalPages, this.currentPage + 3);
+
+      // Adjust if we're near the beginning
+      if (this.currentPage <= 2) {
+        endPage = Math.min(this.totalPages, maxPagesToShow);
+      }
+
+      // Adjust if we're near the end
+      if (this.currentPage >= this.totalPages - 2) {
+        startPage = Math.max(1, this.totalPages - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
+  }
+
+  resetFilter(): void {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
     this.currentPage = 0;
-    this.performSearch();
+    this.loadNhanVienList();
   }
 
   // Modal methods
@@ -181,6 +261,21 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     this.isViewMode = false;
     this.selectedNhanVien = null;
     this.resetForm();
+    // Auto-generate employee code on opening Add modal
+    this.nhanVienService
+      .generateMaNhanVien()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (code: string) => {
+          this.form.maNhanVien = code;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // Fallback: default prefix if API fails
+          this.form.maNhanVien = this.form.maNhanVien || 'NV001';
+          this.cdr.detectChanges();
+        },
+      });
     this.showModal = true;
   }
 
@@ -212,9 +307,11 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
   // Form methods
   resetForm(): void {
     this.form = {
+      maNhanVien: '',
       hoTen: '',
       email: '',
       soDienThoai: '',
+      soCanCuocCongDan: '',
       diaChi: '',
       gioiTinh: true,
       ngaySinh: '',
@@ -313,6 +410,15 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     if (!text) return 'Chưa có';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  }
+
+  // Normalize text for diacritics-insensitive comparison
+  private normalizeText(input: string | undefined): string {
+    if (!input) return '';
+    return input
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }
 
   // Validation methods

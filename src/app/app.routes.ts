@@ -16,6 +16,7 @@ import { OrdersComponent } from './components/orders/orders.component';
 import { PaymentsComponent } from './components/payments/payments.component';
 import { DeliveryComponent } from './components/delivery/delivery.component';
 import { HelmetsComponent } from './components/helmets/helmets.component';
+import { HelmetFormComponent } from './components/helmet-form/helmet-form.component';
 import { ManufacturersComponent } from './components/manufacturers/manufacturers.component';
 // import { ProductDetailsComponent } from './components/product-details/product-details.component';
 import { LoginComponent } from './components/login/login';
@@ -99,6 +100,11 @@ export const routes: Routes = [
   {
     path: 'products/helmets',
     component: HelmetsComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'products/helmets/new',
+    component: HelmetFormComponent,
     canActivate: [AuthGuard],
   },
   {

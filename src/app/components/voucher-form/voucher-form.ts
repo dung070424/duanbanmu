@@ -297,7 +297,28 @@ export class VoucherForm implements OnInit {
   }
 
   toggleVoucherStatus(voucher: Voucher) {
-    this.phieuGiamGiaService.togglePhieuGiamGiaStatus(voucher.id).subscribe({
+    // Tạo một object PhieuGiamGiaResponse từ Voucher để gọi API
+    const phieuData = {
+      id: voucher.id,
+      maPhieu: voucher.code,
+      tenPhieuGiamGia: voucher.name || '',
+      loaiPhieuGiamGia: voucher.type === 'cash',
+      loaiPhieuGiamGiaText: voucher.type === 'cash' ? 'Tiền mặt' : 'Phần trăm',
+      giaTriGiam: voucher.value,
+      giaTriToiThieu: voucher.minOrder,
+      soTienToiDa: 1000000, // Giá trị mặc định
+      hoaDonToiThieu: voucher.minOrder,
+      soLuongDung: voucher.quantity,
+      ngayBatDau: voucher.startDate instanceof Date ? voucher.startDate.toISOString().split('T')[0] : voucher.startDate,
+      ngayKetThuc: voucher.endDate instanceof Date ? voucher.endDate.toISOString().split('T')[0] : voucher.endDate,
+      trangThai: voucher.isActive,
+      trangThaiText: voucher.isActive ? 'Đang diễn ra' : 'Không hoạt động',
+      isActive: voucher.isActive,
+      isExpired: false,
+      isNotStarted: false
+    };
+    
+    this.phieuGiamGiaService.togglePhieuGiamGiaStatus(phieuData).subscribe({
       next: (response: any) => {
         // Update local data
         voucher.isActive = response.data?.trangThai || !voucher.isActive;
@@ -432,7 +453,8 @@ export class VoucherForm implements OnInit {
       soLuongDung: this.voucherForm.quantity,
       ngayBatDau: this.voucherForm.startDate,
       ngayKetThuc: this.voucherForm.endDate,
-      trangThai: true
+      trangThai: true,
+      isPublic: true // Mặc định là công khai cho voucher form
     };
 
     this.phieuGiamGiaService.createPhieuGiamGia(request).subscribe({

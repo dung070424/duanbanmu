@@ -15,13 +15,16 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 260px;
+  margin-left: clamp(64px, 15vw, 260px);
   min-height: 100vh;
   transition: margin-left 0.3s ease;
+  width: calc(100% - clamp(64px, 15vw, 260px));
+  box-sizing: border-box;
 }
 
 .sidebar-hidden .main-content {
   margin-left: 64px;
+  width: calc(100% - 64px);
 }
 
 app-sidebar .sidebar {
@@ -65,7 +68,32 @@ app-sidebar .sidebar {
 
 .content-wrapper {
   flex: 1;
-  padding: 20px;
+  padding: clamp(10px, 2vw, 20px);
   overflow-y: auto;
   min-height: calc(100vh - 80px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .sidebar-hidden .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .content-wrapper {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-wrapper {
+    padding: 4px;
+  }
 }

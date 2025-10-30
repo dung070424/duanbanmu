@@ -113,23 +113,25 @@
           <table>
             <thead>
               <tr>
-                <th>Mã KH</th>
+                <th>STT</th>
                 <th>Tên Khách Hàng</th>
-                <th>Giới...</th>
-                <th>Ngày sinh</th>
-                <th>Tổng số lần m...</th>
-                <th>Lần mua gần ...</th>
+                <th>Số Điện Thoại</th>
+                <th>Điểm Tích Lũy</th>
+                <th>Trạng thái</th>
                 <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let customer of filteredCustomers">
-                <td>{{ customer.code }}</td>
+              <tr *ngFor="let customer of filteredCustomers; let i = index">
+                <td>{{ i + 1 }}</td>
                 <td>{{ customer.name }}</td>
-                <td>{{ customer.gender }}</td>
-                <td>{{ customer.birthDate }}</td>
-                <td>{{ customer.totalPurchases }}</td>
-                <td>{{ customer.lastPurchase }}</td>
+                <td>{{ customer.phoneNumber }}</td>
+                <td>{{ customer.loyaltyPoints }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="customer.status === 'Hoạt động' ? 'status-active' : 'status-inactive'">
+                    {{ customer.status }}
+                  </span>
+                </td>
                 <td>
                   <button class="btn-select" (click)="selectCustomer(customer)">
                     <i class="bi bi-plus"></i>
@@ -149,22 +151,28 @@
             <table>
               <thead>
                 <tr>
-                  <th>Mã KH</th>
+                  <th>STT</th>
                   <th>Tên Khách Hàng</th>
-                  <th>Giới tính</th>
-                  <th>Ngày sinh</th>
+                  <th>Số Điện Thoại</th>
+                  <th>Điểm Tích Lũy</th>
+                  <th>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngIf="selectedCustomers.length === 0">
-                  <td colspan="5" class="no-data">Chưa có khách hàng nào được chọn</td>
+                  <td colspan="6" class="no-data">Chưa có khách hàng nào được chọn</td>
                 </tr>
-                <tr *ngFor="let customer of selectedCustomers">
-                  <td>{{ customer.code }}</td>
+                <tr *ngFor="let customer of selectedCustomers; let i = index">
+                  <td>{{ i + 1 }}</td>
                   <td>{{ customer.name }}</td>
-                  <td>{{ customer.gender }}</td>
-                  <td>{{ customer.birthDate }}</td>
+                  <td>{{ customer.phoneNumber }}</td>
+                  <td>{{ customer.loyaltyPoints }}</td>
+                  <td>
+                    <span class="status-badge" [ngClass]="customer.status === 'Hoạt động' ? 'status-active' : 'status-inactive'">
+                      {{ customer.status }}
+                    </span>
+                  </td>
                   <td>
                     <button class="btn-remove" (click)="removeCustomer(customer.id)">
                       <i class="bi bi-x"></i>

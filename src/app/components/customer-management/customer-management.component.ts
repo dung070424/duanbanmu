@@ -55,6 +55,8 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   showAddressModal = false;
   showAddressList = false;
   isEditAddressMode = false;
+  // Blur the customer modal when address modal is open
+  blurCustomerModal = false;
   selectedAddress: DiaChiKhachHang | null = null;
   addressList: DiaChiKhachHang[] = [];
   pendingAddresses: DiaChiKhachHangFormData[] = []; // Địa chỉ tạm thời khi thêm khách hàng mới
@@ -85,6 +87,11 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   errorMessage = '';
   fieldErrors: { [key: string]: string } = {};
 
+  // New UI properties for address navigation
+  currentAddressIndex = 0;
+  formattedNgaySinh = '';
+  currentAddressMacDinh = false;
+
   constructor(
     private khachHangService: KhachHangService,
     private diaChiKhachHangService: DiaChiKhachHangService,
@@ -103,6 +110,41 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         this.loadSampleData();
       }
     }, 2000);
+  }
+
+  // Generate next customer code (e.g., KH0001, KH0002, ...)
+  private generateCustomerCode(): void {
+    // Default visible immediately
+    this.form.maKhachHang = 'KH001';
+
+    const params: KhachHangSearchParams = {
+      page: 0,
+      size: 1,
+      sortBy: 'id',
+      sortDir: 'desc',
+    } as any;
+
+    this.khachHangService
+      .searchKhachHang(params)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: PageResponse<KhachHang>) => {
+          let nextNumber = 1;
+          const last =
+            response?.content && response.content.length > 0 ? response.content[0] : null;
+          const lastCode = last?.maKhachHang || '';
+          if (lastCode && lastCode.startsWith('KH')) {
+            const num = parseInt(lastCode.substring(2), 10);
+            if (!isNaN(num)) nextNumber = num + 1;
+          }
+          this.form.maKhachHang = `KH${nextNumber.toString().padStart(3, '0')}`;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // keep default KH001
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   // Load sample data for testing
@@ -325,6 +367,34 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   // Filter change handler
   onFilterChange(): void {
     this.currentPage = 0; // Reset to first page when filtering
+
+    // If we already have data loaded (e.g., sample data or first page from API),
+    // perform a fast client-side filter for instant UX. We still support
+    // server-side search when needed via loadKhachHangList().
+    if (this.khachHangList && this.khachHangList.length > 0) {
+      const term = (this.searchTerm || '').trim().toLowerCase();
+      const statusFilter = this.selectedStatus === '' ? undefined : this.selectedStatus === 'true';
+
+      this.filteredList = this.khachHangList.filter((kh) => {
+        const matchesTerm =
+          !term ||
+          (kh.maKhachHang || '').toLowerCase().includes(term) ||
+          (kh.tenKhachHang || '').toLowerCase().includes(term) ||
+          (kh.email || '').toLowerCase().includes(term) ||
+          (kh.soDienThoai || '').toLowerCase().includes(term);
+        const matchesStatus = statusFilter === undefined ? true : kh.trangThai === statusFilter;
+        return matchesTerm && matchesStatus;
+      });
+
+      // Update totals and paginated list (client-side)
+      this.totalElements = this.filteredList.length;
+      this.totalPages = Math.max(1, Math.ceil(this.totalElements / this.pageSize));
+      this.paginatedList = [...this.filteredList].slice(0, this.pageSize);
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Fallback to server-side search when no data is loaded yet
     this.loadKhachHangList();
     this.cdr.detectChanges();
   }
@@ -367,8 +437,13 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
 
   // Update paginated list (for client-side filtering only)
   updatePaginatedList(): void {
-    // For server-side pagination, paginatedList is set directly in loadKhachHangList
-    // This method is kept for compatibility but doesn't slice data
+    // For server-side pagination, paginatedList is set directly in loadKhachHangList.
+    // For client-side filtering, slice from filteredList based on currentPage/pageSize.
+    if (this.filteredList && this.filteredList.length > 0) {
+      const start = this.currentPage * this.pageSize;
+      const end = start + this.pageSize;
+      this.paginatedList = this.filteredList.slice(start, end);
+    }
     this.cdr.detectChanges();
   }
 
@@ -456,9 +531,14 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     this.isViewMode = false;
     this.selectedKhachHang = null;
     this.resetForm();
+    // Auto-generate code for new customer
+    this.generateCustomerCode();
     this.fieldErrors = {};
     this.addressList = []; // Reset address list for new customer
     this.pendingAddresses = []; // Reset pending addresses
+    this.currentAddressIndex = 0;
+    this.formattedNgaySinh = '';
+    this.currentAddressMacDinh = false;
     this.showModal = true;
     this.cdr.detectChanges();
   }
@@ -481,12 +561,26 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       trangThai: khachHang.trangThai !== undefined ? khachHang.trangThai : true,
     };
 
+    // Format date for display
+    if (this.form.ngaySinh) {
+      const dateParts = this.form.ngaySinh.split('-');
+      if (dateParts.length === 3) {
+        this.formattedNgaySinh = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+      }
+    } else {
+      this.formattedNgaySinh = '';
+    }
+
     // Load addresses for existing customer
     if (khachHang.id) {
       this.loadAddressListForCustomer(khachHang.id);
     } else {
       this.addressList = [];
     }
+
+    // Reset address navigation
+    this.currentAddressIndex = 0;
+    this.updateCurrentAddressMacDinh();
 
     // Also reload all addresses to ensure table display is updated
     this.loadAllAddresses();
@@ -524,6 +618,9 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     this.loading = false;
     this.addressList = []; // Reset address list
     this.pendingAddresses = []; // Reset pending addresses
+    this.currentAddressIndex = 0;
+    this.formattedNgaySinh = '';
+    this.currentAddressMacDinh = false;
 
     // Reload all addresses to ensure table display is updated
     this.loadAllAddresses();
@@ -543,6 +640,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       ngaySinh: '',
       trangThai: true,
     };
+    this.formattedNgaySinh = '';
     this.cdr.detectChanges();
   }
 
@@ -574,12 +672,42 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.loading = false;
 
-        // Nếu là thêm khách hàng mới và có địa chỉ tạm thời
-        if (!this.isEditMode && this.pendingAddresses.length > 0 && response.id) {
-          // Lưu tất cả địa chỉ tạm thời
-          this.savePendingAddresses(response.id);
+        // Update address list after save and reset navigation
+        if (this.isEditMode && response.id) {
+          this.loadAddressListForCustomer(response.id);
+          setTimeout(() => {
+            this.currentAddressIndex = 0;
+            this.updateCurrentAddressMacDinh();
+          }, 300);
+        }
+
+        // Nếu là thêm khách hàng mới và có địa chỉ cần lưu
+        if (!this.isEditMode && response.id) {
+          let hasAddressToSave = false;
+
+          // Kiểm tra nếu có địa chỉ từ trường diaChi
+          if (khachHangData.diaChi && khachHangData.diaChi.trim()) {
+            hasAddressToSave = true;
+            // Tạo địa chỉ mặc định từ trường diaChi
+            this.createDefaultAddressFromDiaChi(response.id, khachHangData.diaChi);
+          }
+
+          // Kiểm tra nếu có địa chỉ tạm thời từ phần quản lý địa chỉ
+          if (this.pendingAddresses.length > 0) {
+            hasAddressToSave = true;
+            // Lưu tất cả địa chỉ tạm thời
+            this.savePendingAddresses(response.id);
+          }
+
+          if (!hasAddressToSave) {
+            // Không có địa chỉ nào để lưu
+            const successMessage = 'Thêm khách hàng thành công! (0/0 địa chỉ được lưu)';
+            alert(successMessage);
+            this.closeModal();
+            this.refreshAfterSave();
+          }
         } else {
-          // Show success message
+          // Show success message cho edit mode
           const successMessage = this.isEditMode
             ? 'Cập nhật khách hàng thành công!'
             : 'Thêm khách hàng thành công!';
@@ -661,8 +789,17 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   goToPage(page: number): void {
     if (page >= 0 && page < this.totalPages) {
       this.currentPage = page;
-      // Load data from API for the new page
-      this.loadKhachHangList();
+      // If we are filtering client-side, just update the slice; otherwise, hit API
+      if (
+        this.filteredList &&
+        this.filteredList.length > 0 &&
+        this.filteredList.length !== this.khachHangList.length
+      ) {
+        this.updatePaginatedList();
+      } else {
+        // Load data from API for the new page
+        this.loadKhachHangList();
+      }
     }
   }
 
@@ -828,11 +965,18 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (addresses) => {
           this.addressList = addresses;
+          // Reset to first address if index is out of bounds
+          if (this.currentAddressIndex >= addresses.length) {
+            this.currentAddressIndex = 0;
+          }
+          this.updateCurrentAddressMacDinh();
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Error loading addresses for customer:', error);
           this.addressList = [];
+          this.currentAddressIndex = 0;
+          this.updateCurrentAddressMacDinh();
           this.cdr.detectChanges();
         },
       });
@@ -868,6 +1012,8 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     this.isEditAddressMode = false;
     this.selectedAddress = null;
     this.resetAddressForm();
+    // Remove blur from customer modal if applied
+    this.blurCustomerModal = false;
     this.cdr.detectChanges();
   }
 
@@ -905,6 +1051,23 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
 
       // Cập nhật danh sách hiển thị
       this.updateAddressListFromPending();
+
+      // Update current address index
+      if (this.isEditAddressMode && this.selectedAddress) {
+        const index = this.pendingAddresses.findIndex(
+          (addr) =>
+            addr.diaChiChiTiet === this.addressForm.diaChiChiTiet &&
+            addr.tinhThanh === this.addressForm.tinhThanh &&
+            addr.quanHuyen === this.addressForm.quanHuyen &&
+            addr.phuongXa === this.addressForm.phuongXa
+        );
+        if (index !== -1) {
+          this.currentAddressIndex = index;
+        }
+      } else {
+        this.currentAddressIndex = this.pendingAddresses.length - 1;
+      }
+      this.updateCurrentAddressMacDinh();
 
       const successMessage = this.isEditAddressMode
         ? 'Cập nhật địa chỉ thành công!'
@@ -975,13 +1138,40 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             if (index !== -1) {
               this.addressList[index] = { ...response, khachHangId: this.selectedKhachHang.id };
               console.log('Updated address in addressList:', this.addressList[index]);
+              this.currentAddressIndex = index;
             }
           } else {
             // Add new address to addressList
             const newAddress = { ...response, khachHangId: this.selectedKhachHang.id };
             this.addressList.push(newAddress);
             console.log('Added new address to addressList:', newAddress);
+            this.currentAddressIndex = this.addressList.length - 1;
           }
+          this.updateCurrentAddressMacDinh();
+        }
+
+        // Update pending addresses for new customer
+        if (!this.isEditMode && !this.selectedKhachHang?.id) {
+          if (this.isEditAddressMode && this.selectedAddress) {
+            // Update existing pending address
+            const index = this.pendingAddresses.findIndex(
+              (addr) =>
+                addr.diaChiChiTiet === this.selectedAddress?.diaChiChiTiet &&
+                addr.tinhThanh === this.selectedAddress?.tinhThanh &&
+                addr.quanHuyen === this.selectedAddress?.quanHuyen &&
+                addr.phuongXa === this.selectedAddress?.phuongXa
+            );
+            if (index !== -1) {
+              this.pendingAddresses[index] = { ...this.addressForm };
+              this.currentAddressIndex = index;
+            }
+          } else {
+            // Add new pending address
+            this.pendingAddresses.push({ ...this.addressForm });
+            this.currentAddressIndex = this.pendingAddresses.length - 1;
+          }
+          this.updateAddressListFromPending();
+          this.updateCurrentAddressMacDinh();
         }
 
         // Reload address list based on context
@@ -1138,6 +1328,11 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       ngayTao: new Date().toISOString(),
       ngayCapNhat: new Date().toISOString(),
     }));
+    // Ensure current index is within bounds
+    if (this.currentAddressIndex >= this.addressList.length) {
+      this.currentAddressIndex = Math.max(0, this.addressList.length - 1);
+    }
+    this.updateCurrentAddressMacDinh();
     this.cdr.detectChanges();
   }
 
@@ -1170,7 +1365,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             completedCount++;
             if (completedCount === totalCount) {
               // Tất cả địa chỉ đã được lưu
-              const successMessage = `Thêm khách hàng và ${totalCount} địa chỉ thành công!`;
+              const successMessage = `Thêm khách hàng thành công! (${totalCount}/${totalCount} địa chỉ được lưu)`;
               alert(successMessage);
               this.closeModal();
               this.refreshAfterSave();
@@ -1184,6 +1379,124 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
               const successMessage = `Thêm khách hàng thành công! (${
                 totalCount - 1
               }/${totalCount} địa chỉ được lưu)`;
+              alert(successMessage);
+              this.closeModal();
+              this.refreshAfterSave();
+            }
+          },
+        });
+    });
+  }
+
+  // Tạo địa chỉ mặc định từ trường diaChi
+  createDefaultAddressFromDiaChi(khachHangId: number, diaChi: string): void {
+    // Parse địa chỉ từ trường diaChi (format: "số nhà, phường/xã, quận/huyện, tỉnh/thành")
+    const addressParts = diaChi.split(',').map((part) => part.trim());
+
+    let diaChiChiTiet = '';
+    let phuongXa = '';
+    let quanHuyen = '';
+    let tinhThanh = '';
+
+    if (addressParts.length >= 1) diaChiChiTiet = addressParts[0];
+    if (addressParts.length >= 2) phuongXa = addressParts[1];
+    if (addressParts.length >= 3) quanHuyen = addressParts[2];
+    if (addressParts.length >= 4) tinhThanh = addressParts[3];
+
+    const defaultAddress: DiaChiKhachHang = {
+      khachHangId: khachHangId,
+      diaChiChiTiet: diaChiChiTiet,
+      phuongXa: phuongXa,
+      quanHuyen: quanHuyen,
+      tinhThanh: tinhThanh,
+      macDinh: true, // Đặt làm địa chỉ mặc định
+      trangThai: true,
+    };
+
+    this.diaChiKhachHangService
+      .createDiaChi(defaultAddress)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('Default address created successfully:', response);
+
+          // Kiểm tra nếu cũng có pendingAddresses
+          if (this.pendingAddresses.length > 0) {
+            // Có cả địa chỉ mặc định và địa chỉ chi tiết
+            this.savePendingAddressesWithDefault(khachHangId, 1); // 1 địa chỉ mặc định đã được lưu
+          } else {
+            // Chỉ có địa chỉ mặc định
+            const successMessage = 'Thêm khách hàng thành công! (1/1 địa chỉ được lưu)';
+            alert(successMessage);
+            this.closeModal();
+            this.refreshAfterSave();
+          }
+        },
+        error: (error) => {
+          console.error('Error creating default address:', error);
+
+          // Kiểm tra nếu cũng có pendingAddresses
+          if (this.pendingAddresses.length > 0) {
+            // Có địa chỉ chi tiết, lưu chúng (địa chỉ mặc định lỗi)
+            this.savePendingAddressesWithDefault(khachHangId, 0); // 0 địa chỉ mặc định được lưu
+          } else {
+            // Không có địa chỉ nào được lưu
+            const successMessage = 'Thêm khách hàng thành công! (0/1 địa chỉ được lưu)';
+            alert(successMessage);
+            this.closeModal();
+            this.refreshAfterSave();
+          }
+        },
+      });
+  }
+
+  // Lưu địa chỉ tạm thời khi đã có địa chỉ mặc định
+  savePendingAddressesWithDefault(khachHangId: number, defaultAddressCount: number): void {
+    if (this.pendingAddresses.length === 0) {
+      // Không có địa chỉ tạm thời, đóng modal
+      const totalAddresses = defaultAddressCount;
+      const successMessage = `Thêm khách hàng thành công! (${defaultAddressCount}/${totalAddresses} địa chỉ được lưu)`;
+      alert(successMessage);
+      this.closeModal();
+      this.refreshAfterSave();
+      return;
+    }
+
+    // Lưu từng địa chỉ
+    let completedCount = 0;
+    const totalCount = this.pendingAddresses.length;
+    const totalAddresses = defaultAddressCount + totalCount;
+
+    this.pendingAddresses.forEach((addressData, index) => {
+      const addressToSave: DiaChiKhachHang = {
+        ...addressData,
+        khachHangId: khachHangId,
+      };
+
+      this.diaChiKhachHangService
+        .createDiaChi(addressToSave)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            completedCount++;
+            if (completedCount === totalCount) {
+              // Tất cả địa chỉ đã được lưu
+              const successMessage = `Thêm khách hàng thành công! (${
+                defaultAddressCount + totalCount
+              }/${totalAddresses} địa chỉ được lưu)`;
+              alert(successMessage);
+              this.closeModal();
+              this.refreshAfterSave();
+            }
+          },
+          error: (error) => {
+            console.error('Error saving address:', error);
+            completedCount++;
+            if (completedCount === totalCount) {
+              // Vẫn đóng modal dù có lỗi
+              const successMessage = `Thêm khách hàng thành công! (${
+                defaultAddressCount + totalCount - 1
+              }/${totalAddresses} địa chỉ được lưu)`;
               alert(successMessage);
               this.closeModal();
               this.refreshAfterSave();
@@ -1264,6 +1577,68 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
+  // Export current list to Excel (CSV)
+  exportToExcel(): void {
+    // Prefer filtered list if present; else fall back to full list
+    const dataSource =
+      this.filteredList && this.filteredList.length > 0 ? this.filteredList : this.khachHangList;
+
+    if (!dataSource || dataSource.length === 0) {
+      alert('Không có dữ liệu để xuất Excel!');
+      return;
+    }
+
+    const headers = [
+      'STT',
+      'Mã KH',
+      'Tên khách hàng',
+      'Số điện thoại',
+      'Email',
+      'Địa chỉ',
+      'Giới tính',
+      'Trạng thái',
+    ];
+
+    const rows = dataSource.map((kh, index) => [
+      (index + 1).toString(),
+      kh.maKhachHang || '',
+      kh.tenKhachHang || '',
+      kh.soDienThoai || '',
+      kh.email || '',
+      this.getCustomerAddress(kh) || '',
+      getGioiTinhText(kh.gioiTinh),
+      getTrangThaiText(kh.trangThai),
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) =>
+        row
+          .map((cell) => {
+            const cellStr = String(cell ?? '');
+            return cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')
+              ? '"' + cellStr.replace(/"/g, '""') + '"'
+              : cellStr;
+          })
+          .join(',')
+      ),
+    ].join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `Danh_sach_khach_hang_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // Address management methods for new customer form
   openAddressModalForNewCustomer(): void {
     this.showAddressModal = true;
@@ -1298,6 +1673,15 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   deletePendingAddress(index: number): void {
     if (index >= 0 && index < this.pendingAddresses.length) {
       this.pendingAddresses.splice(index, 1);
+      this.updateAddressListFromPending();
+      // Adjust current index if needed
+      if (
+        this.currentAddressIndex >= this.pendingAddresses.length &&
+        this.currentAddressIndex > 0
+      ) {
+        this.currentAddressIndex = this.pendingAddresses.length - 1;
+      }
+      this.updateCurrentAddressMacDinh();
       this.cdr.detectChanges();
     }
   }
@@ -1318,6 +1702,11 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       selectedKhachHang: this.selectedKhachHang,
       showAddressModal: this.showAddressModal,
     });
+
+    // If customer modal is open, blur it (keep visible)
+    if (this.showModal) {
+      this.blurCustomerModal = true;
+    }
 
     this.showAddressModal = true;
     this.isEditAddressMode = false;
@@ -1358,8 +1747,20 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   }
 
   // Get customer's primary address for table display
-  getCustomerAddress(khachHang: KhachHang): string {
-    // Check if we have addresses loaded for this customer
+  getCustomerAddress(khachHang?: KhachHang | null): string {
+    if (!khachHang) return 'Không có địa chỉ';
+    // Ưu tiên địa chỉ từ backend (địa chỉ mặc định)
+    if (khachHang.coDiaChiMacDinh && khachHang.diaChiMacDinh) {
+      const parts = [];
+      if (khachHang.diaChiMacDinh) parts.push(khachHang.diaChiMacDinh);
+      if (khachHang.phuongXaMacDinh) parts.push(khachHang.phuongXaMacDinh);
+      if (khachHang.quanHuyenMacDinh) parts.push(khachHang.quanHuyenMacDinh);
+      if (khachHang.tinhThanhMacDinh) parts.push(khachHang.tinhThanhMacDinh);
+
+      return parts.length > 0 ? parts.join(' / ') : 'Chưa có địa chỉ chi tiết';
+    }
+
+    // Fallback: Check if we have addresses loaded for this customer (legacy support)
     const customerAddresses = this.allAddresses.filter((addr) => addr.khachHangId === khachHang.id);
     if (customerAddresses.length > 0) {
       const defaultAddress = customerAddresses.find((addr) => addr.macDinh) || customerAddresses[0];
@@ -1369,10 +1770,10 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       if (defaultAddress.quanHuyen) parts.push(defaultAddress.quanHuyen);
       if (defaultAddress.tinhThanh) parts.push(defaultAddress.tinhThanh);
 
-      return parts.length > 0 ? parts.join(' / ') : 'Không có địa chỉ';
+      return parts.length > 0 ? parts.join(' / ') : 'Chưa có địa chỉ chi tiết';
     }
 
-    // Fallback to old diaChi field
+    // Final fallback to old diaChi field
     if (khachHang.diaChi) {
       const addressParts = khachHang.diaChi.split(',').map((part) => part.trim());
       if (addressParts.length > 1) {
@@ -1399,5 +1800,115 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
           this.allAddresses = [];
         },
       });
+  }
+
+  // New UI methods for address navigation and management
+  getCurrentAddress(): DiaChiKhachHang | DiaChiKhachHangFormData | null {
+    const addresses = this.isEditMode ? this.addressList : this.pendingAddresses;
+    if (
+      addresses.length > 0 &&
+      this.currentAddressIndex >= 0 &&
+      this.currentAddressIndex < addresses.length
+    ) {
+      return addresses[this.currentAddressIndex];
+    }
+    return null;
+  }
+
+  previousAddress(): void {
+    if (this.currentAddressIndex > 0) {
+      this.currentAddressIndex--;
+      this.updateCurrentAddressMacDinh();
+    }
+    this.cdr.detectChanges();
+  }
+
+  nextAddress(): void {
+    const totalCount = this.getTotalAddressCount();
+    if (this.currentAddressIndex < totalCount - 1) {
+      this.currentAddressIndex++;
+      this.updateCurrentAddressMacDinh();
+    }
+    this.cdr.detectChanges();
+  }
+
+  editCurrentAddress(): void {
+    const currentAddress = this.getCurrentAddress();
+    if (currentAddress) {
+      if (this.isEditMode && 'id' in currentAddress) {
+        this.editAddress(currentAddress as DiaChiKhachHang);
+      } else {
+        this.editPendingAddress(this.currentAddressIndex);
+      }
+    }
+  }
+
+  deleteCurrentAddress(): void {
+    const currentAddress = this.getCurrentAddress();
+    if (currentAddress) {
+      if (this.isEditMode && 'id' in currentAddress) {
+        this.deleteAddress(currentAddress as DiaChiKhachHang);
+      } else {
+        this.deletePendingAddress(this.currentAddressIndex);
+      }
+      // Adjust index if needed
+      const totalCount = this.getTotalAddressCount();
+      if (this.currentAddressIndex >= totalCount && this.currentAddressIndex > 0) {
+        this.currentAddressIndex = totalCount - 1;
+      }
+      this.updateCurrentAddressMacDinh();
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleCurrentAddressDefault(): void {
+    const currentAddress = this.getCurrentAddress();
+    if (currentAddress) {
+      // If setting as default, unset all others
+      if (this.currentAddressMacDinh) {
+        if (this.isEditMode) {
+          this.addressList.forEach((addr, index) => {
+            if (index !== this.currentAddressIndex) {
+              addr.macDinh = false;
+            }
+          });
+          currentAddress.macDinh = true;
+        } else {
+          this.pendingAddresses.forEach((addr, index) => {
+            if (index !== this.currentAddressIndex) {
+              addr.macDinh = false;
+            }
+          });
+          (currentAddress as DiaChiKhachHangFormData).macDinh = true;
+        }
+      } else {
+        if (this.isEditMode) {
+          (currentAddress as DiaChiKhachHang).macDinh = false;
+        } else {
+          (currentAddress as DiaChiKhachHangFormData).macDinh = false;
+        }
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  updateCurrentAddressMacDinh(): void {
+    const currentAddress = this.getCurrentAddress();
+    this.currentAddressMacDinh = currentAddress?.macDinh || false;
+    this.cdr.detectChanges();
+  }
+
+  onDateBlur(): void {
+    // Parse dd/mm/yyyy format to yyyy-mm-dd
+    if (this.formattedNgaySinh) {
+      const parts = this.formattedNgaySinh.split('/');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        this.form.ngaySinh = `${year}-${month}-${day}`;
+      }
+    }
+    this.cdr.detectChanges();
   }
 }

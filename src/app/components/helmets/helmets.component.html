@@ -69,7 +69,7 @@
             <div class="total-customers">Tổng số sản phẩm: {{ totalElements }}</div>
             <div class="action-buttons">
               <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
-              <button class="btn-add" (click)="openAddModal()">Thêm Chi Tiết Sản Phẩm</button>
+              <button class="btn-add" (click)="navigateToAddForm()">Thêm Chi Tiết Sản Phẩm</button>
             </div>
           </div>
         </div>
@@ -94,11 +94,12 @@
                 <tr>
                   <th>STT</th>
                   <th>Mã SP</th>
-                  <th>Ảnh sản phẩm</th>
+                  <!-- <th>Ảnh sản phẩm</th> -->
                   <th>Tên sản phẩm</th>
                   <th>Loại mũ</th>
                   <th>Nhà sản xuất</th>
                   <th>Giá bán</th>
+                  <th>Số lượng</th>
                   <th>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
@@ -112,7 +113,7 @@
                     <span class="customer-code" *ngIf="product.code">{{ product.code }}</span>
                     <span class="no-data" *ngIf="!product.code">-</span>
                   </td>
-                  <td>
+                  <!-- <td>
                     <div *ngIf="product.anhSanPham" class="product-image-container">
                       <img
                         [src]="product.anhSanPham"
@@ -122,7 +123,7 @@
                       />
                     </div>
                     <span class="no-data" *ngIf="!product.anhSanPham">-</span>
-                  </td>
+                  </td> -->
                   <td>{{ product.name }}</td>
                   <td>
                     <span *ngIf="product.loaiMuBaoHiem">{{ product.loaiMuBaoHiem }}</span>
@@ -134,24 +135,27 @@
                   </td>
                   <td>{{ formatPrice(product.price) }}</td>
                   <td>
+                    <span class="quantity-badge">{{ product.quantity }}</span>
+                  </td>
+                  <td>
                     <span
                       class="status-badge"
-                      [class.active]="product.status === 'Đang bán'"
-                      [class.inactive]="product.status === 'Ngừng bán'"
+                      [class.active]="
+                        product.status === 'Đang bán' || product.status === 'Đang bán'
+                      "
+                      [class.inactive]="
+                        product.status === 'Ngừng bán' || product.status === 'Ngừng bán'
+                      "
                     >
-                      {{ product.status === 'Đang bán' ? 'Kích Hoạt' : 'Đã Hủy' }}
+                      {{
+                        product.status === 'Đang bán' || product.status === 'Đang bán'
+                          ? 'Đang bán'
+                          : 'Ngừng bán'
+                      }}
                     </span>
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <label class="toggle-switch">
-                        <input
-                          type="checkbox"
-                          [checked]="product.status === 'Đang bán'"
-                          (change)="toggleStatus(product)"
-                        />
-                        <span class="toggle-slider"></span>
-                      </label>
                       <button class="btn-edit" (click)="openEditModal(product)" title="Chỉnh sửa">
                         <i class="bi bi-pencil"></i>
                       </button>
@@ -325,7 +329,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold"
-                >Số lượng tồn <span class="text-danger">*</span></label
+                >Số lượng <span class="text-danger">*</span></label
               >
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-box"></i></span>
@@ -545,36 +549,29 @@
           </div>
 
           <div class="row g-3 mb-4">
-            <div class="col-md-12">
-              <div class="image-upload-container">
+            <div class="col-12">
+              <div class="image-upload-section">
+                <div *ngIf="!newProduct.anhSanPham" class="no-image-placeholder">
+                  <i class="bi bi-image display-1 text-muted"></i>
+                  <p class="text-muted mt-2">Chưa có ảnh</p>
+                </div>
                 <div *ngIf="newProduct.anhSanPham" class="image-preview">
-                  <img
-                    [src]="newProduct.anhSanPham"
-                    [alt]="newProduct.name"
-                    class="preview-image"
-                  />
-                  <button
+                  <img [src]="newProduct.anhSanPham" alt="Preview" class="preview-image" />
+                </div>
+                <div class="upload-controls">
+                  <input
                     *ngIf="!isViewMode"
-                    type="button"
-                    class="btn btn-sm btn-danger remove-image-btn"
-                    (click)="removeImage()"
-                    title="Xóa ảnh"
-                  >
-                    <i class="bi bi-x"></i>
-                  </button>
+                    type="file"
+                    id="imageUpload"
+                    class="form-control d-none"
+                    accept="image/*"
+                    (change)="onImageSelected($event)"
+                  />
+                  <label *ngIf="!isViewMode" for="imageUpload" class="btn btn-outline-primary">
+                    <i class="bi bi-upload me-2"></i>Chọn tệp
+                  </label>
+                  <small class="text-muted d-block mt-1">Không có tệp nào được chọn</small>
                 </div>
-                <div *ngIf="!newProduct.anhSanPham" class="image-placeholder">
-                  <i class="bi bi-cloud-upload"></i>
-                  <p>Chưa có ảnh</p>
-                </div>
-                <input
-                  *ngIf="!isViewMode"
-                  type="file"
-                  class="form-control mt-2"
-                  accept="image/*"
-                  (change)="onImageSelected($event)"
-                  #fileInput
-                />
               </div>
             </div>
           </div>

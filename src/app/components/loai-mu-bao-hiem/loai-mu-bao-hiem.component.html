@@ -1,213 +1,263 @@
-<div class="page-container">
-  <!-- Header Section -->
-  <div class="page-header">
-    <div class="page-header-content">
-      <div class="page-title">
-        <h1>Quản lý Loại Mũ Bảo Hiểm</h1>
-      </div>
-      <div class="page-actions">
-        <button class="btn-add" (click)="openAddModal()">
-          <i class="bi bi-plus-circle"></i> Thêm mới
-        </button>
-      </div>
+<div class="container-fluid">
+  <!-- Bộ Lọc Tìm Kiếm Section -->
+  <div class="filter-section">
+    <div class="section-title">
+      <i class="bi bi-funnel"></i>
+      <h3>Bộ Lọc Tìm Kiếm</h3>
     </div>
-  </div>
 
-  <!-- Content Section -->
-  <div class="page-content">
-    <div class="content-card">
-      <!-- Search and Filter -->
-      <div class="search-filters">
-        <div class="search-group">
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <div class="filter-content">
+      <div class="filter-row">
+        <div class="search-section">
+          <label class="filter-label">Tìm kiếm</label>
+          <div class="search-input-wrapper">
+            <i class="bi bi-search search-icon"></i>
             <input
               type="text"
-              class="form-control"
-              placeholder="Tìm kiếm theo tên loại mũ hoặc mô tả..."
+              class="search-input"
+              placeholder="Mã, tên loại mũ, mô tả..."
               [(ngModel)]="keyword"
               (input)="onSearchChange()"
             />
           </div>
         </div>
-        <div class="filter-group">
-          <select class="form-select" [(ngModel)]="trangThai" (change)="onStatusChange()">
-            <option *ngFor="let option of statusOptions" [value]="option.value">
-              {{ option.label }}
-            </option>
-          </select>
+
+        <div class="status-section">
+          <label class="filter-label">Trạng thái</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="all"
+                [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()"
+                checked
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Tất cả</span>
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="true"
+                [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()"
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Đang hoạt động</span>
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="false"
+                [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()"
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Ngừng</span>
+            </label>
+          </div>
         </div>
       </div>
 
-      <!-- Loading indicator -->
-      <div *ngIf="loading" class="loading-container">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Đang tải...</span>
-        </div>
-        <p class="loading-text">Đang tải dữ liệu...</p>
-      </div>
-
-      <!-- Table -->
-      <div class="table-container" *ngIf="!loading">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
-            <tr>
-              <th style="width: 5%" (click)="setSort('id')" class="sortable">
-                ID <i [class]="getSortIcon('id')"></i>
-              </th>
-              <th style="width: 25%" (click)="setSort('tenLoai')" class="sortable">
-                Tên loại mũ <i [class]="getSortIcon('tenLoai')"></i>
-              </th>
-              <th style="width: 40%">Mô tả</th>
-              <th style="width: 15%" (click)="setSort('trangThai')" class="sortable">
-                Trạng thái <i [class]="getSortIcon('trangThai')"></i>
-              </th>
-              <th style="width: 15%">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of items">
-              <td>{{ item.id }}</td>
-              <td>
-                <strong>{{ item.tenLoai }}</strong>
-              </td>
-              <td>
-                <span *ngIf="item.moTa; else noDescription">{{ item.moTa }}</span>
-                <ng-template #noDescription>
-                  <span class="text-muted">Chưa có mô tả</span>
-                </ng-template>
-              </td>
-              <td>
-                <span [class]="getStatusBadgeClass(item.trangThai)">
-                  {{ getStatusText(item.trangThai) }}
-                </span>
-              </td>
-              <td>
-                <div class="btn-group btn-group-sm">
-                  <button
-                    class="btn btn-outline-primary"
-                    (click)="openEditModal(item)"
-                    title="Chỉnh sửa"
-                  >
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn btn-outline-danger" (click)="confirmDelete(item)" title="Xóa">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr *ngIf="items.length === 0">
-              <td colspan="5" class="text-center text-muted py-4">
-                <i class="bi bi-inbox display-4 d-block mb-2"></i>
-                Không có dữ liệu
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div class="pagination-container">
-        <div class="pagination-buttons">
-          <button class="btn btn-outline-secondary" (click)="prevPage()" [disabled]="page === 0">
-            Trang trước
-          </button>
-          <button
-            class="btn btn-outline-secondary"
-            (click)="nextPage()"
-            [disabled]="page >= totalPages - 1"
-          >
-            Trang sau
-          </button>
-        </div>
-        <div class="pagination-info">
-          <span class="page-info">Trang {{ page + 1 }}/{{ totalPages }}</span>
-          <select
-            class="form-select page-size-select"
-            [(ngModel)]="size"
-            (change)="changePageSize(size)"
-          >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
+      <div class="info-and-actions">
+        <div class="total-customers">Tổng số loại mũ bảo hiểm: {{ totalElements }}</div>
+        <div class="action-buttons">
+          <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
+          <button class="btn-add" (click)="openAddModal()">Thêm Loại Mũ</button>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Danh Sách Loại Mũ Bảo Hiểm Section -->
+  <div class="customer-list-section">
+    <div class="section-title">
+      <i class="bi bi-shield-check"></i>
+      <h3>Danh Sách Loại Mũ Bảo Hiểm</h3>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px">STT</th>
+            <th>Tên loại mũ</th>
+            <th>Mô tả</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items; let index = index; trackBy: trackById">
+            <td class="text-center">{{ page * size + index + 1 }}</td>
+            <td>
+              <span class="customer-code">{{ item.tenLoai || '-' }}</span>
+            </td>
+            <td>
+              <span class="no-data">{{ item.moTa || '-' }}</span>
+            </td>
+            <td>
+              <span
+                class="status-badge"
+                [class.active]="item.trangThai"
+                [class.inactive]="!item.trangThai"
+              >
+                {{ item.trangThai ? 'Đang hoạt động' : 'Ngừng' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-edit" (click)="openEditModal(item)" title="Chỉnh sửa">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-view" (click)="viewItem(item)" title="Xem chi tiết">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- No data message -->
+      <div *ngIf="items.length === 0" class="no-data-message">
+        <i class="bi bi-shield-check"></i>
+        <h4>Không tìm thấy loại mũ bảo hiểm nào</h4>
+        <p>Hãy thử thay đổi bộ lọc hoặc thêm loại mũ mới</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination Section -->
+  <div class="pagination-section">
+    <div class="pagination-left">
+      <div class="page-size-control">
+        <label>Hiển thị</label>
+        <select class="page-size-select" [ngModel]="size" (change)="onPageSizeChange($event)">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+        <span>mục / trang</span>
+      </div>
+    </div>
+
+    <div class="pagination-right">
+      <div>
+        <span>
+          Hiển thị {{ page * size + 1 }} - {{ Math.min((page + 1) * size, totalElements) }} /
+          {{ totalElements }} mục
+        </span>
+      </div>
+      <button class="pagination-btn" [disabled]="page === 0" (click)="goToPage(0)">
+        <i class="bi bi-chevron-double-left"></i>
+      </button>
+      <button class="pagination-btn" [disabled]="page === 0" (click)="prevPage()">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button
+        *ngFor="let pageNum of getPageNumbers()"
+        class="pagination-btn"
+        [class.active]="pageNum - 1 === page"
+        (click)="goToPage(pageNum - 1)"
+      >
+        {{ pageNum }}
+      </button>
+      <button class="pagination-btn" [disabled]="page >= totalPages - 1" (click)="nextPage()">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+      <button
+        class="pagination-btn"
+        [disabled]="page >= totalPages - 1"
+        (click)="goToPage(totalPages - 1)"
+      >
+        <i class="bi bi-chevron-double-right"></i>
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- Modal -->
-<div
-  class="modal fade"
-  [class.show]="showModal"
-  [style.display]="showModal ? 'block' : 'none'"
-  tabindex="-1"
->
-  <div class="modal-dialog">
+<!-- Modal thêm/sửa/xem loại mũ bảo hiểm -->
+<div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{{ isEdit ? 'Chỉnh sửa' : 'Thêm mới' }} Loại Mũ Bảo Hiểm</h5>
-        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      <div class="modal-header text-white">
+        <h5 class="modal-title">
+          <span *ngIf="isViewMode">Xem loại mũ bảo hiểm</span>
+          <span *ngIf="isEdit">Chỉnh sửa loại mũ bảo hiểm</span>
+          <span *ngIf="!isViewMode && !isEdit">Thêm loại mũ bảo hiểm mới</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
       </div>
       <div class="modal-body">
         <form>
-          <div class="mb-3">
-            <label for="tenLoai" class="form-label"
-              >Tên loại mũ bảo hiểm <span class="text-danger">*</span></label
-            >
-            <input
-              type="text"
-              class="form-control"
-              [class.is-invalid]="hasFieldError('tenLoai')"
-              id="tenLoai"
-              [(ngModel)]="form.tenLoai"
-              name="tenLoai"
-              placeholder="Nhập tên loại mũ bảo hiểm"
-              required
-              (blur)="markFieldTouched('tenLoai')"
-            />
-            <div *ngIf="hasFieldError('tenLoai')" class="invalid-feedback">
-              {{ getFieldError('tenLoai') }}
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-shield-check me-1"></i>Tên loại mũ bảo hiểm
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('tenLoai')"
+                [(ngModel)]="form.tenLoai"
+                name="tenLoai"
+                [readonly]="isViewMode"
+                placeholder="Nhập tên loại mũ bảo hiểm"
+                (blur)="markFieldTouched('tenLoai')"
+              />
+              <div *ngIf="hasFieldError('tenLoai')" class="invalid-feedback d-block">
+                {{ getFieldError('tenLoai') }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-toggle-on me-1"></i>Trạng thái
+              </label>
+              <select
+                class="form-control"
+                [(ngModel)]="form.trangThai"
+                name="trangThai"
+                [disabled]="isViewMode"
+              >
+                <option [value]="true">Đang hoạt động</option>
+                <option [value]="false">Ngừng</option>
+              </select>
             </div>
           </div>
 
-          <div class="mb-3">
-            <label for="moTa" class="form-label">Mô tả</label>
-            <textarea
-              class="form-control"
-              [class.is-invalid]="hasFieldError('moTa')"
-              id="moTa"
-              [(ngModel)]="form.moTa"
-              name="moTa"
-              rows="3"
-              placeholder="Nhập mô tả (tùy chọn)"
-              (blur)="markFieldTouched('moTa')"
-            ></textarea>
-            <div *ngIf="hasFieldError('moTa')" class="invalid-feedback">
-              {{ getFieldError('moTa') }}
+          <div class="row g-3 mb-4">
+            <div class="col-md-12">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-file-text me-1"></i>Mô tả
+              </label>
+              <textarea
+                class="form-control"
+                [class.is-invalid]="hasFieldError('moTa')"
+                rows="3"
+                [(ngModel)]="form.moTa"
+                name="moTa"
+                [readonly]="isViewMode"
+                placeholder="Nhập mô tả (tùy chọn)"
+                (blur)="markFieldTouched('moTa')"
+              ></textarea>
+              <div *ngIf="hasFieldError('moTa')" class="invalid-feedback d-block">
+                {{ getFieldError('moTa') }}
+              </div>
             </div>
-          </div>
-
-          <div class="mb-3">
-            <label for="trangThai" class="form-label">Trạng thái</label>
-            <select
-              class="form-select"
-              id="trangThai"
-              [(ngModel)]="form.trangThai"
-              name="trangThai"
-            >
-              <option [value]="true">Đang dùng</option>
-              <option [value]="false">Không dùng nữa</option>
-            </select>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-        <button type="button" class="btn btn-primary" (click)="save()">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">
+          {{ isViewMode ? 'Đóng' : 'Hủy' }}
+        </button>
+        <button *ngIf="!isViewMode" type="button" class="btn btn-primary" (click)="save()">
           {{ isEdit ? 'Cập nhật' : 'Thêm mới' }}
         </button>
       </div>
@@ -215,9 +265,32 @@
   </div>
 </div>
 
-<!-- Modal backdrop -->
+<!-- Modal xác nhận xóa -->
 <div
-  class="modal-backdrop fade"
-  [class.show]="showModal"
-  [style.display]="showModal ? 'block' : 'none'"
-></div>
+  class="modal fade"
+  [class.show]="showDeleteModal"
+  [style.display]="showDeleteModal ? 'block' : 'none'"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận xóa</h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Bạn có chắc chắn muốn xóa loại mũ bảo hiểm
+          <strong>{{ itemToDelete?.tenLoai }}</strong> không?
+        </p>
+        <p class="text-danger">Hành động này không thể hoàn tác!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Hủy</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDeleteFromModal()">Xóa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay -->
+<div *ngIf="showModal || showDeleteModal" class="modal-backdrop fade show"></div>

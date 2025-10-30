@@ -306,7 +306,7 @@
 }
 
 .customer-code {
-  color: #febc49;
+  color: black;
   font-weight: 500;
 }
 
@@ -316,19 +316,22 @@
 }
 
 .status-badge {
-  padding: 4px 12px;
+  padding: 6px 12px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 0.8rem;
   font-weight: 500;
-  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .status-badge.active {
-  background-color: #28a745;
+  background-color: #d4edda; /* match @colors */
+  color: #155724;
 }
 
 .status-badge.inactive {
-  background-color: #dc3545;
+  background-color: #f8d7da; /* match @colors */
+  color: #721c24;
 }
 
 .action-buttons {
@@ -845,5 +848,56 @@ input:checked + .toggle-slider:before {
   .pagination-left,
   .pagination-right {
     justify-content: center;
+  }
+}
+
+/* ===== IMAGE UPLOAD SECTION STYLES ===== */
+.image-upload-section {
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #ff8f00;
+    background-color: rgba(255, 143, 0, 0.05);
+  }
+}
+
+.no-image-placeholder {
+  i {
+    color: #6c757d;
+  }
+}
+
+.image-preview {
+  margin-bottom: 1rem;
+
+  .preview-image {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.upload-controls {
+  .btn {
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+
+    &.btn-outline-primary {
+      border-color: #ff8f00;
+      color: #ff8f00;
+
+      &:hover {
+        background-color: #ff8f00;
+        border-color: #ff8f00;
+        color: white;
+      }
+    }
   }
 }

@@ -11,6 +11,12 @@ export interface KhachHang {
   trangThai?: boolean;
   userId?: number;
   username?: string;
+  // Địa chỉ mặc định từ backend
+  coDiaChiMacDinh?: boolean;
+  diaChiMacDinh?: string;
+  phuongXaMacDinh?: string;
+  quanHuyenMacDinh?: string;
+  tinhThanhMacDinh?: string;
 }
 
 export interface KhachHangSearchParams {

@@ -1,0 +1,376 @@
+<!-- Full-screen form container -->
+<div class="helmet-form-container">
+  <!-- Header -->
+  <div class="form-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button class="btn-back" (click)="onCancel()" title="Quay lại">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <h2 class="form-title">
+          <i class="bi bi-plus-circle me-2"></i>
+          Thêm Chi Tiết sản phẩm mới
+        </h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Content -->
+  <div class="form-content">
+    <div class="form-wrapper">
+      <form (ngSubmit)="onSubmit()" #productForm="ngForm">
+        <!-- Thông tin cơ bản -->
+        <div class="section-title mb-4">
+          <h6 class="text-orange fw-bold mb-0">
+            <i class="bi bi-info-circle me-2"></i>Thông tin cơ bản
+          </h6>
+          <hr class="mt-2" />
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              Mã sản phẩm <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+              <input
+                type="text"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('code')"
+                [(ngModel)]="newProduct.code"
+                name="code"
+                [value]="newProduct.code"
+                readonly
+                style="background-color: #f8f9fa; cursor: not-allowed"
+                (blur)="markFieldTouched('code')"
+              />
+              <div *ngIf="hasFieldError('code')" class="invalid-feedback">
+                {{ getCodeError() }}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              Tên sản phẩm <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-tag"></i></span>
+              <input
+                type="text"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('name')"
+                [(ngModel)]="newProduct.name"
+                name="name"
+                placeholder="Nhập tên sản phẩm"
+                (blur)="markFieldTouched('name')"
+              />
+              <div *ngIf="hasFieldError('name')" class="invalid-feedback">
+                {{ getNameError() }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Giá bán (VNĐ)</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-cash-coin"></i></span>
+              <input
+                type="number"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('price')"
+                [(ngModel)]="newProduct.price"
+                name="price"
+                min="0"
+                max="999999999"
+                placeholder="0"
+                (blur)="markFieldTouched('price')"
+              />
+              <div *ngIf="hasFieldError('price')" class="invalid-feedback">
+                {{ getPriceError() }}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold"
+              >Số lượng <span class="text-danger">*</span></label
+            >
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-box"></i></span>
+              <input
+                type="number"
+                class="form-control"
+                [class.is-invalid]="hasFieldError('quantity')"
+                [(ngModel)]="newProduct.quantity"
+                name="quantity"
+                min="0"
+                max="999999"
+                placeholder="0"
+                (blur)="markFieldTouched('quantity')"
+              />
+              <div *ngIf="hasFieldError('quantity')" class="invalid-feedback">
+                {{ getQuantityError() }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Trạng thái</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
+              <select class="form-select" [(ngModel)]="newProduct.status" name="status">
+                <option value="Đang bán">Đang bán</option>
+                <option value="Ngừng bán">Ngừng bán</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thuộc tính sản phẩm -->
+        <div class="section-title mb-3">
+          <h6 class="text-orange fw-bold mb-0">
+            <i class="bi bi-sliders me-2"></i>Thuộc tính sản phẩm
+          </h6>
+          <hr class="mt-2" />
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-shield me-1"></i>Loại mũ bảo hiểm
+            </label>
+            <app-searchable-dropdown
+              [options]="loaiMuOptions"
+              [selectedValue]="newProduct.loaiMuBaoHiemId"
+              [placeholder]="'-- Chọn loại mũ bảo hiểm --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm loại mũ bảo hiểm mới'"
+              [class.is-invalid]="hasDropdownError('loaiMuBaoHiemId')"
+              (selectionChange)="onSelect('loaiMuBaoHiemId', $event)"
+              (addButtonClick)="openQuickAddModal('loaiMuBaoHiem')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('loaiMuBaoHiemId')" class="invalid-feedback d-block">
+              Vui lòng chọn loại mũ bảo hiểm
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-building me-1"></i>Nhà sản xuất
+            </label>
+            <app-searchable-dropdown
+              [options]="nsxOptions"
+              [selectedValue]="newProduct.nhaSanXuatId"
+              [placeholder]="'-- Chọn nhà sản xuất --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm nhà sản xuất mới'"
+              [class.is-invalid]="hasDropdownError('nhaSanXuatId')"
+              (selectionChange)="onSelect('nhaSanXuatId', $event)"
+              (addButtonClick)="openQuickAddModal('nhaSanXuat')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('nhaSanXuatId')" class="invalid-feedback d-block">
+              Vui lòng chọn nhà sản xuất
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-layers me-1"></i>Chất liệu vỏ
+            </label>
+            <app-searchable-dropdown
+              [options]="chatLieuOptions"
+              [selectedValue]="newProduct.chatLieuVoId"
+              [placeholder]="'-- Chọn chất liệu vỏ --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm chất liệu vỏ mới'"
+              [class.is-invalid]="hasDropdownError('chatLieuVoId')"
+              (selectionChange)="onSelect('chatLieuVoId', $event)"
+              (addButtonClick)="openQuickAddModal('chatLieuVo')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('chatLieuVoId')" class="invalid-feedback d-block">
+              Vui lòng chọn chất liệu vỏ
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-speedometer me-1"></i>Trọng lượng
+            </label>
+            <app-searchable-dropdown
+              [options]="trongLuongOptions"
+              [selectedValue]="newProduct.trongLuongId"
+              [placeholder]="'-- Chọn trọng lượng --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm trọng lượng mới'"
+              [class.is-invalid]="hasDropdownError('trongLuongId')"
+              (selectionChange)="onSelect('trongLuongId', $event)"
+              (addButtonClick)="openQuickAddModal('trongLuong')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('trongLuongId')" class="invalid-feedback d-block">
+              Vui lòng chọn trọng lượng
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-geo-alt me-1"></i>Xuất xứ
+            </label>
+            <app-searchable-dropdown
+              [options]="xuatXuOptions"
+              [selectedValue]="newProduct.xuatXuId"
+              [placeholder]="'-- Chọn xuất xứ --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm xuất xứ mới'"
+              [class.is-invalid]="hasDropdownError('xuatXuId')"
+              (selectionChange)="onSelect('xuatXuId', $event)"
+              (addButtonClick)="openQuickAddModal('xuatXu')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('xuatXuId')" class="invalid-feedback d-block">
+              Vui lòng chọn xuất xứ
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-box me-1"></i>Kiểu dáng mũ
+            </label>
+            <app-searchable-dropdown
+              [options]="kieuDangOptions"
+              [selectedValue]="newProduct.kieuDangMuId"
+              [placeholder]="'-- Chọn kiểu dáng mũ --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm kiểu dáng mũ mới'"
+              [class.is-invalid]="hasDropdownError('kieuDangMuId')"
+              (selectionChange)="onSelect('kieuDangMuId', $event)"
+              (addButtonClick)="openQuickAddModal('kieuDangMu')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('kieuDangMuId')" class="invalid-feedback d-block">
+              Vui lòng chọn kiểu dáng mũ
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-shield-check me-1"></i>Công nghệ an toàn
+            </label>
+            <app-searchable-dropdown
+              [options]="congNgheOptions"
+              [selectedValue]="newProduct.congNgheAnToanId"
+              [placeholder]="'-- Chọn công nghệ an toàn --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm công nghệ an toàn mới'"
+              [class.is-invalid]="hasDropdownError('congNgheAnToanId')"
+              (selectionChange)="onSelect('congNgheAnToanId', $event)"
+              (addButtonClick)="openQuickAddModal('congNgheAnToan')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('congNgheAnToanId')" class="invalid-feedback d-block">
+              Vui lòng chọn công nghệ an toàn
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-palette me-1"></i>Màu sắc
+            </label>
+            <app-searchable-dropdown
+              [options]="mauSacOptions"
+              [selectedValue]="newProduct.mauSacId"
+              [placeholder]="'-- Chọn màu sắc --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm màu sắc mới'"
+              [class.is-invalid]="hasDropdownError('mauSacId')"
+              (selectionChange)="onSelect('mauSacId', $event)"
+              (addButtonClick)="openQuickAddModal('mauSac')"
+            ></app-searchable-dropdown>
+            <div *ngIf="hasDropdownError('mauSacId')" class="invalid-feedback d-block">
+              Vui lòng chọn màu sắc
+            </div>
+          </div>
+        </div>
+
+        <!-- Ảnh sản phẩm -->
+        <div class="section-title mb-3">
+          <h6 class="text-orange fw-bold mb-0"><i class="bi bi-image me-2"></i>Ảnh sản phẩm</h6>
+          <hr class="mt-2" />
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <div class="image-upload-section">
+              <div *ngIf="!newProduct.anhSanPham" class="no-image-placeholder">
+                <i class="bi bi-image display-1 text-muted"></i>
+                <p class="text-muted mt-2">Chưa có ảnh</p>
+              </div>
+              <div *ngIf="newProduct.anhSanPham" class="image-preview">
+                <img [src]="newProduct.anhSanPham" alt="Preview" class="preview-image" />
+              </div>
+              <div class="upload-controls">
+                <input
+                  type="file"
+                  id="imageUpload"
+                  class="form-control d-none"
+                  accept="image/*"
+                  (change)="onFileSelected($event)"
+                />
+                <label for="imageUpload" class="btn btn-outline-primary">
+                  <i class="bi bi-upload me-2"></i>Chọn tệp
+                </label>
+                <small class="text-muted d-block mt-1">Không có tệp nào được chọn</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mô tả sản phẩm -->
+        <div class="section-title mb-3">
+          <h6 class="text-orange fw-bold mb-0">
+            <i class="bi bi-file-text me-2"></i>Mô tả sản phẩm
+          </h6>
+          <hr class="mt-2" />
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <textarea
+              class="form-control"
+              [(ngModel)]="newProduct.description"
+              name="description"
+              rows="4"
+              placeholder="Nhập mô tả chi tiết về sản phẩm..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary me-3" (click)="onCancel()">
+            <i class="bi bi-x-circle me-2"></i>Hủy
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="!isFormValid() || isLoading">
+            <span
+              *ngIf="isLoading"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+            ></span>
+            <i *ngIf="!isLoading" class="bi bi-check-circle me-2"></i>
+            {{ isLoading ? 'Đang thêm...' : 'Thêm mới' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Add Modal -->
+<app-quick-add-modal
+  [show]="showQuickAddModal"
+  [type]="quickAddModalType"
+  (close)="onQuickAddCancel()"
+  (save)="onQuickAddSuccess($event)"
+></app-quick-add-modal>

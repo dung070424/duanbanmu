@@ -30,13 +30,17 @@ export class LoaiMuBaoHiemComponent implements OnInit {
   // Search and filter
   keyword = '';
   trangThai: boolean | null = null; // null = hiển thị tất cả
+  selectedStatus = 'all'; // For radio buttons
   sortField = 'id';
   sortDirection = 'desc';
 
   // Form
   showModal = false;
   isEdit = false;
+  isViewMode = false;
   editingItem: LoaiMuBaoHiemResponse | null = null;
+  showDeleteModal = false;
+  itemToDelete: LoaiMuBaoHiemResponse | null = null;
   form: LoaiMuBaoHiemRequest = {
     tenLoai: '',
     moTa: '',
@@ -96,6 +100,7 @@ export class LoaiMuBaoHiemComponent implements OnInit {
           this.totalElements = response.totalElements || 0;
           this.totalPages = response.totalPages || 0;
           this.loading = false;
+          this.applyFilters();
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -121,11 +126,17 @@ export class LoaiMuBaoHiemComponent implements OnInit {
   }
 
   onSearchChange() {
-    this.loadData();
+    this.applyFilters();
   }
 
   onStatusChange() {
-    this.loadData();
+    // Convert selectedStatus to trangThai
+    if (this.selectedStatus === 'all') {
+      this.trangThai = null;
+    } else {
+      this.trangThai = this.selectedStatus === 'true';
+    }
+    this.applyFilters();
   }
 
   setSort(field: string) {
@@ -159,6 +170,7 @@ export class LoaiMuBaoHiemComponent implements OnInit {
 
   openAddModal() {
     this.isEdit = false;
+    this.isViewMode = false;
     this.editingItem = null;
     this.form = {
       tenLoai: '',
@@ -171,6 +183,7 @@ export class LoaiMuBaoHiemComponent implements OnInit {
 
   openEditModal(item: LoaiMuBaoHiemResponse) {
     this.isEdit = true;
+    this.isViewMode = false;
     this.editingItem = item;
     this.form = {
       tenLoai: item.tenLoai,
@@ -184,6 +197,7 @@ export class LoaiMuBaoHiemComponent implements OnInit {
   closeModal() {
     this.showModal = false;
     this.isEdit = false;
+    this.isViewMode = false;
     this.editingItem = null;
   }
 
@@ -245,18 +259,21 @@ export class LoaiMuBaoHiemComponent implements OnInit {
   }
 
   confirmDelete(item: LoaiMuBaoHiemResponse) {
-    if (confirm(`Bạn có chắc chắn muốn xóa loại mũ "${item.tenLoai}"?`)) {
-      this.api.delete(item.id).subscribe({
-        next: () => {
-          this.loadData();
-          this.cdr.detectChanges();
-        },
-        error: (error) => {
-          console.error('Error deleting:', error);
-          console.error('Có lỗi xảy ra khi xóa dữ liệu');
-        },
-      });
-    }
+    this.itemToDelete = item;
+    this.showDeleteModal = true;
+  }
+
+  delete(item: LoaiMuBaoHiemResponse) {
+    this.api.delete(item.id).subscribe({
+      next: () => {
+        this.loadData();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error deleting:', error);
+        console.error('Có lỗi xảy ra khi xóa dữ liệu');
+      },
+    });
   }
 
   getStatusBadgeClass(trangThai: boolean | null | undefined): string {
@@ -298,9 +315,11 @@ export class LoaiMuBaoHiemComponent implements OnInit {
 
     switch (field) {
       case 'tenLoai':
-        return !this.form.tenLoai?.trim() || 
-               this.form.tenLoai.trim().length < 2 || 
-               this.form.tenLoai.trim().length > 100;
+        return (
+          !this.form.tenLoai?.trim() ||
+          this.form.tenLoai.trim().length < 2 ||
+          this.form.tenLoai.trim().length > 100
+        );
       case 'moTa':
         return !!(this.form.moTa?.trim() && this.form.moTa.trim().length > 500);
       default:
@@ -316,8 +335,10 @@ export class LoaiMuBaoHiemComponent implements OnInit {
     switch (field) {
       case 'tenLoai':
         if (!this.form.tenLoai?.trim()) return 'Tên loại mũ bảo hiểm không được để trống';
-        if (this.form.tenLoai.trim().length < 2) return 'Tên loại mũ bảo hiểm phải có ít nhất 2 ký tự';
-        if (this.form.tenLoai.trim().length > 100) return 'Tên loại mũ bảo hiểm không được vượt quá 100 ký tự';
+        if (this.form.tenLoai.trim().length < 2)
+          return 'Tên loại mũ bảo hiểm phải có ít nhất 2 ký tự';
+        if (this.form.tenLoai.trim().length > 100)
+          return 'Tên loại mũ bảo hiểm không được vượt quá 100 ký tự';
         break;
       case 'moTa':
         return 'Mô tả không được vượt quá 500 ký tự';
@@ -327,5 +348,90 @@ export class LoaiMuBaoHiemComponent implements OnInit {
 
   resetTouchedFields() {
     this.touchedFields.clear();
+  }
+
+  // New methods for the updated UI
+  resetFilter() {
+    this.keyword = '';
+    this.selectedStatus = 'all';
+    this.trangThai = null;
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    let filtered = [...this.items];
+
+    // Apply search filter
+    if (this.keyword?.trim()) {
+      const term = this.keyword.toLowerCase().trim();
+      filtered = filtered.filter(
+        (item) =>
+          item.tenLoai.toLowerCase().includes(term) ||
+          (item.moTa && item.moTa.toLowerCase().includes(term))
+      );
+    }
+
+    // Apply status filter
+    if (this.selectedStatus !== 'all') {
+      const status = this.selectedStatus === 'true';
+      filtered = filtered.filter((item) => item.trangThai === status);
+    }
+
+    this.filteredItems = filtered;
+  }
+
+  onPageSizeChange(event: any) {
+    this.size = parseInt(event.target.value);
+    this.loadData();
+  }
+
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages) {
+      this.page = page;
+      this.loadData();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    const startPage = Math.max(0, this.page - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(this.totalPages - 1, startPage + maxVisiblePages - 1);
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i + 1);
+    }
+    return pages;
+  }
+
+  viewItem(item: LoaiMuBaoHiemResponse) {
+    this.isViewMode = true;
+    this.isEdit = false;
+    this.editingItem = item;
+    this.form = {
+      tenLoai: item.tenLoai,
+      moTa: item.moTa || '',
+      trangThai: item.trangThai,
+    };
+    this.showModal = true;
+  }
+
+  closeDeleteModal() {
+    this.showDeleteModal = false;
+    this.itemToDelete = null;
+  }
+
+  confirmDeleteFromModal() {
+    if (this.itemToDelete) {
+      this.delete(this.itemToDelete);
+      this.closeDeleteModal();
+    }
+  }
+
+  // Add Math object for template
+  Math = Math;
+
+  trackById(index: number, item: LoaiMuBaoHiemResponse): number {
+    return item.id;
   }
 }

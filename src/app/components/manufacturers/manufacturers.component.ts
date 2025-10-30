@@ -26,7 +26,7 @@ export class ManufacturersComponent implements OnInit {
   manufacturers: Manufacturer[] = [];
   filteredManufacturers: Manufacturer[] = [];
   searchTerm: string = '';
-  selectedCountry: string = 'all';
+  selectedStatus: string = 'all';
   // Paging & sorting
   currentPage: number = 0;
   pageSize: number = 10;
@@ -56,8 +56,15 @@ export class ManufacturersComponent implements OnInit {
   }
 
   fetchManufacturers(page: number = 0) {
+    const statusFilter = this.selectedStatus === 'all' ? undefined : this.selectedStatus === 'true';
     this.manufacturerApi
-      .search({ keyword: this.searchTerm || undefined, page, size: this.pageSize, sort: this.sort })
+      .search({
+        keyword: this.searchTerm || undefined,
+        trangThai: statusFilter,
+        page,
+        size: this.pageSize,
+        sort: this.sort,
+      })
       .subscribe((res: PageResponse<ManufacturerResponse>) => {
         this.manufacturers = res.content.map((m) => ({
           id: m.id,
@@ -87,13 +94,63 @@ export class ManufacturersComponent implements OnInit {
   }
 
   onSearchChange() {
+    this.applyFilters();
+  }
+
+  onStatusChange() {
+    this.applyFilters();
+  }
+
+  resetFilter() {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.applyFilters();
+  }
+
+  applyFilters() {
     this.currentPage = 0;
     this.fetchManufacturers(0);
   }
 
-  onCountryChange() {
+  onPageSizeChange(event: any) {
+    this.pageSize = event;
     this.currentPage = 0;
     this.fetchManufacturers(0);
+  }
+
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages) {
+      this.currentPage = page;
+      this.fetchManufacturers(page);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, this.currentPage + 1 - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  prevPage() {
+    if (this.currentPage > 0) {
+      this.goToPage(this.currentPage - 1);
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages - 1) {
+      this.goToPage(this.currentPage + 1);
+    }
   }
 
   closeModal() {
@@ -131,7 +188,10 @@ export class ManufacturersComponent implements OnInit {
     }
 
     // Kiểm tra mô tả (nếu có)
-    if (this.newManufacturer.description?.trim() && this.newManufacturer.description.trim().length > 500) {
+    if (
+      this.newManufacturer.description?.trim() &&
+      this.newManufacturer.description.trim().length > 500
+    ) {
       validationErrors.push('Mô tả không được vượt quá 500 ký tự');
     }
 
@@ -245,19 +305,6 @@ export class ManufacturersComponent implements OnInit {
     this.fetchManufacturers(0);
   }
 
-  // Paging controls
-  nextPage() {
-    if (this.currentPage < this.totalPages - 1) {
-      this.fetchManufacturers(this.currentPage + 1);
-    }
-  }
-
-  prevPage() {
-    if (this.currentPage > 0) {
-      this.fetchManufacturers(this.currentPage - 1);
-    }
-  }
-
   changePageSize(size: number) {
     this.pageSize = size;
     this.fetchManufacturers(0);
@@ -283,6 +330,9 @@ export class ManufacturersComponent implements OnInit {
     return manufacturer.id;
   }
 
+  // Add Math object for template
+  Math = Math;
+
   // Validation methods
   markFieldTouched(field: string) {
     this.touchedFields.add(field);
@@ -295,15 +345,22 @@ export class ManufacturersComponent implements OnInit {
 
     switch (field) {
       case 'name':
-        return !this.newManufacturer.name?.trim() || 
-               this.newManufacturer.name.trim().length < 2 || 
-               this.newManufacturer.name.trim().length > 100;
+        return (
+          !this.newManufacturer.name?.trim() ||
+          this.newManufacturer.name.trim().length < 2 ||
+          this.newManufacturer.name.trim().length > 100
+        );
       case 'country':
-        return !this.newManufacturer.country?.trim() || 
-               this.newManufacturer.country.trim().length < 2 || 
-               this.newManufacturer.country.trim().length > 50;
+        return (
+          !this.newManufacturer.country?.trim() ||
+          this.newManufacturer.country.trim().length < 2 ||
+          this.newManufacturer.country.trim().length > 50
+        );
       case 'description':
-        return !!(this.newManufacturer.description?.trim() && this.newManufacturer.description.trim().length > 500);
+        return !!(
+          this.newManufacturer.description?.trim() &&
+          this.newManufacturer.description.trim().length > 500
+        );
       default:
         return false;
     }
@@ -317,12 +374,15 @@ export class ManufacturersComponent implements OnInit {
     switch (field) {
       case 'name':
         if (!this.newManufacturer.name?.trim()) return 'Tên nhà sản xuất không được để trống';
-        if (this.newManufacturer.name.trim().length < 2) return 'Tên nhà sản xuất phải có ít nhất 2 ký tự';
-        if (this.newManufacturer.name.trim().length > 100) return 'Tên nhà sản xuất không được vượt quá 100 ký tự';
+        if (this.newManufacturer.name.trim().length < 2)
+          return 'Tên nhà sản xuất phải có ít nhất 2 ký tự';
+        if (this.newManufacturer.name.trim().length > 100)
+          return 'Tên nhà sản xuất không được vượt quá 100 ký tự';
         break;
       case 'country':
         if (!this.newManufacturer.country?.trim()) return 'Quốc gia không được để trống';
-        if (this.newManufacturer.country.trim().length < 2) return 'Tên quốc gia phải có ít nhất 2 ký tự';
+        if (this.newManufacturer.country.trim().length < 2)
+          return 'Tên quốc gia phải có ít nhất 2 ký tự';
         return 'Tên quốc gia không được vượt quá 50 ký tự';
       case 'description':
         return 'Mô tả không được vượt quá 500 ký tự';

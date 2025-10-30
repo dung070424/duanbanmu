@@ -1,217 +1,208 @@
 <div class="container-fluid">
-  <div class="row">
-    <div class="col-12">
-      <!-- Bộ Lọc Tìm Kiếm Section -->
-      <div class="filter-search-section">
-        <div class="section-header">
-          <i class="bi bi-funnel"></i>
-          <h3>Bộ Lọc Tìm Kiếm</h3>
+  <!-- Bộ Lọc Tìm Kiếm Section -->
+  <div class="filter-section">
+    <div class="section-title">
+      <i class="bi bi-funnel"></i>
+      <h3>Bộ Lọc Tìm Kiếm</h3>
+    </div>
+
+    <div class="filter-content">
+      <div class="filter-row">
+        <div class="search-section">
+          <label class="filter-label">Tìm kiếm</label>
+          <div class="search-input-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Mã, tên, email, SĐT..."
+              [(ngModel)]="searchTerm"
+              (input)="onFilterChange()"
+            />
+          </div>
         </div>
 
-        <div class="filter-content">
-          <div class="search-section">
-            <label class="filter-label">Tìm kiếm</label>
-            <div class="search-input-wrapper">
-              <i class="bi bi-search search-icon"></i>
+        <div class="status-section">
+          <label class="filter-label">Trạng thái</label>
+          <div class="radio-group">
+            <label class="radio-item">
               <input
-                type="text"
-                class="search-input"
-                placeholder="Mã, tên, email, SĐT..."
-                [(ngModel)]="searchTerm"
-                (input)="onFilterChange()"
+                type="radio"
+                name="status"
+                value=""
+                [(ngModel)]="selectedStatus"
+                (change)="onFilterChange()"
+                checked
               />
-            </div>
-            <div class="total-customers">Tổng số khách hàng: {{ totalCustomers }}</div>
-          </div>
-
-          <div class="status-section">
-            <label class="filter-label">Trạng thái</label>
-            <div class="radio-group">
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  name="status"
-                  value=""
-                  [(ngModel)]="selectedStatus"
-                  (change)="onFilterChange()"
-                  checked
-                />
-                <span class="radio-custom"></span>
-                <span class="radio-text">Tất cả</span>
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  name="status"
-                  value="true"
-                  [(ngModel)]="selectedStatus"
-                  (change)="onFilterChange()"
-                />
-                <span class="radio-custom"></span>
-                <span class="radio-text">Kích hoạt</span>
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  name="status"
-                  value="false"
-                  [(ngModel)]="selectedStatus"
-                  (change)="onFilterChange()"
-                />
-                <span class="radio-custom"></span>
-                <span class="radio-text">Hủy kích hoạt</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="action-buttons">
-            <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
-            <button class="btn-add" (click)="openAdd()">Thêm Khách Hàng</button>
-            <button class="btn-export" (click)="forceRefreshData()">Refresh Data</button>
-            <button class="btn-import">Nhập từ Excel</button>
+              <span class="radio-custom"></span>
+              <span class="radio-text">Tất cả</span>
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="true"
+                [(ngModel)]="selectedStatus"
+                (change)="onFilterChange()"
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Kích hoạt</span>
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="false"
+                [(ngModel)]="selectedStatus"
+                (change)="onFilterChange()"
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Hủy kích hoạt</span>
+            </label>
           </div>
         </div>
       </div>
 
-      <!-- Danh Sách Khách Hàng Section -->
-      <div class="customer-list-section">
-        <div class="section-header">
-          <i class="bi bi-calendar3"></i>
-          <h3>Danh Sách Khách Hàng</h3>
+      <div class="info-and-actions">
+        <div class="total-customers">Tổng số khách hàng: {{ totalCustomers }}</div>
+        <div class="action-buttons">
+          <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
+          <button class="btn-export" (click)="exportToExcel()">Xuất Excel</button>
+          <button class="btn-add" (click)="openAdd()">Thêm Khách Hàng</button>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <div class="list-content">
-          <div class="list-header">
-            <span class="customer-count">{{ filteredList.length }} khách hàng</span>
-          </div>
+  <!-- Danh Sách Khách Hàng Section -->
+  <div class="customer-list-section">
+    <div class="section-title">
+      <i class="bi bi-people"></i>
+      <h3>Danh Sách Khách Hàng</h3>
+    </div>
 
-          <!-- Customer Table -->
-          <div class="table-container">
-            <table class="customer-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Mã Khách Hàng</th>
-                  <th>Tên Khách Hàng</th>
-                  <th>Số Điện Thoại</th>
-                  <th>Email</th>
-                  <th>Địa Chỉ</th>
-                  <th>Trạng Thái</th>
-                  <th>Hành Động</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let kh of paginatedList; let i = index">
-                  <td>{{ currentPage * pageSize + i + 1 }}</td>
-                  <td>
-                    <span class="customer-code" *ngIf="kh.maKhachHang">{{ kh.maKhachHang }}</span>
-                    <span class="no-data" *ngIf="!kh.maKhachHang">-</span>
-                  </td>
-                  <td>{{ kh.tenKhachHang }}</td>
-                  <td>
-                    <span *ngIf="kh.soDienThoai">{{ kh.soDienThoai }}</span>
-                    <span class="no-data" *ngIf="!kh.soDienThoai">Không có số điện thoại</span>
-                  </td>
-                  <td>
-                    <span *ngIf="kh.email">{{ kh.email }}</span>
-                    <span class="no-data" *ngIf="!kh.email">Không có email</span>
-                  </td>
-                  <td>
-                    <span>{{ getCustomerAddress(kh) }}</span>
-                  </td>
-                  <td>
-                    <span
-                      class="status-badge"
-                      [class.active]="kh.trangThai"
-                      [class.inactive]="!kh.trangThai"
-                    >
-                      {{ kh.trangThai ? 'Kích Hoạt' : 'Đã Hủy' }}
-                    </span>
-                  </td>
-                  <td>
-                    <div class="action-buttons">
-                      <label class="toggle-switch">
-                        <input
-                          type="checkbox"
-                          [checked]="kh.trangThai"
-                          (change)="toggleStatus(kh)"
-                        />
-                        <span class="toggle-slider"></span>
-                      </label>
-                      <button class="btn-edit" (click)="openEdit(kh)" title="Chỉnh sửa">
-                        <i class="bi bi-pencil"></i>
-                      </button>
-                      <button class="btn-delete" (click)="delete(kh)" title="Xóa">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pagination -->
-          <div class="pagination-container">
-            <div class="pagination-left">
-              <span class="pagination-label">Hiển thị</span>
-              <input
-                type="number"
-                class="page-size-input"
-                [(ngModel)]="pageSize"
-                (change)="onPageSizeChange()"
-                min="1"
-                max="100"
-                value="5"
-              />
-              <span class="pagination-label">mục / trang</span>
-            </div>
-
-            <div class="pagination-center">
-              <span class="pagination-info">
-                Hiển thị {{ currentPage * pageSize + 1 }} -
-                {{ Math.min((currentPage + 1) * pageSize, totalElements) }} /
-                {{ totalElements }} mục
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px">STT</th>
+            <th>Mã Khách Hàng</th>
+            <th>Tên Khách Hàng</th>
+            <th>Số Điện Thoại</th>
+            <th>Email</th>
+            <th>Địa Chỉ</th>
+            <th>Trạng Thái</th>
+            <th>Hành Động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let kh of paginatedList; let i = index">
+            <td class="text-center">{{ currentPage * pageSize + i + 1 }}</td>
+            <td>
+              <span class="customer-code" *ngIf="kh.maKhachHang">{{ kh.maKhachHang }}</span>
+              <span class="no-data" *ngIf="!kh.maKhachHang">-</span>
+            </td>
+            <td>{{ kh.tenKhachHang }}</td>
+            <td>
+              <span *ngIf="kh.soDienThoai">{{ kh.soDienThoai }}</span>
+              <span class="no-data" *ngIf="!kh.soDienThoai">Không có số điện thoại</span>
+            </td>
+            <td>
+              <span *ngIf="kh.email">{{ kh.email }}</span>
+              <span class="no-data" *ngIf="!kh.email">Không có email</span>
+            </td>
+            <td>
+              <span>{{ getCustomerAddress(kh) }}</span>
+            </td>
+            <td>
+              <span
+                class="status-badge"
+                [class.active]="kh.trangThai"
+                [class.inactive]="!kh.trangThai"
+              >
+                {{ kh.trangThai ? 'Kích Hoạt' : 'Đã Hủy' }}
               </span>
-            </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-edit" (click)="openEdit(kh)" title="Chỉnh sửa">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-view" (click)="view(kh)" title="Xem chi tiết">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn-delete" (click)="delete(kh)" title="Xóa">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-            <div class="pagination-right">
-              <button class="pagination-btn" [disabled]="currentPage === 0" (click)="goToPage(0)">
-                <i class="bi bi-chevron-double-left"></i>
-              </button>
-              <button
-                class="pagination-btn"
-                [disabled]="currentPage === 0"
-                (click)="goToPage(currentPage - 1)"
-              >
-                <i class="bi bi-chevron-left"></i>
-              </button>
-              <button
-                *ngFor="let page of getPageNumbers()"
-                class="pagination-btn page-number"
-                [class.active]="page === currentPage + 1"
-                (click)="goToPage(page - 1)"
-              >
-                {{ page }}
-              </button>
-              <button
-                class="pagination-btn"
-                [disabled]="currentPage === totalPages - 1"
-                (click)="goToPage(currentPage + 1)"
-              >
-                <i class="bi bi-chevron-right"></i>
-              </button>
-              <button
-                class="pagination-btn"
-                [disabled]="currentPage === totalPages - 1"
-                (click)="goToPage(totalPages - 1)"
-              >
-                <i class="bi bi-chevron-double-right"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+      <!-- No data message -->
+      <div *ngIf="filteredList.length === 0" class="no-data-message">
+        <i class="bi bi-people"></i>
+        <h4>Không tìm thấy khách hàng nào</h4>
+        <p>Hãy thử thay đổi bộ lọc hoặc thêm khách hàng mới</p>
       </div>
+    </div>
+  </div>
+
+  <!-- Pagination Section -->
+  <div class="pagination-section">
+    <div class="pagination-left">
+      <div class="page-size-control">
+        <label>Hiển thị</label>
+        <select class="page-size-select" [ngModel]="pageSize" (change)="onPageSizeChange()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+        <span>mục / trang</span>
+      </div>
+    </div>
+
+    <div class="pagination-right">
+      <div>
+        <span>
+          Hiển thị {{ currentPage * pageSize + 1 }} -
+          {{ Math.min((currentPage + 1) * pageSize, totalElements) }} / {{ totalElements }} mục
+        </span>
+      </div>
+      <button class="pagination-btn" [disabled]="currentPage === 0" (click)="goToPage(0)">
+        <i class="bi bi-chevron-double-left"></i>
+      </button>
+      <button
+        class="pagination-btn"
+        [disabled]="currentPage === 0"
+        (click)="goToPage(currentPage - 1)"
+      >
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button
+        *ngFor="let page of getPageNumbers()"
+        class="pagination-btn"
+        [class.active]="page - 1 === currentPage"
+        (click)="goToPage(page - 1)"
+      >
+        {{ page }}
+      </button>
+      <button
+        class="pagination-btn"
+        [disabled]="currentPage >= totalPages - 1"
+        (click)="goToPage(currentPage + 1)"
+      >
+        <i class="bi bi-chevron-right"></i>
+      </button>
+      <button
+        class="pagination-btn"
+        [disabled]="currentPage >= totalPages - 1"
+        (click)="goToPage(totalPages - 1)"
+      >
+        <i class="bi bi-chevron-double-right"></i>
+      </button>
     </div>
   </div>
 </div>
@@ -226,57 +217,44 @@
   </div>
 </div>
 
-<!-- Empty state -->
-<div *ngIf="!loading && filteredList.length === 0" class="empty-state">
-  <i class="bi bi-people display-1 text-muted"></i>
-  <h4 class="mt-3">Không có khách hàng nào</h4>
-  <p class="text-muted">Hãy thêm khách hàng đầu tiên của bạn</p>
-  <button class="btn-add" (click)="openAdd()">
-    <i class="bi bi-plus-circle"></i>
-    Thêm khách hàng mới
-  </button>
-</div>
-
 <!-- Customer Modal -->
 <div
-  class="modal fade"
+  class="modal fade customer-form-modal"
   [class.show]="showModal"
+  [class.blurred]="blurCustomerModal"
   [style.display]="showModal ? 'block' : 'none'"
-  tabindex="-1"
 >
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi bi-person-plus" *ngIf="!isEditMode"></i>
-          <i class="bi bi-person-gear" *ngIf="isEditMode"></i>
-          {{ isEditMode ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới' }}
-        </h5>
-        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      <!-- Breadcrumb -->
+      <div class="modal-breadcrumb" *ngIf="!isViewMode && !isEditMode">
+        <span>Trang chủ</span>
+        <span class="breadcrumb-separator">/</span>
+        <span>Khách hàng</span>
+        <span class="breadcrumb-separator">/</span>
+        <span>Form khách hàng</span>
       </div>
 
-      <div class="modal-body">
+      <!-- Modal Header -->
+      <div class="modal-header-custom">
+        <h5 class="modal-title-custom">
+          <span *ngIf="isViewMode">Xem khách hàng</span>
+          <span *ngIf="isEditMode">Chỉnh sửa khách hàng</span>
+          <span *ngIf="!isViewMode && !isEditMode">Thêm Khách Hàng</span>
+        </h5>
+        <button type="button" class="btn-close-custom" (click)="closeModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body-custom">
         <form class="needs-validation" novalidate>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="maKhachHang" class="form-label">
-                  <i class="bi bi-person-badge me-1"></i>Mã khách hàng
-                </label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="maKhachHang"
-                  [(ngModel)]="form.maKhachHang"
-                  name="maKhachHang"
-                  placeholder="Nhập mã khách hàng"
-                />
-              </div>
-            </div>
-            <div class="col-md-6">
+          <div class="form-row-custom">
+            <!-- Left Section: Customer Information -->
+            <div class="form-left-section">
               <div class="mb-3">
                 <label for="tenKhachHang" class="form-label">
-                  <i class="bi bi-person me-1"></i>Họ và tên <span class="text-danger">*</span>
+                  Tên khách hàng <span class="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -284,35 +262,13 @@
                   id="tenKhachHang"
                   [(ngModel)]="form.tenKhachHang"
                   name="tenKhachHang"
-                  placeholder="Nhập họ và tên"
+                  placeholder="Nhập tên khách hàng"
                   required
                 />
               </div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="col-md-6">
               <div class="mb-3">
-                <label for="email" class="form-label">
-                  <i class="bi bi-envelope me-1"></i>Email <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="email"
-                  class="form-control"
-                  id="email"
-                  [(ngModel)]="form.email"
-                  name="email"
-                  placeholder="Nhập email"
-                  required
-                />
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="soDienThoai" class="form-label">
-                  <i class="bi bi-phone me-1"></i>Số điện thoại <span class="text-danger">*</span>
-                </label>
+                <label for="soDienThoai" class="form-label">Số điện thoại</label>
                 <input
                   type="tel"
                   class="form-control"
@@ -320,146 +276,179 @@
                   [(ngModel)]="form.soDienThoai"
                   name="soDienThoai"
                   placeholder="Nhập số điện thoại"
-                  required
                 />
               </div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="col-md-6">
               <div class="mb-3">
-                <label for="ngaySinh" class="form-label">
-                  <i class="bi bi-calendar me-1"></i>Ngày sinh
-                </label>
+                <label for="email" class="form-label">Email</label>
                 <input
-                  type="date"
+                  type="email"
                   class="form-control"
-                  id="ngaySinh"
-                  [(ngModel)]="form.ngaySinh"
-                  name="ngaySinh"
+                  id="email"
+                  [(ngModel)]="form.email"
+                  name="email"
+                  placeholder="Nhập email"
                 />
               </div>
-            </div>
-            <div class="col-md-6">
+
               <div class="mb-3">
-                <label for="gioiTinh" class="form-label">
-                  <i class="bi bi-gender-ambiguous me-1"></i>Giới tính
-                </label>
-                <select
-                  class="form-select"
-                  id="gioiTinh"
-                  [(ngModel)]="form.gioiTinh"
-                  name="gioiTinh"
+                <label class="form-label">Giới tính</label>
+                <div class="gender-radio-group">
+                  <label class="gender-radio-item">
+                    <input
+                      type="radio"
+                      name="gioiTinh"
+                      [value]="true"
+                      [(ngModel)]="form.gioiTinh"
+                    />
+                    <span class="radio-custom"></span>
+                    <span class="radio-text">Nam</span>
+                  </label>
+                  <label class="gender-radio-item">
+                    <input
+                      type="radio"
+                      name="gioiTinh"
+                      [value]="false"
+                      [(ngModel)]="form.gioiTinh"
+                    />
+                    <span class="radio-custom"></span>
+                    <span class="radio-text">Nữ</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="button" class="btn-cancel" (click)="closeModal()">Hủy</button>
+                <button
+                  *ngIf="!isViewMode"
+                  type="button"
+                  class="btn-add-new"
+                  (click)="save()"
+                  [disabled]="loading || !isFormValid()"
                 >
-                  <option value="true">Nam</option>
-                  <option value="false">Nữ</option>
-                </select>
+                  {{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}
+                  <i class="bi bi-chevron-down"></i>
+                </button>
               </div>
             </div>
-          </div>
 
-          <!-- Address Management Section -->
-          <div class="mb-3">
-            <label class="form-label"> <i class="bi bi-geo-alt me-1"></i>Địa chỉ </label>
+            <!-- Right Section: Address Management -->
+            <div class="form-right-section">
+              <div class="address-management-header">
+                <div class="address-title">
+                  <i class="bi bi-geo-alt-fill address-title-icon"></i>
+                  <span>Quản lý địa chỉ</span>
+                  <span class="address-count-badge">{{ getTotalAddressCount() }} địa chỉ</span>
+                </div>
+                <button type="button" class="btn-add-address" (click)="openAddressModal()">
+                  <i class="bi bi-plus-lg"></i>
+                  Thêm địa chỉ
+                </button>
+              </div>
 
-            <!-- Existing Addresses (for edit mode) -->
-            <div class="address-list" *ngIf="isEditMode && addressList.length > 0">
-              <div class="address-item" *ngFor="let address of addressList; let i = index">
-                <div class="address-content">
-                  <div class="address-info">
-                    <span class="address-text">{{ getFullAddress(address) }}</span>
-                    <span class="address-default" *ngIf="address.macDinh">(Mặc định)</span>
+              <!-- Address Navigation -->
+              <div class="address-navigation" *ngIf="getTotalAddressCount() > 0">
+                <button
+                  type="button"
+                  class="btn-nav"
+                  (click)="previousAddress()"
+                  [disabled]="currentAddressIndex === 0"
+                >
+                  < Trước
+                </button>
+                <span class="address-counter"
+                  >Địa chỉ {{ currentAddressIndex + 1 }}/{{ getTotalAddressCount() }}</span
+                >
+                <button
+                  type="button"
+                  class="btn-nav"
+                  (click)="nextAddress()"
+                  [disabled]="currentAddressIndex >= getTotalAddressCount() - 1"
+                >
+                  Tiếp >
+                </button>
+              </div>
+
+              <!-- Address Display Card -->
+              <div class="address-card" *ngIf="getTotalAddressCount() > 0">
+                <div class="address-card-header">
+                  <div class="address-card-title">
+                    <i class="bi bi-geo-alt-fill address-icon"></i>
+                    <span>Địa chỉ {{ currentAddressIndex + 1 }}</span>
+                    <span class="address-default-badge" *ngIf="getCurrentAddress()?.macDinh">
+                      Mặc định
+                    </span>
                   </div>
-                  <div class="address-actions">
+                  <div class="address-card-actions">
                     <button
                       type="button"
-                      class="btn btn-sm btn-outline-primary"
-                      (click)="editAddress(address)"
+                      class="btn-icon-edit"
+                      (click)="editCurrentAddress()"
+                      title="Chỉnh sửa"
                     >
                       <i class="bi bi-pencil"></i>
                     </button>
                     <button
                       type="button"
-                      class="btn btn-sm btn-outline-danger"
-                      (click)="deleteAddress(address)"
+                      class="btn-icon-delete"
+                      (click)="deleteCurrentAddress()"
+                      title="Xóa"
                     >
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- Pending Addresses (for new customer) -->
-            <div class="address-list" *ngIf="!isEditMode && pendingAddresses.length > 0">
-              <div class="address-item" *ngFor="let address of pendingAddresses; let i = index">
-                <div class="address-content">
-                  <div class="address-info">
-                    <span class="address-text">{{ getFullAddress(address) }}</span>
-                    <span class="address-default" *ngIf="address.macDinh">(Mặc định)</span>
+                <div class="address-card-body">
+                  <div class="address-detail-item" *ngIf="getCurrentAddress()?.diaChiChiTiet">
+                    <i class="bi bi-house address-detail-icon"></i>
+                    <span>{{ getCurrentAddress()?.diaChiChiTiet }}</span>
                   </div>
-                  <div class="address-actions">
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary"
-                      (click)="editPendingAddress(i)"
-                    >
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-danger"
-                      (click)="deletePendingAddress(i)"
-                    >
-                      <i class="bi bi-trash"></i>
-                    </button>
+                  <div class="address-detail-item" *ngIf="getCurrentAddress()?.tinhThanh">
+                    <i class="bi bi-building address-detail-icon"></i>
+                    <span>{{ getCurrentAddress()?.tinhThanh }}</span>
+                  </div>
+                  <div class="address-detail-item" *ngIf="getCurrentAddress()?.quanHuyen">
+                    <i class="bi bi-clock address-detail-icon"></i>
+                    <span>{{ getCurrentAddress()?.quanHuyen }}</span>
+                  </div>
+                  <div class="address-detail-item" *ngIf="getCurrentAddress()?.phuongXa">
+                    <i class="bi bi-person address-detail-icon"></i>
+                    <span>{{ getCurrentAddress()?.phuongXa }}</span>
                   </div>
                 </div>
+
+                <div class="address-card-footer">
+                  <label class="default-address-checkbox">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="currentAddressMacDinh"
+                      name="macDinh"
+                      (change)="toggleCurrentAddressDefault()"
+                    />
+                    <span>Địa chỉ mặc định</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Empty Address State -->
+              <div class="address-empty-state" *ngIf="getTotalAddressCount() === 0">
+                <div class="empty-icon-wrapper">
+                  <i class="bi bi-geo-alt"></i>
+                </div>
+                <p>Chưa có địa chỉ nào</p>
               </div>
             </div>
-
-            <!-- Add Address Button -->
-            <div class="add-address-section">
-              <button
-                type="button"
-                class="btn btn-outline-success btn-sm"
-                (click)="openAddressModal()"
-              >
-                <i class="bi bi-plus-circle me-1"></i>Thêm địa chỉ
-              </button>
-              <span class="text-muted ms-2" *ngIf="getTotalAddressCount() === 0"
-                >Chưa có địa chỉ nào</span
-              >
-            </div>
           </div>
 
-          <div class="mb-3">
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                [(ngModel)]="form.trangThai"
-                name="trangThai"
-                id="trangThai"
-              />
-              <label class="form-check-label" for="trangThai"> Khách hàng đang hoạt động </label>
-            </div>
-          </div>
+          <!-- Hidden field for status -->
+          <input
+            type="hidden"
+            [(ngModel)]="form.trangThai"
+            name="trangThai"
+            [value]="form.trangThai"
+          />
         </form>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="save()"
-          [disabled]="loading || !isFormValid()"
-        >
-          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-          {{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}
-        </button>
       </div>
     </div>
   </div>
@@ -470,59 +459,96 @@
   class="modal fade"
   [class.show]="showViewModal"
   [style.display]="showViewModal ? 'block' : 'none'"
-  tabindex="-1"
 >
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header text-white">
         <h5 class="modal-title">
           <i class="bi bi-person-lines-fill"></i>
           Chi tiết khách hàng
         </h5>
-        <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+        <button type="button" class="btn-close btn-close-white" (click)="closeViewModal()"></button>
       </div>
 
       <div class="modal-body">
-        <div class="row">
-          <div class="col-md-6">
-            <div class="info-item">
-              <label>Mã khách hàng:</label>
-              <span>{{ selectedKhachHang?.maKhachHang || 'Chưa có' }}</span>
+        <!-- Customer Avatar Section -->
+        <div class="customer-avatar-section">
+          <div class="avatar-container">
+            <div class="customer-avatar">
+              <i class="bi bi-person-fill"></i>
             </div>
-            <div class="info-item">
-              <label>Họ và tên:</label>
-              <span>{{ selectedKhachHang?.tenKhachHang }}</span>
-            </div>
-            <div class="info-item">
-              <label>Email:</label>
-              <span>{{ selectedKhachHang?.email }}</span>
-            </div>
-            <div class="info-item">
-              <label>Số điện thoại:</label>
-              <span>{{ selectedKhachHang?.soDienThoai }}</span>
+            <div class="customer-basic-info">
+              <h4 class="customer-name">
+                {{ selectedKhachHang?.tenKhachHang || 'Chưa cập nhật' }}
+              </h4>
+              <p class="customer-code">{{ selectedKhachHang?.maKhachHang || 'Chưa có mã' }}</p>
+              <div class="status-indicator">
+                <span
+                  class="status-badge"
+                  [class.active]="selectedKhachHang?.trangThai"
+                  [class.inactive]="!selectedKhachHang?.trangThai"
+                >
+                  <i class="bi bi-circle-fill"></i>
+                  {{ getTrangThaiText(selectedKhachHang?.trangThai) }}
+                </span>
+              </div>
             </div>
           </div>
-          <div class="col-md-6">
-            <div class="info-item">
-              <label>Ngày sinh:</label>
-              <span>{{ selectedKhachHang?.ngaySinh | date : 'dd/MM/yyyy' }}</span>
+        </div>
+
+        <!-- Customer Details Grid -->
+        <div class="customer-details-grid">
+          <div class="detail-card">
+            <div class="detail-icon">
+              <i class="bi bi-envelope"></i>
             </div>
-            <div class="info-item">
-              <label>Giới tính:</label>
-              <span>{{ getGioiTinhText(selectedKhachHang?.gioiTinh) }}</span>
+            <div class="detail-content">
+              <label>Email</label>
+              <span>{{ selectedKhachHang?.email || 'Chưa cập nhật' }}</span>
             </div>
-            <div class="info-item">
-              <label>Địa chỉ:</label>
-              <span>{{ selectedKhachHang?.diaChi || 'Chưa cập nhật' }}</span>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-icon">
+              <i class="bi bi-telephone"></i>
             </div>
-            <div class="info-item">
-              <label>Trạng thái:</label>
-              <span
-                class="badge"
-                [class]="selectedKhachHang?.trangThai ? 'bg-success' : 'bg-danger'"
-              >
-                {{ getTrangThaiText(selectedKhachHang?.trangThai) }}
-              </span>
+            <div class="detail-content">
+              <label>Số điện thoại</label>
+              <span>{{ selectedKhachHang?.soDienThoai || 'Chưa cập nhật' }}</span>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-icon">
+              <i class="bi bi-calendar-date"></i>
+            </div>
+            <div class="detail-content">
+              <label>Ngày sinh</label>
+              <span>{{
+                selectedKhachHang?.ngaySinh
+                  ? (selectedKhachHang?.ngaySinh | date : 'dd/MM/yyyy')
+                  : 'Chưa cập nhật'
+              }}</span>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-icon">
+              <i class="bi bi-gender-ambiguous"></i>
+            </div>
+            <div class="detail-content">
+              <label>Giới tính</label>
+              <span>{{ getGioiTinhText(selectedKhachHang?.gioiTinh) || 'Chưa cập nhật' }}</span>
+            </div>
+          </div>
+
+          <div class="detail-card full-width">
+            <div class="detail-icon">
+              <i class="bi bi-geo-alt"></i>
+            </div>
+            <div class="detail-content">
+              <label>Địa chỉ</label>
+              <span>{{ getCustomerAddress(selectedKhachHang) }}</span>
             </div>
           </div>
         </div>
@@ -541,16 +567,19 @@
   class="modal fade"
   [class.show]="showAddressList"
   [style.display]="showAddressList ? 'block' : 'none'"
-  tabindex="-1"
 >
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header text-white">
         <h5 class="modal-title">
           <i class="bi bi-geo-alt-fill"></i>
           Quản lý địa chỉ - {{ selectedKhachHang?.tenKhachHang }}
         </h5>
-        <button type="button" class="btn-close" (click)="closeAddressManagement()"></button>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          (click)="closeAddressManagement()"
+        ></button>
       </div>
 
       <div class="modal-body">
@@ -642,17 +671,20 @@
   class="modal fade"
   [class.show]="showAddressModal"
   [style.display]="showAddressModal ? 'block' : 'none'"
-  tabindex="-1"
 >
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header text-white">
         <h5 class="modal-title">
           <i class="bi bi-plus-circle" *ngIf="!isEditAddressMode"></i>
           <i class="bi bi-pencil-square" *ngIf="isEditAddressMode"></i>
           {{ isEditAddressMode ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới' }}
         </h5>
-        <button type="button" class="btn-close" (click)="closeAddressModal()"></button>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          (click)="closeAddressModal()"
+        ></button>
       </div>
 
       <div class="modal-body">
@@ -819,7 +851,7 @@
         </form>
       </div>
 
-      <div class="modal-footer">
+      <div class="modal-footer address-modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeAddressModal()">Hủy</button>
         <button type="button" class="btn btn-primary" (click)="saveAddress()" [disabled]="loading">
           <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
@@ -832,7 +864,7 @@
 
 <!-- Modal backdrop -->
 <div
-  *ngIf="showModal || showViewModal || showAddressList"
+  *ngIf="showModal || showViewModal || showAddressList || showAddressModal"
   class="modal-backdrop fade show"
   (click)="closeAllModals()"
 ></div>

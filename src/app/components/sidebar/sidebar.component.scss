@@ -50,11 +50,51 @@
   width: 64px !important;
 }
 
-.sidebar.collapsed .logo-text,
-.sidebar.collapsed .user-card,
-.sidebar.collapsed .submenu,
-.sidebar.collapsed .nav-link span,
-.sidebar.collapsed .nav-link .bi-chevron-down {
+/* Hover effect - mở sidebar khi hover */
+.sidebar.collapsed:hover {
+  width: 260px !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001; /* Đảm bảo sidebar hiển thị trên các element khác */
+}
+
+/* Hiển thị text và elements khi hover */
+.sidebar.collapsed:hover .logo-text,
+.sidebar.collapsed:hover .user-card,
+.sidebar.collapsed:hover .submenu,
+.sidebar.collapsed:hover .nav-link span,
+.sidebar.collapsed:hover .nav-link .bi-chevron-down {
+  display: block !important;
+  animation: fadeIn 0.2s ease-in;
+}
+
+/* Animation cho fade in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hiển thị text và elements khi hover */
+.sidebar.collapsed:hover .logo-text,
+.sidebar.collapsed:hover .user-card,
+.sidebar.collapsed:hover .submenu,
+.sidebar.collapsed:hover .nav-link span,
+.sidebar.collapsed:hover .nav-link .bi-chevron-down {
+  display: block !important;
+  animation: fadeIn 0.2s ease-in;
+}
+
+/* Ẩn lại khi không hover */
+.sidebar.collapsed:not(:hover) .logo-text,
+.sidebar.collapsed:not(:hover) .user-card,
+.sidebar.collapsed:not(:hover) .submenu,
+.sidebar.collapsed:not(:hover) .nav-link span,
+.sidebar.collapsed:not(:hover) .nav-link .bi-chevron-down {
   display: none !important;
 }
 

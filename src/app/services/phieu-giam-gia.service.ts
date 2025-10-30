@@ -87,64 +87,12 @@ export class PhieuGiamGiaService {
     );
   }
 
-  // Mock data cho khách hàng (tạm thời)
+  // Lấy danh sách khách hàng từ API thật
   getAllCustomers(): Observable<KhachHangResponse> {
-    const mockCustomers = [
-      {
-        id: 1,
-        maKhachHang: 'KH00001',
-        tenKhachHang: 'Nguyễn Văn A',
-        gioiTinh: true,
-        ngaySinh: '15/3/1990',
-        tongSoLanMua: 25,
-        lanMuaGanNhat: '15/9/2024'
-      },
-      {
-        id: 2,
-        maKhachHang: 'KH00002',
-        tenKhachHang: 'Đinh Thế Mạnh',
-        gioiTinh: true,
-        ngaySinh: '12/9/1998',
-        tongSoLanMua: 19,
-        lanMuaGanNhat: '28/8/2025'
-      },
-      {
-        id: 3,
-        maKhachHang: 'KH00003',
-        tenKhachHang: 'Trịnh Châu Anh',
-        gioiTinh: false,
-        ngaySinh: '17/4/1986',
-        tongSoLanMua: 2,
-        lanMuaGanNhat: '9/3/2025'
-      },
-      {
-        id: 4,
-        maKhachHang: 'KH00004',
-        tenKhachHang: 'Lê Thị B',
-        gioiTinh: false,
-        ngaySinh: '22/7/1995',
-        tongSoLanMua: 8,
-        lanMuaGanNhat: '12/10/2024'
-      },
-      {
-        id: 5,
-        maKhachHang: 'KH00005',
-        tenKhachHang: 'Trần Văn C',
-        gioiTinh: true,
-        ngaySinh: '5/11/1988',
-        tongSoLanMua: 15,
-        lanMuaGanNhat: '3/9/2024'
-      }
-    ];
-
-    return new Observable(observer => {
-      observer.next({
-        success: true,
-        message: 'Lấy danh sách khách hàng thành công',
-        data: mockCustomers
-      });
-      observer.complete();
-    });
+    return this.http.get<KhachHangResponse>(
+      `${this.API_BASE_URL}/khach-hang/for-voucher`,
+      { headers: this.getHeaders() }
+    );
   }
 
   // Utility methods
@@ -173,12 +121,35 @@ export class PhieuGiamGiaService {
     return this.http.post<ApiResponse<any>>(`${this.API_BASE_URL}/phieu-giam-gia/sample`, {});
   }
 
-  togglePhieuGiamGiaStatus(id: number): Observable<ApiResponse<any>> {
-    return this.http.put<ApiResponse<any>>(`${this.API_BASE_URL}/phieu-giam-gia/${id}/toggle`, {});
+  togglePhieuGiamGiaStatus(phieu: PhieuGiamGiaResponse): Observable<ApiResponse<any>> {
+    // Sử dụng endpoint PUT hiện có để cập nhật trạng thái
+    const requestData = {
+      maPhieu: phieu.maPhieu,
+      tenPhieuGiamGia: phieu.tenPhieuGiamGia,
+      loaiPhieuGiamGia: phieu.loaiPhieuGiamGia,
+      giaTriGiam: phieu.giaTriGiam,
+      giaTriToiThieu: phieu.giaTriToiThieu,
+      soTienToiDa: phieu.soTienToiDa,
+      hoaDonToiThieu: phieu.hoaDonToiThieu,
+      soLuongDung: phieu.soLuongDung,
+      ngayBatDau: phieu.ngayBatDau,
+      ngayKetThuc: phieu.ngayKetThuc,
+      trangThai: !phieu.trangThai // Toggle trạng thái
+    };
+    
+    return this.http.put<ApiResponse<any>>(`${this.API_BASE_URL}/phieu-giam-gia/${phieu.id}`, requestData);
   }
 
   getAllActivePhieuGiamGia(): Observable<ApiResponse<PhieuGiamGiaResponse[]>> {
     return this.getActivePhieuGiamGia();
   }
 
+  // Export to Excel
+  exportToExcel(data: any[]): Observable<ApiResponse<string>> {
+    return this.http.post<ApiResponse<string>>(
+      `${this.API_BASE_URL}/phieu-giam-gia/export-excel`,
+      { data },
+      { headers: this.getHeaders() }
+    );
+  }
 }

@@ -79,19 +79,17 @@ export class TrongLuongComponent implements OnInit {
         this.totalElements = response.totalElements;
         this.totalPages = response.totalPages;
         this.page = response.number;
-        this.display = this.items; // Hiển thị trực tiếp từ API response
+        this.applyFilters();
         this.cdr.detectChanges();
       });
   }
 
   onSearchChange() {
-    this.page = 0;
-    this.fetch(0);
+    this.applyFilters();
   }
 
   onStatusChange() {
-    this.page = 0;
-    this.fetch(0);
+    this.applyFilters();
   }
 
   setSort(field: 'giaTriTrongLuong' | 'donVi' | 'moTa' | 'trangThai') {
@@ -319,4 +317,60 @@ export class TrongLuongComponent implements OnInit {
   resetTouchedFields() {
     this.touchedFields.clear();
   }
+
+  // New methods for the updated UI
+  resetFilter() {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    let filtered = [...this.items];
+
+    // Apply search filter
+    if (this.searchTerm?.trim()) {
+      const term = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(
+        (item) =>
+          item.giaTriTrongLuong.toString().includes(term) ||
+          item.donVi.toLowerCase().includes(term) ||
+          (item.moTa && item.moTa.toLowerCase().includes(term))
+      );
+    }
+
+    // Apply status filter
+    if (this.selectedStatus !== 'all') {
+      const status = this.selectedStatus === 'true';
+      filtered = filtered.filter((item) => item.trangThai === status);
+    }
+
+    this.display = filtered;
+  }
+
+  onPageSizeChange(event: any) {
+    this.size = parseInt(event.target.value);
+    this.fetch(0);
+  }
+
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages) {
+      this.fetch(page);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    const startPage = Math.max(0, this.page - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(this.totalPages - 1, startPage + maxVisiblePages - 1);
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i + 1);
+    }
+    return pages;
+  }
+
+  // Add Math object for template
+  Math = Math;
 }

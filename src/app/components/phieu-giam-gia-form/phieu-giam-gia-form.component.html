@@ -1,190 +1,284 @@
-<div class="phieu-giam-gia-container">
-  <!-- Header -->
-  <div class="header">
-    <div class="breadcrumb">
-      <span>Trang chủ</span>
-      <span class="separator">/</span>
-      <span>Phiếu giảm giá</span>
-      <span class="separator">/</span>
-      <span class="current">Form phiếu giảm giá</span>
+<div class="phieu-giam-gia-form-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <button class="btn btn-back" (click)="goBack()" title="Quay lại">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <h1 class="page-title">Thêm Phiếu Giảm Giá</h1>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    <!-- Left Section: Thêm Phiếu Giảm Giá -->
-    <div class="left-section">
-      <div class="section-header">
-        <h3>Thêm Phiếu Giảm Giá</h3>
-      </div>
-      
+  <!-- Two Column Layout -->
+  <div class="two-column-layout">
+    <!-- Left Column: Thêm Phiếu Giảm Giá -->
+    <div class="left-column">
       <div class="form-container">
-        <!-- Mã Phiếu -->
-        <div class="form-group">
-          <label for="phieuCode">Mã Phiếu</label>
-          <div class="code-input-container">
-            <input 
-              type="text" 
-              id="phieuCode"
-              [(ngModel)]="phieuCode" 
-              class="form-control"
-              placeholder="Nhập mã phiếu hoặc chọn từ gợi ý"
-              (focus)="onCodeInputFocus()"
-              (blur)="onCodeInputBlur()">
-            <button 
-              type="button" 
-              class="btn-suggestions"
-              (click)="toggleSuggestions()"
-              title="Xem gợi ý mã phiếu">
-              <i class="bi bi-lightbulb"></i>
-            </button>
-            <button 
-              type="button" 
-              class="btn-refresh"
-              (click)="generateNewSuggestions()"
-              title="Tạo mã mới">
-              <i class="bi bi-arrow-clockwise"></i>
-            </button>
+        <!-- Basic Information Section -->
+        <div class="basic-info-section">
+          <div class="info-header">
+            <i class="bi bi-percent info-icon"></i>
+            <span class="info-text">Thông tin cơ bản</span>
           </div>
-          
-          <!-- Suggestions Dropdown -->
-          <div class="suggestions-dropdown" *ngIf="showSuggestions">
-            <div class="suggestions-header">
-              <span>Gợi ý mã phiếu:</span>
-              <button 
-                type="button" 
-                class="btn-close-suggestions"
-                (click)="showSuggestions = false">
-                <i class="bi bi-x"></i>
-              </button>
+        </div>
+
+        <!-- Privacy Selection Row - Moved above Tên field -->
+        <div class="form-row">
+          <div class="form-group privacy-group">
+            <label>Trạng thái Phiếu</label>
+            <div class="radio-group">
+              <div class="radio-item">
+                <input 
+                  type="radio" 
+                  id="public" 
+                  name="privacy" 
+                  [value]="true"
+                  [(ngModel)]="isPublic"
+                  [checked]="isPublic === true"
+                  (change)="onPrivacyStatusChange()">
+                <label for="public" class="radio-label">
+                  <span class="radio-custom"></span>
+                  Công khai
+                </label>
+              </div>
+              <div class="radio-item">
+                <input 
+                  type="radio" 
+                  id="private" 
+                  name="privacy" 
+                  [value]="false" 
+                  [(ngModel)]="isPublic"
+                  [checked]="isPublic === false"
+                  (change)="onPrivacyStatusChange()">
+                <label for="private" class="radio-label">
+                  <span class="radio-custom"></span>
+                  Cá nhân
+                </label>
+              </div>
             </div>
-            <div class="suggestions-list">
-              <div 
-                *ngFor="let code of suggestedCodes" 
-                class="suggestion-item"
-                (click)="selectSuggestedCode(code)">
-                <span class="suggestion-code">{{ code }}</span>
-                <i class="bi bi-check-circle suggestion-icon"></i>
+            <div class="error-message" *ngIf="getFieldError('isPublic')">
+              {{ getFieldError('isPublic') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Hàng 1: Mã Phiếu và Tên -->
+        <div class="form-row">
+          <div class="form-group flex-item">
+            <label for="phieuCode">Mã Phiếu</label>
+            <div class="input-group">
+              <input 
+                type="text" 
+                id="phieuCode"
+                [(ngModel)]="phieuCode"
+                class="form-control"
+                [class.error]="getFieldError('phieuCode')"
+                placeholder="Nhập mã phiếu hoặc chọn từ gợi ý"
+                (input)="clearFieldError('phieuCode')">
+              <span 
+                class="input-icon-inside"
+                (click)="toggleSuggestions()"
+                title="Xem gợi ý">
+                <i class="bi bi-lightbulb"></i>
+              </span>
+            </div>
+            <div class="error-message" *ngIf="getFieldError('phieuCode')">
+              {{ getFieldError('phieuCode') }}
+            </div>
+            <div class="suggestions-dropdown" *ngIf="showSuggestions && suggestedCodes.length > 0">
+              <div class="suggestion-item" *ngFor="let code of suggestedCodes" (click)="selectSuggestedCode(code)">
+                {{ code }}
+              </div>
+              <div class="suggestion-item" (click)="generateNewSuggestions()">
+                <i class="bi bi-arrow-clockwise"></i> Tạo mã mới
               </div>
             </div>
           </div>
+          
+          <div class="form-group flex-item">
+            <label for="phieuName">Tên</label>
+            <input 
+              type="text" 
+              id="phieuName"
+              [(ngModel)]="phieuName"
+              class="form-control"
+              [class.error]="getFieldError('phieuName')"
+              placeholder="Nhập tên phiếu giảm giá"
+              (input)="clearFieldError('phieuName')">
+            <div class="error-message" *ngIf="getFieldError('phieuName')">
+              {{ getFieldError('phieuName') }}
+            </div>
+          </div>
         </div>
 
-        <!-- Tên -->
-        <div class="form-group">
-          <label for="phieuName">Tên</label>
-          <input 
-            type="text" 
-            id="phieuName"
-            [(ngModel)]="phieuName" 
-            class="form-control"
-            placeholder="Nhập tên phiếu giảm giá">
+        <!-- Hàng 2: Loại và Số lượng -->
+        <div class="form-row">
+          <div class="form-group flex-item">
+            <label for="phieuType">Loại</label>
+            <select 
+              id="phieuType"
+              [(ngModel)]="phieuType"
+              (change)="onPhieuTypeChange()"
+              class="form-control">
+              <option [value]="true">Tiền mặt</option>
+              <option [value]="false">Phần trăm</option>
+            </select>
+          </div>
+          
+          <div class="form-group flex-item">
+            <label for="quantity">Số lượng</label>
+            <input 
+              type="number" 
+              id="quantity"
+              [(ngModel)]="quantity"
+              class="form-control"
+              [class.error]="getFieldError('quantity')"
+              [class.disabled-field]="!isPublic"
+              [attr.readonly]="!isPublic ? 'readonly' : null"
+              [attr.disabled]="!isPublic ? 'disabled' : null"
+              placeholder="Nhập số lượng"
+              min="1"
+              (input)="onQuantityInput($event)"
+              (keydown)="onQuantityKeydown($event)"
+              (click)="onQuantityClick($event)"
+              (focus)="onQuantityFocus($event)">
+            <div class="error-message" *ngIf="getFieldError('quantity')">
+              {{ getFieldError('quantity') }}
+            </div>
+            <div class="field-note" *ngIf="!isPublic">
+              <!-- <small>Số lượng sẽ được tính tự động dựa trên số khách hàng đã chọn</small> -->
+            </div>
+          </div>
         </div>
 
-        <!-- Loại -->
-        <div class="form-group">
-          <label for="phieuType">Loại</label>
-          <select 
-            id="phieuType"
-            [(ngModel)]="phieuType" 
-            class="form-control">
-            <option [value]="true">Tiền mặt</option>
-            <option [value]="false">Phần trăm</option>
-          </select>
-        </div>
-
-        <!-- Số tiền giảm tối đa -->
-        <div class="form-group">
-          <label for="maxDiscount">Số tiền giảm tối đa</label>
-          <div class="input-group">
+        <!-- Hàng 3: Giá trị giảm và Số tiền giảm tối thiểu -->
+        <div class="form-row">
+          <div class="form-group flex-item">
+            <label for="maxDiscount">Giá trị giảm</label>
             <input 
               type="number" 
               id="maxDiscount"
-              [(ngModel)]="maxDiscount" 
+              [(ngModel)]="maxDiscount"
               class="form-control"
-              placeholder="Nhập số tiền giảm tối đa">
-            <span class="input-group-text">{{ phieuType ? 'VND' : '%' }}</span>
+              [class.error]="getFieldError('maxDiscount')"
+              [placeholder]="phieuType ? 'Nhập giá trị giảm (VND)' : 'Nhập % giảm (1-100%)'"
+              (input)="clearFieldError('maxDiscount')">
+            <div class="error-message" *ngIf="getFieldError('maxDiscount')">
+              {{ getFieldError('maxDiscount') }}
+            </div>
+            <div class="field-note" *ngIf="!getFieldError('maxDiscount')">
+              <small *ngIf="phieuType">Giá trị giảm tiền mặt phải từ 1,000 VND trở lên</small>
+              <small *ngIf="!phieuType">Giá trị giảm phần trăm phải từ 1% đến 100%</small>
+            </div>
           </div>
-        </div>
 
-        <!-- Số tiền giảm tối thiểu -->
-        <div class="form-group">
-          <label for="minDiscount">Số tiền giảm tối thiểu</label>
-          <div class="input-group">
+          <div class="form-group flex-item" *ngIf="phieuType">
+            <label for="minDiscount">Số tiền giảm tối thiểu</label>
             <input 
               type="number" 
               id="minDiscount"
-              [(ngModel)]="minDiscount" 
+              [(ngModel)]="minDiscount"
               class="form-control"
-              placeholder="Nhập số tiền giảm tối thiểu"
-              min="0">
-            <span class="input-group-text">{{ phieuType ? 'VND' : '%' }}</span>
+              [class.error]="getFieldError('minDiscount')"
+              placeholder="Nhập số tiền giảm tối thiểu (VND)"
+              (input)="clearFieldError('minDiscount')">
+            <div class="error-message" *ngIf="getFieldError('minDiscount')">
+              {{ getFieldError('minDiscount') }}
+            </div>
           </div>
         </div>
 
-        <!-- Hóa đơn tối thiểu -->
-        <div class="form-group">
-          <label for="minInvoice">Hóa đơn tối thiểu</label>
-          <div class="input-group">
+        <!-- Hàng 4: Hóa đơn tối thiểu và Trạng thái -->
+        <div class="form-row">
+          <div class="form-group flex-item">
+            <label for="minInvoice">Hóa đơn tối thiểu</label>
             <input 
               type="number" 
               id="minInvoice"
-              [(ngModel)]="minInvoice" 
+              [(ngModel)]="minInvoice"
               class="form-control"
-              placeholder="Nhập hóa đơn tối thiểu">
-            <span class="input-group-text">VND</span>
+              [class.error]="getFieldError('minInvoice')"
+              placeholder="Nhập hóa đơn tối thiểu (VND)"
+              (input)="clearFieldError('minInvoice')">
+            <div class="error-message" *ngIf="getFieldError('minInvoice')">
+              {{ getFieldError('minInvoice') }}
+            </div>
+          </div>
+          
+          <!-- Trường trạng thái đã được ẩn -->
+          <!-- <div class="form-group flex-item">
+            <label for="trangThai">Trạng thái</label>
+            <select 
+              id="trangThai"
+              [(ngModel)]="trangThai"
+              class="form-control"
+              [class.error]="getFieldError('trangThai')"
+              (change)="clearFieldError('trangThai')">
+              <option value="sap_dien_ra">Sắp diễn ra</option>
+              <option value="dang_dien_ra">Đang diễn ra</option>
+              <option value="ket_thuc">Kết thúc</option>
+            </select>
+            <div class="error-message" *ngIf="getFieldError('trangThai')">
+              {{ getFieldError('trangThai') }}
+            </div>
+          </div> -->
+        </div>
+
+        <!-- Hàng 5: Ngày bắt đầu và Ngày kết thúc -->
+        <div class="form-row">
+          <div class="form-group flex-item">
+            <label for="startDate">Ngày bắt đầu</label>
+            <input 
+              type="date" 
+              id="startDate"
+              [(ngModel)]="startDate"
+              class="form-control"
+              [class.error]="getFieldError('startDate')"
+              (input)="clearFieldError('startDate'); updateTrangThaiOnDateChange()">
+            <div class="error-message" *ngIf="getFieldError('startDate')">
+              {{ getFieldError('startDate') }}
+            </div>
+          </div>
+          
+          <div class="form-group flex-item">
+            <label for="endDate">Ngày kết thúc</label>
+            <input 
+              type="date" 
+              id="endDate"
+              [(ngModel)]="endDate"
+              class="form-control"
+              [class.error]="getFieldError('endDate')"
+              (input)="clearFieldError('endDate'); updateTrangThaiOnDateChange()">
+            <div class="error-message" *ngIf="getFieldError('endDate')">
+              {{ getFieldError('endDate') }}
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Số lượng -->
-        <div class="form-group">
-          <label for="quantity">Số lượng</label>
-          <input 
-            type="number" 
-            id="quantity"
-            [(ngModel)]="quantity" 
-            class="form-control"
-            placeholder="Nhập số lượng">
-        </div>
-
-        <!-- Trạng thái -->
-        <div class="form-group">
-          <label for="trangThai">Trạng thái</label>
-          <select 
-            id="trangThai"
-            [(ngModel)]="trangThai" 
-            class="form-control">
-            <option [ngValue]="true">Hoạt động</option>
-            <option [ngValue]="false">Không hoạt động</option>
-          </select>
-        </div>
-
-        <!-- Ngày bắt đầu -->
-        <div class="form-group">
-          <label for="startDate">Ngày bắt đầu</label>
-          <input 
-            type="date" 
-            id="startDate"
-            [(ngModel)]="startDate" 
-            class="form-control">
-        </div>
-
-        <!-- Ngày kết thúc -->
-        <div class="form-group">
-          <label for="endDate">Ngày kết thúc</label>
-          <input 
-            type="date" 
-            id="endDate"
-            [(ngModel)]="endDate" 
-            class="form-control">
-        </div>
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button 
+          type="button"
+          class="btn btn-primary"
+          (click)="savePhieuGiamGia()"
+          [disabled]="isSaving">
+          <span *ngIf="isSaving" class="spinner-border spinner-border-sm"></span>
+          {{ isSaving ? 'Đang thêm...' : 'Thêm mới' }}
+        </button>
+        <button 
+          type="button"
+          class="btn btn-secondary"
+          (click)="resetForm()">
+          Hủy
+        </button>
       </div>
     </div>
 
-    <!-- Right Section: Chọn Khách Hàng -->
-    <div class="right-section">
+    <!-- Right Column: Customer Selection -->
+    <div class="right-column">
       <div class="section-header">
-        <h3>Chọn Khách Hàng</h3>
+        <h3 class="section-title">Chọn Khách Hàng</h3>
       </div>
 
       <!-- Search -->
@@ -196,9 +290,8 @@
             [(ngModel)]="searchTerm"
             (input)="filterCustomers()"
             class="search-input"
-            placeholder="Tìm theo mã hoặc tên...">
+            placeholder="Tìm theo mã, tên, email hoặc số điện thoại...">
         </div>
-        <button class="btn-all">Tất cả</button>
       </div>
 
       <!-- Customer List -->
@@ -207,23 +300,25 @@
           <table class="customer-table">
             <thead>
               <tr>
-                <th>Mã KH</th>
+                <th>STT</th>
+                <th>Mã Khách Hàng</th>
                 <th>Tên Khách Hàng</th>
-                <th>Giới tính</th>
-                <th>Ngày sinh</th>
-                <th>Tổng số lần mua</th>
+                <th>Giới Tính</th>
+                <th>Ngày Sinh</th>
+                <th>Số lần mua</th>
                 <th>Lần mua gần nhất</th>
                 <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let customer of filteredCustomers" class="customer-row">
+              <tr *ngFor="let customer of filteredCustomers; let i = index" class="customer-row">
+                <td>{{ i + 1 }}</td>
                 <td>{{ customer.maKhachHang }}</td>
                 <td>{{ customer.tenKhachHang }}</td>
                 <td>{{ getGenderText(customer.gioiTinh) }}</td>
-                <td>{{ customer.ngaySinh }}</td>
-                <td>{{ customer.tongSoLanMua }}</td>
-                <td>{{ customer.lanMuaGanNhat }}</td>
+                <td>{{ formatDate(customer.ngaySinh) }}</td>
+                <td>{{ customer.soLanMua }}</td>
+                <td>{{ formatDate(customer.lanMuaGanNhat) }}</td>
                 <td>
                   <button 
                     class="btn-select"
@@ -240,24 +335,30 @@
 
       <!-- Selected Customers -->
       <div class="selected-customers-container">
-        <h4>Khách Hàng Đã Chọn</h4>
+        <h4 class="section-title">Khách Hàng Đã Chọn</h4>
         <div class="selected-table-container">
           <table class="selected-table">
             <thead>
               <tr>
-                <th>Mã KH</th>
+                <th>STT</th>
+                <th>Mã Khách Hàng</th>
                 <th>Tên Khách Hàng</th>
-                <th>Giới tính</th>
-                <th>Ngày sinh</th>
+                <th>Giới Tính</th>
+                <th>Ngày Sinh</th>
+                <th>Số lần mua</th>
+                <th>Lần mua gần nhất</th>
                 <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let customer of selectedCustomers" class="selected-row">
+              <tr *ngFor="let customer of selectedCustomers; let i = index" class="selected-row">
+                <td>{{ i + 1 }}</td>
                 <td>{{ customer.maKhachHang }}</td>
                 <td>{{ customer.tenKhachHang }}</td>
                 <td>{{ getGenderText(customer.gioiTinh) }}</td>
-                <td>{{ customer.ngaySinh }}</td>
+                <td>{{ formatDate(customer.ngaySinh) }}</td>
+                <td>{{ customer.soLanMua }}</td>
+                <td>{{ formatDate(customer.lanMuaGanNhat) }}</td>
                 <td>
                   <button 
                     class="btn-remove"
@@ -267,7 +368,7 @@
                 </td>
               </tr>
               <tr *ngIf="selectedCustomers.length === 0">
-                <td colspan="5" class="no-selection">
+                <td colspan="8" class="no-selection">
                   Chưa có khách hàng nào được chọn
                 </td>
               </tr>
@@ -276,21 +377,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Action Buttons -->
-  <div class="action-buttons">
-    <button 
-      class="btn-save"
-      (click)="savePhieuGiamGia()"
-      [disabled]="isSaving">
-      {{ isSaving ? 'Đang lưu...' : 'Lưu Phiếu Giảm Giá' }}
-    </button>
-    <button 
-      class="btn-cancel"
-      (click)="goBack()">
-      Hủy
-    </button>
   </div>
 
   <!-- Messages -->

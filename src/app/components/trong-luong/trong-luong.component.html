@@ -1,162 +1,210 @@
 <div class="container-fluid">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Quản lý trọng lượng</h2>
-    <button class="btn btn-primary" (click)="openAddModal()">
-      <i class="bi bi-plus-circle me-1"></i>Thêm trọng lượng mới
-    </button>
-  </div>
-
-  <div class="row g-3 mb-3">
-    <div class="col-md-6">
-      <label class="form-label">Tìm kiếm:</label>
-      <input
-        class="form-control"
-        placeholder="Tìm theo đơn vị, mô tả..."
-        [(ngModel)]="searchTerm"
-        (input)="onSearchChange()"
-      />
+  <!-- Bộ Lọc Tìm Kiếm Section -->
+  <div class="filter-section">
+    <div class="section-title">
+      <i class="bi bi-funnel"></i>
+      <h3>Bộ Lọc Tìm Kiếm</h3>
     </div>
-    <div class="col-md-3">
-      <label class="form-label">Trạng thái:</label>
-      <select class="form-select" [(ngModel)]="selectedStatus" (change)="onStatusChange()">
-        <option value="all">Tất cả</option>
-        <option value="active">Đang dùng</option>
-        <option value="inactive">Không dùng nữa</option>
-      </select>
-    </div>
-  </div>
 
-  <div class="table-responsive">
-    <table class="table table-striped table-hover">
-      <thead class="table-dark">
-        <tr>
-          <th (click)="setSort('giaTriTrongLuong')" style="cursor: pointer">
-            Giá trị
-            <i
-              class="bi ms-1 text-white"
-              [ngClass]="{
-                'bi-caret-up-fill': sort === 'giaTriTrongLuong,asc',
-                'bi-caret-down-fill': sort === 'giaTriTrongLuong,desc',
-                'bi-arrow-down-up': !sort.startsWith('giaTriTrongLuong')
-              }"
-              aria-hidden="true"
-            ></i>
-          </th>
-          <th (click)="setSort('donVi')" style="cursor: pointer">
-            Đơn vị
-            <i
-              class="bi ms-1 text-white"
-              [ngClass]="{
-                'bi-caret-up-fill': sort === 'donVi,asc',
-                'bi-caret-down-fill': sort === 'donVi,desc',
-                'bi-arrow-down-up': !sort.startsWith('donVi')
-              }"
-              aria-hidden="true"
-            ></i>
-          </th>
-          <th (click)="setSort('moTa')" style="cursor: pointer">
-            Mô tả
-            <i
-              class="bi ms-1 text-white"
-              [ngClass]="{
-                'bi-caret-up-fill': sort === 'moTa,asc',
-                'bi-caret-down-fill': sort === 'moTa,desc',
-                'bi-arrow-down-up': !sort.startsWith('moTa')
-              }"
-              aria-hidden="true"
-            ></i>
-          </th>
-          <th (click)="setSort('trangThai')" style="cursor: pointer">
-            Trạng thái
-            <i
-              class="bi ms-1 text-white"
-              [ngClass]="{
-                'bi-caret-up-fill': sort === 'trangThai,asc',
-                'bi-caret-down-fill': sort === 'trangThai,desc',
-                'bi-arrow-down-up': !sort.startsWith('trangThai')
-              }"
-              aria-hidden="true"
-            ></i>
-          </th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let t of display; trackBy: trackById">
-          <td>{{ t.giaTriTrongLuong | number : '1.2-2' }}</td>
-          <td>{{ t.donVi }}</td>
-          <td class="text-truncate" style="max-width: 320px">{{ t.moTa || '-' }}</td>
-          <td>
-            <span class="badge" [class]="t.trangThai ? 'bg-success' : 'bg-secondary'">{{
-              t.trangThai ? 'Đang dùng' : 'Không dùng nữa'
-            }}</span>
-          </td>
-          <td>
-            <div class="btn-group">
-              <button class="btn btn-sm btn-outline-info" (click)="viewItem(t)" title="Xem">
-                <i class="bi bi-eye"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-warning" (click)="openEditModal(t)" title="Sửa">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="delete(t)" title="Xóa">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="d-flex justify-content-between align-items-center my-3">
-    <div>
-      <button
-        class="btn btn-outline-secondary btn-sm me-2"
-        (click)="prevPage()"
-        [disabled]="page === 0"
-      >
-        Trang trước
-      </button>
-      <button
-        class="btn btn-outline-secondary btn-sm"
-        (click)="nextPage()"
-        [disabled]="page + 1 >= totalPages"
-      >
-        Trang sau
-      </button>
-    </div>
-    <div>
-      <span class="me-3">Trang {{ page + 1 }}/{{ totalPages || 1 }}</span>
-      <select
-        class="form-select form-select-sm d-inline-block"
-        style="width: auto"
-        [(ngModel)]="size"
-        (ngModelChange)="changePageSize($event)"
-      >
-        <option [ngValue]="5">5</option>
-        <option [ngValue]="10">10</option>
-        <option [ngValue]="20">20</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <span *ngIf="isViewMode">Xem trọng lượng</span>
-            <span *ngIf="isEditMode">Chỉnh sửa trọng lượng</span>
-            <span *ngIf="!isViewMode && !isEditMode">Thêm trọng lượng mới</span>
-          </h5>
-          <button type="button" class="btn-close" (click)="closeModal()"></button>
+    <div class="filter-content">
+      <div class="filter-row">
+        <div class="search-section">
+          <label class="filter-label">Tìm kiếm</label>
+          <div class="search-input-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Mã, đơn vị, mô tả..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+            />
+          </div>
         </div>
-        <div class="modal-body">
-          <form>
-            <div class="form-group mb-3">
-              <label>Giá trị trọng lượng <span class="text-danger">*</span></label>
+
+        <div class="status-section">
+          <label class="filter-label">Trạng thái</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="all"
+                [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()"
+                checked
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Tất cả</span>
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="true"
+                [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()"
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Đang hoạt động</span>
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                name="status"
+                value="false"
+                [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()"
+              />
+              <span class="radio-custom"></span>
+              <span class="radio-text">Ngừng</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-and-actions">
+        <div class="total-customers">Tổng số trọng lượng: {{ totalElements }}</div>
+        <div class="action-buttons">
+          <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
+          <button class="btn-add" (click)="openAddModal()">Thêm Trọng Lượng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danh Sách Trọng Lượng Section -->
+  <div class="customer-list-section">
+    <div class="section-title">
+      <i class="bi bi-speedometer2"></i>
+      <h3>Danh Sách Trọng Lượng</h3>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px">STT</th>
+            <th>Giá trị</th>
+            <th>Đơn vị</th>
+            <th>Mô tả</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of display; let index = index; trackBy: trackById">
+            <td class="text-center">{{ page * size + index + 1 }}</td>
+            <td>
+              <span class="customer-code">{{ t.giaTriTrongLuong | number : '1.2-2' }}</span>
+            </td>
+            <td>
+              <span class="no-data">{{ t.donVi || '-' }}</span>
+            </td>
+            <td>
+              <span class="no-data">{{ t.moTa || '-' }}</span>
+            </td>
+            <td>
+              <span
+                class="status-badge"
+                [class.active]="t.trangThai"
+                [class.inactive]="!t.trangThai"
+              >
+                {{ t.trangThai ? 'Đang hoạt động' : 'Ngừng' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-edit" (click)="openEditModal(t)" title="Chỉnh sửa">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-view" (click)="viewItem(t)" title="Xem chi tiết">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- No data message -->
+      <div *ngIf="display.length === 0" class="no-data-message">
+        <i class="bi bi-speedometer2"></i>
+        <h4>Không tìm thấy trọng lượng nào</h4>
+        <p>Hãy thử thay đổi bộ lọc hoặc thêm trọng lượng mới</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination Section -->
+  <div class="pagination-section">
+    <div class="pagination-left">
+      <div class="page-size-control">
+        <label>Hiển thị</label>
+        <select class="page-size-select" [ngModel]="size" (change)="onPageSizeChange($event)">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+        <span>mục / trang</span>
+      </div>
+    </div>
+
+    <div class="pagination-right">
+      <div>
+        <span>
+          Hiển thị {{ page * size + 1 }} - {{ Math.min((page + 1) * size, totalElements) }} /
+          {{ totalElements }} mục
+        </span>
+      </div>
+      <button class="pagination-btn" [disabled]="page === 0" (click)="goToPage(0)">
+        <i class="bi bi-chevron-double-left"></i>
+      </button>
+      <button class="pagination-btn" [disabled]="page === 0" (click)="prevPage()">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button
+        *ngFor="let pageNum of getPageNumbers()"
+        class="pagination-btn"
+        [class.active]="pageNum - 1 === page"
+        (click)="goToPage(pageNum - 1)"
+      >
+        {{ pageNum }}
+      </button>
+      <button class="pagination-btn" [disabled]="page >= totalPages - 1" (click)="nextPage()">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+      <button
+        class="pagination-btn"
+        [disabled]="page >= totalPages - 1"
+        (click)="goToPage(totalPages - 1)"
+      >
+        <i class="bi bi-chevron-double-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal thêm/sửa/xem trọng lượng -->
+<div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header text-white">
+        <h5 class="modal-title">
+          <span *ngIf="isViewMode">Xem trọng lượng</span>
+          <span *ngIf="isEditMode">Chỉnh sửa trọng lượng</span>
+          <span *ngIf="!isViewMode && !isEditMode">Thêm trọng lượng mới</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-speedometer2 me-1"></i>Giá trị trọng lượng
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -169,16 +217,18 @@
                 placeholder="Nhập giá trị trọng lượng"
                 (blur)="markFieldTouched('giaTriTrongLuong')"
               />
-              <div *ngIf="hasFieldError('giaTriTrongLuong')" class="invalid-feedback">
+              <div *ngIf="hasFieldError('giaTriTrongLuong')" class="invalid-feedback d-block">
                 {{ getFieldError('giaTriTrongLuong') }}
               </div>
             </div>
-            <div class="form-group mb-3">
-              <label>Đơn vị <span class="text-danger">*</span></label>
-              <select 
-                class="form-control" 
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-rulers me-1"></i>Đơn vị
+              </label>
+              <select
+                class="form-control"
                 [class.is-invalid]="hasFieldError('donVi')"
-                [(ngModel)]="form.donVi" 
+                [(ngModel)]="form.donVi"
                 name="donVi"
                 [disabled]="isViewMode"
                 (change)="markFieldTouched('donVi')"
@@ -187,12 +237,31 @@
                 <option value="gram">Gram (g)</option>
                 <option value="kg">Kilogram (kg)</option>
               </select>
-              <div *ngIf="hasFieldError('donVi')" class="invalid-feedback">
+              <div *ngIf="hasFieldError('donVi')" class="invalid-feedback d-block">
                 {{ getFieldError('donVi') }}
               </div>
             </div>
-            <div class="form-group mb-3">
-              <label>Mô tả</label>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-toggle-on me-1"></i>Trạng thái
+              </label>
+              <select
+                class="form-control"
+                [(ngModel)]="form.trangThai"
+                name="trangThai"
+                [disabled]="isViewMode"
+              >
+                <option [ngValue]="true">Đang hoạt động</option>
+                <option [ngValue]="false">Ngừng</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-file-text me-1"></i>Mô tả
+              </label>
               <textarea
                 class="form-control"
                 [class.is-invalid]="hasFieldError('moTa')"
@@ -203,55 +272,51 @@
                 placeholder="Nhập mô tả (tùy chọn)"
                 (blur)="markFieldTouched('moTa')"
               ></textarea>
-              <div *ngIf="hasFieldError('moTa')" class="invalid-feedback">
+              <div *ngIf="hasFieldError('moTa')" class="invalid-feedback d-block">
                 {{ getFieldError('moTa') }}
               </div>
             </div>
-            <div class="form-group mb-3">
-              <label>Trạng thái</label>
-              <select class="form-control" [(ngModel)]="form.trangThai" name="trangThai" [disabled]="isViewMode">
-                <option [ngValue]="true">Đang hoạt động</option>
-                <option [ngValue]="false">Ngừng</option>
-              </select>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeModal()">
-            {{ isViewMode ? 'Đóng' : 'Hủy' }}
-          </button>
-          <button *ngIf="!isViewMode" class="btn btn-primary" (click)="save()">
-            {{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}
-          </button>
-        </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">
+          {{ isViewMode ? 'Đóng' : 'Hủy' }}
+        </button>
+        <button *ngIf="!isViewMode" type="button" class="btn btn-primary" (click)="save()">
+          {{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}
+        </button>
       </div>
     </div>
   </div>
-
-  <!-- Delete Modal -->
-  <div
-    class="modal fade"
-    [class.show]="showDeleteModal"
-    [style.display]="showDeleteModal ? 'block' : 'none'"
-  >
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Xác nhận xóa</h5>
-          <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
-        </div>
-        <div class="modal-body">
-          Bạn có chắc chắn muốn xóa trọng lượng
-          <strong>{{ toDelete?.giaTriTrongLuong }} {{ toDelete?.donVi }}</strong
-          >?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Hủy</button>
-          <button type="button" class="btn btn-danger" (click)="confirmDelete()">Xóa</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="showModal || showDeleteModal" class="modal-backdrop fade show"></div>
 </div>
+
+<!-- Modal xác nhận xóa -->
+<div
+  class="modal fade"
+  [class.show]="showDeleteModal"
+  [style.display]="showDeleteModal ? 'block' : 'none'"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận xóa</h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Bạn có chắc chắn muốn xóa trọng lượng
+          <strong>{{ toDelete?.giaTriTrongLuong }} {{ toDelete?.donVi }}</strong> không?
+        </p>
+        <p class="text-danger">Hành động này không thể hoàn tác!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Hủy</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDelete()">Xóa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay -->
+<div *ngIf="showModal || showDeleteModal" class="modal-backdrop fade show"></div>

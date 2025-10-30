@@ -4,6 +4,7 @@ export interface NhanVien {
   maNhanVien?: string;
   email: string;
   soDienThoai: string;
+  soCanCuocCongDan?: string;
   diaChi?: string;
   gioiTinh?: boolean; // true: Nam, false: Nữ
   ngaySinh?: string;

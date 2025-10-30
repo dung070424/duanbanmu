@@ -62,14 +62,24 @@
       border-color: #febc49;
       color: white;
       flex-shrink: 0;
+      cursor: pointer;
+      z-index: 10;
+      position: relative;
+      pointer-events: auto;
 
       &:hover:not(:disabled) {
         background-color: #e6a742;
         border-color: #e6a742;
+        transform: scale(1.05);
+      }
+
+      &:active:not(:disabled) {
+        transform: scale(0.95);
       }
 
       &:disabled {
         opacity: 0.6;
+        cursor: not-allowed;
       }
     }
 

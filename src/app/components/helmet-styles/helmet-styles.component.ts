@@ -25,6 +25,7 @@ export class HelmetStylesComponent implements OnInit {
   items: HelmetStyleVM[] = [];
   filtered: HelmetStyleVM[] = [];
   searchTerm = '';
+  selectedStatus: string = 'all';
   showModal = false;
   isEditMode = false;
   isViewMode = false;
@@ -41,6 +42,13 @@ export class HelmetStylesComponent implements OnInit {
   totalPages = 0;
   totalElements = 0;
   sort = 'id,desc';
+
+  // Make Math available in template
+  Math = Math;
+
+  trackById(index: number, item: HelmetStyleVM): number {
+    return item.id;
+  }
 
   constructor(private api: HelmetStyleApiService, private cdr: ChangeDetectorRef) {}
 
@@ -62,12 +70,45 @@ export class HelmetStylesComponent implements OnInit {
         this.totalPages = res.totalPages;
         this.totalElements = res.totalElements;
         this.currentPage = res.number;
+        this.applyFilters();
         this.cdr.detectChanges();
       });
   }
 
   onSearchChange() {
-    this.fetch(0);
+    this.applyFilters();
+  }
+
+  onStatusChange() {
+    this.applyFilters();
+  }
+
+  resetFilter() {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    let filtered = [...this.items];
+
+    // Filter by search term
+    if (this.searchTerm.trim()) {
+      const searchLower = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(searchLower) ||
+          (item.description && item.description.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Filter by status
+    if (this.selectedStatus !== 'all') {
+      const statusFilter = this.selectedStatus === 'true';
+      filtered = filtered.filter((item) => item.status === statusFilter);
+    }
+
+    this.filtered = filtered;
   }
 
   openAddModal() {
@@ -188,15 +229,49 @@ export class HelmetStylesComponent implements OnInit {
     return f === field ? (d === 'asc' ? '▲' : '▼') : '';
   }
 
-  nextPage() {
-    if (this.currentPage < this.totalPages - 1) this.fetch(this.currentPage + 1);
-  }
-  prevPage() {
-    if (this.currentPage > 0) this.fetch(this.currentPage - 1);
-  }
   changePageSize(size: number) {
     this.pageSize = size;
     this.fetch(0);
+  }
+
+  onPageSizeChange(event: any) {
+    this.pageSize = event.target.value;
+    this.fetch(0);
+  }
+
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages) {
+      this.currentPage = page;
+      this.fetch(page);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, this.currentPage + 1 - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  prevPage() {
+    if (this.currentPage > 0) {
+      this.goToPage(this.currentPage - 1);
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages - 1) {
+      this.goToPage(this.currentPage + 1);
+    }
   }
 
   // Validation methods
@@ -211,9 +286,11 @@ export class HelmetStylesComponent implements OnInit {
 
     switch (field) {
       case 'name':
-        return !this.newItem.name?.trim() || 
-               this.newItem.name.trim().length < 2 || 
-               this.newItem.name.trim().length > 100;
+        return (
+          !this.newItem.name?.trim() ||
+          this.newItem.name.trim().length < 2 ||
+          this.newItem.name.trim().length > 100
+        );
       case 'description':
         return !!(this.newItem.description?.trim() && this.newItem.description.trim().length > 500);
       default:
@@ -230,7 +307,8 @@ export class HelmetStylesComponent implements OnInit {
       case 'name':
         if (!this.newItem.name?.trim()) return 'Tên kiểu dáng không được để trống';
         if (this.newItem.name.trim().length < 2) return 'Tên kiểu dáng phải có ít nhất 2 ký tự';
-        if (this.newItem.name.trim().length > 100) return 'Tên kiểu dáng không được vượt quá 100 ký tự';
+        if (this.newItem.name.trim().length > 100)
+          return 'Tên kiểu dáng không được vượt quá 100 ký tự';
         break;
       case 'description':
         return 'Mô tả không được vượt quá 500 ký tự';

@@ -14,6 +14,7 @@ import { AuthService } from '../../services/auth';
 })
 export class SidebarComponent implements OnInit {
   @Input() isCollapsed = false;
+  isHovered = false; // Thêm state để track hover
   menuItems = [
     {
       icon: 'bi-clipboard-data',
@@ -21,6 +22,7 @@ export class SidebarComponent implements OnInit {
       route: '/dashboard',
       active: true,
       hasSubmenu: false,
+      isExpanded: false,
       submenu: [],
     },
     {
@@ -29,6 +31,7 @@ export class SidebarComponent implements OnInit {
       route: '/invoices',
       active: false,
       hasSubmenu: false,
+      isExpanded: false,
       submenu: [],
     },
     {
@@ -37,6 +40,7 @@ export class SidebarComponent implements OnInit {
       route: '/counter-sales',
       active: false,
       hasSubmenu: false,
+      isExpanded: false,
       submenu: [],
     },
     {
@@ -114,6 +118,7 @@ export class SidebarComponent implements OnInit {
       route: '/management',
       active: false,
       hasSubmenu: false,
+      isExpanded: false,
       submenu: [],
     },
     {
@@ -122,6 +127,7 @@ export class SidebarComponent implements OnInit {
       route: '/staff',
       active: false,
       hasSubmenu: false,
+      isExpanded: false,
       submenu: [],
     },
     {
@@ -130,23 +136,36 @@ export class SidebarComponent implements OnInit {
       route: '/customers',
       active: false,
       hasSubmenu: false,
+      isExpanded: false,
       submenu: [],
     },
     {
-      icon: 'bi-megaphone',
-      label: 'Quản lý khuyến mại',
-      route: '/promotions',
+      icon: 'bi-percent',
+      label: 'Quản Lý Giảm Giá',
+      route: null,
       active: false,
-      hasSubmenu: false,
-      submenu: [],
-    },
-    {
-      icon: 'bi-ticket-perforated',
-      label: 'Phiếu Giảm Giá',
-      route: '/phieu-giam-gia',
-      active: false,
-      hasSubmenu: false,
-      submenu: [],
+      hasSubmenu: true,
+      isExpanded: false,
+      submenu: [
+        {
+          icon: 'bi-megaphone',
+          label: 'Đợt Giảm Giá',
+          route: '/promotions',
+          active: false,
+          hasSubmenu: false,
+          isExpanded: false,
+          submenu: [],
+        },
+        {
+          icon: 'bi-ticket-perforated',
+          label: 'Phiếu Giảm Giá',
+          route: '/phieu-giam-gia',
+          active: false,
+          hasSubmenu: false,
+          isExpanded: false,
+          submenu: [],
+        },
+      ],
     },
   ];
 
@@ -194,5 +213,14 @@ export class SidebarComponent implements OnInit {
   onLogout() {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  // Hover events để mở/đóng sidebar
+  onMouseEnter() {
+    this.isHovered = true;
+  }
+
+  onMouseLeave() {
+    this.isHovered = false;
   }
 }

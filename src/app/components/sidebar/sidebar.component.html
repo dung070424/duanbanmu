@@ -1,4 +1,8 @@
-<div class="sidebar" [class.collapsed]="isCollapsed">
+<div class="sidebar" 
+     [class.collapsed]="isCollapsed" 
+     [class.hovered]="isHovered"
+     (mouseenter)="onMouseEnter()" 
+     (mouseleave)="onMouseLeave()">
   <div class="sidebar-header">
     <div class="logo">
       <img
