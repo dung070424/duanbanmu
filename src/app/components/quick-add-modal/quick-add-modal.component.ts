@@ -196,6 +196,23 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
         ];
         this.form.trangThai = true;
         break;
+      case 'kichThuoc':
+        this.modalTitle = 'Thêm mới Kích thước';
+        this.fields = [
+          { name: 'tenKichThuoc', label: 'Tên kích thước', type: 'text', required: true },
+          { name: 'moTa', label: 'Mô tả', type: 'textarea' },
+          {
+            name: 'trangThai',
+            label: 'Trạng thái',
+            type: 'select',
+            options: [
+              { value: true, label: 'Đang dùng' },
+              { value: false, label: 'Không dùng nữa' },
+            ],
+          },
+        ];
+        this.form.trangThai = true;
+        break;
       default:
         this.modalTitle = 'Thêm mới';
         break;
@@ -204,7 +221,7 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
 
   onSave() {
     // Mark all fields as touched when user tries to submit
-    this.fields.forEach(field => this.touchedFields.add(field.name));
+    this.fields.forEach((field) => this.touchedFields.add(field.name));
 
     // Validation chi tiết cho từng loại
     if (this.type === 'mauSac') {
@@ -400,9 +417,11 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     if (this.type === 'mauSac') {
       switch (field) {
         case 'tenMau':
-          return !this.form.tenMau?.trim() || 
-                 this.form.tenMau.trim().length < 2 || 
-                 this.form.tenMau.trim().length > 100;
+          return (
+            !this.form.tenMau?.trim() ||
+            this.form.tenMau.trim().length < 2 ||
+            this.form.tenMau.trim().length > 100
+          );
         case 'maMau':
           if (!this.form.maMau?.trim()) return true; // Required field
           const colorCode = this.form.maMau.trim();
@@ -415,13 +434,17 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     } else if (this.type === 'nhaSanXuat') {
       switch (field) {
         case 'tenNhaSanXuat':
-          return !this.form.tenNhaSanXuat?.trim() || 
-                 this.form.tenNhaSanXuat.trim().length < 2 || 
-                 this.form.tenNhaSanXuat.trim().length > 100;
+          return (
+            !this.form.tenNhaSanXuat?.trim() ||
+            this.form.tenNhaSanXuat.trim().length < 2 ||
+            this.form.tenNhaSanXuat.trim().length > 100
+          );
         case 'quocGia':
-          return !this.form.quocGia?.trim() || 
-                 this.form.quocGia.trim().length < 2 || 
-                 this.form.quocGia.trim().length > 50;
+          return (
+            !this.form.quocGia?.trim() ||
+            this.form.quocGia.trim().length < 2 ||
+            this.form.quocGia.trim().length > 50
+          );
         case 'moTa':
           return this.form.moTa?.trim() && this.form.moTa.trim().length > 500;
         default:
@@ -430,9 +453,11 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     } else if (this.type === 'chatLieuVo') {
       switch (field) {
         case 'tenChatLieu':
-          return !this.form.tenChatLieu?.trim() || 
-                 this.form.tenChatLieu.trim().length < 2 || 
-                 this.form.tenChatLieu.trim().length > 100;
+          return (
+            !this.form.tenChatLieu?.trim() ||
+            this.form.tenChatLieu.trim().length < 2 ||
+            this.form.tenChatLieu.trim().length > 100
+          );
         case 'moTa':
           return this.form.moTa?.trim() && this.form.moTa.trim().length > 500;
         default:
@@ -441,13 +466,17 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     } else if (this.type === 'trongLuong') {
       switch (field) {
         case 'giaTriTrongLuong':
-          return !this.form.giaTriTrongLuong || 
-                 this.form.giaTriTrongLuong <= 0 || 
-                 this.form.giaTriTrongLuong > 10000;
+          return (
+            !this.form.giaTriTrongLuong ||
+            this.form.giaTriTrongLuong <= 0 ||
+            this.form.giaTriTrongLuong > 10000
+          );
         case 'donVi':
-          return !this.form.donVi?.trim() || 
-                 this.form.donVi.trim().length < 1 || 
-                 this.form.donVi.trim().length > 20;
+          return (
+            !this.form.donVi?.trim() ||
+            this.form.donVi.trim().length < 1 ||
+            this.form.donVi.trim().length > 20
+          );
         case 'moTa':
           return this.form.moTa?.trim() && this.form.moTa.trim().length > 500;
         default:
@@ -456,9 +485,11 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     } else if (this.type === 'xuatXu') {
       switch (field) {
         case 'tenXuatXu':
-          return !this.form.tenXuatXu?.trim() || 
-                 this.form.tenXuatXu.trim().length < 2 || 
-                 this.form.tenXuatXu.trim().length > 100;
+          return (
+            !this.form.tenXuatXu?.trim() ||
+            this.form.tenXuatXu.trim().length < 2 ||
+            this.form.tenXuatXu.trim().length > 100
+          );
         case 'moTa':
           return this.form.moTa?.trim() && this.form.moTa.trim().length > 500;
         default:
@@ -467,9 +498,11 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     } else if (this.type === 'kieuDangMu') {
       switch (field) {
         case 'tenKieuDang':
-          return !this.form.tenKieuDang?.trim() || 
-                 this.form.tenKieuDang.trim().length < 2 || 
-                 this.form.tenKieuDang.trim().length > 100;
+          return (
+            !this.form.tenKieuDang?.trim() ||
+            this.form.tenKieuDang.trim().length < 2 ||
+            this.form.tenKieuDang.trim().length > 100
+          );
         case 'moTa':
           return this.form.moTa?.trim() && this.form.moTa.trim().length > 500;
         default:
@@ -478,7 +511,7 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     }
 
     // Default validation for other types
-    const fieldConfig = this.fields.find(f => f.name === field);
+    const fieldConfig = this.fields.find((f) => f.name === field);
     if (fieldConfig?.required) {
       return !this.form[field] || String(this.form[field]).trim() === '';
     }
@@ -496,7 +529,8 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
         case 'tenMau':
           if (!this.form.tenMau?.trim()) return 'Tên màu sắc không được để trống';
           if (this.form.tenMau.trim().length < 2) return 'Tên màu sắc phải có ít nhất 2 ký tự';
-          if (this.form.tenMau.trim().length > 100) return 'Tên màu sắc không được vượt quá 100 ký tự';
+          if (this.form.tenMau.trim().length > 100)
+            return 'Tên màu sắc không được vượt quá 100 ký tự';
           break;
         case 'maMau':
           if (!this.form.maMau?.trim()) return 'Mã màu không được để trống';
@@ -508,8 +542,10 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
       switch (field) {
         case 'tenNhaSanXuat':
           if (!this.form.tenNhaSanXuat?.trim()) return 'Tên nhà sản xuất không được để trống';
-          if (this.form.tenNhaSanXuat.trim().length < 2) return 'Tên nhà sản xuất phải có ít nhất 2 ký tự';
-          if (this.form.tenNhaSanXuat.trim().length > 100) return 'Tên nhà sản xuất không được vượt quá 100 ký tự';
+          if (this.form.tenNhaSanXuat.trim().length < 2)
+            return 'Tên nhà sản xuất phải có ít nhất 2 ký tự';
+          if (this.form.tenNhaSanXuat.trim().length > 100)
+            return 'Tên nhà sản xuất không được vượt quá 100 ký tự';
           break;
         case 'quocGia':
           if (!this.form.quocGia?.trim()) return 'Quốc gia không được để trống';
@@ -522,8 +558,10 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
       switch (field) {
         case 'tenChatLieu':
           if (!this.form.tenChatLieu?.trim()) return 'Tên chất liệu vỏ không được để trống';
-          if (this.form.tenChatLieu.trim().length < 2) return 'Tên chất liệu vỏ phải có ít nhất 2 ký tự';
-          if (this.form.tenChatLieu.trim().length > 100) return 'Tên chất liệu vỏ không được vượt quá 100 ký tự';
+          if (this.form.tenChatLieu.trim().length < 2)
+            return 'Tên chất liệu vỏ phải có ít nhất 2 ký tự';
+          if (this.form.tenChatLieu.trim().length > 100)
+            return 'Tên chất liệu vỏ không được vượt quá 100 ký tự';
           break;
         case 'moTa':
           return 'Mô tả không được vượt quá 500 ký tự';
@@ -531,8 +569,10 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     } else if (this.type === 'trongLuong') {
       switch (field) {
         case 'giaTriTrongLuong':
-          if (!this.form.giaTriTrongLuong || this.form.giaTriTrongLuong <= 0) return 'Giá trị trọng lượng phải lớn hơn 0';
-          if (this.form.giaTriTrongLuong > 10000) return 'Giá trị trọng lượng không được vượt quá 10000 gram';
+          if (!this.form.giaTriTrongLuong || this.form.giaTriTrongLuong <= 0)
+            return 'Giá trị trọng lượng phải lớn hơn 0';
+          if (this.form.giaTriTrongLuong > 10000)
+            return 'Giá trị trọng lượng không được vượt quá 10000 gram';
           break;
         case 'donVi':
           if (!this.form.donVi?.trim()) return 'Đơn vị không được để trống';
@@ -547,7 +587,8 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
         case 'tenXuatXu':
           if (!this.form.tenXuatXu?.trim()) return 'Tên xuất xứ không được để trống';
           if (this.form.tenXuatXu.trim().length < 2) return 'Tên xuất xứ phải có ít nhất 2 ký tự';
-          if (this.form.tenXuatXu.trim().length > 100) return 'Tên xuất xứ không được vượt quá 100 ký tự';
+          if (this.form.tenXuatXu.trim().length > 100)
+            return 'Tên xuất xứ không được vượt quá 100 ký tự';
           break;
         case 'moTa':
           return 'Mô tả không được vượt quá 500 ký tự';
@@ -556,8 +597,10 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
       switch (field) {
         case 'tenKieuDang':
           if (!this.form.tenKieuDang?.trim()) return 'Tên kiểu dáng mũ không được để trống';
-          if (this.form.tenKieuDang.trim().length < 2) return 'Tên kiểu dáng mũ phải có ít nhất 2 ký tự';
-          if (this.form.tenKieuDang.trim().length > 100) return 'Tên kiểu dáng mũ không được vượt quá 100 ký tự';
+          if (this.form.tenKieuDang.trim().length < 2)
+            return 'Tên kiểu dáng mũ phải có ít nhất 2 ký tự';
+          if (this.form.tenKieuDang.trim().length > 100)
+            return 'Tên kiểu dáng mũ không được vượt quá 100 ký tự';
           break;
         case 'moTa':
           return 'Mô tả không được vượt quá 500 ký tự';
@@ -565,7 +608,7 @@ export class QuickAddModalComponent implements OnInit, OnChanges {
     }
 
     // Default error message
-    const fieldConfig = this.fields.find(f => f.name === field);
+    const fieldConfig = this.fields.find((f) => f.name === field);
     if (fieldConfig?.required) {
       return `Vui lòng nhập ${fieldConfig.label.toLowerCase()}`;
     }

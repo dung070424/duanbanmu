@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import {
@@ -14,7 +15,7 @@ import {
   providedIn: 'root',
 })
 export class NhanVienService {
-  private readonly baseUrl = 'http://localhost:8081/api/nhan-vien';
+  private readonly baseUrl = `${environment.apiUrl}/nhan-vien`;
   private nhanVienSubject = new BehaviorSubject<NhanVien[]>([]);
   public nhanVien$ = this.nhanVienSubject.asObservable();
 

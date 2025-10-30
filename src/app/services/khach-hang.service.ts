@@ -13,7 +13,7 @@ import {
   providedIn: 'root',
 })
 export class KhachHangService {
-  private apiUrl = `${environment.apiBaseUrl}/api/khach-hang`;
+  private apiUrl = `${environment.apiUrl}/khach-hang`;
 
   constructor(private http: HttpClient) {}
 

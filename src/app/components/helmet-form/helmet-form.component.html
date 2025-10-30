@@ -19,10 +19,10 @@
   <div class="form-content">
     <div class="form-wrapper">
       <form (ngSubmit)="onSubmit()" #productForm="ngForm">
-        <!-- Thông tin cơ bản -->
+        <!-- Thông tin sản phẩm -->
         <div class="section-title mb-4">
           <h6 class="text-orange fw-bold mb-0">
-            <i class="bi bi-info-circle me-2"></i>Thông tin cơ bản
+            <i class="bi bi-info-circle me-2"></i>Thông tin sản phẩm
           </h6>
           <hr class="mt-2" />
         </div>
@@ -72,63 +72,7 @@
           </div>
         </div>
 
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Giá bán (VNĐ)</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-cash-coin"></i></span>
-              <input
-                type="number"
-                class="form-control"
-                [class.is-invalid]="hasFieldError('price')"
-                [(ngModel)]="newProduct.price"
-                name="price"
-                min="0"
-                max="999999999"
-                placeholder="0"
-                (blur)="markFieldTouched('price')"
-              />
-              <div *ngIf="hasFieldError('price')" class="invalid-feedback">
-                {{ getPriceError() }}
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold"
-              >Số lượng <span class="text-danger">*</span></label
-            >
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-box"></i></span>
-              <input
-                type="number"
-                class="form-control"
-                [class.is-invalid]="hasFieldError('quantity')"
-                [(ngModel)]="newProduct.quantity"
-                name="quantity"
-                min="0"
-                max="999999"
-                placeholder="0"
-                (blur)="markFieldTouched('quantity')"
-              />
-              <div *ngIf="hasFieldError('quantity')" class="invalid-feedback">
-                {{ getQuantityError() }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Trạng thái</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
-              <select class="form-select" [(ngModel)]="newProduct.status" name="status">
-                <option value="Đang bán">Đang bán</option>
-                <option value="Ngừng bán">Ngừng bán</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <!-- Bỏ Giá bán, Số lượng, Trạng thái theo yêu cầu -->
 
         <!-- Thuộc tính sản phẩm -->
         <div class="section-title mb-3">
@@ -196,24 +140,7 @@
               Vui lòng chọn chất liệu vỏ
             </div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">
-              <i class="bi bi-speedometer me-1"></i>Trọng lượng
-            </label>
-            <app-searchable-dropdown
-              [options]="trongLuongOptions"
-              [selectedValue]="newProduct.trongLuongId"
-              [placeholder]="'-- Chọn trọng lượng --'"
-              [showAddButton]="true"
-              [addButtonTitle]="'Thêm trọng lượng mới'"
-              [class.is-invalid]="hasDropdownError('trongLuongId')"
-              (selectionChange)="onSelect('trongLuongId', $event)"
-              (addButtonClick)="openQuickAddModal('trongLuong')"
-            ></app-searchable-dropdown>
-            <div *ngIf="hasDropdownError('trongLuongId')" class="invalid-feedback d-block">
-              Vui lòng chọn trọng lượng
-            </div>
-          </div>
+          <!-- Bỏ Trọng lượng theo yêu cầu -->
         </div>
 
         <div class="row g-3 mb-3">
@@ -274,23 +201,154 @@
               Vui lòng chọn công nghệ an toàn
             </div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">
-              <i class="bi bi-palette me-1"></i>Màu sắc
-            </label>
+          <!-- Bỏ Màu sắc theo yêu cầu -->
+        </div>
+
+        <!-- ===== PHIÊN BẢN SẢN PHẨM (HELMET VERSIONS) ===== -->
+        <div class="section-title mb-3 mt-4">
+          <h6 class="text-orange fw-bold mb-0">
+            <i class="bi bi-layers me-2"></i>Phiên bản sản phẩm
+          </h6>
+          <hr class="mt-2" />
+        </div>
+        <div class="row g-3 mb-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Chọn kích thước</label>
+            <app-searchable-dropdown
+              [options]="kichThuocOptions"
+              [multiSelect]="true"
+              [selectedValues]="selectedSizes"
+              [placeholder]="'-- Chọn kích thước --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm kích thước mới'"
+              (addButtonClick)="openQuickAddModal('kichThuoc')"
+              (selectionChangeMulti)="selectedSizes = $event"
+            ></app-searchable-dropdown>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Chọn màu sắc</label>
             <app-searchable-dropdown
               [options]="mauSacOptions"
-              [selectedValue]="newProduct.mauSacId"
+              [multiSelect]="true"
+              [selectedValues]="selectedColors"
               [placeholder]="'-- Chọn màu sắc --'"
               [showAddButton]="true"
               [addButtonTitle]="'Thêm màu sắc mới'"
-              [class.is-invalid]="hasDropdownError('mauSacId')"
-              (selectionChange)="onSelect('mauSacId', $event)"
               (addButtonClick)="openQuickAddModal('mauSac')"
+              (selectionChangeMulti)="selectedColors = $event"
             ></app-searchable-dropdown>
-            <div *ngIf="hasDropdownError('mauSacId')" class="invalid-feedback d-block">
-              Vui lòng chọn màu sắc
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Chọn trọng lượng</label>
+            <app-searchable-dropdown
+              [options]="trongLuongOptions"
+              [multiSelect]="true"
+              [selectedValues]="selectedWeights"
+              [placeholder]="'-- Chọn trọng lượng --'"
+              [showAddButton]="true"
+              [addButtonTitle]="'Thêm trọng lượng mới'"
+              (addButtonClick)="openQuickAddModal('trongLuong')"
+              (selectionChangeMulti)="selectedWeights = $event"
+            ></app-searchable-dropdown>
+          </div>
+          <div class="col-12 mt-3 text-end">
+            <button type="button" class="btn btn-primary btn-sm" (click)="generateVariants()">
+              <i class="bi bi-plus-circle me-2"></i>Tạo lại biến thể
+            </button>
+          </div>
+        </div>
+        <div *ngIf="versionError" class="alert alert-danger py-2 mb-3">
+          <i class="bi bi-exclamation-circle me-2"></i>{{ versionError }}
+        </div>
+
+        <div *ngIf="hasHelmetVersions" class="mb-4">
+          <div class="row g-2 mb-2 align-items-center">
+            <div class="col-md-3">
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="priceAll"
+                placeholder="Nhập giá chung"
+                (blur)="onPriceChangeAll()"
+              />
             </div>
+            <div class="col-md-3">
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="quantityAll"
+                placeholder="Nhập số lượng chung"
+                (blur)="onQuantityChangeAll()"
+              />
+            </div>
+            <div class="col text-muted fst-italic small">
+              Nhập giá/số lượng trên để áp dụng cho tất cả phiên bản phía dưới
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>STT</th>
+                  <th>Kích thước</th>
+                  <th>Màu sắc</th>
+                  <th>Trọng lượng</th>
+                  <th>Giá bán (VNĐ)</th>
+                  <th>Số lượng</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let v of helmetVersions; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ getKichThuocTenById(v.kichThuocId) }}</td>
+                  <td>
+                    {{ getMauSacTenById(v.mauSacId) }}
+                    <span
+                      *ngIf="getMauSacMaById(v.mauSacId)"
+                      class="d-inline-block ms-1"
+                      [style.background]="getMauSacMaById(v.mauSacId)"
+                      style="
+                        border: 1px solid #aaa;
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 50%;
+                        vertical-align: middle;
+                        display: inline-block;
+                      "
+                    ></span>
+                  </td>
+                  <td>{{ getTrongLuongTenById(v.trongLuongId) }}</td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="giaBan_{{ i }}"
+                      [(ngModel)]="v.giaBan"
+                      [ngModelOptions]="{ standalone: true }"
+                      (blur)="onPriceChangeRow(i, v.giaBan)"
+                      (input)="castVersionNumber(i, 'giaBan')"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="soLuongTon_{{ i }}"
+                      [(ngModel)]="v.soLuongTon"
+                      [ngModelOptions]="{ standalone: true }"
+                      (blur)="onQuantityChangeRow(i, v.soLuongTon)"
+                      (input)="castVersionNumber(i, 'soLuongTon')"
+                    />
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removeVariant(i)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 

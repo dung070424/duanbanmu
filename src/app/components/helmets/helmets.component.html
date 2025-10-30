@@ -98,7 +98,7 @@
                   <th>Tên sản phẩm</th>
                   <th>Loại mũ</th>
                   <th>Nhà sản xuất</th>
-                  <th>Giá bán</th>
+                  <th>Giá TB (VNĐ)</th>
                   <th>Số lượng</th>
                   <th>Trạng thái</th>
                   <th>Hành động</th>
@@ -133,10 +133,29 @@
                     <span *ngIf="product.nhaSanXuat">{{ product.nhaSanXuat }}</span>
                     <span class="no-data" *ngIf="!product.nhaSanXuat">-</span>
                   </td>
-                  <td>{{ formatPrice(product.price) }}</td>
                   <td>
-                    <span class="quantity-badge">{{ product.quantity }}</span>
+                    <span *ngIf="product.avgPrice !== null && product.avgPrice !== undefined">
+                      {{ formatPrice(product.avgPrice) }}
+                    </span>
+                    <span
+                      class="no-data"
+                      *ngIf="product.avgPrice === null || product.avgPrice === undefined"
+                      >-</span
+                    >
                   </td>
+                  <td>
+                    <span
+                      *ngIf="product.totalQuantity !== null && product.totalQuantity !== undefined"
+                    >
+                      {{ product.totalQuantity }}
+                    </span>
+                    <span
+                      class="no-data"
+                      *ngIf="product.totalQuantity === null || product.totalQuantity === undefined"
+                      >-</span
+                    >
+                  </td>
+
                   <td>
                     <span
                       class="status-badge"
@@ -305,52 +324,7 @@
             </div>
           </div>
 
-          <div class="row g-3 mb-4">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Giá bán (VNĐ)</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-cash-coin"></i></span>
-                <input
-                  type="number"
-                  class="form-control"
-                  [class.is-invalid]="hasFieldError('price')"
-                  [(ngModel)]="newProduct.price"
-                  name="price"
-                  min="0"
-                  max="999999999"
-                  placeholder="0"
-                  [readonly]="isViewMode"
-                  (blur)="markFieldTouched('price')"
-                />
-                <div *ngIf="hasFieldError('price')" class="invalid-feedback">
-                  {{ getPriceError() }}
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold"
-                >Số lượng <span class="text-danger">*</span></label
-              >
-              <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-box"></i></span>
-                <input
-                  type="number"
-                  class="form-control"
-                  [class.is-invalid]="hasFieldError('quantity')"
-                  [(ngModel)]="newProduct.quantity"
-                  name="quantity"
-                  min="0"
-                  max="999999"
-                  placeholder="0"
-                  [readonly]="isViewMode"
-                  (blur)="markFieldTouched('quantity')"
-                />
-                <div *ngIf="hasFieldError('quantity')" class="invalid-feedback">
-                  {{ getQuantityError() }}
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Bỏ Giá bán và Số lượng trong chỉnh sửa -->
 
           <div class="row g-3 mb-4">
             <div class="col-md-6">
@@ -439,25 +413,7 @@
                 Vui lòng chọn chất liệu vỏ
               </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                <i class="bi bi-speedometer me-1"></i>Trọng lượng
-              </label>
-              <app-searchable-dropdown
-                [options]="trongLuongOptions"
-                [selectedValue]="newProduct.trongLuongId"
-                [placeholder]="'-- Chọn trọng lượng --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
-                [addButtonTitle]="'Thêm trọng lượng mới'"
-                [class.is-invalid]="hasDropdownError('trongLuongId')"
-                (selectionChange)="onSelect('trongLuongId', $event)"
-                (addButtonClick)="openQuickAddModal('trongLuong')"
-              ></app-searchable-dropdown>
-              <div *ngIf="hasDropdownError('trongLuongId')" class="invalid-feedback d-block">
-                Vui lòng chọn trọng lượng
-              </div>
-            </div>
+            <!-- Bỏ Trọng lượng -->
           </div>
 
           <div class="row g-3 mb-3">
@@ -521,25 +477,95 @@
                 Vui lòng chọn công nghệ an toàn
               </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                <i class="bi bi-palette me-1"></i>Màu sắc
-              </label>
-              <app-searchable-dropdown
-                [options]="mauSacOptions"
-                [selectedValue]="newProduct.mauSacId"
-                [placeholder]="'-- Chọn màu sắc --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
-                [addButtonTitle]="'Thêm màu sắc mới'"
-                [class.is-invalid]="hasDropdownError('mauSacId')"
-                (selectionChange)="onSelect('mauSacId', $event)"
-                (addButtonClick)="openQuickAddModal('mauSac')"
-              ></app-searchable-dropdown>
-              <div *ngIf="hasDropdownError('mauSacId')" class="invalid-feedback d-block">
-                Vui lòng chọn màu sắc
-              </div>
-            </div>
+            <!-- Bỏ Màu sắc -->
+          </div>
+
+          <!-- Phiên bản sản phẩm đưa lên trước ảnh -->
+          <div class="section-title mb-3">
+            <h6 class="text-orange fw-bold mb-0">
+              <i class="bi bi-layers me-2"></i>Phiên bản sản phẩm
+            </h6>
+            <hr class="mt-2" />
+          </div>
+          <div *ngIf="!(helmetVersions && helmetVersions.length > 0)" class="alert alert-info py-2">
+            <i class="bi bi-info-circle me-2"></i>Chưa có phiên bản cho sản phẩm này.
+          </div>
+          <div class="table-responsive" *ngIf="helmetVersions && helmetVersions.length > 0">
+            <table class="customer-table">
+              <thead>
+                <tr>
+                  <th>STT</th>
+                  <th>Kích thước</th>
+                  <th>Màu sắc</th>
+                  <th>Trọng lượng</th>
+                  <th>Giá bán (VNĐ)</th>
+                  <th>Số lượng</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let v of helmetVersions; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ getKichThuocTenById(v.kichThuocId) }}</td>
+                  <td>
+                    {{ getMauSacTenById(v.mauSacId) }}
+                    <span
+                      *ngIf="getMauSacMaById(v.mauSacId)"
+                      class="d-inline-block ms-1"
+                      [style.background]="getMauSacMaById(v.mauSacId)"
+                      style="
+                        border: 1px solid #aaa;
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 50%;
+                        vertical-align: middle;
+                        display: inline-block;
+                      "
+                    ></span>
+                  </td>
+                  <td>{{ getTrongLuongTenById(v.trongLuongId) }}</td>
+                  <td>
+                    <ng-container *ngIf="!isViewMode; else priceView">
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="giaBan_{{ i }}"
+                        [(ngModel)]="v.giaBan"
+                        [ngModelOptions]="{ standalone: true }"
+                        (input)="castVersionNumber(i, 'giaBan')"
+                      />
+                    </ng-container>
+                    <ng-template #priceView>
+                      {{ v.giaBan }}
+                    </ng-template>
+                  </td>
+                  <td>
+                    <ng-container *ngIf="!isViewMode; else qtyView">
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="soLuongTon_{{ i }}"
+                        [(ngModel)]="v.soLuongTon"
+                        [ngModelOptions]="{ standalone: true }"
+                        (input)="castVersionNumber(i, 'soLuongTon')"
+                      />
+                    </ng-container>
+                    <ng-template #qtyView>
+                      {{ v.soLuongTon }}
+                    </ng-template>
+                  </td>
+                  <td>
+                    <span
+                      class="status-badge"
+                      [class.active]="v.trangThai"
+                      [class.inactive]="!v.trangThai"
+                    >
+                      {{ v.trangThai ? 'Đang bán' : 'Ngừng bán' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- Ảnh sản phẩm -->

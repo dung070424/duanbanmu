@@ -23,6 +23,11 @@ import { TrongLuongApiService } from '../../services/trong-luong-api.service';
 import { OriginApiService } from '../../services/origin-api.service';
 import { HelmetStyleApiService } from '../../services/helmet-style-api.service';
 import { CongNgheAnToanApiService } from '../../services/cong-nghe-an-toan-api.service';
+import {
+  HelmetVersionApiService,
+  HelmetVersionRequest,
+} from '../../services/helmet-version-api.service';
+import { SizeApiService, SizeResponse } from '../../services/size-api.service';
 
 interface HelmetProduct {
   id: number;
@@ -78,6 +83,7 @@ export class HelmetFormComponent implements OnInit {
   kieuDangList: { id: number; tenKieuDang: string }[] = [];
   congNgheList: { id: number; tenCongNghe: string }[] = [];
   mauSacList: { id: number; tenMau: string; maMau: string }[] = [];
+  kichThuocList: { id: number; tenKichThuoc: string }[] = [];
 
   // Converted data for searchable dropdowns
   loaiMuOptions: DropdownOption[] = [];
@@ -88,6 +94,7 @@ export class HelmetFormComponent implements OnInit {
   kieuDangOptions: DropdownOption[] = [];
   congNgheOptions: DropdownOption[] = [];
   mauSacOptions: DropdownOption[] = [];
+  kichThuocOptions: DropdownOption[] = [];
 
   newProduct: HelmetProduct = {
     id: 0,
@@ -118,6 +125,36 @@ export class HelmetFormComponent implements OnInit {
   // Loading state
   isLoading: boolean = false;
 
+  selectedSizes: number[] = [];
+  selectedColors: number[] = [];
+  selectedWeights: number[] = [];
+
+  helmetVersions: any[] = [];
+  priceAll: number = 0;
+  quantityAll: number = 0;
+  generatingVariants: boolean = false;
+  versionError: string = '';
+
+  deletedVersionIds: number[] = [];
+
+  public get hasHelmetVersions(): boolean {
+    return Array.isArray(this.helmetVersions) && this.helmetVersions.length > 0;
+  }
+
+  // Chuẩn hóa giá trị số: nhận string/number, bỏ dấu phẩy/khoảng trắng, ép về number an toàn
+  private toNumberSafe(value: any, fallback = 0): number {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : fallback;
+    }
+    const cleaned = String(value)
+      .replace(/\s+/g, '') // remove spaces
+      .replace(/[,]/g, '') // remove thousand separators
+      .replace(/[^0-9.-]/g, ''); // keep digits, minus, dot
+    const n = parseFloat(cleaned);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
   constructor(
     private productApi: ProductApiService,
     private cdr: ChangeDetectorRef,
@@ -129,12 +166,27 @@ export class HelmetFormComponent implements OnInit {
     private trongLuongApi: TrongLuongApiService,
     private originApi: OriginApiService,
     private helmetStyleApi: HelmetStyleApiService,
-    private congNgheAnToanApi: CongNgheAnToanApiService
+    private congNgheAnToanApi: CongNgheAnToanApiService,
+    private helmetVersionApi: HelmetVersionApiService,
+    private sizeApi: SizeApiService
   ) {}
 
   ngOnInit() {
     this.generateProductCode();
     this.loadLookups();
+    this.loadKichThuoc();
+    // Nếu là sửa sản phẩm (điều kiện là id > 0)
+    if (this.newProduct && this.newProduct.id > 0) {
+      this.helmetVersionApi.getBySanPhamId(this.newProduct.id).subscribe({
+        next: (res) => {
+          this.helmetVersions = (res.data || []).map((v) => ({
+            ...v,
+            isNew: false,
+          }));
+          this.cdr.detectChanges();
+        },
+      });
+    }
   }
 
   // Generate product code automatically
@@ -191,6 +243,7 @@ export class HelmetFormComponent implements OnInit {
     this.loadKieuDang();
     this.loadCongNghe();
     this.loadMauSac();
+    this.loadKichThuoc();
   }
 
   loadLoaiMuBaoHiem() {
@@ -313,6 +366,33 @@ export class HelmetFormComponent implements OnInit {
     });
   }
 
+  loadKichThuoc() {
+    this.sizeApi.getAllActive().subscribe((response: SizeResponse[]) => {
+      this.kichThuocOptions = (response || []).map((item) => ({
+        id: item.id,
+        name: item.tenKichThuoc,
+      }));
+      this.cdr.detectChanges();
+    });
+  }
+
+  getKichThuocTenById(id: number): string {
+    const obj = this.kichThuocOptions?.find((opt) => opt.id === id);
+    return obj ? obj.name : id + '';
+  }
+  getMauSacTenById(id: number): string {
+    const obj = this.mauSacOptions?.find((opt) => opt.id === id);
+    return obj ? obj.name : id + '';
+  }
+  getMauSacMaById(id: number): string {
+    const obj = this.mauSacOptions?.find((opt) => opt.id === id);
+    return obj && obj['maMau'] ? obj['maMau'] : '';
+  }
+  getTrongLuongTenById(id: number): string {
+    const obj = this.trongLuongOptions?.find((opt) => opt.id === id);
+    return obj ? obj.name : id + '';
+  }
+
   onSelect(field: string, value: number | null) {
     switch (field) {
       case 'loaiMuBaoHiemId':
@@ -374,16 +454,12 @@ export class HelmetFormComponent implements OnInit {
         return !this.newProduct.nhaSanXuatId;
       case 'chatLieuVoId':
         return !this.newProduct.chatLieuVoId;
-      case 'trongLuongId':
-        return !this.newProduct.trongLuongId;
       case 'xuatXuId':
         return !this.newProduct.xuatXuId;
       case 'kieuDangMuId':
         return !this.newProduct.kieuDangMuId;
       case 'congNgheAnToanId':
         return !this.newProduct.congNgheAnToanId;
-      case 'mauSacId':
-        return !this.newProduct.mauSacId;
       default:
         return false;
     }
@@ -604,6 +680,26 @@ export class HelmetFormComponent implements OnInit {
             );
           },
         });
+    } else if (event.type === 'kichThuoc') {
+      this.sizeApi
+        .create({
+          tenKichThuoc: event.data.tenKichThuoc,
+          moTa: event.data.moTa,
+          trangThai: event.data.trangThai,
+        })
+        .subscribe({
+          next: () => {
+            alert('Thêm mới Kích thước thành công!');
+            this.loadKichThuoc();
+            this.cdr.detectChanges();
+          },
+          error: (error) => {
+            alert(
+              'Lỗi khi thêm mới Kích thước: ' +
+                (error.error?.message || error.message || 'Không thể kết nối đến server')
+            );
+          },
+        });
     }
   }
 
@@ -622,38 +718,112 @@ export class HelmetFormComponent implements OnInit {
     }
   }
 
+  // Sinh các phiên bản/biến thể dựa vào tổ hợp thuộc tính user chọn
+  generateVariants() {
+    const oldVersions = this.helmetVersions || [];
+    this.helmetVersions = [];
+    this.versionError = '';
+    if (
+      this.selectedSizes.length === 0 ||
+      this.selectedColors.length === 0 ||
+      this.selectedWeights.length === 0
+    ) {
+      this.versionError =
+        'Vui lòng chọn ít nhất một kích thước, trọng lượng, màu sắc để sinh phiên bản!';
+      return;
+    }
+    this.selectedSizes.forEach((kichThuocId) => {
+      this.selectedColors.forEach((mauSacId) => {
+        this.selectedWeights.forEach((trongLuongId) => {
+          // Tìm bản ghi cũ (nếu có)
+          const old = oldVersions.find(
+            (v) =>
+              v.kichThuocId == kichThuocId &&
+              v.mauSacId == mauSacId &&
+              v.trongLuongId == trongLuongId
+          );
+          this.helmetVersions.push({
+            kichThuocId,
+            mauSacId,
+            trongLuongId,
+            giaBan: String(
+              (old && typeof old.giaBan !== 'undefined' ? old.giaBan : this.priceAll) || ''
+            ),
+            soLuongTon: String(
+              (old && typeof old.soLuongTon !== 'undefined' ? old.soLuongTon : this.quantityAll) ||
+                ''
+            ),
+            trangThai: true, // default on
+          });
+        });
+      });
+    });
+  }
+
+  onPriceChangeAll() {
+    this.helmetVersions.forEach((v) => {
+      v.giaBan = this.priceAll ? String(this.priceAll) : '';
+    });
+  }
+  onQuantityChangeAll() {
+    this.helmetVersions.forEach((v) => {
+      v.soLuongTon = this.quantityAll ? String(this.quantityAll) : '';
+    });
+  }
+  onPriceChangeRow(index: number, value: any) {
+    const val = value !== undefined && value !== null ? String(value).trim() : '';
+    this.helmetVersions[index].giaBan = val;
+  }
+  onQuantityChangeRow(index: number, value: any) {
+    const val = value !== undefined && value !== null ? String(value).trim() : '';
+    this.helmetVersions[index].soLuongTon = val;
+  }
+  removeVariant(index: number) {
+    const v = this.helmetVersions[index];
+    if (v && v.id) {
+      this.deletedVersionIds.push(v.id);
+    }
+    this.helmetVersions.splice(index, 1);
+  }
+
+  castVersionNumber(index: number, field: 'giaBan' | 'soLuongTon') {
+    if (!this.helmetVersions || !this.helmetVersions[index]) return;
+    // No-op: giữ nguyên chuỗi người dùng nhập
+    return;
+  }
+
   isFormValid(): boolean {
-    return (
-      this.newProduct.code.trim() !== '' &&
-      this.newProduct.name.trim() !== '' &&
-      this.newProduct.price >= 0 &&
-      this.newProduct.quantity >= 0 &&
-      this.newProduct.loaiMuBaoHiemId !== null &&
-      this.newProduct.nhaSanXuatId !== null &&
-      this.newProduct.chatLieuVoId !== null &&
-      this.newProduct.trongLuongId !== null &&
-      this.newProduct.xuatXuId !== null &&
-      this.newProduct.kieuDangMuId !== null &&
-      this.newProduct.congNgheAnToanId !== null &&
-      this.newProduct.mauSacId !== null
-    );
+    // Phải có đủ mã, tên sản phẩm, và ít nhất 1 phiên bản
+    if (
+      !this.newProduct.code.trim() ||
+      !this.newProduct.name.trim() ||
+      this.helmetVersions.length === 0
+    )
+      return false;
+    // Chỉ cần có kích thước; giá và số lượng để dạng chuỗi (không bắt buộc ràng số)
+    for (const [i, v] of this.helmetVersions.entries()) {
+      if (!v.kichThuocId) {
+        this.versionError = `Biến thể dòng ${i + 1} thiếu kích thước!`;
+        return false;
+      }
+    }
+    this.versionError = '';
+    return true;
   }
 
   onSubmit() {
     if (!this.isFormValid()) {
+      this.versionError =
+        this.helmetVersions.length === 0 ? 'Bạn cần tạo ít nhất một phiên bản cho sản phẩm!' : '';
       // Mark all fields as touched to show validation errors
       this.touchedFields.add('code');
       this.touchedFields.add('name');
-      this.touchedFields.add('price');
-      this.touchedFields.add('quantity');
       this.touchedFields.add('loaiMuBaoHiemId');
       this.touchedFields.add('nhaSanXuatId');
       this.touchedFields.add('chatLieuVoId');
-      this.touchedFields.add('trongLuongId');
       this.touchedFields.add('xuatXuId');
       this.touchedFields.add('kieuDangMuId');
       this.touchedFields.add('congNgheAnToanId');
-      this.touchedFields.add('mauSacId');
       return;
     }
 
@@ -662,39 +832,110 @@ export class HelmetFormComponent implements OnInit {
     const payload = {
       maSanPham: this.newProduct.code,
       tenSanPham: this.newProduct.name,
-      giaBan: this.newProduct.price,
-      soLuongTon: this.newProduct.quantity,
-      trangThai: this.newProduct.status === 'Đang bán',
+      trangThai: true,
       loaiMuBaoHiemId: this.newProduct.loaiMuBaoHiemId || undefined,
       nhaSanXuatId: this.newProduct.nhaSanXuatId || undefined,
       chatLieuVoId: this.newProduct.chatLieuVoId || undefined,
-      trongLuongId: this.newProduct.trongLuongId || undefined,
       xuatXuId: this.newProduct.xuatXuId || undefined,
       kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
       congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
-      mauSacId: this.newProduct.mauSacId || undefined,
       moTa: this.newProduct.description,
       anhSanPham: this.newProduct.anhSanPham,
     };
 
-    this.productApi.create(payload).subscribe({
-      next: (response) => {
-        console.log('Tạo sản phẩm thành công:', response);
-        alert('Thêm sản phẩm thành công!');
-        this.router.navigate(['/products/helmets']);
-      },
-      error: (error) => {
-        console.error('Lỗi khi tạo sản phẩm:', error);
-        if (error?.status === 409) {
-          // Xóa thông báo lỗi mã sản phẩm trùng lặp
+    this.productApi.create(payload as any).subscribe({
+      next: (response: any) => {
+        const sanPhamId = response.id || response?.idSanPham || null;
+        if (!sanPhamId) {
           this.isLoading = false;
+          alert('Không nhận được mã sản phẩm sau khi tạo!');
           return;
         }
-        alert(
-          `Lỗi khi tạo sản phẩm: ${error.error?.message || error.message || 'Lỗi không xác định'}`
-        );
-        this.isLoading = false;
+        // Gọi lần lượt API tạo các phiên bản
+        let doneCount = 0;
+        let errorFlag = false;
+        this.helmetVersions.forEach((v, idx) => {
+          const versionPayload: HelmetVersionRequest = {
+            sanPhamId,
+            kichThuocId: Number(v.kichThuocId),
+            mauSacId: Number(v.mauSacId),
+            trongLuongId: Number(v.trongLuongId),
+            giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+            soLuongTon:
+              v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+            trangThai: true,
+          };
+          console.log('DEBUG: will send versionPayload', idx, versionPayload); // debug
+          this.helmetVersionApi.create(versionPayload).subscribe({
+            next: () => {
+              doneCount++;
+              if (doneCount === this.helmetVersions.length && !errorFlag) {
+                alert('Tạo sản phẩm và các phiên bản thành công!');
+                this.router.navigate(['/products/helmets']);
+              }
+            },
+            error: (err: any) => {
+              errorFlag = true;
+              alert(
+                'Lỗi khi tạo phiên bản: ' + (err.error?.message || err.message || 'Không xác định')
+              );
+              this.isLoading = false;
+            },
+          });
+        });
       },
+      error: (error) => {
+        this.isLoading = false;
+        alert(
+          'Lỗi khi tạo sản phẩm: ' + (error.error?.message || error.message || 'Không xác định')
+        );
+      },
+    });
+  }
+
+  onUpdate() {
+    // Cập nhật sản phẩm chính (giả sử payload giống onSubmit)
+    const payload = {
+      maSanPham: this.newProduct.code,
+      tenSanPham: this.newProduct.name,
+      trangThai: this.newProduct.status === 'Đang bán',
+      loaiMuBaoHiemId: this.newProduct.loaiMuBaoHiemId || undefined,
+      nhaSanXuatId: this.newProduct.nhaSanXuatId || undefined,
+      chatLieuVoId: this.newProduct.chatLieuVoId || undefined,
+      xuatXuId: this.newProduct.xuatXuId || undefined,
+      kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
+      congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
+      moTa: this.newProduct.description,
+      anhSanPham: this.newProduct.anhSanPham,
+    };
+    this.productApi.update(this.newProduct.id, payload as any).subscribe({
+      next: (response: any) => {
+        const sanPhamId = response.id || this.newProduct.id;
+        // Update + create variant
+        this.helmetVersions.forEach((v, idx) => {
+          const versionPayload: HelmetVersionRequest = {
+            sanPhamId,
+            kichThuocId: Number(v.kichThuocId),
+            mauSacId: Number(v.mauSacId),
+            trongLuongId: Number(v.trongLuongId),
+            giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+            soLuongTon:
+              v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+            trangThai: true,
+          };
+          console.log('DEBUG: will send versionPayload', idx, versionPayload); // debug
+          if (v.id) {
+            this.helmetVersionApi.update(v.id, versionPayload).subscribe();
+          } else {
+            this.helmetVersionApi.create(versionPayload).subscribe();
+          }
+        });
+        // Delete removed variants
+        this.deletedVersionIds.forEach((id) => this.helmetVersionApi.delete(id).subscribe());
+        alert('Cập nhật sản phẩm và các phiên bản thành công!');
+        this.router.navigate(['/products/helmets']);
+      },
+      error: (err) => alert(err.error?.message || 'Lỗi cập nhật'),
     });
   }
 

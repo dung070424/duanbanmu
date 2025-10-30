@@ -11,7 +11,7 @@
         (click)="toggleDropdown()"
       />
       <button
-        *ngIf="selectedValue"
+        *ngIf="(!multiSelect && selectedValue) || (multiSelect && selectedValues?.length)"
         class="btn btn-outline-secondary clear-button"
         type="button"
         (click)="clearSelection()"
@@ -49,8 +49,15 @@
           *ngFor="let option of filteredOptions"
           class="dropdown-item"
           (click)="onOptionSelect(option)"
-          [class.selected]="selectedValue === option.id"
+          [class.selected]="multiSelect ? (selectedValues?.includes(option.id)) : (selectedValue === option.id)"
         >
+          <input
+            *ngIf="multiSelect"
+            type="checkbox"
+            class="form-check-input me-2"
+            [checked]="selectedValues?.includes(option.id)"
+            (click)="$event.stopPropagation(); onOptionSelect(option)"
+          />
           {{ option.name }}
         </div>
         <div *ngIf="filteredOptions.length === 0" class="dropdown-item no-results">

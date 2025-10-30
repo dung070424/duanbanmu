@@ -29,11 +29,14 @@ export interface DropdownOption {
 export class SearchableDropdownComponent implements OnInit, OnChanges {
   @Input() options: DropdownOption[] = [];
   @Input() selectedValue: number | null | undefined = null;
+  @Input() multiSelect: boolean = false; // enable multiple selection mode
+  @Input() selectedValues: number[] = []; // used when multiSelect=true
   @Input() placeholder: string = '-- Chọn --';
   @Input() disabled: boolean = false;
   @Input() showAddButton: boolean = false;
   @Input() addButtonTitle: string = 'Thêm mới';
   @Output() selectionChange = new EventEmitter<number | null>();
+  @Output() selectionChangeMulti = new EventEmitter<number[]>();
   @Output() addButtonClick = new EventEmitter<void>();
 
   @ViewChild('searchInput') searchInput!: ElementRef;
@@ -57,8 +60,17 @@ export class SearchableDropdownComponent implements OnInit, OnChanges {
 
   initializeOptions() {
     this.filteredOptions = [...this.options];
-    this.selectedOption = this.options.find((opt) => opt.id === this.selectedValue) || null;
-    this.selectedOptionName = this.selectedOption?.name || '';
+    if (this.multiSelect) {
+      // Build display label from selected values list
+      const nameList = this.options
+        .filter((opt) => this.selectedValues?.includes(opt.id))
+        .map((opt) => opt.name);
+      this.selectedOptionName = nameList.join(', ');
+      this.selectedOption = null;
+    } else {
+      this.selectedOption = this.options.find((opt) => opt.id === this.selectedValue) || null;
+      this.selectedOptionName = this.selectedOption?.name || '';
+    }
     this.searchTerm = ''; // Reset search term
   }
 
@@ -73,12 +85,29 @@ export class SearchableDropdownComponent implements OnInit, OnChanges {
   }
 
   onOptionSelect(option: DropdownOption) {
-    this.selectedOption = option;
-    this.selectedValue = option.id;
-    this.selectedOptionName = option.name;
-    this.searchTerm = ''; // Clear search term after selection
-    this.isOpen = false;
-    this.selectionChange.emit(option.id);
+    if (this.multiSelect) {
+      const id = option.id;
+      const current = new Set(this.selectedValues || []);
+      if (current.has(id)) {
+        current.delete(id);
+      } else {
+        current.add(id);
+      }
+      this.selectedValues = Array.from(current);
+      const nameList = this.options
+        .filter((opt) => this.selectedValues.includes(opt.id))
+        .map((opt) => opt.name);
+      this.selectedOptionName = nameList.join(', ');
+      this.selectionChangeMulti.emit(this.selectedValues);
+      // keep dropdown open for multi-select
+    } else {
+      this.selectedOption = option;
+      this.selectedValue = option.id;
+      this.selectedOptionName = option.name;
+      this.searchTerm = ''; // Clear search term after selection
+      this.isOpen = false;
+      this.selectionChange.emit(option.id);
+    }
   }
 
   onInputFocus() {
@@ -100,11 +129,18 @@ export class SearchableDropdownComponent implements OnInit, OnChanges {
   }
 
   clearSelection() {
-    this.selectedOption = null;
-    this.selectedValue = null;
-    this.selectedOptionName = '';
-    this.searchTerm = '';
-    this.selectionChange.emit(null);
+    if (this.multiSelect) {
+      this.selectedValues = [];
+      this.selectedOptionName = '';
+      this.searchTerm = '';
+      this.selectionChangeMulti.emit([]);
+    } else {
+      this.selectedOption = null;
+      this.selectedValue = null;
+      this.selectedOptionName = '';
+      this.searchTerm = '';
+      this.selectionChange.emit(null);
+    }
   }
 
   toggleDropdown() {

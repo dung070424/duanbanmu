@@ -9,7 +9,7 @@ import { HoaDonDTO, HoaDonPaginatedResponse, HoaDonFilter, HoaDonAdvancedFilter 
   providedIn: 'root'
 })
 export class HoaDonService {
-  private apiUrl = `${environment.apiBaseUrl}/api/hoa-don`;
+  private apiUrl = `${environment.apiUrl}/hoa-don`;
 
   constructor(private http: HttpClient) { }
 
@@ -191,15 +191,15 @@ export class HoaDonService {
   }
 
   getActiveSanPham(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiBaseUrl}/api/san-pham/active`);
+    return this.http.get<any[]>(`${environment.apiUrl}/san-pham/active`);
   }
 
   getAvailableSanPham(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiBaseUrl}/api/san-pham/available`);
+    return this.http.get<any[]>(`${environment.apiUrl}/san-pham/available`);
   }
 
   createSanPham(sanPham: any): Observable<any> {
-    return this.http.post<any>(`${environment.apiBaseUrl}/api/san-pham/create`, sanPham);
+    return this.http.post<any>(`${environment.apiUrl}/san-pham/create`, sanPham);
   }
 
   getProducts(): Observable<any[]> {
@@ -224,26 +224,26 @@ export class HoaDonService {
 
   // Customer API methods
   getAllCustomers(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiBaseUrl}/api/khach-hang/all`);
+    return this.http.get<any[]>(`${environment.apiUrl}/khach-hang/all`);
   }
 
   getCustomerById(id: number): Observable<any> {
-    return this.http.get<any>(`${environment.apiBaseUrl}/api/khach-hang/${id}`);
+    return this.http.get<any>(`${environment.apiUrl}/khach-hang/${id}`);
   }
 
   getCustomerByEmail(email: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiBaseUrl}/api/khach-hang/email/${email}`);
+    return this.http.get<any>(`${environment.apiUrl}/khach-hang/email/${email}`);
   }
 
   getCustomerByPhone(phone: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiBaseUrl}/api/khach-hang/phone/${phone}`);
+    return this.http.get<any[]>(`${environment.apiUrl}/khach-hang/phone/${phone}`);
   }
 
   createCustomer(customer: any): Observable<any> {
-    return this.http.post<any>(`${environment.apiBaseUrl}/api/khach-hang/create`, customer);
+    return this.http.post<any>(`${environment.apiUrl}/khach-hang/create`, customer);
   }
 
   searchCustomerByName(name: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiBaseUrl}/api/khach-hang/search?name=${encodeURIComponent(name)}`);
+    return this.http.get<any[]>(`${environment.apiUrl}/khach-hang/search?name=${encodeURIComponent(name)}`);
   }
 }

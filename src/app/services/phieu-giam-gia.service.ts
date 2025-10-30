@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { PhieuGiamGia, PhieuGiamGiaRequest, PhieuGiamGiaResponse, ApiResponse, KhachHangResponse } from '../interfaces/phieu-giam-gia.interface';
@@ -8,7 +9,7 @@ import { PhieuGiamGia, PhieuGiamGiaRequest, PhieuGiamGiaResponse, ApiResponse, K
   providedIn: 'root'
 })
 export class PhieuGiamGiaService {
-  private readonly API_BASE_URL = 'http://localhost:8081/api';
+  private readonly API_BASE_URL = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 

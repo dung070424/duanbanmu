@@ -68,7 +68,7 @@ export class CustomerAddressService {
     console.log('📍 Creating address with data:', address);
     
     // Sử dụng endpoint thực tế với responseType text
-    return this.http.post('http://localhost:8081/api/address/save', address, { 
+    return this.http.post(`${environment.apiUrl}/address/save`, address, { 
       responseType: 'text' 
     }).pipe(
       map(responseText => {

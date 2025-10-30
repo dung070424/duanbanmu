@@ -8,7 +8,7 @@ import { DiaChiKhachHang } from '../interfaces/dia-chi-khach-hang.interface';
   providedIn: 'root',
 })
 export class DiaChiKhachHangService {
-  private apiUrl = `${environment.apiBaseUrl}/api/dia-chi-khach-hang`;
+  private apiUrl = `${environment.apiUrl}/dia-chi-khach-hang`;
 
   constructor(private http: HttpClient) {}
 
