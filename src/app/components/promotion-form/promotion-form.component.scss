@@ -90,7 +90,7 @@
 
 .main-content {
   display: grid;
-  grid-template-columns: 1.2fr 2fr; // Giảm kích thước cột trái một chút
+  grid-template-columns: 1.5fr 2fr; // Tăng kích thước cột trái để cân bằng hơn
   gap: 24px; // Tăng gap để tạo khoảng cách đẹp hơn
   height: auto; // Thay đổi từ fixed height thành auto
   align-items: start; // Căn chỉnh 2 section từ trên xuống
@@ -111,23 +111,22 @@
   }
 }
 
-// Promotion info section - nhỏ lại một chút
-.promotion-info-small {
-  max-width: 480px; // Giảm chiều rộng tối đa
-  min-width: 420px; // Giảm chiều rộng tối thiểu
+// Promotion info section - điều chỉnh để khớp với view tổng
+.left-section {
+  flex: 1;
   height: fit-content; // Chiều cao vừa với nội dung
-max-height: 600px; // Giới hạn chiều cao tối đa
+  max-height: 600px; // Giới hạn chiều cao tối đa
   overflow-y: auto; // Cho phép scroll nếu cần
 
   .section-header {
-    padding: 18px 22px; // Giảm padding header một chút
+    padding: 22px 28px; // Tăng padding header để khớp với product-list-large
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-bottom: 1px solid #dee2e6;
     border-radius: 12px 12px 0 0; // Bo góc header
 
     h3 {
-      font-size: 17px; // Giảm kích thước tiêu đề một chút
-      font-weight: 700; // Giữ font weight
+      font-size: 19px; // Tăng kích thước tiêu đề để khớp với product-list-large
+      font-weight: 700;
       color: #febc49;
       margin: 0;
       display: flex;
@@ -136,23 +135,23 @@ max-height: 600px; // Giới hạn chiều cao tối đa
 
     i {
       color: #febc49;
-      margin-right: 8px;
-      font-size: 17px; // Giảm kích thước icon một chút
+      margin-right: 10px;
+      font-size: 18px; // Tăng kích thước icon để khớp với product-list-large
     }
   }
 
   .form-content {
-    padding: 18px 22px; // Giảm padding một chút
+    padding: 22px 28px; // Tăng padding để khớp với product-list-large
     flex: 1;
   }
 
   .form-group {
-    margin-bottom: 14px; // Giảm khoảng cách giữa các trường
+    margin-bottom: 18px; // Tăng khoảng cách giữa các trường
 
     label {
-      font-size: 13px; // Giảm kích thước label một chút
-      margin-bottom: 5px;
-      font-weight: 700; // Giữ font weight
+      font-size: 14px; // Tăng kích thước label để khớp
+      margin-bottom: 6px;
+      font-weight: 600;
       color: #495057;
       display: flex;
       align-items: center;
@@ -160,25 +159,25 @@ max-height: 600px; // Giới hạn chiều cao tối đa
 
       i {
         color: #febc49;
-        font-size: 14px;
-        width: 16px;
+        font-size: 15px;
+        width: 18px;
         text-align: center;
       }
     }
 
     .form-control {
-      font-size: 13px; // Giảm kích thước input một chút
-      padding: 9px 12px; // Giảm padding input một chút
-      height: 38px; // Giảm chiều cao input một chút
-      border: 2px solid #e9ecef; // Giữ border width
-      border-radius: 7px; // Giảm border radius một chút
-      transition: all 0.2s ease-in-out; // Giữ thời gian transition
+      font-size: 14px; // Tăng kích thước input để khớp
+      padding: 10px 12px; // Tăng padding input
+      height: 40px; // Tăng chiều cao input
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      transition: all 0.2s ease-in-out;
 
       &:focus {
         border-color: #febc49;
-        box-shadow: 0 0 0 0.3rem rgba(0, 123, 255, 0.15); // Giữ shadow focus
+        box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25);
         outline: 0;
-        transform: translateY(-1px); // Giữ hiệu ứng focus
+        transform: translateY(-1px);
       }
 
       &[readonly] {
@@ -190,26 +189,26 @@ max-height: 600px; // Giới hạn chiều cao tối đa
   }
 
   .form-actions {
-    margin-top: 18px; // Giảm khoảng cách một chút
-    gap: 10px; // Giảm khoảng cách giữa các nút
+    margin-top: 24px; // Tăng khoảng cách
+    gap: 12px; // Tăng khoảng cách giữa các nút
     display: flex;
     justify-content: space-between;
 
     .btn {
-      font-size: 13px; // Giảm kích thước nút một chút
+      font-size: 14px; // Tăng kích thước nút
       font-family: 'Times New Roman', Times, serif;
-      padding: 10px 16px; // Giảm padding nút một chút
-      height: 40px; // Giảm chiều cao nút một chút
+      padding: 12px 20px; // Tăng padding nút
+      height: 42px; // Tăng chiều cao nút
       flex: 1;
       margin: 0 5px;
-      border-radius: 7px; // Giảm border radius một chút
-      font-weight: 700; // Giữ font weight
-      transition: all 0.2s ease-in-out; // Giữ thời gian transition
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease-in-out;
       border: none;
 
       &:hover {
-        transform: translateY(-2px); // Giữ hiệu ứng hover
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); // Giữ shadow hover
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
 
       &.btn-success {

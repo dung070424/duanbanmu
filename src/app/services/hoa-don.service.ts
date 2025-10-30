@@ -52,7 +52,36 @@ export class HoaDonService {
       }
     }
     
-    return this.http.get<any>(`${this.apiUrl}/page`, { params });
+    return this.http.get<any>(`${this.apiUrl}/page`, { params }).pipe(
+      map((response: any) => {
+        // Map danhSachChiTiet sang danhSachSanPham cho từng hóa đơn
+        if (response.content && Array.isArray(response.content)) {
+          response.content = response.content.map((invoice: any) => {
+            if (invoice.danhSachChiTiet && Array.isArray(invoice.danhSachChiTiet)) {
+              invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => ({
+                id: item.id,
+                chiTietSanPhamId: item.chiTietSanPhamId,
+                tenSanPham: item.tenSanPham,
+                maSanPham: item.maSanPham,
+                mauSac: item.mauSac,
+                kichThuoc: item.kichThuoc,
+                nhaSanXuat: item.nhaSanXuat,
+                soLuong: item.soLuong,
+                donGia: item.donGia ? Number(item.donGia) : 0,
+                giamGia: item.giamGia ? Number(item.giamGia) : 0,
+                thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
+                anhSanPham: item.anhSanPham,
+                sanPhamId: item.chiTietSanPhamId
+              }));
+            } else {
+              invoice.danhSachSanPham = [];
+            }
+            return invoice;
+          });
+        }
+        return response;
+      })
+    );
   }
 
   getHoaDonPaginated(filter: HoaDonFilter): Observable<any> {
@@ -64,11 +93,64 @@ export class HoaDonService {
     if (filter.search) params = params.append('search', filter.search);
     if (filter.trangThai) params = params.append('trangThai', filter.trangThai);
 
-    return this.http.get<any>(`${this.apiUrl}/page`, { params });
+    return this.http.get<any>(`${this.apiUrl}/page`, { params }).pipe(
+      map((response: any) => {
+        // Map danhSachChiTiet sang danhSachSanPham cho từng hóa đơn
+        if (response.content && Array.isArray(response.content)) {
+          response.content = response.content.map((invoice: any) => {
+            if (invoice.danhSachChiTiet && Array.isArray(invoice.danhSachChiTiet)) {
+              invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => ({
+                id: item.id,
+                chiTietSanPhamId: item.chiTietSanPhamId,
+                tenSanPham: item.tenSanPham,
+                maSanPham: item.maSanPham,
+                mauSac: item.mauSac,
+                kichThuoc: item.kichThuoc,
+                nhaSanXuat: item.nhaSanXuat,
+                soLuong: item.soLuong,
+                donGia: item.donGia ? Number(item.donGia) : 0,
+                giamGia: item.giamGia ? Number(item.giamGia) : 0,
+                thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
+                anhSanPham: item.anhSanPham,
+                sanPhamId: item.chiTietSanPhamId
+              }));
+            } else {
+              invoice.danhSachSanPham = [];
+            }
+            return invoice;
+          });
+        }
+        return response;
+      })
+    );
   }
 
   getHoaDonById(id: number): Observable<HoaDonDTO> {
-    return this.http.get<HoaDonDTO>(`${this.apiUrl}/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map((response: any) => {
+        // Map danhSachChiTiet từ backend sang danhSachSanPham cho frontend
+        if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet)) {
+          response.danhSachSanPham = response.danhSachChiTiet.map((item: any) => ({
+            id: item.id,
+            chiTietSanPhamId: item.chiTietSanPhamId,
+            tenSanPham: item.tenSanPham,
+            maSanPham: item.maSanPham,
+            mauSac: item.mauSac,
+            kichThuoc: item.kichThuoc,
+            nhaSanXuat: item.nhaSanXuat,
+            soLuong: item.soLuong,
+            donGia: item.donGia ? Number(item.donGia) : 0,
+            giamGia: item.giamGia ? Number(item.giamGia) : 0,
+            thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
+            anhSanPham: item.anhSanPham,
+            sanPhamId: item.chiTietSanPhamId // Map chiTietSanPhamId to sanPhamId for compatibility
+          }));
+        } else {
+          response.danhSachSanPham = [];
+        }
+        return response as HoaDonDTO;
+      })
+    );
   }
 
   createHoaDon(hoaDon: Partial<HoaDonDTO>): Observable<HoaDonDTO> {
@@ -217,7 +299,31 @@ export class HoaDonService {
 
   // Get detailed invoice information
   getHoaDonDetail(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}/detail`);
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map((response: any) => {
+        // Map danhSachChiTiet từ backend sang danhSachSanPham cho frontend
+        if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet)) {
+          response.danhSachSanPham = response.danhSachChiTiet.map((item: any) => ({
+            id: item.id,
+            chiTietSanPhamId: item.chiTietSanPhamId,
+            tenSanPham: item.tenSanPham,
+            maSanPham: item.maSanPham,
+            mauSac: item.mauSac,
+            kichThuoc: item.kichThuoc,
+            nhaSanXuat: item.nhaSanXuat,
+            soLuong: item.soLuong,
+            donGia: item.donGia ? Number(item.donGia) : 0,
+            giamGia: item.giamGia ? Number(item.giamGia) : 0,
+            thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
+            anhSanPham: item.anhSanPham,
+            sanPhamId: item.chiTietSanPhamId // Map chiTietSanPhamId to sanPhamId for compatibility
+          }));
+        } else {
+          response.danhSachSanPham = [];
+        }
+        return response;
+      })
+    );
   }
 
 
