@@ -1,235 +1,228 @@
 <div class="promotion-management">
-  <!-- Header Section -->
-  <div class="page-header">
-    <div class="header-left">
-      <div class="page-title">
-        <i class="bi bi-gift"></i>
-        <h1>Quản lý chương trình khuyến mãi</h1>
-      </div>
-      
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-outline-secondary" (click)="onExportExcel()">
-        <i class="bi bi-download"></i>
-        Xuất Excel
-      </button>
-      <button class="btn btn-outline-secondary" (click)="onImportExcel()">
-        <i class="bi bi-upload"></i>
-        Nhập Excel
-      </button>
-      <button class="btn btn-primary" (click)="onAddPromotion()">
-        <i class="bi bi-plus"></i>
-        + Thêm khuyến mãi
-      </button>
-    </div>
-  </div>
 
-  <!-- Search Filter Section -->
-  <div class="search-filter-section">
-    <div class="filter-header">
-      <i class="bi bi-funnel"></i>
-      <h3>Bộ Lọc Tìm Kiếm</h3>
-    </div>
-    
-    <div class="filter-content">
-      <!-- Row 1: Search Input and Dropdowns -->
-      <div class="filter-row">
-        <div class="filter-group">
-          <label>Tìm kiếm đợt giảm giá</label>
-          <div class="search-input-group">
-            <i class="bi bi-search"></i>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Mã đợt, tên đợt..."
-              [(ngModel)]="filterCriteria.searchTerm"
-              (keyup)="onSearch()"
-              [disabled]="loading"
-            />
-          </div>
+  <!-- Main Content Container -->
+  <div class="main-content">
+    <!-- Search Filter Section -->
+    <div class="search-filter-section">
+      <div class="filter-header">
+        <div class="header-left">
+          <i class="bi bi-funnel"></i>
+          <h3>Bộ Lọc Tìm Kiếm</h3>
         </div>
-        
-        <div class="filter-group">
-          <label>Loại giảm giá</label>
-          <select class="form-control" [(ngModel)]="filterCriteria.discountType" (change)="onFilter()">
-            <option value="">Tất cả loại giảm giá</option>
-            <option value="PHAN_TRAM">Phần trăm (%)</option>
-            <option value="SO_TIEN">Số tiền (VND)</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label>Trạng thái</label>
-          <select class="form-control" [(ngModel)]="filterCriteria.status" (change)="onFilter()">
-            <option value="">Trạng thái đang/sắp diễn ra</option>
-            <option value="ACTIVE">Đang hoạt động</option>
-            <option value="UPCOMING">Sắp diễn ra</option>
-            <option value="ENDED">Đã kết thúc</option>
-            <option value="INACTIVE">Tạm dừng</option>
-          </select>
+        <div class="header-right">
         </div>
       </div>
-      
-      <!-- Row 2: Date Range -->
-      <div class="filter-row">
-        <div class="filter-group">
-          <label>Khoảng thời gian</label>
-          <div class="date-range-group">
-            <input
-              type="date"
-              class="form-control"
-              [(ngModel)]="filterCriteria.startDate"
-              (change)="onFilter()"
-              [disabled]="loading"
-            />
-            <span class="date-separator">đến</span>
-            <input
-              type="date"
-              class="form-control"
-              [(ngModel)]="filterCriteria.endDate"
-              (change)="onFilter()"
-              [disabled]="loading"
-            />
+
+      <div class="filter-content">
+        <!-- Row 1: Search Input and Dropdowns -->
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Tìm kiếm đợt giảm giá</label>
+            <div class="search-input-group">
+              <i class="bi bi-search"></i>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Nhập ít nhất 2 ký tự để tìm kiếm..."
+                [(ngModel)]="filterCriteria.searchTerm"
+                (keyup)="onSearch()"
+                [disabled]="loading"
+              />
+            </div>
+            <small class="search-hint" *ngIf="filterCriteria.searchTerm && filterCriteria.searchTerm.trim().length === 1">
+              <i class="bi bi-info-circle"></i> Vui lòng nhập thêm ít nhất 1 ký tự nữa
+            </small>
+          </div>
+
+          <div class="filter-group">
+            <label>Loại giảm giá</label>
+            <select class="form-control" [(ngModel)]="filterCriteria.discountType" (change)="onFilter()">
+              <option value="">Tất cả loại giảm giá</option>
+              <option value="PHAN_TRAM">Phần trăm (%)</option>
+              <option value="SO_TIEN">Số tiền (VND)</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Trạng thái</label>
+            <select class="form-control" [(ngModel)]="filterCriteria.status" (change)="onFilter()">
+              <option value="">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang diễn ra</option>
+              <option value="UPCOMING">Sắp diễn ra</option>
+            </select>
           </div>
         </div>
-      </div>
-      
-      <!-- Row 3: Sliders -->
-      <div class="filter-row">
-        <div class="filter-group">
-          <label>Giá trị giảm (%)</label>
-          <div class="slider-group">
-            <div class="slider-container">
-              <div class="slider-track">
-                <div class="slider-fill" [style.width.%]="filterCriteria.discountPercentageMax"></div>
-                <input
-                  type="range"
-                  class="slider-input"
-                  min="0"
-                  max="100"
-                  [(ngModel)]="filterCriteria.discountPercentageMax"
-                  (input)="onFilter()"
-                  [disabled]="loading"
-                />
+
+        <!-- Row 2: Date Range -->
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Khoảng thời gian</label>
+            <div class="date-range-group">
+              <input
+                type="date"
+                class="form-control"
+                [(ngModel)]="filterCriteria.startDate"
+                (change)="onDateFilterChange()"
+                [disabled]="loading"
+                [max]="filterCriteria.endDate || getMaxDate()"
+                placeholder="Từ ngày"
+                title="Chọn ngày bắt đầu"
+              />
+              <span class="date-separator">đến</span>
+              <input
+                type="date"
+                class="form-control"
+                [(ngModel)]="filterCriteria.endDate"
+                (change)="onDateFilterChange()"
+                [disabled]="loading"
+                [min]="filterCriteria.startDate"
+                [max]="getMaxDate()"
+                placeholder="Đến ngày"
+                title="Chọn ngày kết thúc"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Sliders -->
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Giá trị giảm (%)</label>
+            <div class="slider-group">
+              <div class="slider-container">
+                <div class="slider-track">
+                  <div class="slider-fill" [style.width.%]="filterCriteria.discountPercentageMax"></div>
+                  <input
+                    type="range"
+                    class="slider-input"
+                    min="0"
+                    max="100"
+                    [(ngModel)]="filterCriteria.discountPercentageMax"
+                    (input)="onFilter()"
+                    [disabled]="loading"
+                  />
+                </div>
+                <div class="slider-labels">
+                  <span>0%</span>
+                  <span>{{ filterCriteria.discountPercentageMax }}%</span>
+                </div>
               </div>
-              <div class="slider-labels">
-                <span>0%</span>
-                <span>{{ filterCriteria.discountPercentageMax }}%</span>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Số tiền giảm tối đa (VND)</label>
+            <div class="slider-group">
+              <div class="slider-container">
+                <div class="slider-track">
+                  <div class="slider-fill" [style.width.%]="(filterCriteria.maxDiscountAmount / 50000000) * 100"></div>
+                  <input
+                    type="range"
+                    class="slider-input"
+                    min="0"
+                    max="50000000"
+                    step="100000"
+                    [(ngModel)]="filterCriteria.maxDiscountAmount"
+                    (input)="onFilter()"
+                    [disabled]="loading"
+                  />
+                </div>
+                <div class="slider-labels">
+                  <span>0 </span>
+                  <span>{{ formatCurrency(filterCriteria.maxDiscountAmount) }} </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        
-        <div class="filter-group">
-          <label>Số tiền giảm tối đa (VND)</label>
-          <div class="slider-group">
-            <div class="slider-container">
-              <div class="slider-track">
-                <div class="slider-fill" [style.width.%]="(filterCriteria.maxDiscountAmount / 50000000) * 100"></div>
-                <input
-                  type="range"
-                  class="slider-input"
-                  min="0"
-                  max="50000000"
-                  step="100000"
-                  [(ngModel)]="filterCriteria.maxDiscountAmount"
-                  (input)="onFilter()"
-                  [disabled]="loading"
-                />
-              </div>
-              <div class="slider-labels">
-                <span>0 ₫</span>
-                <span>{{ formatCurrency(filterCriteria.maxDiscountAmount) }} ₫</span>
-              </div>
-            </div>
-          </div>
+
+        <!-- Action Buttons -->
+        <div class="filter-actions">
+          <button class="btn btn-secondary" (click)="resetFilter()" [disabled]="loading">
+            <i class="bi bi-arrow-clockwise"></i>
+            Đặt lại bộ lọc
+          </button>
+          <button class="btn btn-success" (click)="onExportExcel()" [disabled]="loading">
+            <i class="bi bi-file-earmark-excel"></i>
+            Xuất Excel
+          </button>
+          <button class="btn btn-primary" (click)="onAddPromotion()" [disabled]="loading">
+            <i class="bi bi-plus"></i>
+            Thêm Đợt Giảm Giá
+          </button>
         </div>
       </div>
-      
-      <!-- Action Buttons -->
-      <div class="filter-actions">
-        <button class="btn btn-secondary" (click)="resetFilter()" [disabled]="loading">
-          <i class="bi bi-arrow-clockwise"></i>
-          Đặt lại bộ lọc
-        </button>
-        <button class="btn btn-success" (click)="onExportExcel()" [disabled]="loading">
-          <i class="bi bi-file-earmark-excel"></i>
-          Xuất Excel
-        </button>
-        <button class="btn btn-primary" (click)="onAddPromotion()" [disabled]="loading">
-          <i class="bi bi-plus"></i>
-          Thêm Đợt Giảm Giá
-        </button>
+    </div>
+
+    <!-- Separator -->
+    <div class="section-separator"></div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle"></i>
+      {{ error }}
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+      <div class="table-header">
+        <i class="bi bi-calendar3"></i>
+        <h3>Danh Sách Đợt Giảm Giá</h3>
       </div>
-    </div>
-  </div>
 
-  <!-- Error Message -->
-  <div *ngIf="error" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle"></i>
-    {{ error }}
-  </div>
-
- 
-<div>
-  
-</div>
-  <!-- Table Section -->
-  <div class="table-section">
-    <div class="table-header">
-      <h3>Danh sách chương trình khuyến mãi ({{ promotions.length }} chương trình)</h3>
-    </div>
-
-    <div class="table-responsive">
-      <table class="table table-hover">
-        <thead>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
           <tr>
-            <th>Mã KM</th>
-            <th>Tên chương trình</th>
-            <th>Loại giảm giá</th>
-            <th>Giá trị giảm</th>
-            <th>Ngày bắt đầu</th>
-            <th>Ngày kết thúc</th>
-            <th>Điều kiện</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
+            <th>STT</th>
+            <th>Mã đợt</th>
+            <th>Tên đợt</th>
+            <th>Giá Trị</th>
+            <th>Loại Phiếu</th>
+            <th>Trạng Thái</th>
+            <th>Ngày Bắt Đầu</th>
+            <th>Ngày Kết Thúc</th>
+            <th>Hành Động</th>
           </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let promotion of promotions; let i = index">
-            <td>
-              <strong>{{ promotion.code }}</strong>
+          </thead>
+          <tbody>
+          <tr *ngFor="let promotion of getPaginatedPromotions(); let i = index">
+            <td>{{ getStartItem() + i }}</td>
+            <td class="promotion-code-cell">
+              {{ promotion.code }}
             </td>
             <td>{{ promotion.name }}</td>
-            <td>{{ promotion.discountType }}</td>
             <td>
-              <strong>{{ promotion.discountValue }}</strong>
+              <div class="discount-value">
+                <div class="discount-percentage">{{ promotion.discountPercentage || '0%' }}</div>
+                <div class="max-discount">Số tiền giảm tối đa: {{ formatCurrency(promotion.maxDiscountAmount || 0) }} </div>
+              </div>
+            </td>
+            <td>
+              <span class="voucher-type-badge">{{ promotion.voucherType || 'Tiền mặt' }}</span>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(promotion.status)">
+                {{ getStatusText(promotion.status) }}
+              </span>
             </td>
             <td>{{ promotion.startDate }}</td>
             <td>{{ promotion.endDate }}</td>
-            <td>{{ promotion.condition }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="getStatusClass(promotion.status)">
-                {{ promotion.status }}
-              </span>
-            </td>
             <td>
               <div class="action-buttons">
-                <button class="btn btn-sm btn-outline-info" (click)="onView(promotion)" title="Xem chi tiết">
-                  <i class="bi bi-eye"></i>
-                </button>
                 <button
-                  class="btn btn-sm btn-outline-warning"
+                  class="btn btn-sm edit-btn"
                   (click)="onEdit(promotion)"
-                  title="Chỉnh sửa"
+                  title="Chỉnh sửa đợt giảm giá"
                   [disabled]="loading"
+                  [attr.aria-label]="'Chỉnh sửa ' + promotion.name"
                 >
-                  <i class="bi bi-pencil"></i>
+                  <i class="bi bi-pencil-square"></i>
                 </button>
                 <button
-                  class="btn btn-sm btn-outline-danger"
+                  class="btn btn-sm delete-btn"
                   (click)="onDelete(promotion)"
-                  title="Xóa"
+                  title="Xóa khuyến mại"
                   [disabled]="loading"
                 >
                   <i class="bi bi-trash"></i>
@@ -243,17 +236,48 @@
               Không có dữ liệu
             </td>
           </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+          </tbody>
+        </table>
+      </div>
 
-  <!-- Promotion Modal -->
-  <app-promotion-modal
-    [isVisible]="showModal"
-    [isEditMode]="isEditMode"
-    [promotionData]="selectedPromotion"
-    (close)="onModalClose()"
-    (save)="onModalSave($event)"
-  ></app-promotion-modal>
-</div>
+      <!-- Pagination -->
+      <div class="pagination-section">
+        <div class="pagination-info">
+          <span class="items-per-page">Hiển thị 5 mục / trang</span>
+          <span class="current-range">Hiển thị {{ getStartItem() }} - {{ getEndItem() }} / {{ promotions.length }} mục</span>
+        </div>
+        <div class="pagination-controls">
+          <button class="btn btn-pagination" [disabled]="currentPage === 1" (click)="goToFirstPage()">
+            <i class="bi bi-chevron-double-left"></i>
+          </button>
+          <button class="btn btn-pagination" [disabled]="currentPage === 1" (click)="goToPreviousPage()">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <button
+            *ngFor="let page of getVisiblePages()"
+            class="btn btn-pagination"
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+          <button class="btn btn-pagination" [disabled]="currentPage === totalPages" (click)="goToNextPage()">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="btn btn-pagination" [disabled]="currentPage === totalPages" (click)="goToLastPage()">
+            <i class="bi bi-chevron-double-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Promotion Modal -->
+    <app-promotion-modal
+      [isVisible]="showModal"
+      [isEditMode]="isEditMode"
+      [isViewMode]="isViewMode"
+      [promotionData]="selectedPromotion"
+      (close)="onModalClose()"
+      (save)="onModalSave($event)"
+    ></app-promotion-modal>
+  </div>
