@@ -1,12 +1,12 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-12">
-      <div class="page-header">
-        <h2>Quản lý hóa đơn</h2>
-      </div>
-
-      <!-- Bộ lọcc -->
+      <!-- Bộ lọc tìm kiếm -->
       <div class="filter-section">
+        <div class="section-title">
+          <i class="bi bi-funnel"></i>
+          <h3>Bộ Lọc Tìm Kiếm</h3>
+        </div>
         <div class="row">
           <div class="col-md-3">
             <div class="form-group">
@@ -106,13 +106,43 @@
           </div>
           <div class="col-md-3">
             <div class="form-group">
-              <label>&nbsp;</label>
-              <div class="create-invoice-button-container">
-                <button class="btn btn-primary" (click)="openAddModal()">
-                  <i class="bi bi-plus-circle"></i>
-                  Tạo hóa đơn mới
+              <label>Ngày tạo:</label>
+              <div class="date-range-group">
+                <input
+                  type="date"
+                  class="form-control date-input"
+                  [(ngModel)]="startDate"
+                  name="startDate"
+                  (change)="onDateFilterChange()"
+                />
+                <span class="date-separator">đến</span>
+                <input
+                  type="date"
+                  class="form-control date-input"
+                  [(ngModel)]="endDate"
+                  name="endDate"
+                  (change)="onDateFilterChange()"
+                />
+                <button
+                  *ngIf="startDate || endDate"
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary p-0 border-0 bg-transparent date-clear-btn"
+                  (click)="clearDateFilter()"
+                  title="Xóa lọc ngày"
+                >
+                  <i class="bi bi-x-circle text-muted"></i>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 text-end">
+            <div class="create-invoice-button-container">
+              <button class="btn btn-primary" (click)="openAddModal()">
+                <i class="bi bi-plus-circle"></i>
+                Tạo hóa đơn mới
+              </button>
             </div>
           </div>
         </div>

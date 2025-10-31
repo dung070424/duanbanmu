@@ -26,12 +26,12 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #000000;
+  color: #febc49;
 }
 
 .section-title i {
   font-size: 1.5rem;
-  color: #000000;
+  color: #febc49;
 }
 
 .filter-content {
@@ -301,21 +301,29 @@
   white-space: nowrap;
 }
 
-.status-badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+/* Status badge in staff table */
+.data-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
+  line-height: 1.2;
+  box-sizing: border-box;
 }
 
-.status-badge.active {
+.data-table .status-badge.active {
   background-color: #d4edda;
   color: #155724;
 }
 
-.status-badge.inactive {
+.data-table .status-badge.inactive {
   background-color: #f8d7da;
   color: #721c24;
 }

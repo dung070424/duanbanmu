@@ -43,6 +43,14 @@ export class HoaDonService {
         params = params.append('phuongThucThanhToan', filterParams.phuongThucThanhToan);
       }
       
+      // Add date range parameters
+      if (filterParams.ngayBatDau) {
+        params = params.append('ngayBatDau', filterParams.ngayBatDau);
+      }
+      if (filterParams.ngayKetThuc) {
+        params = params.append('ngayKetThuc', filterParams.ngayKetThuc);
+      }
+      
       // Add sorting parameters
       if (filterParams.sortBy) {
         params = params.append('sortBy', filterParams.sortBy);

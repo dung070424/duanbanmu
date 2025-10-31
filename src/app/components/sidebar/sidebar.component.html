@@ -49,6 +49,7 @@
               [class.has-submenu]="subItem.hasSubmenu"
               (click)="subItem.hasSubmenu ? toggleSubmenu(subItem) : null"
             >
+              <i *ngIf="$any(subItem).icon" class="bi" [ngClass]="$any(subItem).icon"></i>
               <span>{{ subItem.label }}</span>
               <i
                 *ngIf="subItem.hasSubmenu"

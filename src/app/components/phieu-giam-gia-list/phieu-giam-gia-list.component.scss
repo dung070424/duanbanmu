@@ -81,31 +81,7 @@
           grid-column: span 6;
         }
 
-        // Row 3: Item 5, 6, 7 (buttons) - hàng riêng, căn sát bên phải
-        // Tạo một nhóm buttons sát nhau bằng cách dùng flexbox
-        &:nth-child(5),
-        &:nth-child(6),
-        &:nth-child(7) {
-          grid-column: auto;
-        }
-        
-        // Đặt tất cả 3 buttons vào cuối grid, sát hoàn toàn
-        &:nth-child(5) {
-          grid-column: 4 / span 1;
-          justify-self: end;
-          margin-right: 0; // Không có khoảng cách
-        }
-        
-        &:nth-child(6) {
-          grid-column: 5 / span 1;
-          justify-self: end;
-          margin-right: 0; // Không có khoảng cách
-        }
-        
-        &:nth-child(7) {
-          grid-column: 6 / span 1;
-          justify-self: end;
-        }
+        // Row 2: Date range đã xử lý ở trên, không cần thêm gì
 
         label {
           font-weight: 500;
@@ -208,48 +184,70 @@
 
       .filter-actions {
         display: flex;
-        gap: clamp(10px, 2vw, 15px);
         justify-content: flex-end;
-        margin-top: clamp(15px, 2vw, 20px);
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
         grid-column: 1 / -1;
-        flex-wrap: wrap;
 
-        button {
-          padding: clamp(10px, 2vw, 12px) clamp(20px, 3vw, 24px);
+        .btn {
+          padding: 8px 16px;
+          font-size: 14px;
+          border-radius: 6px;
+          font-weight: 600;
+          transition: all 0.2s ease;
           border: none;
-          border-radius: clamp(6px, 1vw, 8px);
-          font-size: clamp(12px, 2vw, 14px);
-          font-weight: 500;
           cursor: pointer;
-          transition: background-color 0.15s ease-in-out;
-          flex: 1;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
           min-width: 120px;
+          justify-content: center;
 
-          &.btn-reset {
-            background-color: #6c757d;
-            color: white;
-
-            &:hover {
-              background-color: #5a6268;
-            }
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
           }
 
-          &.btn-export {
-            background-color: #febc49;
-            color: white;
-
-            &:hover {
-              background-color: #e6a942;
-            }
+          i {
+            font-size: 14px;
           }
+        }
 
-          &.btn-add {
-            background-color: #febc49;
-            color: white;
+        .btn-secondary {
+          background-color: #6c757d;
+          color: white;
+          box-shadow: 0 1px 2px rgba(108, 117, 125, 0.2);
 
-            &:hover {
-              background-color: #e6a942;
-            }
+          &:hover:not(:disabled) {
+            background-color: #5a6268;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+          }
+        }
+
+        .btn-success {
+          background-color: #febc49;
+          color: white;
+          box-shadow: 0 1px 2px rgba(254, 188, 73, 0.2);
+
+          &:hover:not(:disabled) {
+            background-color: #f0a500;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(254, 188, 73, 0.3);
+          }
+        }
+
+        .btn-primary {
+          background-color: #febc49;
+          color: white;
+          box-shadow: 0 1px 2px rgba(254, 188, 73, 0.2);
+
+          &:hover:not(:disabled) {
+            background-color: #f0a500;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(254, 188, 73, 0.3);
           }
         }
       }
@@ -287,18 +285,33 @@
 
       // Action Buttons Styles
       .btn-action {
-        width: 180px;
-        min-width: 180px;
-        padding: clamp(8px, 1.5vw, 10px) clamp(10px, 1.5vw, 12px);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: auto;
+        min-width: 140px;
+        padding: clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px);
         border: none;
-        border-radius: clamp(5px, 0.8vw, 6px);
-        font-size: clamp(11px, 1.8vw, 13px);
+        border-radius: clamp(6px, 0.8vw, 8px);
+        font-size: clamp(12px, 1.8vw, 14px);
         font-weight: 500;
         cursor: pointer;
         transition: all 0.15s ease-in-out;
         white-space: nowrap;
         background-color: #6c757d;
         color: white;
+        
+        i {
+          font-size: clamp(14px, 2vw, 16px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        span {
+          display: inline-block;
+        }
         
         &:hover {
           background-color: #5a6268;
@@ -420,7 +433,7 @@
         min-width: 800px; // Đảm bảo bảng không quá nhỏ
 
         thead {
-          background-color: #f8f9fa;
+          background-color: #fafbfc;
 
           th {
             padding: clamp(10px, 2vw, 15px) clamp(8px, 1.5vw, 12px);
@@ -437,9 +450,15 @@
           .table-row {
             border-bottom: 1px solid #dee2e6;
             transition: background-color 0.15s ease-in-out;
+            background-color: #ffffff;
+
+            // Alternating row colors - even rows have light gray background
+            &:nth-child(even) {
+              background-color: #f5f6f7;
+            }
 
             &:hover {
-              background-color: #f8f9fa;
+              background-color: #f0f1f2;
             }
 
             &:last-child {

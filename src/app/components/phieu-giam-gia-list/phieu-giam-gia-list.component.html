@@ -61,19 +61,19 @@
         </div>
       </div>
 
-      <div class="filter-group">
-        <label>&nbsp;</label>
-        <button class="btn-action" (click)="resetFilters()" title="Đặt lại bộ lọc">Đặt lại bộ lọc</button>
-      </div>
-
-      <div class="filter-group">
-        <label>&nbsp;</label>
-        <button class="btn-action btn-export" (click)="exportToExcel()" title="Xuất Excel">Xuất Excel</button>
-      </div>
-
-      <div class="filter-group">
-        <label>&nbsp;</label>
-        <button class="btn-action btn-add" (click)="addPhieuGiamGia()" title="Thêm Phiếu Giảm Giá">Thêm Phiếu Giảm Giá</button>
+      <div class="filter-actions">
+        <button class="btn btn-secondary" (click)="resetFilters()" title="Đặt lại bộ lọc">
+          <i class="bi bi-arrow-clockwise"></i>
+          <span>Đặt lại bộ lọc</span>
+        </button>
+        <button class="btn btn-success" (click)="exportToExcel()" title="Xuất Excel">
+          <i class="bi bi-file-earmark-excel"></i>
+          <span>Xuất Excel</span>
+        </button>
+        <button class="btn btn-primary" (click)="addPhieuGiamGia()" title="Thêm Phiếu Giảm Giá">
+          <i class="bi bi-plus-circle"></i>
+          <span>Thêm Phiếu Giảm Giá</span>
+        </button>
       </div>
     </div>
   </div>
