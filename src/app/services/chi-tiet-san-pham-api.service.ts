@@ -59,7 +59,5 @@ export class ChiTietSanPhamApiService {
     return this.http.get<ChiTietSanPhamResponse[]>(`${this.baseUrl}/san-pham/${sanPhamId}`);
   }
 
-  getAll(): Observable<ChiTietSanPhamResponse[]> {
-    return this.http.get<ChiTietSanPhamResponse[]>(this.baseUrl);
-  }
+ 
 }

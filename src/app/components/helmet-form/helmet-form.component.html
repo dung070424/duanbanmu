@@ -18,7 +18,7 @@
   <!-- Form Content -->
   <div class="form-content">
     <div class="form-wrapper">
-      <form (ngSubmit)="onSubmit()" #productForm="ngForm">
+      <form (ngSubmit)="requestCreate()" #productForm="ngForm">
         <!-- Thông tin sản phẩm -->
         <div class="section-title mb-4">
           <h6 class="text-orange fw-bold mb-0">
@@ -432,3 +432,41 @@
   (close)="onQuickAddCancel()"
   (save)="onQuickAddSuccess($event)"
 ></app-quick-add-modal>
+
+<!-- Modal xác nhận thêm mới -->
+<div class="modal fade" [class.show]="showConfirmCreate" [style.display]="showConfirmCreate ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận</h5>
+        <button type="button" class="btn-close" (click)="cancelConfirmCreate()"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có muốn thêm mới sản phẩm này không?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelConfirmCreate()">Hủy</button>
+        <button type="button" class="btn btn-primary" (click)="confirmCreate()">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xác nhận cập nhật -->
+<div class="modal fade" [class.show]="showConfirmUpdate" [style.display]="showConfirmUpdate ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận</h5>
+        <button type="button" class="btn-close" (click)="cancelConfirmUpdate()"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có muốn cập nhật sản phẩm này không?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelConfirmUpdate()">Hủy</button>
+        <button type="button" class="btn btn-primary" (click)="confirmUpdate()">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+</div>

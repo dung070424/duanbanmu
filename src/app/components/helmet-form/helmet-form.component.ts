@@ -137,6 +137,10 @@ export class HelmetFormComponent implements OnInit {
 
   deletedVersionIds: number[] = [];
 
+  // Confirm dialogs state
+  showConfirmCreate: boolean = false;
+  showConfirmUpdate: boolean = false;
+
   public get hasHelmetVersions(): boolean {
     return Array.isArray(this.helmetVersions) && this.helmetVersions.length > 0;
   }
@@ -811,6 +815,20 @@ export class HelmetFormComponent implements OnInit {
     return true;
   }
 
+  requestCreate() {
+    // Hiển thị modal xác nhận trước khi thêm mới
+    this.showConfirmCreate = true;
+  }
+
+  confirmCreate() {
+    this.showConfirmCreate = false;
+    this.onSubmit();
+  }
+
+  cancelConfirmCreate() {
+    this.showConfirmCreate = false;
+  }
+
   onSubmit() {
     if (!this.isFormValid()) {
       this.versionError =
@@ -920,6 +938,19 @@ export class HelmetFormComponent implements OnInit {
         );
       },
     });
+  }
+
+  requestUpdate() {
+    this.showConfirmUpdate = true;
+  }
+
+  confirmUpdate() {
+    this.showConfirmUpdate = false;
+    this.onUpdate();
+  }
+
+  cancelConfirmUpdate() {
+    this.showConfirmUpdate = false;
   }
 
   onUpdate() {

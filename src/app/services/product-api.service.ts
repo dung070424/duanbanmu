@@ -48,8 +48,12 @@ export interface LookupItem {
 
 @Injectable({ providedIn: 'root' })
 export class ProductApiService {
-  private baseUrl = environment.apiBaseUrl + '/san-pham';
+  // Admin endpoints (bảo vệ bằng JWT)
+  private adminBaseUrl = environment.apiBaseUrl + '/api/admin/products';
+  // Public endpoints cho khách hàng
   private customerBaseUrl = environment.apiBaseUrl + '/api/customer/products';
+  // Legacy GET (nếu BE còn giữ cho tương thích)
+  private legacyBaseUrl = environment.apiBaseUrl + '/san-pham';
 
   constructor(private http: HttpClient) {}
 
@@ -69,16 +73,17 @@ export class ProductApiService {
     httpParams = httpParams.set('page', String(params.page ?? 0));
     httpParams = httpParams.set('size', String(params.size ?? 10));
     httpParams = httpParams.set('sort', params.sort ?? 'id,desc');
-    
-    // Sử dụng customer endpoint nếu được yêu cầu (cho shop website)
-    const url = params.useCustomerEndpoint ? this.customerBaseUrl : this.baseUrl;
+
+    // Sử dụng customer endpoint nếu được yêu cầu (cho shop website),
+    // ngược lại dùng admin endpoint cho trang quản trị
+    const url = params.useCustomerEndpoint ? this.customerBaseUrl : this.adminBaseUrl;
     return this.http.get<PageResponse<SanPhamResponse>>(url, { params: httpParams });
   }
 
   getById(id: number, useCustomerEndpoint: boolean = false): Observable<SanPhamResponse> {
-    const url = useCustomerEndpoint 
+    const url = useCustomerEndpoint
       ? `${this.customerBaseUrl}/${id}`
-      : `${this.baseUrl}/${id}`;
+      : `${this.adminBaseUrl}/${id}`;
     return this.http.get<SanPhamResponse>(url);
   }
 
@@ -98,15 +103,15 @@ export class ProductApiService {
       congNgheAnToanId?: number;
     }
   ): Observable<SanPhamResponse> {
-    return this.http.post<SanPhamResponse>(this.baseUrl, payload);
+    return this.http.post<SanPhamResponse>(this.adminBaseUrl, payload);
   }
 
   update(id: number, payload: Partial<SanPhamResponse>): Observable<SanPhamResponse> {
-    return this.http.put<SanPhamResponse>(`${this.baseUrl}/${id}`, payload);
+    return this.http.put<SanPhamResponse>(`${this.adminBaseUrl}/${id}`, payload);
   }
 
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.http.delete<void>(`${this.adminBaseUrl}/${id}`);
   }
 
   // lookups
