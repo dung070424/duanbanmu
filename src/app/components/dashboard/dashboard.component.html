@@ -1,4 +1,103 @@
 <div class="dashboard">
+  <!-- Modal chỉnh sửa mẫu báo cáo -->
+  <div class="modal-overlay" *ngIf="showTemplateModal" (click)="closeTemplateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="bi bi-folder"></i> Chỉnh Sửa Mẫu Báo Cáo</h3>
+        <button class="modal-close" (click)="closeTemplateModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="template-section">
+          <h4><i class="bi bi-download"></i> Tải mẫu Word</h4>
+          <p class="section-description">
+            Tải xuống mẫu Word để chỉnh sửa. Bạn có thể thêm, xóa hoặc chỉnh sửa nội dung, 
+            định dạng theo ý muốn. File mẫu chứa các placeholder sẽ được thay thế tự động khi xuất báo cáo.
+          </p>
+          <button class="btn btn-primary btn-download" (click)="downloadTemplate()">
+            <i class="bi bi-file-earmark-word"></i>
+            <span>Tải mẫu Word</span>
+          </button>
+        </div>
+        
+        <div class="template-divider">
+          <span>HOẶC</span>
+        </div>
+        
+        <div class="template-section">
+          <h4><i class="bi bi-upload"></i> Tải lên mẫu đã chỉnh sửa</h4>
+          <p class="section-description">
+            Tải lên file Word hoặc HTML đã chỉnh sửa của bạn. File này sẽ được sử dụng 
+            làm mẫu khi xuất báo cáo.
+          </p>
+          
+          <div class="file-upload-area" [class.has-file]="templateFile">
+            <input 
+              type="file" 
+              id="templateFileInput" 
+              accept=".doc,.docx,.html"
+              (change)="onTemplateFileSelected($event)"
+              style="display: none;"
+            />
+            
+            <div *ngIf="!templateFile" class="upload-placeholder">
+              <i class="bi bi-cloud-upload"></i>
+              <p>Click để chọn file hoặc kéo thả file vào đây</p>
+              <p class="upload-hint">Định dạng hỗ trợ: .doc, .docx, .html</p>
+            </div>
+            
+            <div *ngIf="templateFile" class="file-selected">
+              <i class="bi bi-file-earmark-word"></i>
+              <span class="file-name">{{ templateFileName }}</span>
+              <button class="btn-remove" (click)="templateFile = null; templateFileName = ''" title="Xóa file">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+            
+            <button 
+              *ngIf="!templateFile"
+              class="btn btn-secondary btn-choose-file" 
+              (click)="openFileDialog()">
+              <i class="bi bi-folder2-open"></i>
+              <span>Chọn file</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="template-info">
+          <div class="info-box">
+            <i class="bi bi-info-circle"></i>
+            <div>
+              <strong>Lưu ý:</strong>
+              <ul>
+                <li>File mẫu có thể chứa các placeholder như {{'{'}}{{'{'}}totalRevenue{{'}'}}{{'}'}} để tự động điền dữ liệu</li>
+                <li>File sẽ được lưu và sử dụng cho tất cả các lần xuất báo cáo tiếp theo</li>
+                <li>Bạn có thể tải lại mẫu mặc định bất cứ lúc nào</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeTemplateModal()">
+          <i class="bi bi-x-circle"></i>
+          <span>Đóng</span>
+        </button>
+        <button 
+          class="btn btn-success" 
+          (click)="uploadTemplate()" 
+          [disabled]="!templateFile || isUploading">
+          <i class="bi bi-upload"></i>
+          <span *ngIf="!isUploading">Tải lên</span>
+          <span *ngIf="isUploading">Đang tải lên...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bộ lọc thống kê -->
   <div class="filter-section">
     <div class="filter-header">
@@ -6,34 +105,36 @@
     </div>
     
     <div class="filter-content">
-      <div class="filter-group">
-        <label>Khoảng thời gian thống kê</label>
-        <select class="form-control" [(ngModel)]="selectedTimeRange" (change)="onTimeRangeChange()">
-          <option value="today">Hôm nay</option>
-          <option value="week">Tuần này</option>
-          <option value="month" [selected]="true">Tháng này</option>
-          <option value="year">Năm nay</option>
-          <option value="custom">Tùy chọn</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label>Loại biểu đồ</label>
-        <div class="chart-type-buttons">
-          <button 
-            class="chart-type-btn" 
-            [class.active]="chartType === 'line'"
-            (click)="setChartType('line')">
-            <i class="bi bi-graph-up"></i>
-            <span>Đường</span>
-          </button>
-          <button 
-            class="chart-type-btn" 
-            [class.active]="chartType === 'column'"
-            (click)="setChartType('column')">
-            <i class="bi bi-bar-chart"></i>
-            <span>Cột</span>
-          </button>
+      <div class="filter-row">
+        <div class="filter-group time-range">
+          <label>Khoảng thời gian thống kê</label>
+          <select class="form-control" [(ngModel)]="selectedTimeRange" (change)="onTimeRangeChange()">
+            <option value="today">Hôm nay</option>
+            <option value="week">Tuần này</option>
+            <option value="month" [selected]="true">Tháng này</option>
+            <option value="year">Năm nay</option>
+            <option value="custom">Tùy chọn</option>
+          </select>
+        </div>
+        
+        <div class="filter-group chart-type">
+          <label>Loại biểu đồ</label>
+          <div class="chart-type-buttons">
+            <button 
+              class="chart-type-btn" 
+              [class.active]="chartType === 'line'"
+              (click)="setChartType('line')">
+              <i class="bi bi-graph-up"></i>
+              <span>Đường</span>
+            </button>
+            <button 
+              class="chart-type-btn" 
+              [class.active]="chartType === 'column'"
+              (click)="setChartType('column')">
+              <i class="bi bi-bar-chart"></i>
+              <span>Cột</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -58,6 +159,10 @@
         <button class="btn btn-success" (click)="exportReport()">
           <i class="bi bi-file-earmark-spreadsheet"></i>
           <span>Xuất báo cáo</span>
+        </button>
+        <button class="btn btn-info" (click)="editReportTemplate()" title="Chỉnh sửa mẫu file xuất báo cáo" style="display: none;">
+          <i class="bi bi-folder"></i>
+          <span>Chỉnh sửa mẫu</span>
         </button>
       </div>
     </div>

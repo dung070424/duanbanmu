@@ -167,28 +167,28 @@ export class DashboardComponent implements OnInit {
         revenue: 0,
         productsSold: 0,
         orders: 0,
-        iconColor: '#3b82f6' // Blue
+        iconColor: '#fbb544' // Orange/Yellow
       },
       {
         label: 'Tháng này',
         revenue: 0,
         productsSold: 0,
         orders: 0,
-        iconColor: '#8b5cf6' // Purple
+        iconColor: '#f3c57a' // Light Orange/Yellow
       },
       {
         label: 'Tuần này',
         revenue: 0,
         productsSold: 0,
         orders: 0,
-        iconColor: '#22c55e' // Green
+        iconColor: '#f0d9b6' // Beige/Light Tan
       },
       {
         label: 'Hôm nay',
         revenue: 0,
         productsSold: 0,
         orders: 0,
-        iconColor: '#14b8a6' // Teal
+        iconColor: '#f5e8d3' // Light Beige/Cream
       }
     ];
 
@@ -573,6 +573,216 @@ export class DashboardComponent implements OnInit {
     console.log('Export report');
   }
 
+  // Modal state cho chỉnh sửa mẫu
+  showTemplateModal: boolean = false;
+  templateFile: File | null = null;
+  templateFileName: string = '';
+  isUploading: boolean = false;
+
+  editReportTemplate() {
+    // Mở modal chỉnh sửa mẫu
+    console.log('🔄 [Dashboard] Opening report template editor modal...');
+    this.showTemplateModal = true;
+  }
+
+  closeTemplateModal() {
+    this.showTemplateModal = false;
+    this.templateFile = null;
+    this.templateFileName = '';
+  }
+
+  downloadTemplate() {
+    // Tải mẫu Word template
+    console.log('📥 [Dashboard] Downloading Word template...');
+    
+    // Tạo nội dung Word template đơn giản (HTML format có thể convert sang Word)
+    const templateContent = this.generateWordTemplate();
+    
+    // Tạo Blob từ HTML content
+    const blob = new Blob([templateContent], { type: 'application/msword' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Mau_Bao_Cao_Thong_Ke_TDK_Store.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    console.log('✅ [Dashboard] Word template downloaded');
+    alert('Đã tải mẫu Word thành công! Bạn có thể mở file và chỉnh sửa.');
+  }
+
+  private generateWordTemplate(): string {
+    // Tạo nội dung HTML cho Word template
+    const template = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Mẫu Báo Cáo Thống Kê TDK Store</title>
+    <style>
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 20px; }
+        h1 { color: #febc49; text-align: center; }
+        h2 { color: #495057; border-bottom: 2px solid #febc49; padding-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #febc49; color: white; }
+        .summary { background-color: #f8f9fa; padding: 10px; margin: 10px 0; border-left: 4px solid #febc49; }
+    </style>
+</head>
+<body>
+    <h1>BÁO CÁO THỐNG KÊ TDK STORE</h1>
+    
+    <div class="summary">
+        <p><strong>Khoảng thời gian:</strong> {{timeRange}}</p>
+        <p><strong>Ngày tạo báo cáo:</strong> {{currentDate}}</p>
+    </div>
+    
+    <h2>1. TỔNG QUAN DOANH THU</h2>
+    <table>
+        <tr>
+            <th>Chỉ tiêu</th>
+            <th>Giá trị</th>
+        </tr>
+        <tr>
+            <td>Tổng doanh thu</td>
+            <td>{{totalRevenue}} ₫</td>
+        </tr>
+        <tr>
+            <td>Số đơn hàng</td>
+            <td>{{totalOrders}}</td>
+        </tr>
+    </table>
+    
+    <h2>2. SẢN PHẨM BÁN CHẠY</h2>
+    <table>
+        <tr>
+            <th>STT</th>
+            <th>Tên sản phẩm</th>
+            <th>Số lượng đã bán</th>
+            <th>Giá bán</th>
+        </tr>
+        {{bestSellingProducts}}
+    </table>
+    
+    <h2>3. GHI CHÚ</h2>
+    <p>Bạn có thể chỉnh sửa nội dung này trực tiếp trong file Word.</p>
+    <p>Các placeholder như {{timeRange}}, {{totalRevenue}} sẽ được thay thế tự động khi xuất báo cáo.</p>
+    
+    <p style="margin-top: 30px; text-align: right;">
+        <em>Được tạo bởi hệ thống TDK Store</em>
+    </p>
+</body>
+</html>`;
+    
+    return template;
+  }
+
+  onTemplateFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      // Kiểm tra định dạng file
+      if (!file.name.toLowerCase().endsWith('.doc') && 
+          !file.name.toLowerCase().endsWith('.docx') &&
+          !file.name.toLowerCase().endsWith('.html')) {
+        alert('Vui lòng chọn file Word (.doc, .docx) hoặc HTML (.html)!');
+        return;
+      }
+      
+      this.templateFile = file;
+      this.templateFileName = file.name;
+      console.log('✅ [Dashboard] Template file selected:', file.name);
+    }
+  }
+
+  openFileDialog() {
+    const input = document.getElementById('templateFileInput') as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
+  }
+
+  uploadTemplate() {
+    if (!this.templateFile) {
+      alert('Vui lòng chọn file mẫu trước khi tải lên!');
+      return;
+    }
+    
+    this.isUploading = true;
+    console.log('📤 [Dashboard] Uploading template file:', this.templateFileName);
+    
+    // Tạo FormData để upload file
+    const formData = new FormData();
+    formData.append('template', this.templateFile);
+    formData.append('type', 'report_template');
+    
+    // Lưu vào localStorage (trong thực tế có thể upload lên server)
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        // Lưu thông tin file vào localStorage
+        const fileInfo = {
+          name: this.templateFileName,
+          size: this.templateFile!.size,
+          type: this.templateFile!.type,
+          lastModified: this.templateFile!.lastModified,
+          content: e.target?.result // Lưu base64 hoặc text content
+        };
+        
+        localStorage.setItem('reportTemplateFile', JSON.stringify(fileInfo));
+        
+        console.log('✅ [Dashboard] Template file saved to localStorage');
+        alert('Đã tải lên và lưu mẫu thành công!\n\nFile: ' + this.templateFileName + '\nKhi xuất báo cáo, mẫu này sẽ được sử dụng.');
+        
+        this.isUploading = false;
+        this.closeTemplateModal();
+      } catch (error) {
+        console.error('❌ [Dashboard] Error saving template:', error);
+        alert('Lỗi khi lưu mẫu file!');
+        this.isUploading = false;
+      }
+    };
+    
+    // Đọc file dạng text để lưu vào localStorage
+    reader.readAsText(this.templateFile);
+  }
+
+  private getReportTemplateConfig() {
+    // Lấy cấu hình mẫu từ localStorage hoặc default
+    const savedConfig = localStorage.getItem('reportTemplateConfig');
+    if (savedConfig) {
+      try {
+        return JSON.parse(savedConfig);
+      } catch (e) {
+        console.error('Error parsing report template config:', e);
+      }
+    }
+    
+    // Cấu hình mặc định
+    return {
+      format: 'Excel',
+      title: 'Báo Cáo Thống Kê TDK Store',
+      includeChart: true,
+      includeTable: true,
+      includeSummary: true,
+      dateRange: this.selectedTimeRange
+    };
+  }
+
+  saveReportTemplateConfig(config: any) {
+    // Lưu cấu hình mẫu vào localStorage
+    try {
+      localStorage.setItem('reportTemplateConfig', JSON.stringify(config));
+      console.log('✅ [Dashboard] Report template config saved:', config);
+      alert('Đã lưu cấu hình mẫu báo cáo thành công!');
+    } catch (e) {
+      console.error('❌ [Dashboard] Error saving report template config:', e);
+      alert('Lỗi khi lưu cấu hình mẫu báo cáo!');
+    }
+  }
+
   generateOrderStatusChart() {
     console.log('🔄 [Dashboard] Loading order status statistics for filter:', this.orderStatusFilter);
     
@@ -669,12 +879,13 @@ export class DashboardComponent implements OnInit {
         
         if (response && response.data) {
           // Chuyển đổi từ ChannelStatisticsDTO sang format cho chart
+          // Đổi tất cả màu thành #d0875a như yêu cầu
           this.channelData = response.data
             .filter(item => item !== null && item !== undefined)
             .map((item) => ({
               label: item.channel || 'Không xác định',
               value: item.count || 0,
-              color: item.color || '#9ca3af'
+              color: '#d0875a' // Màu đồng nhất cho tất cả kênh
             }));
           
           // Tính tổng số đơn hàng
@@ -691,8 +902,8 @@ export class DashboardComponent implements OnInit {
           } else {
             console.warn('⚠️ [Dashboard] No channel data returned from API');
             this.channelData = [
-              { label: 'Online', value: 0, color: '#f472b6' },
-              { label: 'Tại quầy', value: 0, color: '#3b82f6' }
+              { label: 'Online', value: 0, color: '#d0875a' },
+              { label: 'Tại quầy', value: 0, color: '#d0875a' }
             ];
             this.channelTotal = 0;
             this.generateDonutSegments(this.channelData, this.channelSegments);
@@ -701,8 +912,8 @@ export class DashboardComponent implements OnInit {
         } else {
           console.warn('⚠️ [Dashboard] Invalid response structure:', response);
           this.channelData = [
-            { label: 'Online', value: 0, color: '#f472b6' },
-            { label: 'Tại quầy', value: 0, color: '#3b82f6' }
+            { label: 'Online', value: 0, color: '#d0875a' },
+            { label: 'Tại quầy', value: 0, color: '#d0875a' }
           ];
           this.channelTotal = 0;
           this.generateDonutSegments(this.channelData, this.channelSegments);

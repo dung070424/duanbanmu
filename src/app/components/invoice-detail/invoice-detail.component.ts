@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HoaDonService } from '../../services/hoa-don.service';
 import { ProductApiService, PageResponse, SanPhamResponse } from '../../services/product-api.service';
-import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.service';
+import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../services/chi-tiet-san-pham-api.service';
 import { CustomerAddressService } from '../../services/customer-address.service';
 import { EmployeeService } from '../../services/employee.service';
 import { CustomerAddress } from '../../interfaces/customer-address.interface';
@@ -246,9 +246,9 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       timeout(4000),
       catchError(() => of([]))
     ).subscribe({
-      next: (chiTietProducts: any[]) => {
+      next: (chiTietProducts: ChiTietSanPhamResponse[]) => {
         // Map ChiTietSanPhamResponse to match frontend expected format
-        this.allProducts = (chiTietProducts || []).map((product: any) => ({
+        this.allProducts = (chiTietProducts || []).map((product: ChiTietSanPhamResponse) => ({
           id: product.id, // Đây là chiTietSanPhamId - ID chính xác cần dùng
           chiTietSanPhamId: product.id, // Đảm bảo có chiTietSanPhamId
           sanPhamId: product.sanPhamId, // ID của SanPham gốc
@@ -267,13 +267,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           danhMuc: '',
           thuongHieu: '',
           moTa: '',
-          anhSanPham: product.anhSanPham || '',
+          anhSanPham: '', // ChiTietSanPhamResponse không có anhSanPham
         }));
         console.log('✅ Loaded ChiTietSanPham products for invoice detail:', this.allProducts);
         this.productsLoaded = true;
         this.cdr.detectChanges();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('❌ Error loading ChiTietSanPham, falling back to SanPham:', error);
         // Fallback to SanPham if ChiTietSanPham fails
         this.hoaDonService.getProducts().pipe(
@@ -1565,12 +1565,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       timeout(4000),
       catchError(() => of([]))
     ).subscribe({
-      next: (chiTietProducts: any[]) => {
+      next: (chiTietProducts: ChiTietSanPhamResponse[]) => {
         console.log('✅ ChiTietSanPham loaded from API:', chiTietProducts);
         console.log('📊 Products count:', chiTietProducts.length);
         
         // Map ChiTietSanPhamResponse to match frontend expected format
-        this.allProducts = chiTietProducts.map((product: any) => ({
+        this.allProducts = chiTietProducts.map((product: ChiTietSanPhamResponse) => ({
           id: product.id, // Đây là chiTietSanPhamId - ID chính xác cần dùng
           chiTietSanPhamId: product.id, // Đảm bảo có chiTietSanPhamId
           sanPhamId: product.sanPhamId, // ID của SanPham gốc
@@ -1585,7 +1585,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           mauSac: product.mauSacTen || '',
           mauSacMa: product.mauSacMa || '',
           trongLuong: product.trongLuongTen || '',
-          anhSanPham: product.anhSanPham || '',
+          anhSanPham: '', // ChiTietSanPhamResponse không có anhSanPham
           // Thông tin sản phẩm gốc (sẽ load thêm nếu cần)
           danhMuc: '',
           thuongHieu: '',
@@ -1698,7 +1698,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     try {
       // 1) Tải toàn bộ danh sách ChiTietSanPham thay vì SanPham
-        const chiTietProducts = await firstValueFrom(
+        const chiTietProducts: ChiTietSanPhamResponse[] = await firstValueFrom(
           this.chiTietSanPhamService.getAll().pipe(
             timeout(5000),
             catchError(() => of([]))
@@ -1706,7 +1706,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         );
         
         // Map ChiTietSanPhamResponse to match frontend expected format
-        this.allProducts = chiTietProducts.map((product: any) => ({
+        this.allProducts = chiTietProducts.map((product: ChiTietSanPhamResponse) => ({
           id: product.id, // Đây là chiTietSanPhamId - ID chính xác cần dùng
           chiTietSanPhamId: product.id, // Đảm bảo có chiTietSanPhamId
           sanPhamId: product.sanPhamId, // ID của SanPham gốc
@@ -1721,7 +1721,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           mauSac: product.mauSacTen || '',
           mauSacMa: product.mauSacMa || '',
           trongLuong: product.trongLuongTen || '',
-          anhSanPham: product.anhSanPham || '',
+          anhSanPham: '', // ChiTietSanPhamResponse không có anhSanPham
           // Thông tin sản phẩm gốc
           danhMuc: '',
           thuongHieu: '',

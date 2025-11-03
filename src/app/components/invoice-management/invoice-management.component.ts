@@ -13,7 +13,7 @@ import { CustomerAddress, CustomerAddressCreateRequest } from '../../interfaces/
 import { VietnamAddressService, Province, District, Ward } from '../../services/vietnam-address.service';
 import { EmployeeService } from '../../services/employee.service';
 import { Employee } from '../../interfaces/employee.interface';
-import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.service';
+import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../services/chi-tiet-san-pham-api.service';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { map, tap } from 'rxjs/operators';
@@ -1127,9 +1127,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
     // Load ChiTietSanPham thay vì SanPham để có chiTietSanPhamId đúng
     this.chiTietSanPhamService.getAll().subscribe({
-      next: (chiTietProducts) => {
+      next: (chiTietProducts: ChiTietSanPhamResponse[]) => {
         // Map ChiTietSanPhamResponse to match frontend expected format
-        this.availableProducts = chiTietProducts.map((product: any) => ({
+        this.availableProducts = chiTietProducts.map((product: ChiTietSanPhamResponse) => ({
           id: product.id, // Đây là chiTietSanPhamId - ID chính xác cần dùng
           chiTietSanPhamId: product.id, // Đảm bảo có chiTietSanPhamId
           sanPhamId: product.sanPhamId, // ID của SanPham gốc
@@ -1157,7 +1157,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         this.loadingProducts = false;
         this.cdr.detectChanges(); // Force change detection
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading ChiTietSanPham, falling back to SanPham:', error);
         // Fallback to SanPham if ChiTietSanPham fails
         this.hoaDonService.getProducts().subscribe({
