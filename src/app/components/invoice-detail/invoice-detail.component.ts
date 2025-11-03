@@ -7,6 +7,7 @@ import { ProductApiService, PageResponse, SanPhamResponse } from '../../services
 import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.service';
 import { CustomerAddressService } from '../../services/customer-address.service';
 import { EmployeeService } from '../../services/employee.service';
+import { AuthService } from '../../services/auth';
 import { CustomerAddress } from '../../interfaces/customer-address.interface';
 import { HoaDonDTO } from '../../interfaces/hoa-don.interface';
 import { Subject, interval, takeUntil, firstValueFrom, Subscription, timeout, catchError, of } from 'rxjs';
@@ -66,16 +67,23 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     private hoaDonService: HoaDonService,
     private customerAddressService: CustomerAddressService,
     private employeeService: EmployeeService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private productApi: ProductApiService,
     private chiTietSanPhamService: ChiTietSanPhamApiService
   ) {}
 
   /**
-   * Quay lại trang quản lý hóa đơn
+   * Quay lại trang quản lý hóa đơn hoặc đơn hàng của customer
    */
   goBack(): void {
-    this.router.navigate(['/invoices']);
+    // Nếu là customer, quay lại trang đơn hàng của họ
+    if (this.authService.isCustomer()) {
+      this.router.navigate(['/customer/orders']);
+    } else {
+      // Nếu là admin/staff, quay lại trang quản lý hóa đơn
+      this.router.navigate(['/invoices']);
+    }
   }
 
   /**
@@ -226,11 +234,21 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    console.log('🔍 InvoiceDetailComponent initialized');
     this.route.params.subscribe(params => {
-      this.invoiceId = +params['id'];
-      if (this.invoiceId) {
+      const idParam = params['id'];
+      console.log('📋 Route params received:', params, 'id param:', idParam);
+      
+      this.invoiceId = +idParam;
+      console.log('✅ Parsed invoiceId:', this.invoiceId);
+      
+      if (this.invoiceId && !isNaN(this.invoiceId) && this.invoiceId > 0) {
+        console.log('🔄 Valid invoiceId, loading detail...');
         this.loadInvoiceDetail();
         this.startAutoRefresh();
+      } else {
+        console.error('❌ Invalid invoiceId:', this.invoiceId);
+        this.error = 'Mã hóa đơn không hợp lệ';
       }
     });
     // Prefetch sản phẩm để mở modal là có dữ liệu ngay
@@ -331,6 +349,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   loadInvoiceDetail(): void {
     console.log('🔄 Loading invoice detail for ID:', this.invoiceId);
+    console.log('🔑 Current auth token:', this.authService.getToken() ? 'Present' : 'Missing');
+    console.log('👤 Current user:', this.authService.getCurrentUser());
+    console.log('✅ Is logged in:', this.authService.isLoggedIn());
+    
     this.error = '';
 
     this.hoaDonService.getHoaDonDetail(this.invoiceId).subscribe({
@@ -356,6 +378,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             },
             error: (error) => {
               console.error('❌ Error loading customer:', error);
+              // Không set error chính, chỉ log để không làm gián đoạn hiển thị invoice
               this.customer = null;
               this.cdr.detectChanges();
             }
@@ -371,7 +394,25 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('❌ Error loading invoice detail:', error);
-        this.error = 'Không thể tải thông tin hóa đơn';
+        console.error('❌ Error status:', error.status);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error details:', error);
+        
+        // Xử lý các loại lỗi khác nhau
+        if (error.status === 401) {
+          this.error = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+          // Không redirect tự động, để user tự quyết định
+          console.warn('⚠️ 401 - Session expired, but staying on page to show error');
+        } else if (error.status === 403) {
+          this.error = 'Bạn không có quyền xem hóa đơn này.';
+          console.warn('⚠️ 403 - Forbidden, but staying on page to show error');
+        } else if (error.status === 404) {
+          this.error = 'Không tìm thấy hóa đơn với ID: ' + this.invoiceId;
+        } else {
+          this.error = 'Không thể tải thông tin hóa đơn. Vui lòng thử lại sau.';
+        }
+        
+        // Không redirect, chỉ hiển thị error message
         this.cdr.detectChanges();
       }
     });
