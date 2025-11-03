@@ -1634,12 +1634,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       timeout(4000),
       catchError(() => of([]))
     ).subscribe({
-      next: (chiTietProducts: any[]) => {
+      next: (chiTietProducts: ChiTietSanPhamResponse[]) => {
         console.log('✅ ChiTietSanPham loaded from API:', chiTietProducts);
         console.log('📊 Products count:', chiTietProducts.length);
         
         // Map ChiTietSanPhamResponse to match frontend expected format
-        this.allProducts = chiTietProducts.map((product: any) => ({
+        this.allProducts = chiTietProducts.map((product: ChiTietSanPhamResponse) => ({
           id: product.id, // Đây là chiTietSanPhamId - ID chính xác cần dùng
           chiTietSanPhamId: product.id, // Đảm bảo có chiTietSanPhamId
           sanPhamId: product.sanPhamId, // ID của SanPham gốc

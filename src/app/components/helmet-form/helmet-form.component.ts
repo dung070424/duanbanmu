@@ -829,6 +829,32 @@ export class HelmetFormComponent implements OnInit {
 
     this.isLoading = true;
 
+    // Lấy giá bán từ giá chung hoặc giá của phiên bản đầu tiên
+    let giaBanValue: number | undefined = undefined;
+    if (this.priceAll && this.priceAll > 0) {
+      giaBanValue = this.priceAll;
+    } else if (this.helmetVersions.length > 0 && this.helmetVersions[0].giaBan) {
+      const firstPrice = this.helmetVersions[0].giaBan;
+      if (typeof firstPrice === 'string') {
+        giaBanValue = parseFloat(firstPrice.replace(/,/g, '').replace(/\s/g, '')) || undefined;
+      } else if (typeof firstPrice === 'number') {
+        giaBanValue = firstPrice;
+      }
+    }
+
+    // Lấy số lượng tồn từ số lượng chung hoặc số lượng của phiên bản đầu tiên
+    let soLuongTonValue: number | undefined = undefined;
+    if (this.quantityAll && this.quantityAll > 0) {
+      soLuongTonValue = this.quantityAll;
+    } else if (this.helmetVersions.length > 0 && this.helmetVersions[0].soLuongTon) {
+      const firstQuantity = this.helmetVersions[0].soLuongTon;
+      if (typeof firstQuantity === 'string') {
+        soLuongTonValue = parseInt(firstQuantity.replace(/,/g, '').replace(/\s/g, ''), 10) || undefined;
+      } else if (typeof firstQuantity === 'number') {
+        soLuongTonValue = firstQuantity;
+      }
+    }
+
     const payload = {
       maSanPham: this.newProduct.code,
       tenSanPham: this.newProduct.name,
@@ -836,11 +862,14 @@ export class HelmetFormComponent implements OnInit {
       loaiMuBaoHiemId: this.newProduct.loaiMuBaoHiemId || undefined,
       nhaSanXuatId: this.newProduct.nhaSanXuatId || undefined,
       chatLieuVoId: this.newProduct.chatLieuVoId || undefined,
+      trongLuongId: this.newProduct.trongLuongId || undefined, // Thêm trongLuongId
       xuatXuId: this.newProduct.xuatXuId || undefined,
       kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
       congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
       moTa: this.newProduct.description,
       anhSanPham: this.newProduct.anhSanPham,
+      giaBan: giaBanValue !== undefined ? giaBanValue : 0, // Gửi giá bán, mặc định 0 nếu không có
+      soLuongTon: soLuongTonValue !== undefined ? soLuongTonValue : 0, // Gửi số lượng tồn, mặc định 0 nếu không có
     };
 
     this.productApi.create(payload as any).subscribe({
@@ -894,6 +923,32 @@ export class HelmetFormComponent implements OnInit {
   }
 
   onUpdate() {
+    // Lấy giá bán từ giá chung hoặc giá của phiên bản đầu tiên
+    let giaBanValue: number | undefined = undefined;
+    if (this.priceAll && this.priceAll > 0) {
+      giaBanValue = this.priceAll;
+    } else if (this.helmetVersions.length > 0 && this.helmetVersions[0].giaBan) {
+      const firstPrice = this.helmetVersions[0].giaBan;
+      if (typeof firstPrice === 'string') {
+        giaBanValue = parseFloat(firstPrice.replace(/,/g, '').replace(/\s/g, '')) || undefined;
+      } else if (typeof firstPrice === 'number') {
+        giaBanValue = firstPrice;
+      }
+    }
+
+    // Lấy số lượng tồn từ số lượng chung hoặc số lượng của phiên bản đầu tiên
+    let soLuongTonValue: number | undefined = undefined;
+    if (this.quantityAll && this.quantityAll > 0) {
+      soLuongTonValue = this.quantityAll;
+    } else if (this.helmetVersions.length > 0 && this.helmetVersions[0].soLuongTon) {
+      const firstQuantity = this.helmetVersions[0].soLuongTon;
+      if (typeof firstQuantity === 'string') {
+        soLuongTonValue = parseInt(firstQuantity.replace(/,/g, '').replace(/\s/g, ''), 10) || undefined;
+      } else if (typeof firstQuantity === 'number') {
+        soLuongTonValue = firstQuantity;
+      }
+    }
+    
     // Cập nhật sản phẩm chính (giả sử payload giống onSubmit)
     const payload = {
       maSanPham: this.newProduct.code,
@@ -902,11 +957,14 @@ export class HelmetFormComponent implements OnInit {
       loaiMuBaoHiemId: this.newProduct.loaiMuBaoHiemId || undefined,
       nhaSanXuatId: this.newProduct.nhaSanXuatId || undefined,
       chatLieuVoId: this.newProduct.chatLieuVoId || undefined,
+      trongLuongId: this.newProduct.trongLuongId || undefined, // Thêm trongLuongId
       xuatXuId: this.newProduct.xuatXuId || undefined,
       kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
       congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
       moTa: this.newProduct.description,
       anhSanPham: this.newProduct.anhSanPham,
+      giaBan: giaBanValue !== undefined ? giaBanValue : 0, // Gửi giá bán, mặc định 0 nếu không có
+      soLuongTon: soLuongTonValue !== undefined ? soLuongTonValue : 0, // Gửi số lượng tồn, mặc định 0 nếu không có
     };
     this.productApi.update(this.newProduct.id, payload as any).subscribe({
       next: (response: any) => {
