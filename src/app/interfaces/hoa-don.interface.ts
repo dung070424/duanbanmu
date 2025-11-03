@@ -17,7 +17,8 @@ export interface HoaDonDTO {
   trangThai: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY';
   soLuongSanPham?: number;
   viTriBanHang?: string; // "Tại quầy" hoặc "Online"
-  danhSachSanPham?: SanPhamTrongHoaDon[]; // Danh sách sản phẩm trong hóa đơn
+  danhSachSanPham?: SanPhamTrongHoaDon[]; // Danh sách sản phẩm trong hóa đơn (frontend only)
+  danhSachChiTiet?: HoaDonChiTietDTO[]; // Danh sách chi tiết sản phẩm (backend format)
   // Thêm các thuộc tính còn thiếu
   soDienThoai?: string;
   email?: string;
@@ -28,6 +29,21 @@ export interface HoaDonDTO {
   quanHuyen?: string;
   phuongXa?: string;
   diaChiChiTiet?: string;
+}
+
+export interface HoaDonChiTietDTO {
+  id?: number;
+  chiTietSanPhamId: number; // Required: ID của chi tiết sản phẩm
+  tenSanPham?: string;
+  maSanPham?: string;
+  mauSac?: string;
+  kichThuoc?: string;
+  nhaSanXuat?: string;
+  soLuong: number;
+  donGia: number;
+  giamGia?: number;
+  thanhTien: number;
+  anhSanPham?: string;
 }
 
 export interface SanPhamTrongHoaDon {

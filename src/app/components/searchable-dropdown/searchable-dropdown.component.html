@@ -49,13 +49,13 @@
           *ngFor="let option of filteredOptions"
           class="dropdown-item"
           (click)="onOptionSelect(option)"
-          [class.selected]="multiSelect ? (selectedValues?.includes(option.id)) : (selectedValue === option.id)"
+          [class.selected]="multiSelect ? (selectedValues.includes(option.id)) : (selectedValue === option.id)"
         >
           <input
             *ngIf="multiSelect"
             type="checkbox"
             class="form-check-input me-2"
-            [checked]="selectedValues?.includes(option.id)"
+            [checked]="selectedValues.includes(option.id)"
             (click)="$event.stopPropagation(); onOptionSelect(option)"
           />
           {{ option.name }}

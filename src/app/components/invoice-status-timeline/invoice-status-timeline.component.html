@@ -16,12 +16,28 @@
         *ngFor="let step of statusSteps; let i = index" 
         class="timeline-step"
         [ngClass]="getStepClass(step)"
+        [class.clickable]="enableClick && canClickStep(step)"
+        [title]="enableClick && canClickStep(step) ? 'Click để đổi sang ' + step.label : ''"
+        (click)="onStepClick(step); $event.stopPropagation()"
+        (touchstart)="onStepClick(step); $event.stopPropagation()"
+        [style.pointer-events]="enableClick && canClickStep(step) ? 'auto' : 'auto'"
+        [style.z-index]="'101'"
       >
-        <div class="step-circle">
-          <i [ngClass]="getStepIconClass(step)"></i>
+        <div 
+          class="step-circle" 
+          (click)="onStepClick(step); $event.stopPropagation()"
+          (touchstart)="onStepClick(step); $event.stopPropagation()"
+          style="pointer-events: auto !important; z-index: 102;"
+        >
+          <i 
+            [ngClass]="getStepIconClass(step)" 
+            style="pointer-events: auto !important; z-index: 103;"
+            (click)="onStepClick(step); $event.stopPropagation()"
+            (touchstart)="onStepClick(step); $event.stopPropagation()"
+          ></i>
         </div>
         
-        <div class="step-content">
+        <div class="step-content" style="pointer-events: none;">
           <div class="step-label">{{ step.label }}</div>
         </div>
       </div>

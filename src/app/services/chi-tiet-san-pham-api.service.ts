@@ -47,6 +47,10 @@ export class ChiTietSanPhamApiService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
+  getAll(): Observable<ChiTietSanPhamResponse[]> {
+    return this.http.get<ChiTietSanPhamResponse[]>(this.baseUrl);
+  }
+
   getById(id: number): Observable<ChiTietSanPhamResponse> {
     return this.http.get<ChiTietSanPhamResponse>(`${this.baseUrl}/${id}`);
   }
