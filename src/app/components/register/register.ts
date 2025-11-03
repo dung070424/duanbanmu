@@ -48,16 +48,12 @@ export class RegisterComponent {
     this.authService.register(this.registerData).subscribe({
       next: (response) => {
         this.successMessage = response.message || 'Đăng ký thành công!';
-        setTimeout(() => {
-          // Khách hàng mới đăng ký sẽ có role CUSTOMER, redirect đến shop
-          const user = this.authService.getCurrentUser();
-          if (user?.roles?.includes('CUSTOMER')) {
-            this.router.navigate(['/shop']);
-          } else {
-            // Fallback
-            this.router.navigate(['/shop']);
-          }
-        }, 1500);
+        const username = this.registerData.username;
+        this.isLoading = false;
+        this.router.navigate(['/login'], {
+          queryParams: { registered: 'true', username },
+          replaceUrl: true
+        });
       },
       error: (error: Error) => {
         this.errorMessage = error.message || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại!';

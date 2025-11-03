@@ -12,6 +12,10 @@
       <p>TDK Store - Bán mũ bảo hiểm</p>
     </div>
 
+    <div *ngIf="successMessage" class="success-message" style="margin-bottom: 12px;">
+      {{ successMessage }}
+    </div>
+
     <form class="login-form" (ngSubmit)="onLogin()" #loginForm="ngForm">
       <div class="form-group">
         <label for="username">Tên đăng nhập:</label>
