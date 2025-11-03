@@ -1,10 +1,15 @@
-<!-- Trang đăng nhập -->
-<div *ngIf="isLoginPage" class="login-layout">
+<!-- Trang đăng nhập, đăng ký, quên mật khẩu - không có sidebar/header -->
+<div *ngIf="isLoginPage" class="auth-layout">
   <router-outlet></router-outlet>
 </div>
 
-<!-- Layout chính với sidebar và header -->
-<div *ngIf="!isLoginPage" class="app-container" [class.sidebar-hidden]="sidebarHidden">
+<!-- Customer Shop Website - không có sidebar/header -->
+<div *ngIf="isShopPage" class="shop-layout">
+  <router-outlet></router-outlet>
+</div>
+
+<!-- Admin/Staff Layout - có sidebar và header -->
+<div *ngIf="showAdminLayout" class="app-container" [class.sidebar-hidden]="sidebarHidden">
   <app-sidebar [isCollapsed]="sidebarHidden"></app-sidebar>
   <div class="main-content">
     <app-header (menuToggle)="toggleSidebar()"></app-header>

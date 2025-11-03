@@ -15,7 +15,10 @@ import { AuthService } from '../../services/auth';
 export class SidebarComponent implements OnInit {
   @Input() isCollapsed = false;
   isHovered = false; // Thêm state để track hover
-  menuItems = [
+  filteredMenuItems: any[] = [];
+  menuItems: any[] = []; // Reference for template
+  
+  allMenuItems = [
     {
       icon: 'bi-clipboard-data',
       label: 'Thống kê',
@@ -24,6 +27,7 @@ export class SidebarComponent implements OnInit {
       hasSubmenu: false,
       isExpanded: false,
       submenu: [],
+      roles: ['ADMIN'], // Chỉ ADMIN
     },
     {
       icon: 'bi-receipt',
@@ -33,6 +37,7 @@ export class SidebarComponent implements OnInit {
       hasSubmenu: false,
       isExpanded: false,
       submenu: [],
+      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
     },
     {
       icon: 'bi-cart',
@@ -42,6 +47,7 @@ export class SidebarComponent implements OnInit {
       hasSubmenu: false,
       isExpanded: false,
       submenu: [],
+      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
     },
     {
       icon: 'bi-box-seam',
@@ -50,6 +56,7 @@ export class SidebarComponent implements OnInit {
       active: false,
       hasSubmenu: true,
       isExpanded: false,
+      roles: ['ADMIN'], // Chỉ ADMIN
       submenu: [
         {
           label: 'Sản phẩm mũ bảo hiểm',
@@ -119,6 +126,7 @@ export class SidebarComponent implements OnInit {
       active: false,
       hasSubmenu: true,
       isExpanded: false,
+      roles: ['ADMIN'], // Chỉ ADMIN
       submenu: [
         {
           icon: 'bi-person-workspace',
@@ -147,6 +155,7 @@ export class SidebarComponent implements OnInit {
       active: false,
       hasSubmenu: true,
       isExpanded: false,
+      roles: ['ADMIN'], // Chỉ ADMIN
       submenu: [
         {
           icon: 'bi-megaphone',
@@ -173,6 +182,9 @@ export class SidebarComponent implements OnInit {
   constructor(private router: Router, private authService: AuthService) {}
 
   ngOnInit() {
+    // Filter menu items based on user role
+    this.filterMenuByRole();
+    
     // Update active menu on initial load
     this.updateActiveMenuItem(this.router.url);
     
@@ -182,27 +194,64 @@ export class SidebarComponent implements OnInit {
       .subscribe((event: NavigationEnd) => {
         this.updateActiveMenuItem(event.url);
       });
+    
+    // Re-filter menu when user changes
+    this.authService.currentUser$.subscribe(() => {
+      this.filterMenuByRole();
+    });
+  }
+
+  filterMenuByRole(): void {
+    const user = this.authService.getCurrentUser();
+    const userRoles = user?.roles || [];
+
+    this.filteredMenuItems = this.allMenuItems.filter(item => {
+      // Nếu không có roles requirement, hiển thị cho tất cả
+      if (!item.roles || item.roles.length === 0) {
+        return true;
+      }
+      
+      // Kiểm tra user có role phù hợp không
+      const hasRequiredRole = item.roles.some((role: string) => 
+        userRoles.includes(role)
+      );
+      
+      // Nếu có submenu, filter submenu items
+      if (hasRequiredRole && item.hasSubmenu && item.submenu) {
+        item.submenu = item.submenu.filter((subItem: any) => {
+          if (!subItem.roles || subItem.roles.length === 0) {
+            return true;
+          }
+          return subItem.roles.some((role: string) => userRoles.includes(role));
+        });
+      }
+      
+      return hasRequiredRole;
+    });
+    
+    // Update menuItems reference
+    this.menuItems = this.filteredMenuItems;
   }
 
   updateActiveMenuItem(currentUrl: string) {
-    this.menuItems.forEach((item) => {
+    this.filteredMenuItems.forEach((item) => {
       item.active = currentUrl === item.route;
 
       // Check submenu items
       if (item.hasSubmenu && item.submenu) {
-        item.submenu.forEach((subItem) => {
+        item.submenu.forEach((subItem: any) => {
           subItem.active = currentUrl === subItem.route;
 
           // Check nested submenu items
           if (subItem.hasSubmenu && subItem.submenu) {
-            subItem.submenu.forEach((nestedItem) => {
+            subItem.submenu.forEach((nestedItem: any) => {
               nestedItem.active = currentUrl === nestedItem.route;
             });
           }
         });
 
         // Auto-expand parent if any submenu item is active
-        if (item.submenu.some((subItem) => subItem.active || (subItem.hasSubmenu && subItem.submenu && subItem.submenu.some((nestedItem) => nestedItem.active)))) {
+        if (item.submenu.some((subItem: any) => subItem.active || (subItem.hasSubmenu && subItem.submenu && subItem.submenu.some((nestedItem: any) => nestedItem.active)))) {
           item.isExpanded = true;
         }
       }

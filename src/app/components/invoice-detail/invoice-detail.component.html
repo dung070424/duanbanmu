@@ -11,25 +11,34 @@
       <button class="btn btn-outline-primary" (click)="printInvoice()">
         <i class="fas fa-print"></i> In hóa đơn
       </button>
-      <button class="btn btn-primary" (click)="openUpdateModal()" [id]="'update-button'">
-        <i class="fas fa-edit"></i> Cập nhật
-      </button>
     </div>
   </div>
 
 
-  <!-- Loading State e-->
+  <!-- Loading State -->
+  <div *ngIf="!invoice && !error && invoiceId > 0" class="loading-container">
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3">Đang tải thông tin hóa đơn...</p>
+    </div>
+  </div>
 
   <!-- Error State -->
   <div *ngIf="error" class="error-container">
     <div class="alert alert-danger">
       <i class="fas fa-exclamation-triangle"></i>
       {{ error }}
+      <br>
+      <button class="btn btn-sm btn-outline-danger mt-2" (click)="loadInvoiceDetail()">
+        <i class="fas fa-redo"></i> Thử lại
+      </button>
     </div>
   </div>
 
   <!-- Invoice Content -->
-  <div *ngIf="invoice" class="invoice-content">
+  <div *ngIf="invoice && !error" class="invoice-content">
 
     <!-- Print Invoice Layout -->
     <div class="print-invoice">
@@ -114,7 +123,7 @@
       <div class="payment-info">
         <div class="info-row">
           <span class="label">Hình thức thanh toán:</span>
-          <span class="value">{{ invoice.phuongThucThanhToan || invoice.viTriBanHang || 'Tiền mặt' }}</span>
+          <span class="value">{{ getPaymentMethodLabel(invoice.phuongThucThanhToan) || 'Tiền mặt' }}</span>
         </div>
         <div class="info-row" *ngIf="invoice.ghiChu">
           <span class="label">Ghi chú:</span>
@@ -135,8 +144,11 @@
     
     <!-- Invoice Status Timeline -->
     <app-invoice-status-timeline 
-      [currentStatus]="invoice?.trangThai" 
-      [invoiceCreatedAt]="invoice?.ngayTao">
+      [currentStatus]="invoice ? invoice.trangThai : undefined" 
+      [invoiceCreatedAt]="invoice ? invoice.ngayTao : undefined"
+      [invoiceId]="invoiceId"
+      [enableClick]="true"
+      (statusChange)="onStatusChangeFromTimeline($event)">
     </app-invoice-status-timeline>
 
 
@@ -229,7 +241,7 @@
             </div>
             <div class="info-row">
               <span class="label">Phương thức:</span>
-              <span class="value">{{ invoice.phuongThucThanhToan || invoice.viTriBanHang || 'Tiền mặt' }}</span>
+              <span class="value">{{ getPaymentMethodLabel(invoice.phuongThucThanhToan) || 'Tiền mặt' }}</span>
             </div>
             <div class="info-row">
               <span class="label">Tổng tiền:</span>
@@ -463,287 +475,6 @@
 
   </div>
 
-  <!-- Modal Cập nhật hóa đơn -->
-  <div
-    class="modal fade"
-    id="updateInvoiceModal"
-    tabindex="-1"
-    role="dialog"
-    aria-labelledby="updateInvoiceModalLabel"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="updateInvoiceModalLabel">Cập nhật hóa đơn </h5>
-          <button type="button" class="btn-close" (click)="closeUpdateModal()" aria-label="Close"></button>
-        </div>
-        <div class="modal-body invoice-form" *ngIf="editingInvoice">
-          <form>
-            <!-- Thông tin hóa đơn và khách hàng -->
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Mã hóa đơn</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.maHoaDon"
-                    name="maHoaDon"
-                    readonly
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Tên khách hàng *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.tenKhachHang"
-                    name="tenKhachHang"
-                    placeholder="Nhập tên khách hàng"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Thông tin liên hệ và địa chỉ -->
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Số điện thoại **</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.soDienThoaiKhachHang"
-                    name="soDienThoaiKhachHang"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Email **</label>
-                  <input
-                    type="email"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.emailKhachHang"
-                    name="emailKhachHang"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Thông tin địa chỉ -->
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Tỉnh/Thành phố *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.tinhThanh"
-                    name="tinhThanh"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Quận/Huyện *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.quanHuyen"
-                    name="quanHuyen"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Xã/Phường *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.phuongXa"
-                    name="phuongXa"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Địa chỉ chi tiết *</label>
-                  <textarea
-                    class="form-control"
-                    rows="2"
-                    [(ngModel)]="editingInvoice.diaChiChiTiet"
-                    name="diaChiChiTiet"
-                    placeholder="Số nhà, tên đường, tòa nhà..."
-                    required
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-
-            <!-- Thông tin sản phẩm và giá -->
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Sản phẩm</label>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted">{{ selectedProductsForUpdate.length }} sản phẩm đã chọn</span>
-                    <button type="button" class="btn btn-primary btn-sm" (click)="openProductSelectionModal()">
-                      <i class="bi bi-plus-circle"></i>
-                      Chọn sản phẩm
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Tổng tiền</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.tongTien"
-                    name="tongTien"
-                    readonly
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label">Giảm giá (%)</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.giamGiaPhanTram"
-                    name="giamGiaPhanTram"
-                    min="0"
-                    max="100"
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label">Tiền giảm giá</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.tienGiamGia"
-                    name="tienGiamGia"
-                    min="0"
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label">Thành tiền</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.thanhTien"
-                    name="thanhTien"
-                    readonly
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Thông tin trạng thái và thanh toán -->
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Trạng thái *</label>
-                  <select 
-                    class="form-control status-select-modal" 
-                    [(ngModel)]="editingInvoice.trangThai"
-                    name="trangThai"
-                    [ngClass]="getStatusClass(editingInvoice.trangThai)">
-                    <option *ngFor="let step of statusSteps" [value]="step.key">
-                      {{ step.label }}
-                    </option>
-                  </select>
-                  
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Nhân viên *</label>
-                  <select class="form-control" [(ngModel)]="editingInvoice.nhanVienId" name="nhanVienId" required>
-                    <option value="">Chọn nhân viên</option>
-                    <option *ngFor="let employee of employees" [value]="employee.id">
-                      {{ employee.tenNhanVien }}
-                    </option>
-                  </select>
-                  
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Ngày thanh toán</label>
-                  <input
-                    type="datetime-local"
-                    class="form-control"
-                    [(ngModel)]="editingInvoice.ngayThanhToan"
-                    name="ngayThanhToan"
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">Phương thức thanh toán *</label>
-                  <select class="form-control" [(ngModel)]="editingInvoice.phuongThucThanhToan" name="phuongThucThanhToan" required>
-                    <option value="">Chọn phương thức</option>
-                    <option value="Tiền Mặt">Tiền mặt</option>
-                    <option value="Chuyển Khoản">Chuyển khoản</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Ghi chú -->
-            <div class="row">
-              <div class="col-md-12">
-                <div class="mb-3">
-                  <label class="form-label">Ghi chú</label>
-                  <textarea
-                    class="form-control"
-                    rows="3"
-                    [(ngModel)]="editingInvoice.ghiChu"
-                    name="ghiChu"
-                    placeholder="Nhập ghi chú (tùy chọn)"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeUpdateModal()">
-            <i class="fas fa-times"></i> Hủy
-          </button>
-          <button type="button" class="btn btn-primary" (click)="saveUpdatedInvoice()">
-            <i class="fas fa-save"></i> Lưu thay đổi
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- Modal chọn sản phẩm -->

@@ -7,6 +7,7 @@ import { ProductApiService, PageResponse, SanPhamResponse } from '../../services
 import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../services/chi-tiet-san-pham-api.service';
 import { CustomerAddressService } from '../../services/customer-address.service';
 import { EmployeeService } from '../../services/employee.service';
+import { AuthService } from '../../services/auth';
 import { CustomerAddress } from '../../interfaces/customer-address.interface';
 import { HoaDonDTO } from '../../interfaces/hoa-don.interface';
 import { Subject, interval, takeUntil, firstValueFrom, Subscription, timeout, catchError, of } from 'rxjs';
@@ -66,16 +67,23 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     private hoaDonService: HoaDonService,
     private customerAddressService: CustomerAddressService,
     private employeeService: EmployeeService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private productApi: ProductApiService,
     private chiTietSanPhamService: ChiTietSanPhamApiService
   ) {}
 
   /**
-   * Quay lại trang quản lý hóa đơn
+   * Quay lại trang quản lý hóa đơn hoặc đơn hàng của customer
    */
   goBack(): void {
-    this.router.navigate(['/invoices']);
+    // Nếu là customer, quay lại trang đơn hàng của họ
+    if (this.authService.isCustomer()) {
+      this.router.navigate(['/customer/orders']);
+    } else {
+      // Nếu là admin/staff, quay lại trang quản lý hóa đơn
+      this.router.navigate(['/invoices']);
+    }
   }
 
   /**
@@ -226,11 +234,21 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    console.log('🔍 InvoiceDetailComponent initialized');
     this.route.params.subscribe(params => {
-      this.invoiceId = +params['id'];
-      if (this.invoiceId) {
+      const idParam = params['id'];
+      console.log('📋 Route params received:', params, 'id param:', idParam);
+      
+      this.invoiceId = +idParam;
+      console.log('✅ Parsed invoiceId:', this.invoiceId);
+      
+      if (this.invoiceId && !isNaN(this.invoiceId) && this.invoiceId > 0) {
+        console.log('🔄 Valid invoiceId, loading detail...');
         this.loadInvoiceDetail();
         this.startAutoRefresh();
+      } else {
+        console.error('❌ Invalid invoiceId:', this.invoiceId);
+        this.error = 'Mã hóa đơn không hợp lệ';
       }
     });
     // Prefetch sản phẩm để mở modal là có dữ liệu ngay
@@ -331,6 +349,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   loadInvoiceDetail(): void {
     console.log('🔄 Loading invoice detail for ID:', this.invoiceId);
+    console.log('🔑 Current auth token:', this.authService.getToken() ? 'Present' : 'Missing');
+    console.log('👤 Current user:', this.authService.getCurrentUser());
+    console.log('✅ Is logged in:', this.authService.isLoggedIn());
+    
     this.error = '';
 
     this.hoaDonService.getHoaDonDetail(this.invoiceId).subscribe({
@@ -356,6 +378,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             },
             error: (error) => {
               console.error('❌ Error loading customer:', error);
+              // Không set error chính, chỉ log để không làm gián đoạn hiển thị invoice
               this.customer = null;
               this.cdr.detectChanges();
             }
@@ -371,7 +394,25 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('❌ Error loading invoice detail:', error);
-        this.error = 'Không thể tải thông tin hóa đơn';
+        console.error('❌ Error status:', error.status);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error details:', error);
+        
+        // Xử lý các loại lỗi khác nhau
+        if (error.status === 401) {
+          this.error = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+          // Không redirect tự động, để user tự quyết định
+          console.warn('⚠️ 401 - Session expired, but staying on page to show error');
+        } else if (error.status === 403) {
+          this.error = 'Bạn không có quyền xem hóa đơn này.';
+          console.warn('⚠️ 403 - Forbidden, but staying on page to show error');
+        } else if (error.status === 404) {
+          this.error = 'Không tìm thấy hóa đơn với ID: ' + this.invoiceId;
+        } else {
+          this.error = 'Không thể tải thông tin hóa đơn. Vui lòng thử lại sau.';
+        }
+        
+        // Không redirect, chỉ hiển thị error message
         this.cdr.detectChanges();
       }
     });
@@ -392,13 +433,33 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       next: (detailData: any) => {
         console.log('📦 Chi tiết hóa đơn loaded:', detailData);
 
-        const danhSach = Array.isArray(detailData?.danhSachSanPham) ? detailData.danhSachSanPham : [];
+        // Backend trả về danhSachChiTiet, cần map sang danhSachSanPham cho frontend
+        const danhSachChiTiet = Array.isArray(detailData?.danhSachChiTiet) 
+          ? detailData.danhSachChiTiet 
+          : (Array.isArray(detailData?.danhSachSanPham) ? detailData.danhSachSanPham : []);
+        
+        // Map danhSachChiTiet sang danhSachSanPham format
+        const danhSachSanPham = danhSachChiTiet.map((item: any) => ({
+          id: item.id,
+          chiTietSanPhamId: item.chiTietSanPhamId,
+          tenSanPham: item.tenSanPham || 'Chưa có tên',
+          maSanPham: item.maSanPham || '',
+          soLuong: item.soLuong || 1,
+          donGia: item.donGia || 0,
+          thanhTien: item.thanhTien || (item.donGia || 0) * (item.soLuong || 1),
+          giamGia: item.giamGia || 0,
+          mauSac: item.mauSac || '',
+          kichThuoc: item.kichThuoc || '',
+          anhSanPham: item.anhSanPham || ''
+        }));
+        
+        console.log('📦 Mapped danhSachSanPham from danhSachChiTiet:', danhSachSanPham);
         
         // Cập nhật invoice với dữ liệu mới nhất từ server
         this.invoice = {
           ...(this.invoice || {} as any),
-          danhSachSanPham: danhSach,
-          soLuongSanPham: danhSach.length,
+          danhSachSanPham: danhSachSanPham,
+          soLuongSanPham: danhSachSanPham.length,
           tongTien: detailData?.tongTien ?? 0,
           thanhTien: detailData?.thanhTien ?? detailData?.tongTien ?? 0,
           tienGiamGia: detailData?.tienGiamGia ?? 0,
@@ -409,10 +470,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           ghiChu: detailData?.ghiChu
         } as any;
 
-        if (danhSach.length === 0) {
+        if (danhSachSanPham.length === 0) {
           console.log('📦 No products found for this invoice');
         } else {
-          console.log('✅ Real products loaded from API:', danhSach);
+          console.log('✅ Products loaded from API:', danhSachSanPham.length, 'items');
         }
 
         // Force UI update
@@ -865,13 +926,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   getStatusIcon(status: string): string {
     const statusMap: { [key: string]: string } = {
-      'CHO_XAC_NHAN': 'fas fa-clock',
-      'DA_XAC_NHAN': 'fas fa-check-circle',
-      'DANG_GIAO_HANG': 'fas fa-truck',
-      'DA_GIAO_HANG': 'fas fa-box-open',
-      'HUY': 'fas fa-times-circle'
+      'CHO_XAC_NHAN': 'fa-solid fa-hourglass-half text-warning',
+      'DA_XAC_NHAN': 'fa-solid fa-circle-check text-success',
+      'DANG_GIAO_HANG': 'fa-solid fa-truck-fast text-primary',
+      'DA_GIAO_HANG': 'fa-solid fa-box-open text-info',
+      'HUY': 'fa-solid fa-circle-xmark text-danger'
     };
-    return statusMap[status] || 'fas fa-question-circle';
+    return statusMap[status] || 'fa-solid fa-question-circle';
   }
 
   getStatusDescription(status: string): string {
@@ -883,17 +944,6 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       'HUY': 'Đơn hàng đã bị hủy và không được xử lý'
     };
     return statusMap[status] || 'Trạng thái không xác định';
-  }
-
-  getStatusLabel(status: string): string {
-    const statusMap: { [key: string]: string } = {
-      'CHO_XAC_NHAN': 'Chờ xác nhận',
-      'DA_XAC_NHAN': 'Đã xác nhận',
-      'DANG_GIAO_HANG': 'Đang giao hàng',
-      'DA_GIAO_HANG': 'Đã giao hàng',
-      'HUY': 'Hủy'
-    };
-    return statusMap[status] || status;
   }
 
   formatDate(date: string): string {
@@ -1300,6 +1350,25 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 </html>`;
   }
 
+  /**
+   * Chuyển đổi mã phương thức thanh toán sang label hiển thị
+   */
+  getPaymentMethodLabel(method?: string): string {
+    if (!method) return 'Tiền mặt';
+    
+    // Map từ backend format về hiển thị
+    const methodLower = method.toLowerCase().trim();
+    
+    if (methodLower === 'cash' || methodLower === 'tiền mặt' || methodLower === 'tiền mặt') {
+      return 'Tiền mặt';
+    } else if (methodLower === 'transfer' || methodLower === 'chuyển khoản' || methodLower === 'chuyen khoan') {
+      return 'Chuyển khoản';
+    }
+    
+    // Trả về giá trị gốc nếu không match
+    return method;
+  }
+
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -1697,13 +1766,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     try {
-      // 1) Tải toàn bộ danh sách ChiTietSanPham thay vì SanPham
-        const chiTietProducts: ChiTietSanPhamResponse[] = await firstValueFrom(
+        // 1) Tải toàn bộ danh sách ChiTietSanPham thay vì SanPham
+        const chiTietProducts = await firstValueFrom(
           this.chiTietSanPhamService.getAll().pipe(
             timeout(5000),
             catchError(() => of([]))
           )
-        );
+        ) as ChiTietSanPhamResponse[];
         
         // Map ChiTietSanPhamResponse to match frontend expected format
         this.allProducts = chiTietProducts.map((product: ChiTietSanPhamResponse) => ({
@@ -2422,6 +2491,125 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     
     // Đóng modal
     this.closeProductModal();
+  }
+
+  /**
+   * Xử lý khi trạng thái thay đổi từ timeline (click vào icon)
+   */
+  onStatusChangeFromTimeline(newStatus: string): void {
+    console.log('📥 ========== RECEIVED STATUS CHANGE ==========');
+    console.log('📥 onStatusChangeFromTimeline called with:', newStatus);
+    console.log('📥 Type of newStatus:', typeof newStatus);
+    console.log('📥 ===========================================');
+    console.log('📋 Current invoice data:', {
+      invoice: this.invoice,
+      invoiceId: this.invoiceId,
+      currentStatus: this.invoice?.trangThai
+    });
+
+    if (!this.invoice) {
+      console.error('❌ Cannot update: invoice is null');
+      this.showToast('Không có dữ liệu hóa đơn để cập nhật', 'error');
+      return;
+    }
+
+    if (!this.invoiceId) {
+      console.error('❌ Cannot update: invoiceId is missing');
+      this.showToast('Không tìm thấy ID hóa đơn', 'error');
+      return;
+    }
+
+    if (!newStatus) {
+      console.error('❌ Cannot update: newStatus is empty');
+      this.showToast('Trạng thái mới không hợp lệ', 'error');
+      return;
+    }
+
+    // Kiểm tra xem trạng thái mới có khác trạng thái hiện tại không
+    if (this.invoice.trangThai === newStatus) {
+      console.log('ℹ️ Status unchanged:', newStatus);
+      const statusLabel = this.getStatusLabel(newStatus);
+      this.showToast(`Trạng thái hiện tại đã là: ${statusLabel}`, 'info');
+      return;
+    }
+
+    console.log('🔄 Updating invoice status from', this.invoice.trangThai, 'to', newStatus);
+    console.log('🌐 Calling API: PATCH /api/hoa-don/' + this.invoiceId + '/trang-thai?trangThai=' + newStatus);
+    
+    this.savingStatus = true;
+    
+    // Gọi API để cập nhật trạng thái
+    this.hoaDonService.updateTrangThaiHoaDon(this.invoiceId, newStatus).subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Status updated successfully:', updatedInvoice);
+        console.log('📊 Updated invoice:', {
+          id: updatedInvoice.id,
+          maHoaDon: updatedInvoice.maHoaDon,
+          trangThai: updatedInvoice.trangThai
+        });
+        
+        // Cập nhật invoice với dữ liệu mới từ server
+        this.invoice = updatedInvoice;
+        this.originalStatus = updatedInvoice.trangThai as 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY';
+        this.statusChanged = false;
+        this.savingStatus = false;
+        
+        // Hiển thị thông báo thành công
+        const statusLabel = this.getStatusLabel(updatedInvoice.trangThai);
+        this.showToast(`Đã cập nhật trạng thái thành: ${statusLabel}`, 'success');
+        
+        // Force UI update - timeline sẽ tự động update nhờ ngOnChanges khi currentStatus thay đổi
+        this.cdr.detectChanges();
+        
+        console.log('🔄 UI updated with new status:', updatedInvoice.trangThai);
+        console.log('✅ Timeline should auto-update via ngOnChanges');
+      },
+      error: (error) => {
+        console.error('❌ Error updating status:', error);
+        console.error('❌ Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          error: error.error
+        });
+        
+        this.savingStatus = false;
+        
+        // Hiển thị thông báo lỗi chi tiết
+        let errorMessage = 'Vui lòng thử lại';
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        } else if (error.status === 404) {
+          errorMessage = 'Không tìm thấy hóa đơn';
+        } else if (error.status === 400) {
+          errorMessage = 'Trạng thái không hợp lệ';
+        } else if (error.status === 500) {
+          errorMessage = 'Lỗi server, vui lòng thử lại sau';
+        }
+        
+        this.showToast('Lỗi khi cập nhật trạng thái: ' + errorMessage, 'error');
+        
+        // Reload invoice để đảm bảo UI đồng bộ với server
+        console.log('🔄 Reloading invoice to sync UI with server');
+        this.loadInvoiceDetail();
+      }
+    });
+  }
+
+  /**
+   * Lấy label của trạng thái
+   */
+  getStatusLabel(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'CHO_XAC_NHAN': 'Chờ xác nhận',
+      'DA_XAC_NHAN': 'Đã xác nhận',
+      'DANG_GIAO_HANG': 'Đang giao hàng',
+      'DA_GIAO_HANG': 'Đã giao hàng',
+      'HUY': 'Hủy'
+    };
+    return statusMap[status] || status;
   }
 
   /**

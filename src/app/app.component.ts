@@ -17,22 +17,34 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'Helmet Store';
   sidebarHidden = false;
   isLoginPage = false;
+  isShopPage = false; // Trang shop (customer website)
+  showAdminLayout = true; // Hiển thị sidebar/header cho admin/staff pages
   private routerSubscription: Subscription = new Subscription();
 
   constructor(public router: Router, private authService: AuthService) {}
 
   ngOnInit() {
-    // Kiểm tra route hiện tại để xác định có phải trang login không
+    // Kiểm tra route hiện tại để xác định layout
+    this.updateLayoutFlags(this.router.url);
+    
     this.routerSubscription.add(
       this.router.events
         .pipe(filter((event) => event instanceof NavigationEnd))
         .subscribe((event: NavigationEnd) => {
-          this.isLoginPage = event.url === '/login';
+          this.updateLayoutFlags(event.url);
         })
     );
+  }
 
-    // Kiểm tra route ban đầu
-    this.isLoginPage = this.router.url === '/login';
+  updateLayoutFlags(url: string): void {
+    // Trang login, register, forgot-password - không có sidebar/header
+    this.isLoginPage = url === '/login' || url === '/register' || url === '/forgot-password';
+    
+    // Trang shop - không có sidebar/header (customer website)
+    this.isShopPage = url.startsWith('/shop');
+    
+    // Hiển thị admin layout nếu không phải login/shop pages
+    this.showAdminLayout = !this.isLoginPage && !this.isShopPage;
   }
 
   ngOnDestroy() {

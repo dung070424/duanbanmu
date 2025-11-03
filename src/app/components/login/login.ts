@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
 interface LoginData {
@@ -13,7 +13,7 @@ interface LoginData {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],
 })
@@ -42,8 +42,21 @@ export class LoginComponent {
         next: (success: boolean) => {
           console.log('Login result:', success);
           if (success) {
-            console.log('Login successful, navigating to dashboard');
-            this.router.navigate(['/dashboard']);
+            const user = this.authService.getCurrentUser();
+            console.log('Login successful, user:', user);
+            
+            // Redirect dựa trên role
+            if (user?.roles?.includes('ADMIN') || user?.roles?.includes('STAFF')) {
+              console.log('Navigating to dashboard for admin/staff');
+              this.router.navigate(['/dashboard']);
+            } else if (user?.roles?.includes('CUSTOMER')) {
+              console.log('Navigating to shop for customer');
+              this.router.navigate(['/shop']);
+            } else {
+              // Fallback: nếu không có role, redirect đến shop
+              console.log('No role found, navigating to shop');
+              this.router.navigate(['/shop']);
+            }
           } else {
             console.log('Login failed - invalid credentials');
             this.errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng!';

@@ -360,4 +360,46 @@ export class HoaDonService {
   searchCustomerByName(name: string): Observable<any[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/khach-hang/search?name=${encodeURIComponent(name)}`);
   }
+
+  // Customer orders methods
+  getCustomerOrders(page: number = 0, size: number = 10): Observable<any> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    
+    return this.http.get<any>(`${environment.apiBaseUrl}/api/customer/orders`, { params }).pipe(
+      map((response: any) => {
+        // Map danhSachChiTiet sang danhSachSanPham
+        if (response.content && Array.isArray(response.content)) {
+          response.content = response.content.map((invoice: any) => {
+            if (invoice.danhSachChiTiet && Array.isArray(invoice.danhSachChiTiet)) {
+              invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => ({
+                id: item.id,
+                chiTietSanPhamId: item.chiTietSanPhamId,
+                tenSanPham: item.tenSanPham,
+                maSanPham: item.maSanPham,
+                mauSac: item.mauSac,
+                kichThuoc: item.kichThuoc,
+                nhaSanXuat: item.nhaSanXuat,
+                soLuong: item.soLuong,
+                donGia: item.donGia ? Number(item.donGia) : 0,
+                giamGia: item.giamGia ? Number(item.giamGia) : 0,
+                thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
+                anhSanPham: item.anhSanPham,
+                sanPhamId: item.chiTietSanPhamId
+              }));
+            } else {
+              invoice.danhSachSanPham = [];
+            }
+            return invoice;
+          });
+        }
+        return response;
+      })
+    );
+  }
+
+  cancelCustomerOrder(orderId: number): Observable<any> {
+    return this.http.patch<any>(`${environment.apiBaseUrl}/api/customer/orders/${orderId}/cancel`, {});
+  }
 }

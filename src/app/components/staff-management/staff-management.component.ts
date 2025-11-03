@@ -10,6 +10,25 @@ import {
   getTrangThaiText,
   getGioiTinhText,
 } from '../../interfaces/nhan-vien.interface';
+// Dữ liệu địa danh Việt Nam: import trực tiếp JSON để tương thích Vite
+import provincesData from 'sub-vn/json_data/provinces.json';
+import districtsData from 'sub-vn/json_data/districts.json';
+import wardsData from 'sub-vn/json_data/wards.json';
+
+export interface Province {
+  code: string;
+  name: string;
+}
+export interface District {
+  code: string;
+  name: string;
+  province_code: string;
+}
+export interface Ward {
+  code: string;
+  name: string;
+  district_code: string;
+}
 
 @Component({
   selector: 'app-staff-management',
@@ -56,14 +75,27 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     trangThai: true,
   };
 
+  // UI-only địa chỉ tách trường (không lưu backend)
+  // Lưu code (mã) tỉnh/quận/xã để kết nối dữ liệu phụ thuộc
+  selectedTinh: string = '';
+  selectedQuan: string = '';
+  selectedXa: string = '';
+  provinces: Province[] = [];
+  districts: District[] = [];
+  wards: Ward[] = [];
+
   // Error handling
   errorMessage = '';
   fieldErrors: { [key: string]: string } = {};
+  // Xác nhận thao tác lưu
+  showConfirm = false;
 
   constructor(private nhanVienService: NhanVienService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadNhanVienList();
+    // Load danh sách tỉnh ngay khi vào màn
+    this.provinces = provincesData as any as Province[];
   }
 
   ngOnDestroy(): void {
@@ -163,26 +195,26 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: PageResponse<NhanVien>) => {
           this.nhanVienList = response.content;
-          // Lọc lại trên FE để đảm bảo tìm kiếm hoạt động ổn định và cả trạng thái
-          if (this.searchTerm.trim()) {
-            const q = this.normalizeText(this.searchTerm.trim());
-            this.filteredList = this.nhanVienList.filter((nv) => {
-              const fields = [
-                (nv.maNhanVien || '').toLowerCase(),
-                this.normalizeText(nv.hoTen),
-                (nv.email || '').toLowerCase(),
-                (nv.soDienThoai || '').toLowerCase(),
-                (nv.soCanCuocCongDan || '').toLowerCase(),
-              ];
-              const textMatch = fields.some((v) => v.includes(q));
-              const statusMatch =
-                this.selectedStatus === 'all' ||
-                (this.selectedStatus === 'Hoạt động' ? nv.trangThai : !nv.trangThai);
-              return textMatch && statusMatch;
-            });
-          } else {
-            this.filteredList = [...this.nhanVienList];
-          }
+          // Luôn áp dụng lọc FE cho cả tìm kiếm và trạng thái để hiển thị đúng
+          const hasQuery = this.searchTerm.trim().length > 0;
+          const q = this.normalizeText(this.searchTerm.trim());
+          this.filteredList = this.nhanVienList.filter((nv) => {
+            const statusMatch =
+              this.selectedStatus === 'all' ||
+              (this.selectedStatus === 'Hoạt động' ? !!nv.trangThai : !nv.trangThai);
+
+            if (!hasQuery) return statusMatch;
+
+            const fields = [
+              (nv.maNhanVien || '').toLowerCase(),
+              this.normalizeText(nv.hoTen),
+              (nv.email || '').toLowerCase(),
+              (nv.soDienThoai || '').toLowerCase(),
+              (nv.soCanCuocCongDan || '').toLowerCase(),
+            ];
+            const textMatch = fields.some((v) => v.includes(q));
+            return textMatch && statusMatch;
+          });
           this.totalElements = response.totalElements;
           this.totalPages = response.totalPages;
           this.loading = false;
@@ -304,6 +336,29 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     this.clearFieldErrors();
   }
 
+  // Handlers cho chọn tỉnh/quận/xã
+  onProvinceChange(code: string): void {
+    this.selectedTinh = code || '';
+    const allDistricts = districtsData as any as District[];
+    this.districts = this.selectedTinh
+      ? allDistricts.filter((d) => d.province_code === this.selectedTinh)
+      : [];
+    this.wards = [];
+    this.selectedQuan = '';
+    this.selectedXa = '';
+    this.cdr.detectChanges();
+  }
+
+  onDistrictChange(code: string): void {
+    this.selectedQuan = code || '';
+    const allWards = wardsData as any as Ward[];
+    this.wards = this.selectedQuan
+      ? allWards.filter((w) => w.district_code === this.selectedQuan)
+      : [];
+    this.selectedXa = '';
+    this.cdr.detectChanges();
+  }
+
   // Form methods
   resetForm(): void {
     this.form = {
@@ -320,26 +375,42 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     };
   }
 
-  save(): void {
-    // Clear previous errors
+  // Hiển thị xác nhận trước khi lưu
+  requestSave(): void {
     this.clearFieldErrors();
     this.errorMessage = '';
-
-    // Validate all fields
     if (!this.isFormValid()) {
       this.errorMessage = 'Vui lòng kiểm tra lại thông tin đã nhập';
       return;
     }
+    this.showConfirm = true;
+  }
 
+  // Giữ tương thích template cũ nếu còn tham chiếu
+  save(): void {
+    this.requestSave();
+  }
+
+  // Người dùng xác nhận lưu
+  confirmSave(): void {
+    this.showConfirm = false;
+    this.doSave();
+  }
+
+  // Hủy xác nhận
+  cancelConfirm(): void {
+    this.showConfirm = false;
+  }
+
+  private doSave(): void {
     this.loading = true;
-
     const saveOperation =
       this.isEditMode && this.selectedNhanVien?.id
         ? this.nhanVienService.updateNhanVien(this.selectedNhanVien.id, this.form)
         : this.nhanVienService.createNhanVien(this.form);
 
     saveOperation.pipe(takeUntil(this.destroy$)).subscribe({
-      next: (nhanVien) => {
+      next: () => {
         this.loadNhanVienList();
         this.close();
         this.cdr.detectChanges();
