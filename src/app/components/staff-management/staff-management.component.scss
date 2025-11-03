@@ -976,3 +976,189 @@
     font-size: 0.8rem;
   }
 }
+
+/* ===== NEW MODERN EMPLOYEE FORM (Add/Edit) ===== */
+.employee-form-modern {
+  background: #fafafa;
+  border-radius: 16px;
+  border: 1px solid #ececec;
+  padding: 20px;
+}
+
+.employee-form-modern .profile-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.employee-form-modern .avatar-wrapper {
+  position: relative;
+}
+
+.employee-form-modern .avatar-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #ffe7bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.employee-form-modern .avatar-circle i {
+  font-size: 48px;
+  color: #a45e1a;
+}
+
+.employee-form-modern .avatar-remove {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.employee-form-modern .grid-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.employee-form-modern .grid-col {
+  padding: 0;
+}
+
+.employee-form-modern .col-12 { width: 100%; }
+.employee-form-modern .col-6 { width: calc(50% - 8px); }
+.employee-form-modern .col-5 { width: calc(41.666% - 8px); }
+.employee-form-modern .col-4 { width: calc(33.333% - 11px); }
+.employee-form-modern .col-1 { width: 60px; }
+
+.employee-form-modern .center-col {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+}
+
+.employee-form-modern .btn-ghost {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+  background: #fff;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.employee-form-modern .input-with-icon {
+  position: relative;
+}
+
+.employee-form-modern .input-with-icon i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+.employee-form-modern .input-with-icon .form-control {
+  padding-left: 40px;
+}
+
+@media (max-width: 768px) {
+  .employee-form-modern .col-6,
+  .employee-form-modern .col-5,
+  .employee-form-modern .col-4,
+  .employee-form-modern .col-1,
+  .employee-form-modern .col-12 {
+    width: 100%;
+  }
+
+  .employee-form-modern .center-col {
+    justify-content: flex-start;
+  }
+}
+
+/* ===== FULLSCREEN PANEL ===== */
+.staff-fullscreen {
+  /* Hiển thị dạng khối bình thường để KHÔNG che sidebar/menu */
+  position: static;
+  background: transparent;
+  display: none;
+}
+
+.staff-fullscreen.show { display: block; }
+
+.staff-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #febc49;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.panel-title .btn-back {
+  background: #fff;
+  color: #febc49;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-title .title-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-body {
+  padding: 16px 20px 100px 20px;
+  overflow: auto;
+}
+
+.panel-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  padding: 12px 20px;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

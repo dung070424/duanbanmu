@@ -1,4 +1,4 @@
-<div class="container-fluid">
+<div class="container-fluid" *ngIf="!showModal">
   <!-- Bộ Lọc Tìm Kiếm Section -->
   <div class="filter-section">
     <div class="section-title">
@@ -139,7 +139,7 @@
               </span>
             </td>
             <td class="text-truncate" style="max-width: 120px">
-              {{ nv.ngayVaoLam | date : 'short' }}
+              {{ nv.ngayVaoLam | date : 'dd/MM/yyyy' }}
             </td>
             <td>
               <div class="action-buttons">
@@ -225,286 +225,283 @@
   </div>
 </div>
 
-<!-- Modal thêm/sửa/xem nhân viên -->
-<div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header text-white">
-        <h5 class="modal-title">
-          <span *ngIf="isViewMode">Xem chi tiết nhân viên</span>
-          <span *ngIf="isEditMode">Chỉnh sửa nhân viên</span>
-          <span *ngIf="!isViewMode && !isEditMode">Thêm nhân viên mới</span>
-        </h5>
-        <button type="button" class="btn-close btn-close-white" (click)="close()"></button>
-      </div>
-      <div class="modal-body">
-        <form (ngSubmit)="save()">
-          <!-- Error message in modal -->
-          <div
-            *ngIf="errorMessage"
-            class="alert alert-danger alert-dismissible fade show"
-            role="alert"
+<!-- Màn hình toàn trang thêm/sửa/xem nhân viên -->
+<div
+  class="staff-fullscreen"
+  [class.show]="showModal"
+  [style.display]="showModal ? 'block' : 'none'"
+>
+  <div class="staff-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <button class="btn-back" (click)="close()" title="Quay lại">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <span class="title-text">
+          <i class="bi bi-plus-circle me-2" *ngIf="!isEditMode && !isViewMode"></i>
+          <i class="bi bi-pencil-square me-2" *ngIf="isEditMode"></i>
+          <i class="bi bi-person-badge me-2" *ngIf="isViewMode"></i>
+          <ng-container *ngIf="isViewMode">Xem chi tiết nhân viên</ng-container>
+          <ng-container *ngIf="isEditMode">Chỉnh sửa nhân viên</ng-container>
+          <ng-container *ngIf="!isViewMode && !isEditMode"
+            >Thêm Chi Tiết nhân viên mới</ng-container
           >
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            {{ errorMessage }}
-            <button
-              type="button"
-              class="btn-close"
-              (click)="errorMessage = ''"
-              aria-label="Close"
-            ></button>
+        </span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <form (ngSubmit)="requestSave()">
+        <div
+          *ngIf="errorMessage"
+          class="alert alert-danger alert-dismissible fade show"
+          role="alert"
+        >
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          {{ errorMessage }}
+          <button
+            type="button"
+            class="btn-close"
+            (click)="errorMessage = ''"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <div class="employee-form-modern">
+          <div class="profile-row">
+            <div class="avatar-wrapper">
+              <div class="avatar-circle"><i class="bi bi-person-fill"></i></div>
+            </div>
           </div>
 
-          <!-- Personal Information Section -->
-          <div class="mb-4">
-            <h6 class="section-subtitle">
-              <i class="bi bi-person-circle me-2"></i>
-              Thông tin cá nhân
-            </h6>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="maNhanVien" class="form-label">
-                  <i class="bi bi-hash me-1"></i>Mã nhân viên
-                </label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="maNhanVien"
-                  [(ngModel)]="form.maNhanVien"
-                  name="maNhanVien"
-                  [disabled]="isViewMode || isEditMode"
-                  [readonly]="!isEditMode && !isViewMode"
-                  placeholder="NV001, NV002..."
-                  (blur)="validateField('maNhanVien')"
-                  (input)="validateField('maNhanVien')"
-                  [class.is-invalid]="fieldErrors['maNhanVien']"
-                  [style.background-color]="!isEditMode && !isViewMode ? '#f8f9fa' : ''"
-                />
-                <div class="invalid-feedback" *ngIf="fieldErrors['maNhanVien']">
-                  {{ fieldErrors['maNhanVien'] }}
-                </div>
+          <div class="grid-row">
+            <div class="grid-col col-6">
+              <label class="form-label">Tên nhân viên</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="form.hoTen"
+                name="hoTen"
+                placeholder="Nguyễn Văn A"
+                [disabled]="isViewMode"
+                (blur)="validateField('hoTen')"
+                [class.is-invalid]="fieldErrors['hoTen']"
+              />
+              <div class="invalid-feedback" *ngIf="fieldErrors['hoTen']">
+                {{ fieldErrors['hoTen'] }}
               </div>
-              <div class="col-md-6">
-                <label for="hoTen" class="form-label">
-                  <i class="bi bi-person me-1"></i>Họ tên <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="hoTen"
-                  [(ngModel)]="form.hoTen"
-                  name="hoTen"
-                  required
-                  [disabled]="isViewMode"
-                  placeholder="Nhập họ tên đầy đủ"
-                  (blur)="validateField('hoTen')"
-                  [class.is-invalid]="fieldErrors['hoTen']"
-                />
-                <div class="invalid-feedback" *ngIf="fieldErrors['hoTen']">
-                  {{ fieldErrors['hoTen'] }}
-                </div>
+            </div>
+            <div class="grid-col col-6">
+              <label class="form-label">Số điện thoại</label>
+              <input
+                type="tel"
+                class="form-control"
+                [(ngModel)]="form.soDienThoai"
+                name="soDienThoai"
+                placeholder="0901234567"
+                [disabled]="isViewMode"
+                (blur)="validateField('soDienThoai')"
+                (input)="validateField('soDienThoai')"
+                [class.is-invalid]="fieldErrors['soDienThoai']"
+              />
+              <div class="invalid-feedback" *ngIf="fieldErrors['soDienThoai']">
+                {{ fieldErrors['soDienThoai'] }}
               </div>
             </div>
           </div>
 
-          <!-- Contact Information Section -->
-          <div class="mb-4">
-            <h6 class="section-subtitle">
-              <i class="bi bi-telephone me-2"></i>
-              Thông tin liên hệ
-            </h6>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="email" class="form-label">
-                  <i class="bi bi-envelope me-1"></i>Email <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="email"
-                  class="form-control"
-                  id="email"
-                  [(ngModel)]="form.email"
-                  name="email"
-                  required
-                  [disabled]="isViewMode"
-                  placeholder="example@tdk.vn"
-                  (blur)="validateField('email')"
-                  (input)="validateField('email')"
-                  [class.is-invalid]="fieldErrors['email']"
-                />
-                <div class="invalid-feedback" *ngIf="fieldErrors['email']">
-                  {{ fieldErrors['email'] }}
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="soDienThoai" class="form-label">
-                  <i class="bi bi-phone me-1"></i>Điện thoại <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="tel"
-                  class="form-control"
-                  id="soDienThoai"
-                  [(ngModel)]="form.soDienThoai"
-                  name="soDienThoai"
-                  required
-                  [disabled]="isViewMode"
-                  placeholder="0901234567"
-                  (blur)="validateField('soDienThoai')"
-                  (input)="validateField('soDienThoai')"
-                  [class.is-invalid]="fieldErrors['soDienThoai']"
-                />
-                <div class="invalid-feedback" *ngIf="fieldErrors['soDienThoai']">
-                  {{ fieldErrors['soDienThoai'] }}
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="soCanCuocCongDan" class="form-label">
-                  <i class="bi bi-person-vcard me-1"></i>CCCD
-                </label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="soCanCuocCongDan"
-                  [(ngModel)]="form.soCanCuocCongDan"
-                  name="soCanCuocCongDan"
-                  [disabled]="isViewMode"
-                  placeholder="Số căn cước công dân"
-                />
+          <div class="grid-row">
+            <div class="grid-col col-6">
+              <label class="form-label">CCCD</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="form.soCanCuocCongDan"
+                name="soCanCuocCongDan"
+                placeholder="001234567890"
+                [disabled]="isViewMode"
+              />
+            </div>
+            <div class="grid-col col-6">
+              <label class="form-label">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                [(ngModel)]="form.email"
+                name="email"
+                placeholder="example@company.vn"
+                [disabled]="isViewMode"
+                (blur)="validateField('email')"
+                (input)="validateField('email')"
+                [class.is-invalid]="fieldErrors['email']"
+              />
+              <div class="invalid-feedback" *ngIf="fieldErrors['email']">
+                {{ fieldErrors['email'] }}
               </div>
             </div>
           </div>
 
-          <!-- Personal Details Section -->
-          <div class="mb-4">
-            <h6 class="section-subtitle">
-              <i class="bi bi-calendar3 me-2"></i>
-              Thông tin chi tiết
-            </h6>
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label for="gioiTinh" class="form-label">
-                  <i class="bi bi-gender-ambiguous me-1"></i>Giới tính
-                </label>
-                <select
-                  class="form-control"
-                  id="gioiTinh"
-                  [(ngModel)]="form.gioiTinh"
-                  name="gioiTinh"
-                  [disabled]="isViewMode"
-                >
-                  <option [value]="true">Nam</option>
-                  <option [value]="false">Nữ</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label for="ngaySinh" class="form-label">
-                  <i class="bi bi-calendar-event me-1"></i>Ngày sinh
-                </label>
+          <div class="grid-row">
+            <div class="grid-col col-4">
+              <label class="form-label">Tỉnh/Thành phố</label>
+              <select
+                class="form-control"
+                [(ngModel)]="selectedTinh"
+                name="selectedTinh"
+                (ngModelChange)="onProvinceChange($event)"
+                [disabled]="isViewMode"
+              >
+                <option value="">Chọn tỉnh</option>
+                <option *ngFor="let p of provinces" [value]="p.code">{{ p.name }}</option>
+              </select>
+            </div>
+            <div class="grid-col col-4">
+              <label class="form-label">Quận/Huyện</label>
+              <select
+                class="form-control"
+                [(ngModel)]="selectedQuan"
+                name="selectedQuan"
+                (ngModelChange)="onDistrictChange($event)"
+                [disabled]="isViewMode || !selectedTinh"
+              >
+                <option value="">Chọn quận</option>
+                <option *ngFor="let d of districts" [value]="d.code">{{ d.name }}</option>
+              </select>
+            </div>
+            <div class="grid-col col-4">
+              <label class="form-label">Xã/Phường</label>
+              <select
+                class="form-control"
+                [(ngModel)]="selectedXa"
+                name="selectedXa"
+                [disabled]="isViewMode || !selectedQuan"
+              >
+                <option value="">Chọn xã</option>
+                <option *ngFor="let w of wards" [value]="w.code">{{ w.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-row">
+            <div class="grid-col col-12">
+              <label class="form-label">Địa chỉ cụ thể</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="form.diaChi"
+                name="diaChi"
+                placeholder="Số nhà, đường..."
+                [disabled]="isViewMode"
+              />
+            </div>
+          </div>
+
+          <div class="grid-row">
+            <div class="grid-col col-6 with-icon">
+              <label class="form-label">Ngày sinh</label>
+              <div class="input-with-icon">
+                <i class="bi bi-calendar-event"></i>
                 <input
                   type="date"
                   class="form-control"
-                  id="ngaySinh"
                   [(ngModel)]="form.ngaySinh"
                   name="ngaySinh"
                   [disabled]="isViewMode"
                 />
               </div>
-              <div class="col-md-4">
-                <label for="ngayVaoLam" class="form-label">
-                  <i class="bi bi-calendar-check me-1"></i>Ngày vào làm
+            </div>
+            <div class="grid-col col-6">
+              <label class="form-label">Giới tính</label>
+              <div class="radio-inline">
+                <label class="radio-item">
+                  <input
+                    type="radio"
+                    name="gioiTinh"
+                    [value]="true"
+                    [(ngModel)]="form.gioiTinh"
+                    [disabled]="isViewMode"
+                  />
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">Nam</span>
                 </label>
-                <input
-                  type="date"
-                  class="form-control"
-                  id="ngayVaoLam"
-                  [(ngModel)]="form.ngayVaoLam"
-                  name="ngayVaoLam"
-                  [disabled]="isViewMode"
-                />
+                <label class="radio-item">
+                  <input
+                    type="radio"
+                    name="gioiTinh"
+                    [value]="false"
+                    [(ngModel)]="form.gioiTinh"
+                    [disabled]="isViewMode"
+                  />
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">Nữ</span>
+                </label>
               </div>
             </div>
           </div>
 
-          <!-- Status Section -->
-          <div class="mb-4">
-            <h6 class="section-subtitle">
-              <i class="bi bi-gear me-2"></i>
-              Trạng thái
-            </h6>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="trangThai" class="form-label">
-                  <i class="bi bi-toggle-on me-1"></i>Trạng thái làm việc
+          <!-- Trạng thái: chỉ hiển thị khi Chỉnh sửa hoặc Xem -->
+          <div class="grid-row" *ngIf="isEditMode || isViewMode">
+            <div class="grid-col col-6">
+              <label class="form-label">Trạng thái</label>
+              <div class="radio-inline">
+                <label class="radio-item">
+                  <input
+                    type="radio"
+                    name="trangThai"
+                    [value]="true"
+                    [(ngModel)]="form.trangThai"
+                    [disabled]="isViewMode"
+                  />
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">Hoạt động</span>
                 </label>
-                <select
-                  class="form-control"
-                  id="trangThai"
-                  [(ngModel)]="form.trangThai"
-                  name="trangThai"
-                  [disabled]="isViewMode"
-                >
-                  <option [value]="true">Hoạt động</option>
-                  <option [value]="false">Nghỉ việc</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Address Section -->
-          <div class="mb-4">
-            <h6 class="section-subtitle">
-              <i class="bi bi-geo-alt me-2"></i>
-              Địa chỉ
-            </h6>
-            <div class="row g-3">
-              <div class="col-12">
-                <label for="diaChi" class="form-label">
-                  <i class="bi bi-house me-1"></i>Địa chỉ
+                <label class="radio-item">
+                  <input
+                    type="radio"
+                    name="trangThai"
+                    [value]="false"
+                    [(ngModel)]="form.trangThai"
+                    [disabled]="isViewMode"
+                  />
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">Nghỉ việc</span>
                 </label>
-                <textarea
-                  class="form-control"
-                  id="diaChi"
-                  [(ngModel)]="form.diaChi"
-                  name="diaChi"
-                  rows="3"
-                  [disabled]="isViewMode"
-                  placeholder="Nhập địa chỉ đầy đủ (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
-                ></textarea>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Thông tin User liên kết (chỉ hiển thị khi xem chi tiết) -->
-          <div *ngIf="isViewMode && (form.username || form.fullName)" class="mb-4">
-            <h6 class="section-subtitle">
-              <i class="bi bi-link-45deg me-2"></i>
-              Tài khoản liên kết
-            </h6>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Username</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  [value]="form.username || 'Chưa có'"
-                  disabled
-                  readonly
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Full Name (User)</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  [value]="form.fullName || 'Chưa có'"
-                  disabled
-                  readonly
-                />
-              </div>
+        <div *ngIf="isViewMode && (form.username || form.fullName)" class="mb-4">
+          <h6 class="section-subtitle">
+            <i class="bi bi-link-45deg me-2"></i>
+            Tài khoản liên kết
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Username</label>
+              <input
+                type="text"
+                class="form-control"
+                [value]="form.username || 'Chưa có'"
+                disabled
+                readonly
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Full Name (User)</label>
+              <input
+                type="text"
+                class="form-control"
+                [value]="form.fullName || 'Chưa có'"
+                disabled
+                readonly
+              />
             </div>
           </div>
-        </form>
-      </div>
-      <div class="modal-footer">
+        </div>
+      </form>
+    </div>
+    <div class="panel-footer">
+      <div class="footer-actions">
         <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="loading">
           {{ isViewMode ? 'Đóng' : 'Hủy' }}
         </button>
@@ -512,7 +509,7 @@
           *ngIf="!isViewMode"
           type="button"
           class="btn btn-primary"
-          (click)="save()"
+          (click)="requestSave()"
           [disabled]="loading"
         >
           <span
@@ -528,5 +525,21 @@
   </div>
 </div>
 
-<!-- Overlay -->
-<div *ngIf="showModal" class="modal-backdrop fade show"></div>
+<!-- Xác nhận lưu -->
+<div class="modal fade" [class.show]="showConfirm" [style.display]="showConfirm ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận</h5>
+        <button type="button" class="btn-close" (click)="cancelConfirm()"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có muốn {{ isEditMode ? 'cập nhật' : 'thêm mới' }} nhân viên này không?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelConfirm()">Hủy</button>
+        <button type="button" class="btn btn-primary" (click)="confirmSave()">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+</div>
