@@ -1445,3 +1445,219 @@
     font-size: 0.8rem;
   }
 }
+
+/* ===== ENHANCEMENTS FOR FULLSCREEN CUSTOMER FORM ===== */
+.staff-panel .employee-form-modern {
+  max-width: 100%; /* dùng toàn bộ bề ngang để tránh khoảng trống */
+  padding-left: 16px;
+  padding-right: 16px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+/* Card-like feel for each row group */
+.staff-panel .employee-form-modern .grid-row {
+  display: grid; /* lưới 12 cột */
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 0; /* bỏ khoảng cách giữa 2 cột để không còn khoảng trống */
+  row-gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* Hàng có 2 cột muốn ô nhập to hơn về bên phải */
+.staff-panel .employee-form-modern .grid-row.two-col-large {
+  grid-template-columns: 7fr 5fr; /* 70% - 30% */
+}
+
+.staff-panel .employee-form-modern .grid-col {
+  grid-column: span 12;
+}
+.staff-panel .employee-form-modern .grid-col.col-6 {
+  grid-column: span 6;
+}
+
+@media (max-width: 768px) {
+  .staff-panel .employee-form-modern .grid-col.col-6 {
+    grid-column: span 12;
+  }
+}
+
+/* Inputs look consistent and comfy */
+.staff-panel .form-control,
+.staff-panel select.form-control {
+  height: 48px; /* to hơn */
+  line-height: 48px;
+  font-size: 15px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+/* Labels and title */
+.title-text {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.modal-breadcrumb {
+  padding: 8px 0 0 0;
+  color: #8a8f98;
+  font-size: 12px;
+}
+
+.breadcrumb-separator {
+  margin: 0 4px;
+}
+
+/* Panel polish */
+.staff-panel {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* Yellow banner giống nhân viên */
+.toolbar-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #febc49;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px 12px 0 0;
+}
+
+.btn-back-sm {
+  background: rgba(0, 0, 0, 0.08);
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.banner-text {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Avatar ở giữa giống nhân viên */
+.profile-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px 0 24px;
+}
+
+.avatar-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #febc49 0%, #e6a742 100%);
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.panel-header {
+  border-bottom: 1px solid #eef0f2;
+}
+
+/* Address band */
+.address-management-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Radio group tidy */
+.radio-inline {
+  gap: 18px;
+}
+.radio-item .radio-text {
+  font-weight: 500;
+  color: #2f353b;
+}
+
+/* Buttons */
+.panel-footer .btn {
+  border-radius: 10px;
+}
+.panel-footer .btn-primary {
+  background-color: #febc49;
+  border-color: #febc49;
+}
+.panel-footer .btn-primary:hover {
+  background-color: #e6a742;
+  border-color: #e6a742;
+}
+
+.staff-panel .form-label {
+  font-weight: 600;
+  color: #2f353b;
+  margin-bottom: 6px;
+}
+
+.staff-panel .form-control {
+  border: 1px solid #dfe3e8;
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.staff-panel .form-control:focus {
+  border-color: #febc49;
+  box-shadow: 0 0 0 3px rgba(254, 188, 73, 0.15);
+}
+
+.panel-header {
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+}
+
+/* Giới tính: bỏ khung chữ nhật quanh mỗi lựa chọn */
+.radio-inline .radio-item {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Avatar lớn như nhân viên */
+.avatar-lg {
+  width: 80px;
+  height: 80px;
+  font-size: 1.6rem;
+}
+
+.address-management-header {
+  background: #fafbfc;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #eef0f2;
+}
+
+.panel-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-top: 1px solid #eef0f2;
+}
+
+.panel-footer .footer-actions {
+  display: flex;
+  justify-content: flex-end; /* đẩy nút sang phải giống nhân viên */
+  gap: 10px;
+}
+
+.panel-footer .btn.btn-primary {
+  min-width: 140px;
+}
+.panel-footer .btn.btn-secondary {
+  min-width: 100px;
+}
+
+.invalid-feedback {
+  display: block;
+}
