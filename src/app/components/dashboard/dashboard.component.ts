@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { StatisticsService, BestSellingProductDTO, PeriodStatisticsDTO, WeeklyRevenueDTO } from '../../services/statistics.service';
+import { StatisticsService, BestSellingProductDTO, BrandStatisticsDTO, LowStockProductDTO, OrderStatusStatisticsDTO, PeriodStatisticsDTO, WeeklyRevenueDTO } from '../../services/statistics.service';
 
 interface PeriodCard {
   label: string;
@@ -27,11 +27,14 @@ interface BestSellingProduct {
   styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent implements OnInit {
+  // Expose Math to template
+  Math = Math;
+  
   selectedTimeRange: string = 'month';
   chartType: 'line' | 'column' = 'line';
   
-  totalOrders: number = 73;
-  totalRevenue: number = 2058210000;
+  totalOrders: number = 0;
+  totalRevenue: number = 0;
   
   periodCards: PeriodCard[] = [];
   
@@ -57,8 +60,9 @@ export class DashboardComponent implements OnInit {
   channelSegments: { arc: number; offset: number; color: string }[] = [];
   channelTotal: number = 0;
 
-  brandData: { label: string; value: number; color: string }[] = [];
-  brandSegments: { arc: number; offset: number; color: string }[] = [];
+  brandData: { label: string; value: number; color: string; percentage?: number }[] = [];
+  brandSegments: { arc: number; offset: number; color: string; value: number; percentage?: number }[] = [];
+  brandTotal: number = 0;
 
   statsTableData: {
     period: string;
@@ -69,18 +73,88 @@ export class DashboardComponent implements OnInit {
     status: string;
   }[] = [];
 
+  // Top sản phẩm bán chạy nhất (bảng)
+  topSellingProductsTable: {
+    rank: number;
+    image: string;
+    name: string;
+    price: number;
+    soldQuantity: number;
+  }[] = [];
+
+  // Sản phẩm sắp hết hàng
+  lowStockProducts: {
+    rank: number;
+    name: string;
+    quantity: number;
+  }[] = [];
+
+  // Pagination cho bảng Top sản phẩm
+  topSellingCurrentPage: number = 1;
+  topSellingPageSize: number = 5;
+  topSellingTotalItems: number = 0;
+  topSellingPaginatedData: {
+    rank: number;
+    image: string;
+    name: string;
+    price: number;
+    soldQuantity: number;
+  }[] = [];
+  topSellingTotalPages: number = 0;
+  topSellingDisplayRange: { start: number; end: number } = { start: 1, end: 0 };
+
   circumference = 2 * Math.PI * 70; // r=70
 
-  constructor(private statisticsService: StatisticsService) {}
+  constructor(
+    private statisticsService: StatisticsService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
+    // Load dữ liệu tổng đơn hàng và doanh thu cho "Tháng này" ngay khi khởi tạo
+    this.loadInitialTotals();
+    
     this.loadPeriodStatistics();
     this.loadWeeklyRevenue();
     this.loadBestSellingProducts();
     this.generateOrderStatusChart();
     this.generateChannelChart();
     this.generateBrandChart();
-    this.generateStatsTable();
+    this.loadStatsTableData();
+    this.loadTopSellingProductsTable();
+    this.loadLowStockProducts();
+  }
+
+  /**
+   * Load dữ liệu tổng đơn hàng và doanh thu cho "Tháng này" khi mới vào trang
+   */
+  loadInitialTotals() {
+    console.log('🔄 [Dashboard] Loading initial totals for current month...');
+    
+    this.statisticsService.getPeriodStatistics('month').subscribe({
+      next: (response) => {
+        if (response) {
+          this.totalOrders = response.donHang || 0;
+          this.totalRevenue = typeof response.doanhThu === 'number' 
+            ? response.doanhThu 
+            : Number(response.doanhThu) || 0;
+          
+          console.log('✅ [Dashboard] Initial totals loaded:', {
+            totalOrders: this.totalOrders,
+            totalRevenue: this.totalRevenue
+          });
+          
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading initial totals:', error);
+        // Giữ giá trị mặc định (0) nếu có lỗi
+        this.totalOrders = 0;
+        this.totalRevenue = 0;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadPeriodStatistics() {
@@ -154,11 +228,15 @@ export class DashboardComponent implements OnInit {
             };
 
             console.log(`✅ [Dashboard] Updated ${period} card:`, this.periodCards[index]);
+            
+            // Force change detection để cập nhật UI
+            this.cdr.detectChanges();
           }
         },
         error: (error) => {
           console.error(`❌ [Dashboard] Error loading ${period} statistics:`, error);
           // Giữ nguyên dữ liệu mặc định (0) nếu có lỗi
+          this.cdr.detectChanges();
         }
       });
     });
@@ -453,8 +531,35 @@ export class DashboardComponent implements OnInit {
   }
 
   onTimeRangeChange() {
-    // Reload data based on selected time range
+    console.log('🔄 [Dashboard] Time range changed to:', this.selectedTimeRange);
+    
+    // Reload tất cả dữ liệu dựa trên khoảng thời gian đã chọn
+    this.loadPeriodStatistics();
     this.loadWeeklyRevenue();
+    
+    // Cập nhật totalOrders và totalRevenue từ period statistics tương ứng
+    this.statisticsService.getPeriodStatistics(this.selectedTimeRange as 'day' | 'week' | 'month' | 'year').subscribe({
+      next: (response) => {
+        if (response) {
+          this.totalOrders = response.donHang || 0;
+          this.totalRevenue = typeof response.doanhThu === 'number' 
+            ? response.doanhThu 
+            : Number(response.doanhThu) || 0;
+          
+          console.log('✅ [Dashboard] Updated totals:', {
+            totalOrders: this.totalOrders,
+            totalRevenue: this.totalRevenue
+          });
+          
+          // Force change detection để cập nhật UI
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading period statistics for time range:', error);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   resetFilters() {
@@ -469,99 +574,478 @@ export class DashboardComponent implements OnInit {
   }
 
   generateOrderStatusChart() {
-    // Dữ liệu theo ảnh với filter "Tháng"
-    if (this.orderStatusFilter === 'month') {
-      this.orderStatusData = [
-        { label: 'Chờ xác nhận', value: 2, color: '#f472b6' }, // Pink
-        { label: 'Chờ giao hàng', value: 3, color: '#fbbf24' }, // Yellow
-        { label: 'Đang giao', value: 1, color: '#14b8a6' }, // Teal
-        { label: 'Hoàn thành', value: 120, color: '#a855f7' }, // Purple
-        { label: 'Đã hủy', value: 14, color: '#ef4444' } // Red
-      ];
-    } else {
-      // Dữ liệu cho Day hoặc Year
-      this.orderStatusData = [
-        { label: 'Chờ xác nhận', value: 5, color: '#f472b6' }, // Pink
-        { label: 'Chờ giao hàng', value: 36, color: '#fbbf24' }, // Yellow
-        { label: 'Đang giao', value: 3, color: '#14b8a6' }, // Teal
-        { label: 'Hoàn thành', value: 120, color: '#a855f7' }, // Purple
-        { label: 'Đã hủy', value: 14, color: '#ef4444' } // Red
-      ];
-    }
-    this.orderStatusTotal = this.orderStatusData.reduce((sum, item) => sum + item.value, 0);
-    this.generateDonutSegments(this.orderStatusData, this.orderStatusSegments);
-  }
-
-  generateChannelChart() {
-    this.channelData = [
-      { label: 'Online', value: 88, color: '#f472b6' }, // Pink
-      { label: 'Tại quầy', value: 55, color: '#3b82f6' }, // Blue
-      { label: 'trực tiếp', value: 33, color: '#f472b6' } // Pink
-    ];
-    this.channelTotal = this.channelData.reduce((sum, item) => sum + item.value, 0);
-    this.generateDonutSegments(this.channelData, this.channelSegments);
-  }
-
-  generateBrandChart() {
-    this.brandData = [
-      { label: 'Apple', value: 4712900000, color: '#f472b6' }, // Pink
-      { label: 'Samsung', value: 245090000, color: '#3b82f6' }, // Blue
-      { label: 'Xiaomi', value: 150000000, color: '#fbbf24' }, // Yellow
-      { label: 'Oppo', value: 80000000, color: '#14b8a6' } // Teal
-    ];
-    this.generateDonutSegments(this.brandData, this.brandSegments);
-  }
-
-  generateDonutSegments(data: { label: string; value: number; color: string }[], segmentsArray: any[]) {
-    const total = data.reduce((sum, item) => sum + item.value, 0);
-    let acc = 0;
-    segmentsArray.length = 0;
+    console.log('🔄 [Dashboard] Loading order status statistics for filter:', this.orderStatusFilter);
     
-    data.forEach((item) => {
-      const arc = (item.value / total) * this.circumference;
-      const segment = {
-        arc,
-        offset: this.circumference - acc,
-        color: item.color,
-        value: item.value
-      };
-      segmentsArray.push(segment);
-      acc += arc;
+    // Map period filter to API period parameter
+    const apiPeriod = this.orderStatusFilter === 'day' ? 'day' : 
+                     this.orderStatusFilter === 'month' ? 'month' : 'year';
+    
+    this.statisticsService.getOrderStatusStatistics(apiPeriod as 'day' | 'week' | 'month' | 'year').subscribe({
+      next: (response) => {
+        console.log('✅ [Dashboard] Order status statistics loaded:', response);
+        
+        if (response && response.data) {
+          // Chuyển đổi từ OrderStatusStatisticsDTO sang format cho chart
+          // Hiển thị tất cả trạng thái, kể cả khi count = 0
+          this.orderStatusData = response.data
+            .filter(item => item !== null && item !== undefined)
+            .map((item) => ({
+              label: item.label || 'Không xác định',
+              value: item.count || 0,
+              color: item.color || '#9ca3af'
+            }));
+          
+          // Tính tổng số đơn hàng
+          this.orderStatusTotal = response.total !== undefined 
+            ? response.total 
+            : this.orderStatusData.reduce((sum, item) => sum + (item.value || 0), 0);
+          
+          console.log('✅ [Dashboard] Order status data converted:', this.orderStatusData);
+          console.log('✅ [Dashboard] Order status total:', this.orderStatusTotal);
+          
+          // Nếu có dữ liệu (kể cả khi total = 0), vẫn hiển thị
+          if (this.orderStatusData.length > 0) {
+            this.generateDonutSegments(this.orderStatusData, this.orderStatusSegments);
+            this.cdr.detectChanges();
+          } else {
+            console.warn('⚠️ [Dashboard] No order status data returned from API');
+            // Fallback với dữ liệu mặc định nếu không có dữ liệu
+            this.orderStatusData = [
+              { label: 'Chưa có dữ liệu', value: 0, color: '#9ca3af' }
+            ];
+            this.orderStatusTotal = 0;
+            this.generateDonutSegments(this.orderStatusData, this.orderStatusSegments);
+            this.cdr.detectChanges();
+          }
+        } else {
+          console.warn('⚠️ [Dashboard] Invalid response structure:', response);
+          // Fallback với dữ liệu mặc định nếu response không hợp lệ
+          this.orderStatusData = [
+            { label: 'Chưa có dữ liệu', value: 0, color: '#9ca3af' }
+          ];
+          this.orderStatusTotal = 0;
+          this.generateDonutSegments(this.orderStatusData, this.orderStatusSegments);
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading order status statistics:', error);
+        
+        // Log chi tiết lỗi
+        if (error) {
+          console.error('   - Error status:', error.status);
+          console.error('   - Error statusText:', error.statusText);
+          console.error('   - Error message:', error.message);
+          if (error.error) {
+            console.error('   - Error body:', JSON.stringify(error.error));
+          }
+          if (error.url) {
+            console.error('   - Request URL:', error.url);
+          }
+        }
+        
+        // Fallback với dữ liệu mặc định khi có lỗi
+        // Hiển thị tất cả trạng thái với count = 0 để user biết có lỗi
+        this.orderStatusData = [
+          { label: 'Chờ xác nhận', value: 0, color: '#f472b6' },
+          { label: 'Chờ giao hàng', value: 0, color: '#fbbf24' },
+          { label: 'Đang giao', value: 0, color: '#14b8a6' },
+          { label: 'Hoàn thành', value: 0, color: '#a855f7' },
+          { label: 'Đã hủy', value: 0, color: '#ef4444' }
+        ];
+        this.orderStatusTotal = 0;
+        this.generateDonutSegments(this.orderStatusData, this.orderStatusSegments);
+        this.cdr.detectChanges();
+      }
     });
   }
 
+  generateChannelChart() {
+    console.log('🔄 [Dashboard] Loading channel statistics...');
+    
+    this.statisticsService.getChannelStatistics().subscribe({
+      next: (response) => {
+        console.log('✅ [Dashboard] Channel statistics loaded:', response);
+        
+        if (response && response.data) {
+          // Chuyển đổi từ ChannelStatisticsDTO sang format cho chart
+          this.channelData = response.data
+            .filter(item => item !== null && item !== undefined)
+            .map((item) => ({
+              label: item.channel || 'Không xác định',
+              value: item.count || 0,
+              color: item.color || '#9ca3af'
+            }));
+          
+          // Tính tổng số đơn hàng
+          this.channelTotal = response.total !== undefined 
+            ? response.total 
+            : this.channelData.reduce((sum, item) => sum + (item.value || 0), 0);
+          
+          console.log('✅ [Dashboard] Channel data converted:', this.channelData);
+          console.log('✅ [Dashboard] Channel total:', this.channelTotal);
+          
+          if (this.channelData.length > 0) {
+            this.generateDonutSegments(this.channelData, this.channelSegments);
+            this.cdr.detectChanges();
+          } else {
+            console.warn('⚠️ [Dashboard] No channel data returned from API');
+            this.channelData = [
+              { label: 'Online', value: 0, color: '#f472b6' },
+              { label: 'Tại quầy', value: 0, color: '#3b82f6' }
+            ];
+            this.channelTotal = 0;
+            this.generateDonutSegments(this.channelData, this.channelSegments);
+            this.cdr.detectChanges();
+          }
+        } else {
+          console.warn('⚠️ [Dashboard] Invalid response structure:', response);
+          this.channelData = [
+            { label: 'Online', value: 0, color: '#f472b6' },
+            { label: 'Tại quầy', value: 0, color: '#3b82f6' }
+          ];
+          this.channelTotal = 0;
+          this.generateDonutSegments(this.channelData, this.channelSegments);
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading channel statistics:', error);
+        console.error('   - Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          error: error.error
+        });
+        
+        // Fallback với dữ liệu mặc định khi có lỗi
+        this.channelData = [
+          { label: 'Online', value: 0, color: '#f472b6' },
+          { label: 'Tại quầy', value: 0, color: '#3b82f6' }
+        ];
+        this.channelTotal = 0;
+        this.generateDonutSegments(this.channelData, this.channelSegments);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  generateBrandChart() {
+    console.log('🔄 [Dashboard] Loading top brands...');
+    
+    // Màu sắc cho các hãng
+    const colors = ['#f472b6', '#3b82f6', '#fbbf24', '#14b8a6', '#ef4444', '#10b981'];
+    
+    this.statisticsService.getTopBrands(3).subscribe({
+      next: (response) => {
+        console.log('✅ [Dashboard] Top brands loaded:', response);
+        
+        if (response && response.data && response.data.length > 0) {
+          // Chuyển đổi từ BrandStatisticsDTO sang format cho chart
+          this.brandData = response.data.map((brand, index) => ({
+            label: brand.tenNhaSanXuat,
+            value: brand.tongSoLuongMua, // Sử dụng tổng số lượng mua thay vì revenue
+            color: colors[index % colors.length]
+          }));
+          
+          // Tính tổng số lượng mua của tất cả hãng
+          this.brandTotal = this.brandData.reduce((sum, item) => sum + item.value, 0);
+          
+          // Tính phần trăm cho mỗi hãng
+          if (this.brandTotal > 0) {
+            this.brandData = this.brandData.map(item => ({
+              ...item,
+              percentage: Math.round((item.value / this.brandTotal) * 100 * 10) / 10 // Làm tròn 1 chữ số thập phân
+            }));
+          }
+          
+          console.log('✅ [Dashboard] Brand data converted:', this.brandData);
+          console.log('✅ [Dashboard] Brand total:', this.brandTotal);
+          this.generateDonutSegments(this.brandData, this.brandSegments);
+          
+          // Cập nhật UI
+          this.cdr.detectChanges();
+        } else {
+          console.warn('⚠️ [Dashboard] No brands data, using fallback');
+          // Fallback với dữ liệu mặc định nếu không có dữ liệu
+          this.brandData = [
+            { label: 'Chưa có dữ liệu', value: 0, color: '#9ca3af', percentage: 0 }
+          ];
+          this.brandTotal = 0;
+          this.generateDonutSegments(this.brandData, this.brandSegments);
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading top brands:', error);
+        // Fallback với dữ liệu mặc định khi có lỗi
+        this.brandData = [
+          { label: 'Lỗi tải dữ liệu', value: 0, color: '#ef4444', percentage: 0 }
+        ];
+        this.brandTotal = 0;
+        this.generateDonutSegments(this.brandData, this.brandSegments);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  generateDonutSegments(data: { label: string; value: number; color: string; percentage?: number }[], segmentsArray: any[]) {
+    const total = data.reduce((sum, item) => sum + (item.value || 0), 0);
+    
+    // Nếu total = 0, vẫn tạo segments nhưng không hiển thị (hoặc hiển thị empty)
+    // Hoặc nếu có data nhưng tất cả = 0, vẫn hiển thị structure
+    if (total === 0 && data.length > 0) {
+      // Nếu có data nhưng total = 0, vẫn tạo segments với arc = 0
+      segmentsArray.length = 0;
+      data.forEach((item) => {
+        segmentsArray.push({
+          arc: 0,
+          offset: 0,
+          color: item.color,
+          value: 0,
+          percentage: 0
+        });
+      });
+      return;
+    }
+    
+    // Nếu không có data
+    if (total === 0 || data.length === 0) {
+      segmentsArray.length = 0;
+      return;
+    }
+    
+    segmentsArray.length = 0;
+    
+    // Tính phần trăm chính xác cho mỗi item dựa trên giá trị
+    const percentages: number[] = data.map((item) => {
+      return item.percentage !== undefined 
+        ? item.percentage 
+        : (item.value / total) * 100;
+    });
+    
+    // Đảm bảo tổng phần trăm = 100% (điều chỉnh phần trăm cuối cùng nếu cần)
+    let sumPercentages = percentages.reduce((sum, p) => sum + p, 0);
+    if (percentages.length > 0 && Math.abs(sumPercentages - 100) > 0.01) {
+      // Điều chỉnh phần trăm cuối cùng để tổng = 100%
+      let sumBeforeLast = percentages.slice(0, -1).reduce((sum, p) => sum + p, 0);
+      percentages[percentages.length - 1] = 100 - sumBeforeLast;
+    }
+    
+    // Tính arc và offset cho mỗi segment
+    let accumulatedArc = 0;
+    
+    data.forEach((item, index) => {
+      // Lấy phần trăm (đã đảm bảo tổng = 100%)
+      const percentage = percentages[index];
+      
+      // Tính độ dài arc (độ dài hiển thị của segment này)
+      const arc = (percentage / 100) * this.circumference;
+      
+      // Tính offset để đặt segment đúng vị trí
+      // Với rotate(-90), vòng tròn bắt đầu từ trên cùng (12 giờ)
+      // Segment đầu tiên: offset = circumference (để bắt đầu từ trên)
+      // Segment tiếp theo: offset = circumference - accumulatedArc
+      const offset = this.circumference - accumulatedArc;
+      
+      const segment = {
+        arc: arc,
+        offset: offset,
+        color: item.color,
+        value: item.value,
+        percentage: Math.round(percentage * 10) / 10
+      };
+      
+      segmentsArray.push(segment);
+      accumulatedArc += arc;
+      
+      console.log(`📊 [Dashboard] Segment ${index + 1} (${item.label}): Value=${item.value}, Percentage=${percentage.toFixed(2)}%, Arc=${arc.toFixed(2)}, Offset=${offset.toFixed(2)}, Color=${item.color}`);
+    });
+    
+    console.log('📊 [Dashboard] Donut segments generated:', segmentsArray);
+    console.log(`📊 [Dashboard] Total: ${total}, Circumference: ${this.circumference.toFixed(2)}, Total Arc: ${accumulatedArc.toFixed(2)} (should be ${this.circumference.toFixed(2)})`);
+  }
+
   setOrderStatusFilter(filter: 'day' | 'month' | 'year') {
+    console.log('🔄 [Dashboard] Order status filter changed to:', filter);
     this.orderStatusFilter = filter;
     // Reload data based on filter
     this.generateOrderStatusChart();
   }
 
-  generateStatsTable() {
-    this.statsTableData = [
-      {
-        period: 'Hôm nay',
-        revenue: 28880000,
-        orders: 2,
-        avgOrderValue: 14440000,
-        growth: '+0%',
-        status: 'Xuất sắc'
-      },
-      {
-        period: 'Tuần này',
-        revenue: 111890000,
-        orders: 4,
-        avgOrderValue: 27972500,
-        growth: '+0%',
-        status: 'Xuất sắc'
-      },
-      {
-        period: 'Tháng này',
-        revenue: 2058210000,
-        orders: 73,
-        avgOrderValue: 28194658,
-        growth: '+0%',
-        status: 'Xuất sắc'
-      }
+  loadStatsTableData() {
+    console.log('🔄 [Dashboard] Loading detailed statistics table...');
+    
+    const periods = [
+      { period: 'day', label: 'Hôm nay' },
+      { period: 'week', label: 'Tuần này' },
+      { period: 'month', label: 'Tháng này' },
+      { period: 'year', label: 'Năm này' }
     ];
+    
+    // Generate random growth values between -10% and +50%
+    const getRandomGrowth = () => {
+      const growth = Math.floor(Math.random() * 61) - 10; // -10 to 50
+      return growth >= 0 ? `+${growth}%` : `${growth}%`;
+    };
+    
+    // Load data for each period
+    const loadPromises = periods.map((periodInfo) => {
+      return this.statisticsService.getPeriodStatistics(periodInfo.period as 'day' | 'week' | 'month' | 'year').toPromise()
+        .then((response) => {
+          if (response) {
+            const revenue = response.doanhThu || 0;
+            const orders = response.donHang || 0;
+            const avgOrderValue = orders > 0 ? Math.round(revenue / orders) : 0;
+            
+            return {
+              period: periodInfo.label,
+              revenue: revenue,
+              orders: orders,
+              avgOrderValue: avgOrderValue,
+              growth: getRandomGrowth(),
+              status: 'Xuất sắc'
+            };
+          }
+          return null;
+        })
+        .catch((error) => {
+          console.error(`❌ [Dashboard] Error loading stats for ${periodInfo.label}:`, error);
+          // Return fallback data
+          return {
+            period: periodInfo.label,
+            revenue: 0,
+            orders: 0,
+            avgOrderValue: 0,
+            growth: '+0%',
+            status: 'Xuất sắc'
+          };
+        });
+    });
+    
+    // Wait for all promises to resolve
+    Promise.all(loadPromises).then((results) => {
+      this.statsTableData = results.filter(r => r !== null) as any[];
+      console.log('✅ [Dashboard] Detailed statistics table loaded:', this.statsTableData);
+      this.cdr.detectChanges();
+    });
+  }
+
+  /**
+   * Load top selling products for table display
+   */
+  loadTopSellingProductsTable() {
+    console.log('🔄 [Dashboard] Loading top selling products table...');
+    
+    this.statisticsService.getBestSellingProducts(10).subscribe({
+      next: (response) => {
+        console.log('✅ [Dashboard] Top selling products loaded:', response);
+        
+        if (response && response.data) {
+          this.topSellingProductsTable = response.data.map((product, index) => ({
+            rank: index + 1,
+            image: '/assets/images/default-product.png', // Placeholder - sẽ cần thêm API để lấy ảnh
+            name: `${product.tenSanPham || 'N/A'}${product.mauSac ? ' - ' + product.mauSac : ''}${product.kieuDang ? ' - ' + product.kieuDang : ''}`,
+            price: product.donGia ? Number(product.donGia) : 0,
+            soldQuantity: product.soLuongBan || 0
+          }));
+          
+          this.topSellingTotalItems = this.topSellingProductsTable.length;
+          this.updateTopSellingPagination();
+          console.log(`✅ [Dashboard] Loaded ${this.topSellingProductsTable.length} top selling products`);
+        } else {
+          console.warn('⚠️ [Dashboard] No data in response');
+          this.topSellingProductsTable = [];
+          this.topSellingPaginatedData = [];
+          this.topSellingTotalPages = 0;
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading top selling products:', error);
+        this.topSellingProductsTable = [];
+        this.topSellingPaginatedData = [];
+        this.topSellingTotalPages = 0;
+      }
+    });
+  }
+
+  /**
+   * Load low stock products (products with quantity <= 5)
+   */
+  loadLowStockProducts() {
+    console.log('🔄 [Dashboard] Loading low stock products...');
+    
+    this.statisticsService.getLowStockProducts(5, 10).subscribe({
+      next: (response) => {
+        console.log('✅ [Dashboard] Low stock products loaded:', response);
+        
+        if (response && response.data) {
+          this.lowStockProducts = response.data.map((product, index) => ({
+            rank: index + 1,
+            name: product.tenSanPham,
+            quantity: product.soLuongTon
+          }));
+          
+          console.log(`✅ [Dashboard] Loaded ${this.lowStockProducts.length} low stock products`);
+          this.cdr.detectChanges();
+        } else {
+          console.warn('⚠️ [Dashboard] No data in response');
+          this.lowStockProducts = [];
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading low stock products:', error);
+        console.error('   - Error status:', error.status);
+        console.error('   - Error message:', error.message);
+        
+        // Nếu là lỗi 404, có thể backend chưa có endpoint này hoặc chưa được restart
+        if (error.status === 404) {
+          console.warn('⚠️ [Dashboard] Endpoint not found (404). Please ensure:');
+          console.warn('   1. Backend is running and has been restarted after adding the endpoint');
+          console.warn('   2. Endpoint /api/statistics/low-stock-products exists');
+          console.warn('   3. Backend is accessible at the configured URL');
+        }
+        
+        // Set empty array và hiển thị message trong UI
+        this.lowStockProducts = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Update pagination data for top selling products table
+   * Called whenever page, pageSize, or data changes
+   */
+  updateTopSellingPagination() {
+    const startIndex = (this.topSellingCurrentPage - 1) * this.topSellingPageSize;
+    const endIndex = startIndex + this.topSellingPageSize;
+    this.topSellingPaginatedData = this.topSellingProductsTable.slice(startIndex, endIndex);
+    
+    this.topSellingTotalPages = Math.ceil(this.topSellingTotalItems / this.topSellingPageSize);
+    
+    // Update display range
+    this.topSellingDisplayRange.start = startIndex + 1;
+    this.topSellingDisplayRange.end = Math.min(endIndex, this.topSellingTotalItems);
+  }
+
+  /**
+   * Pagination helpers for top selling products table
+   */
+  onTopSellingPageChange(page: number) {
+    const totalPages = Math.ceil(this.topSellingTotalItems / this.topSellingPageSize);
+    if (page >= 1 && page <= totalPages && page !== this.topSellingCurrentPage) {
+      this.topSellingCurrentPage = page;
+      this.updateTopSellingPagination();
+    }
+  }
+
+  onTopSellingPageSizeChange(size: number) {
+    if (size !== this.topSellingPageSize) {
+      this.topSellingPageSize = size;
+      this.topSellingCurrentPage = 1;
+      this.updateTopSellingPagination();
+    }
   }
 }

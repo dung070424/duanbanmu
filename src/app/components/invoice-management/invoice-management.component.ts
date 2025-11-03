@@ -2134,14 +2134,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.loadingCustomerAddresses = true;
     this.customerAddressService.getAddressesByCustomerId(this.newInvoice.khachHangId).subscribe({
       next: (addresses) => {
-        this.customerAddresses = addresses;
+        this.customerAddresses = addresses || [];
         this.loadingCustomerAddresses = false;
         console.log('✅ Loaded customer addresses:', addresses);
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('❌ Error loading customer addresses:', error);
+        this.customerAddresses = [];
         this.loadingCustomerAddresses = false;
         this.showToast('Không thể tải danh sách địa chỉ', 'error');
+        this.cdr.detectChanges();
       }
     });
   }

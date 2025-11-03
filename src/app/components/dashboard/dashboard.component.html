@@ -205,9 +205,12 @@
                 <circle
                   class="donut-segment"
                   r="70"
+                  fill="none"
                   [attr.stroke-dasharray]="segment.arc + ' ' + (circumference - segment.arc)"
                   [attr.stroke-dashoffset]="segment.offset"
                   [style.stroke]="segment.color"
+                  stroke-width="20"
+                  transform="rotate(-90)"
                   [attr.data-value]="segment.value"
                 ></circle>
               </ng-container>
@@ -241,9 +244,12 @@
                 <circle
                   class="donut-segment"
                   r="70"
+                  fill="none"
                   [attr.stroke-dasharray]="segment.arc + ' ' + (circumference - segment.arc)"
                   [attr.stroke-dashoffset]="segment.offset"
                   [style.stroke]="segment.color"
+                  stroke-width="20"
+                  transform="rotate(-90)"
                 ></circle>
               </ng-container>
             </g>
@@ -276,19 +282,24 @@
                 <circle
                   class="donut-segment"
                   r="70"
+                  fill="none"
                   [attr.stroke-dasharray]="segment.arc + ' ' + (circumference - segment.arc)"
                   [attr.stroke-dashoffset]="segment.offset"
                   [style.stroke]="segment.color"
+                  stroke-width="20"
+                  transform="rotate(-90)"
                 ></circle>
               </ng-container>
             </g>
           </svg>
+          <div class="donut-center">
+            <div class="center-total">{{ brandTotal }}</div>
+          </div>
         </div>
-        <div class="donut-legend">
+        <div class="donut-legend brand-legend">
           <div class="legend-item" *ngFor="let item of brandData">
-            <span class="legend-dot" [style.background-color]="item.color"></span>
+            <span class="legend-square" [style.background-color]="item.color"></span>
             <span class="legend-label">{{ item.label }}</span>
-            <span class="legend-value revenue">{{ item.value | number }} ₫</span>
           </div>
         </div>
       </div>
@@ -324,6 +335,114 @@
             <td>
               <span class="status-badge status-excellent">{{ row.status }}</span>
             </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top sản phẩm bán chạy nhất của cửa hàng -->
+  <div class="stats-table-card">
+    <div class="card-header">
+      <h3><i class="bi bi-trophy-fill"></i> Top sản phẩm bán chạy nhất của cửa hàng</h3>
+    </div>
+    <div class="card-body">
+      <table class="stats-table product-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Ảnh</th>
+            <th>Tên Sản Phẩm</th>
+            <th>Giá Bán</th>
+            <th>Số Lượng Đã Bán</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of topSellingPaginatedData">
+            <td>{{ product.rank }}</td>
+            <td class="product-image-cell">
+              <div class="product-image-wrapper">
+                <img [src]="product.image" [alt]="product.name" class="product-image" 
+                     loading="lazy"
+                     onerror="this.src='/assets/images/default-product.png'; this.onerror=null;">
+              </div>
+            </td>
+            <td class="product-name-cell">{{ product.name }}</td>
+            <td>{{ product.price | number }} ₫</td>
+            <td>{{ product.soldQuantity }}</td>
+          </tr>
+          <tr *ngIf="topSellingPaginatedData.length === 0">
+            <td colspan="5" class="empty-message">Không có dữ liệu</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- Pagination -->
+      <div class="table-pagination" *ngIf="topSellingTotalItems > 0">
+        <div class="pagination-controls">
+          <span class="pagination-info">Hiển thị</span>
+          <select class="pagination-select" [value]="topSellingPageSize" 
+                  (change)="onTopSellingPageSizeChange(+$any($event.target).value)">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+          <span class="pagination-info">mục/trang</span>
+        </div>
+        
+        <div class="pagination-info">
+          Hiển thị {{ topSellingDisplayRange.start }}-{{ topSellingDisplayRange.end }}/{{ topSellingTotalItems }} mục
+        </div>
+        
+        <div class="pagination-buttons">
+          <button class="page-btn" (click)="onTopSellingPageChange(1)" [disabled]="topSellingCurrentPage === 1">
+            &lt;&lt;
+          </button>
+          <button class="page-btn" (click)="onTopSellingPageChange(topSellingCurrentPage - 1)" 
+                  [disabled]="topSellingCurrentPage === 1">
+            &lt;
+          </button>
+          <button *ngFor="let page of [].constructor(topSellingTotalPages); let i = index" 
+                  class="page-btn" 
+                  [class.active]="topSellingCurrentPage === (i + 1)"
+                  (click)="onTopSellingPageChange(i + 1)">
+            {{ i + 1 }}
+          </button>
+          <button class="page-btn" (click)="onTopSellingPageChange(topSellingCurrentPage + 1)" 
+                  [disabled]="topSellingCurrentPage === topSellingTotalPages || topSellingTotalPages === 0">
+            &gt;
+          </button>
+          <button class="page-btn" (click)="onTopSellingPageChange(topSellingTotalPages)" 
+                  [disabled]="topSellingCurrentPage === topSellingTotalPages || topSellingTotalPages === 0">
+            &gt;&gt;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sản Phẩm Sắp Hết Hàng -->
+  <div class="stats-table-card low-stock-card">
+    <div class="card-header">
+      <h3><i class="bi bi-exclamation-triangle-fill"></i> Sản Phẩm Sắp Hết Hàng</h3>
+    </div>
+    <div class="card-body">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên Sản Phẩm</th>
+            <th>Số Lượng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of lowStockProducts">
+            <td>{{ product.rank }}</td>
+            <td>{{ product.name }}</td>
+            <td class="low-stock-quantity">{{ product.quantity }}</td>
+          </tr>
+          <tr *ngIf="lowStockProducts.length === 0">
+            <td colspan="3" class="empty-message">Không có sản phẩm sắp hết hàng</td>
           </tr>
         </tbody>
       </table>
