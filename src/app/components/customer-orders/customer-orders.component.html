@@ -1,0 +1,105 @@
+<div class="customer-orders-container">
+  <div class="container">
+    <div class="page-header">
+      <h1><i class="fas fa-shopping-bag"></i> Đơn hàng của tôi</h1>
+      <p>Xem và quản lý các đơn hàng của bạn</p>
+    </div>
+
+    <div *ngIf="error" class="error-message">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ error }}
+    </div>
+
+    <div *ngIf="isLoading" class="loading">
+      <div class="spinner"></div>
+      <p>Đang tải đơn hàng...</p>
+    </div>
+
+    <div *ngIf="!isLoading && orders.length === 0 && !error" class="no-orders">
+      <i class="fas fa-box-open"></i>
+      <h3>Chưa có đơn hàng nào</h3>
+      <p>Bạn chưa có đơn hàng nào. Hãy <a routerLink="/shop">mua sắm ngay</a>!</p>
+    </div>
+
+    <div *ngIf="!isLoading && orders.length > 0" class="orders-list">
+      <div *ngFor="let order of orders" class="order-card">
+        <div class="order-header">
+          <div class="order-info">
+            <h3>Mã đơn hàng: {{ order.maHoaDon }}</h3>
+            <p class="order-date">
+              <i class="fas fa-calendar"></i>
+              Ngày đặt: {{ formatDate(order.ngayTao) }}
+            </p>
+          </div>
+          <div class="order-status">
+            <span [class]="'status-badge ' + getStatusClass(order.trangThai)">
+              {{ getStatusLabel(order.trangThai) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="order-body">
+          <div class="order-summary">
+            <div class="summary-item">
+              <span class="label">Số lượng sản phẩm:</span>
+              <span class="value">{{ order.soLuongSanPham || 0 }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Tổng tiền:</span>
+              <span class="value total-price">{{ formatCurrency(order.tongTien || 0) }}</span>
+            </div>
+            <div class="summary-item" *ngIf="order.tienGiamGia && order.tienGiamGia > 0">
+              <span class="label">Giảm giá:</span>
+              <span class="value discount">-{{ formatCurrency(order.tienGiamGia) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Thành tiền:</span>
+              <span class="value final-price">{{ formatCurrency(order.thanhTien || 0) }}</span>
+            </div>
+          </div>
+
+          <div class="order-actions">
+            <button 
+              class="btn btn-primary" 
+              (click)="viewOrderDetail(order.id!)"
+            >
+              <i class="fas fa-eye"></i> Xem chi tiết
+            </button>
+            <button 
+              *ngIf="canCancel(order)"
+              class="btn btn-danger" 
+              (click)="cancelOrder(order.id!)"
+            >
+              <i class="fas fa-times"></i> Hủy đơn hàng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="!isLoading && orders.length > 0 && totalPages > 1" class="pagination">
+      <button 
+        class="btn-page" 
+        [disabled]="currentPage === 0"
+        (click)="onPageChange(currentPage - 1)"
+      >
+        <i class="fas fa-chevron-left"></i> Trước
+      </button>
+      
+      <span class="page-info">
+        Trang {{ currentPage + 1 }} / {{ totalPages }} 
+        ({{ totalElements }} đơn hàng)
+      </span>
+      
+      <button 
+        class="btn-page" 
+        [disabled]="currentPage >= totalPages - 1"
+        (click)="onPageChange(currentPage + 1)"
+      >
+        Sau <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
