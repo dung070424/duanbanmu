@@ -1405,10 +1405,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   loadCustomerAddress(khachHangId: number): void {
     console.log('📍 Loading customer addresses for ID:', khachHangId);
     
+    this.loadingAddresses = true;
+    
     this.customerAddressService.getAddressesByCustomerId(khachHangId).subscribe({
       next: (addresses) => {
         console.log('✅ Customer addresses loaded:', addresses);
-        this.customerAddresses = addresses;
+        this.customerAddresses = addresses || [];
+        this.loadingAddresses = false;
         
         // Chỉ populate địa chỉ nếu các trường địa chỉ hiện tại đang trống
         if (addresses && addresses.length > 0) {
@@ -1433,6 +1436,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('❌ Error loading customer addresses:', error);
+        this.customerAddresses = [];
+        this.loadingAddresses = false;
         this.cdr.detectChanges();
       }
     });

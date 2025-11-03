@@ -47,6 +47,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   selectedStatus: string = 'all';
   selectedPaymentStatus: string = 'all';
   selectedPaymentMethod: string = 'all';
+  startDate: string = '';
+  endDate: string = '';
 
   // Modal states
   showAddModal: boolean = false;
@@ -245,6 +247,14 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Add payment method filter if not 'all'
     if (this.selectedPaymentMethod && this.selectedPaymentMethod !== 'all') {
       filterParams.phuongThucThanhToan = this.selectedPaymentMethod;
+    }
+
+    // Add date range filter if provided
+    if (this.startDate) {
+      filterParams.ngayBatDau = this.startDate;
+    }
+    if (this.endDate) {
+      filterParams.ngayKetThuc = this.endDate;
     }
 
     // Add sorting if specified
@@ -531,6 +541,24 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   onPaymentStatusChange(): void {
+    this.currentPage = 1;
+    // Áp dụng filter ngay lập tức
+    this.applyFrontendFilters();
+    // Gọi API để lấy dữ liệu mới
+    this.loadHoaDon();
+  }
+
+  onDateFilterChange(): void {
+    this.currentPage = 1;
+    // Áp dụng filter ngay lập tức
+    this.applyFrontendFilters();
+    // Gọi API để lấy dữ liệu mới
+    this.loadHoaDon();
+  }
+
+  clearDateFilter(): void {
+    this.startDate = '';
+    this.endDate = '';
     this.currentPage = 1;
     // Áp dụng filter ngay lập tức
     this.applyFrontendFilters();
@@ -2245,14 +2273,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.loadingCustomerAddresses = true;
     this.customerAddressService.getAddressesByCustomerId(this.newInvoice.khachHangId).subscribe({
       next: (addresses) => {
-        this.customerAddresses = addresses;
+        this.customerAddresses = addresses || [];
         this.loadingCustomerAddresses = false;
         console.log('✅ Loaded customer addresses:', addresses);
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('❌ Error loading customer addresses:', error);
+        this.customerAddresses = [];
         this.loadingCustomerAddresses = false;
         this.showToast('Không thể tải danh sách địa chỉ', 'error');
+        this.cdr.detectChanges();
       }
     });
   }

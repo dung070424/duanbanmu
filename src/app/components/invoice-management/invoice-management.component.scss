@@ -65,6 +65,26 @@ $text-light: #6c757d;
   box-shadow: 0 4px 15px rgba(254, 188, 73, 0.1);
   border: 1px solid rgba(254, 188, 73, 0.2);
 
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+
+    i {
+      font-size: 1.5rem;
+      color: #febc49;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #febc49;
+    }
+  }
+
   .form-group {
     margin-bottom: 20px;
 
@@ -90,6 +110,31 @@ $text-light: #6c757d;
 
       &:hover {
         border-color: rgba(254, 188, 73, 0.5);
+      }
+    }
+
+    .date-range-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+
+      .date-input {
+        flex: 1;
+      }
+
+      .date-separator {
+        font-size: 0.9rem;
+        color: $text-dark;
+        white-space: nowrap;
+      }
+
+      .date-clear-btn {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
       }
     }
   }

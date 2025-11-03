@@ -115,29 +115,30 @@ export class SidebarComponent implements OnInit {
     {
       icon: 'bi-person',
       label: 'Quản lý tài khoản',
-      route: '/management',
+      route: null,
       active: false,
-      hasSubmenu: false,
+      hasSubmenu: true,
       isExpanded: false,
-      submenu: [],
-    },
-    {
-      icon: 'bi-person-workspace',
-      label: 'Quản lý nhân viên',
-      route: '/staff',
-      active: false,
-      hasSubmenu: false,
-      isExpanded: false,
-      submenu: [],
-    },
-    {
-      icon: 'bi-people',
-      label: 'Quản lý khách hàng',
-      route: '/customers',
-      active: false,
-      hasSubmenu: false,
-      isExpanded: false,
-      submenu: [],
+      submenu: [
+        {
+          icon: 'bi-person-workspace',
+          label: 'Quản lý nhân viên',
+          route: '/staff',
+          active: false,
+          hasSubmenu: false,
+          isExpanded: false,
+          submenu: [],
+        },
+        {
+          icon: 'bi-people',
+          label: 'Quản lý khách hàng',
+          route: '/customers',
+          active: false,
+          hasSubmenu: false,
+          isExpanded: false,
+          submenu: [],
+        },
+      ],
     },
     {
       icon: 'bi-percent',
@@ -172,6 +173,10 @@ export class SidebarComponent implements OnInit {
   constructor(private router: Router, private authService: AuthService) {}
 
   ngOnInit() {
+    // Update active menu on initial load
+    this.updateActiveMenuItem(this.router.url);
+    
+    // Update active menu on route changes
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
@@ -196,10 +201,10 @@ export class SidebarComponent implements OnInit {
           }
         });
 
-        // Don't auto-expand parent - let user manually toggle
-        // if (item.submenu.some((subItem) => subItem.active)) {
-        //   item.isExpanded = true;
-        // }
+        // Auto-expand parent if any submenu item is active
+        if (item.submenu.some((subItem) => subItem.active || (subItem.hasSubmenu && subItem.submenu && subItem.submenu.some((nestedItem) => nestedItem.active)))) {
+          item.isExpanded = true;
+        }
       }
     });
   }

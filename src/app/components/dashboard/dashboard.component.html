@@ -1,105 +1,451 @@
 <div class="dashboard">
-  <div class="page-header">
-    <h1><i class="bi bi-graph-up"></i> Dashboard</h1>
-    <p>Biểu đồ thống kê tổng quan hệ thống</p>
-  </div>
-
-  <!-- Stats Cards -->
-  <div class="stats-grid">
-    <div class="stat-card" *ngFor="let card of statCards">
-      <div class="stat-icon">
-        <i [class]="card.icon"></i>
+  <!-- Bộ lọc thống kê -->
+  <div class="filter-section">
+    <div class="filter-header">
+      <h2><i class="bi bi-funnel"></i> Bộ Lọc Thống Kê</h2>
+    </div>
+    
+    <div class="filter-content">
+      <div class="filter-group">
+        <label>Khoảng thời gian thống kê</label>
+        <select class="form-control" [(ngModel)]="selectedTimeRange" (change)="onTimeRangeChange()">
+          <option value="today">Hôm nay</option>
+          <option value="week">Tuần này</option>
+          <option value="month" [selected]="true">Tháng này</option>
+          <option value="year">Năm nay</option>
+          <option value="custom">Tùy chọn</option>
+        </select>
       </div>
-      <div class="stat-content">
-        <h3>{{ card.value }}</h3>
-        <p>{{ card.title }}</p>
-        <span class="stat-change" [ngClass]="getChangeClass(card.changeType)">
-          {{ card.change }}
-        </span>
+      
+      <div class="filter-group">
+        <label>Loại biểu đồ</label>
+        <div class="chart-type-buttons">
+          <button 
+            class="chart-type-btn" 
+            [class.active]="chartType === 'line'"
+            (click)="setChartType('line')">
+            <i class="bi bi-graph-up"></i>
+            <span>Đường</span>
+          </button>
+          <button 
+            class="chart-type-btn" 
+            [class.active]="chartType === 'column'"
+            (click)="setChartType('column')">
+            <i class="bi bi-bar-chart"></i>
+            <span>Cột</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-footer">
+      <div class="summary-metrics">
+        <div class="metric-item">
+          <span class="metric-label">Số đơn hàng:</span>
+          <span class="metric-value">{{ totalOrders }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Tổng doanh thu:</span>
+          <span class="metric-value revenue">{{ totalRevenue | number }} ₫</span>
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-secondary" (click)="resetFilters()">
+          <i class="bi bi-arrow-clockwise"></i>
+          <span>Đặt lại bộ lọc</span>
+        </button>
+        <button class="btn btn-success" (click)="exportReport()">
+          <i class="bi bi-file-earmark-spreadsheet"></i>
+          <span>Xuất báo cáo</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Charts Grid -->
-  <div class="charts-grid">
-    <!-- Line Chart: Doanh thu 7 ngày -->
-    <div class="content-card">
+  <!-- 4 Card tổng quan -->
+  <div class="period-cards">
+    <div class="period-card" *ngFor="let period of periodCards">
+      <div class="period-icon" [style.background-color]="period.iconColor">
+        <div class="icon-inner"></div>
+      </div>
+      <div class="period-content">
+        <div class="period-revenue">{{ period.revenue | number }} ₫</div>
+        <div class="period-change">
+          <span class="change-indicator">↓0%</span>
+        </div>
+        <div class="period-details">
+          <span>Sản phẩm đã bán: {{ period.productsSold }} | Đơn hàng: {{ period.orders }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Biểu đồ và sản phẩm bán chạy -->
+  <div class="bottom-section">
+    <!-- Biểu đồ doanh thu -->
+    <div class="chart-card">
       <div class="card-header">
-        <h3><i class="bi bi-activity"></i> Doanh thu 7 ngày gần nhất</h3>
+        <h3><i class="bi bi-bar-chart-line"></i> Biểu Đồ Doanh Thu</h3>
       </div>
       <div class="card-body">
-        <div class="line-chart">
+        <div class="revenue-chart">
           <svg
+            *ngIf="chartType === 'line'"
             [attr.viewBox]="'0 0 ' + lineChartWidth + ' ' + lineChartHeight"
             preserveAspectRatio="none"
           >
             <defs>
-              <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.25" />
-                <stop offset="100%" stop-color="#4f46e5" stop-opacity="0" />
+              <linearGradient id="revenueLineFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#febc49" stop-opacity="0.25" />
+                <stop offset="100%" stop-color="#febc49" stop-opacity="0" />
               </linearGradient>
             </defs>
-            <path class="line-fill" [attr.d]="lineAreaPath" fill="url(#lineFill)"></path>
+            <path class="line-fill" [attr.d]="lineAreaPath" fill="url(#revenueLineFill)"></path>
             <path class="line-path" [attr.d]="linePath"></path>
-            <g *ngFor="let p of linePoints">
-              <circle class="line-dot" [attr.cx]="p.x" [attr.cy]="p.y" r="3"></circle>
+            <g *ngFor="let p of linePoints; let i = index">
+              <circle class="line-dot" [attr.cx]="p.x" [attr.cy]="p.y" r="4"></circle>
+              <text 
+                class="chart-value-label" 
+                [attr.x]="p.x" 
+                [attr.y]="p.y - 10"
+                text-anchor="middle">
+                {{ revenueData[i] | number }} ₫
+              </text>
+            </g>
+            <!-- Y-axis labels -->
+            <g class="y-axis-labels">
+              <text *ngFor="let label of yAxisLabels" 
+                [attr.x]="15" 
+                [attr.y]="label.y"
+                class="y-label">
+                {{ label.value }}.0M
+              </text>
+            </g>
+            <!-- X-axis labels -->
+            <g class="x-axis-labels">
+              <text *ngFor="let label of chartLabels; let i = index" 
+                [attr.x]="40 + (i * ((lineChartWidth - 80) / (chartLabels.length - 1)))" 
+                [attr.y]="lineChartHeight - 5"
+                class="x-label"
+                text-anchor="middle">
+                {{ label }}
+              </text>
             </g>
           </svg>
-          <div class="x-labels">
-            <span *ngFor="let d of last7Days">{{ d }}</span>
+          <!-- X-axis labels below chart -->
+          <div class="x-labels-revenue">
+            <span *ngFor="let label of chartLabels">{{ label }}</span>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bar Chart: Doanh thu theo danh mục -->
-    <div class="content-card">
-      <div class="card-header">
-        <h3><i class="bi bi-bar-chart"></i> Doanh thu theo danh mục</h3>
-      </div>
-      <div class="card-body">
-        <div class="bar-chart">
-          <div
-            class="bar"
-            *ngFor="let c of categoryRevenues"
-            [style.height.%]="(c.value / maxCategoryValue) * 100"
-          >
-            <span class="bar-value">{{ c.value | number }}</span>
-            <span class="bar-label">{{ c.name }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Donut Chart: Trạng thái tồn kho -->
-    <div class="content-card">
-      <div class="card-header">
-        <h3><i class="bi bi-pie-chart"></i> Tỷ lệ trạng thái tồn kho</h3>
-      </div>
-      <div class="card-body">
-        <div class="donut-chart">
-          <svg viewBox="0 0 120 120">
-            <g transform="translate(60,60)">
-              <circle class="donut-bg" r="45"></circle>
-              <ng-container *ngFor="let s of donutSegments; let i = index">
-                <circle
-                  class="donut-seg"
-                  r="45"
-                  [attr.stroke-dasharray]="s.arc + ' ' + (circumference - s.arc)"
-                  [attr.stroke-dashoffset]="s.offset"
-                  [style.stroke]="s.color"
-                ></circle>
-              </ng-container>
-            </g>
-          </svg>
-          <div class="donut-legend">
-            <div class="legend-item" *ngFor="let s of stockStatus">
-              <span class="dot" [style.background]="s.color"></span>
-              <span>{{ s.label }} ({{ s.value }})</span>
+          
+          <!-- Column chart -->
+          <div *ngIf="chartType === 'column'" class="column-chart">
+            <div class="column-bar" *ngFor="let data of revenueData; let i = index" 
+              [style.height.%]="(data / maxRevenue) * 100">
+              <span class="bar-value">{{ data | number }} ₫</span>
+              <span class="bar-label">{{ chartLabels[i] }}</span>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Sản phẩm bán chạy -->
+    <div class="products-card">
+      <div class="card-header">
+        <h3><i class="bi bi-trophy"></i> Sản Phẩm Bán Chạy</h3>
+      </div>
+      <div class="card-body">
+        <div class="best-selling-list">
+          <div class="product-item" *ngFor="let product of bestSellingProducts; let i = index" 
+               [class.rank-1]="i === 0" 
+               [class.rank-2]="i === 1" 
+               [class.rank-3]="i === 2"
+               [class.rank-4]="i === 3"
+               [class.rank-5]="i === 4">
+            <div class="product-rank" 
+                 [class.rank-1]="i === 0" 
+                 [class.rank-2]="i === 1" 
+                 [class.rank-3]="i === 2">
+              {{ i + 1 }}
+            </div>
+            <div class="product-info">
+              <div class="product-name">{{ product.name }}</div>
+              <div class="product-details">
+                <span>Đã bán: {{ product.sold }} | Giá: {{ product.price | number }} ₫</span>
+              </div>
+            </div>
+            <div class="product-progress">
+              <div class="progress-bar" [style.width.%]="product.progress"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 Donut Charts Section -->
+  <div class="donut-charts-section">
+    <!-- Card 1: Phân Bố Trạng Thái Đơn Hàng -->
+    <div class="donut-card">
+      <div class="card-header">
+        <h3><i class="bi bi-diagram-3"></i> Phân Bố Trạng Thái Đơn Hàng</h3>
+        <div class="time-filters">
+          <button class="filter-btn" [class.active]="orderStatusFilter === 'day'" (click)="setOrderStatusFilter('day')">Ngày</button>
+          <button class="filter-btn" [class.active]="orderStatusFilter === 'month'" (click)="setOrderStatusFilter('month')">Tháng</button>
+          <button class="filter-btn" [class.active]="orderStatusFilter === 'year'" (click)="setOrderStatusFilter('year')">Năm</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="donut-chart-container">
+          <svg viewBox="0 0 200 200" class="donut-svg">
+            <g transform="translate(100,100)">
+              <circle class="donut-bg" r="70"></circle>
+              <ng-container *ngFor="let segment of orderStatusSegments; let i = index">
+                <circle
+                  class="donut-segment"
+                  r="70"
+                  fill="none"
+                  [attr.stroke-dasharray]="segment.arc + ' ' + (circumference - segment.arc)"
+                  [attr.stroke-dashoffset]="segment.offset"
+                  [style.stroke]="segment.color"
+                  stroke-width="20"
+                  transform="rotate(-90)"
+                  [attr.data-value]="segment.value"
+                ></circle>
+              </ng-container>
+            </g>
+          </svg>
+          <div class="donut-center">
+            <div class="center-total">{{ orderStatusTotal }}</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="legend-item" *ngFor="let item of orderStatusData">
+            <span class="legend-dot" [style.background-color]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Phân Phối Đa Kênh -->
+    <div class="donut-card">
+      <div class="card-header">
+        <h3><i class="bi bi-building"></i> Phân Phối Đa Kênh</h3>
+      </div>
+      <div class="card-body">
+        <div class="donut-chart-container">
+          <svg viewBox="0 0 200 200" class="donut-svg">
+            <g transform="translate(100,100)">
+              <circle class="donut-bg" r="70"></circle>
+              <ng-container *ngFor="let segment of channelSegments; let i = index">
+                <circle
+                  class="donut-segment"
+                  r="70"
+                  fill="none"
+                  [attr.stroke-dasharray]="segment.arc + ' ' + (circumference - segment.arc)"
+                  [attr.stroke-dashoffset]="segment.offset"
+                  [style.stroke]="segment.color"
+                  stroke-width="20"
+                  transform="rotate(-90)"
+                ></circle>
+              </ng-container>
+            </g>
+          </svg>
+          <div class="donut-center">
+            <div class="center-total">{{ channelTotal }}</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="legend-item" *ngFor="let item of channelData">
+            <span class="legend-dot" [style.background-color]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Hãng Bán Chạy -->
+    <div class="donut-card">
+      <div class="card-header">
+        <h3><i class="bi bi-star"></i> Hãng Bán Chạy</h3>
+      </div>
+      <div class="card-body">
+        <div class="donut-chart-container">
+          <svg viewBox="0 0 200 200" class="donut-svg">
+            <g transform="translate(100,100)">
+              <circle class="donut-bg" r="70"></circle>
+              <ng-container *ngFor="let segment of brandSegments; let i = index">
+                <circle
+                  class="donut-segment"
+                  r="70"
+                  fill="none"
+                  [attr.stroke-dasharray]="segment.arc + ' ' + (circumference - segment.arc)"
+                  [attr.stroke-dashoffset]="segment.offset"
+                  [style.stroke]="segment.color"
+                  stroke-width="20"
+                  transform="rotate(-90)"
+                ></circle>
+              </ng-container>
+            </g>
+          </svg>
+          <div class="donut-center">
+            <div class="center-total">{{ brandTotal }}</div>
+          </div>
+        </div>
+        <div class="donut-legend brand-legend">
+          <div class="legend-item" *ngFor="let item of brandData">
+            <span class="legend-square" [style.background-color]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bảng Thống Kê Chi Tiết -->
+  <div class="stats-table-card">
+    <div class="card-header">
+      <h3><i class="bi bi-calendar"></i> Bảng Thống Kê Chi Tiết</h3>
+    </div>
+    <div class="card-body">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Doanh thu</th>
+            <th>Số đơn hàng</th>
+            <th>Giá trị TB/đơn</th>
+            <th>Tăng trưởng</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of statsTableData">
+            <td>{{ row.period }}</td>
+            <td>{{ row.revenue | number }} ₫</td>
+            <td>{{ row.orders }}</td>
+            <td>{{ row.avgOrderValue | number }} ₫</td>
+            <td class="growth-cell">
+              <span class="growth-positive">{{ row.growth }}</span>
+            </td>
+            <td>
+              <span class="status-badge status-excellent">{{ row.status }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top sản phẩm bán chạy nhất của cửa hàng -->
+  <div class="stats-table-card">
+    <div class="card-header">
+      <h3><i class="bi bi-trophy-fill"></i> Top sản phẩm bán chạy nhất của cửa hàng</h3>
+    </div>
+    <div class="card-body">
+      <table class="stats-table product-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Ảnh</th>
+            <th>Tên Sản Phẩm</th>
+            <th>Giá Bán</th>
+            <th>Số Lượng Đã Bán</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of topSellingPaginatedData">
+            <td>{{ product.rank }}</td>
+            <td class="product-image-cell">
+              <div class="product-image-wrapper">
+                <img [src]="product.image" [alt]="product.name" class="product-image" 
+                     loading="lazy"
+                     onerror="this.src='/assets/images/default-product.png'; this.onerror=null;">
+              </div>
+            </td>
+            <td class="product-name-cell">{{ product.name }}</td>
+            <td>{{ product.price | number }} ₫</td>
+            <td>{{ product.soldQuantity }}</td>
+          </tr>
+          <tr *ngIf="topSellingPaginatedData.length === 0">
+            <td colspan="5" class="empty-message">Không có dữ liệu</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- Pagination -->
+      <div class="table-pagination" *ngIf="topSellingTotalItems > 0">
+        <div class="pagination-controls">
+          <span class="pagination-info">Hiển thị</span>
+          <select class="pagination-select" [value]="topSellingPageSize" 
+                  (change)="onTopSellingPageSizeChange(+$any($event.target).value)">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+          <span class="pagination-info">mục/trang</span>
+        </div>
+        
+        <div class="pagination-info">
+          Hiển thị {{ topSellingDisplayRange.start }}-{{ topSellingDisplayRange.end }}/{{ topSellingTotalItems }} mục
+        </div>
+        
+        <div class="pagination-buttons">
+          <button class="page-btn" (click)="onTopSellingPageChange(1)" [disabled]="topSellingCurrentPage === 1">
+            &lt;&lt;
+          </button>
+          <button class="page-btn" (click)="onTopSellingPageChange(topSellingCurrentPage - 1)" 
+                  [disabled]="topSellingCurrentPage === 1">
+            &lt;
+          </button>
+          <button *ngFor="let page of [].constructor(topSellingTotalPages); let i = index" 
+                  class="page-btn" 
+                  [class.active]="topSellingCurrentPage === (i + 1)"
+                  (click)="onTopSellingPageChange(i + 1)">
+            {{ i + 1 }}
+          </button>
+          <button class="page-btn" (click)="onTopSellingPageChange(topSellingCurrentPage + 1)" 
+                  [disabled]="topSellingCurrentPage === topSellingTotalPages || topSellingTotalPages === 0">
+            &gt;
+          </button>
+          <button class="page-btn" (click)="onTopSellingPageChange(topSellingTotalPages)" 
+                  [disabled]="topSellingCurrentPage === topSellingTotalPages || topSellingTotalPages === 0">
+            &gt;&gt;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sản Phẩm Sắp Hết Hàng -->
+  <div class="stats-table-card low-stock-card">
+    <div class="card-header">
+      <h3><i class="bi bi-exclamation-triangle-fill"></i> Sản Phẩm Sắp Hết Hàng</h3>
+    </div>
+    <div class="card-body">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên Sản Phẩm</th>
+            <th>Số Lượng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of lowStockProducts">
+            <td>{{ product.rank }}</td>
+            <td>{{ product.name }}</td>
+            <td class="low-stock-quantity">{{ product.quantity }}</td>
+          </tr>
+          <tr *ngIf="lowStockProducts.length === 0">
+            <td colspan="3" class="empty-message">Không có sản phẩm sắp hết hàng</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
