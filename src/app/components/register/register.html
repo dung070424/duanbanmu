@@ -1,0 +1,101 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="register-header">
+      <div class="logo-container">
+        <img
+          src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg"
+          alt="TDK Store Logo"
+          class="logo-img"
+        />
+      </div>
+      <h2>Đăng ký</h2>
+      <p>TDK Store - Bán mũ bảo hiểm</p>
+    </div>
+
+    <form class="register-form" (ngSubmit)="onRegister()" #registerForm="ngForm">
+      <div class="form-group">
+        <label for="fullName">Họ và tên:</label>
+        <input
+          type="text"
+          id="fullName"
+          name="fullName"
+          [(ngModel)]="registerData.fullName"
+          class="form-control"
+          placeholder="Nhập họ và tên"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="username">Tên đăng nhập:</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          [(ngModel)]="registerData.username"
+          required
+          minlength="3"
+          class="form-control"
+          placeholder="Nhập tên đăng nhập"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          [(ngModel)]="registerData.email"
+          required
+          email
+          class="form-control"
+          placeholder="Nhập email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mật khẩu:</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          [(ngModel)]="registerData.password"
+          required
+          minlength="6"
+          class="form-control"
+          placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Xác nhận mật khẩu:</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          [(ngModel)]="confirmPassword"
+          required
+          class="form-control"
+          placeholder="Nhập lại mật khẩu"
+        />
+      </div>
+
+      <button type="submit" class="btn-register" [disabled]="!registerForm.valid || isLoading">
+        <span *ngIf="isLoading" class="spinner"></span>
+        {{ isLoading ? 'Đang đăng ký...' : 'Đăng ký' }}
+      </button>
+
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="success-message">
+        {{ successMessage }}
+      </div>
+
+      <div class="register-footer">
+        <p>Đã có tài khoản? <a (click)="goToLogin()" class="link">Đăng nhập ngay</a></p>
+      </div>
+    </form>
+  </div>
+</div>

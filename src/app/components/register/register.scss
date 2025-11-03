@@ -1,4 +1,4 @@
-.login-container {
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -7,7 +7,7 @@
   padding: 20px;
 }
 
-.login-card {
+.register-card {
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -29,7 +29,7 @@
   }
 }
 
-.login-header {
+.register-header {
   text-align: center;
   margin-bottom: 30px;
 
@@ -59,7 +59,7 @@
   }
 }
 
-.login-form {
+.register-form {
   .form-group {
     margin-bottom: 20px;
 
@@ -110,7 +110,7 @@
   }
 }
 
-.btn-login {
+.btn-register {
   width: 100%;
   padding: 14px;
   background: #111827;
@@ -179,7 +179,7 @@
   border: 1px solid #bbf7d0;
 }
 
-.login-footer {
+.register-footer {
   margin-top: 20px;
   text-align: center;
   
@@ -203,15 +203,15 @@
 
 // Responsive
 @media (max-width: 480px) {
-  .login-container {
+  .register-container {
     padding: 10px;
   }
 
-  .login-card {
+  .register-card {
     padding: 30px 20px;
   }
 
-  .login-header h2 {
+  .register-header h2 {
     font-size: 24px;
   }
 }

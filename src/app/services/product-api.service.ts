@@ -49,6 +49,7 @@ export interface LookupItem {
 @Injectable({ providedIn: 'root' })
 export class ProductApiService {
   private baseUrl = environment.apiBaseUrl + '/san-pham';
+  private customerBaseUrl = environment.apiBaseUrl + '/api/customer/products';
 
   constructor(private http: HttpClient) {}
 
@@ -58,6 +59,7 @@ export class ProductApiService {
     page?: number;
     size?: number;
     sort?: string;
+    useCustomerEndpoint?: boolean; // Flag để dùng endpoint customer (public)
   }): Observable<PageResponse<SanPhamResponse>> {
     let httpParams = new HttpParams();
     if (params.keyword) httpParams = httpParams.set('keyword', params.keyword);
@@ -67,11 +69,17 @@ export class ProductApiService {
     httpParams = httpParams.set('page', String(params.page ?? 0));
     httpParams = httpParams.set('size', String(params.size ?? 10));
     httpParams = httpParams.set('sort', params.sort ?? 'id,desc');
-    return this.http.get<PageResponse<SanPhamResponse>>(this.baseUrl, { params: httpParams });
+    
+    // Sử dụng customer endpoint nếu được yêu cầu (cho shop website)
+    const url = params.useCustomerEndpoint ? this.customerBaseUrl : this.baseUrl;
+    return this.http.get<PageResponse<SanPhamResponse>>(url, { params: httpParams });
   }
 
-  getById(id: number): Observable<SanPhamResponse> {
-    return this.http.get<SanPhamResponse>(`${this.baseUrl}/${id}`);
+  getById(id: number, useCustomerEndpoint: boolean = false): Observable<SanPhamResponse> {
+    const url = useCustomerEndpoint 
+      ? `${this.customerBaseUrl}/${id}`
+      : `${this.baseUrl}/${id}`;
+    return this.http.get<SanPhamResponse>(url);
   }
 
   create(

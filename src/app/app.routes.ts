@@ -20,6 +20,11 @@ import { HelmetFormComponent } from './components/helmet-form/helmet-form.compon
 import { ManufacturersComponent } from './components/manufacturers/manufacturers.component';
 // import { ProductDetailsComponent } from './components/product-details/product-details.component';
 import { LoginComponent } from './components/login/login';
+import { RegisterComponent } from './components/register/register';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password';
+import { ShopComponent } from './components/shop/shop.component';
+import { CustomerOrdersComponent } from './components/customer-orders/customer-orders.component';
+import { roleGuard } from './guards/role-guard';
 import { AuthGuard } from './guards/auth-guard';
 import { ColorsComponent } from './components/colors/colors.component';
 import { HelmetStylesComponent } from './components/helmet-styles/helmet-styles.component';
@@ -31,32 +36,46 @@ import { LoaiMuBaoHiemComponent } from './components/loai-mu-bao-hiem/loai-mu-ba
 import { CongNgheAnToanComponent } from './components/cong-nghe-an-toan/cong-nghe-an-toan.component';
 
 export const routes: Routes = [
+  // Public routes
   { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  
+  // Customer shop routes - public access
+  { path: 'shop', component: ShopComponent },
+  { path: 'shop/products', component: ShopComponent },
+  
+  // Customer orders routes
+  {
+    path: 'customer/orders',
+    component: CustomerOrdersComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['CUSTOMER'] }
+  },
+  {
+    path: 'customer/orders/:id',
+    component: InvoiceDetailComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['CUSTOMER'] }
+  },
+  
   {
     path: '',
-    redirectTo: '/login',
+    redirectTo: '/shop',
     pathMatch: 'full',
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN', 'STAFF'] },
   },
   {
     path: 'invoices',
     component: InvoiceManagementComponent,
     // canActivate: [AuthGuard], // Tạm thời bỏ để test
   },
-  {
-    path: 'invoices/:id',
-    component: InvoiceDetailComponent,
-    canActivate: [AuthGuard],
-  },
-  {
-    path: 'counter-sales',
-    component: CounterSalesComponent,
-    canActivate: [AuthGuard],
-  },
+  // Đặt các route cụ thể trước route động để tránh conflict
   {
     path: 'invoices/orders',
     component: OrdersComponent,
@@ -75,6 +94,17 @@ export const routes: Routes = [
   {
     path: 'invoices/delivery',
     component: DeliveryComponent,
+    canActivate: [AuthGuard],
+  },
+  // Route động phải đặt sau các route cụ thể
+  {
+    path: 'invoices/:id',
+    component: InvoiceDetailComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'counter-sales',
+    component: CounterSalesComponent,
     canActivate: [AuthGuard],
   },
   {

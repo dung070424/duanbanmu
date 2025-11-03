@@ -15,18 +15,30 @@
   </div>
 
 
-  <!-- Loading State e-->
+  <!-- Loading State -->
+  <div *ngIf="!invoice && !error && invoiceId > 0" class="loading-container">
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3">Đang tải thông tin hóa đơn...</p>
+    </div>
+  </div>
 
   <!-- Error State -->
   <div *ngIf="error" class="error-container">
     <div class="alert alert-danger">
       <i class="fas fa-exclamation-triangle"></i>
       {{ error }}
+      <br>
+      <button class="btn btn-sm btn-outline-danger mt-2" (click)="loadInvoiceDetail()">
+        <i class="fas fa-redo"></i> Thử lại
+      </button>
     </div>
   </div>
 
   <!-- Invoice Content -->
-  <div *ngIf="invoice" class="invoice-content">
+  <div *ngIf="invoice && !error" class="invoice-content">
 
     <!-- Print Invoice Layout -->
     <div class="print-invoice">

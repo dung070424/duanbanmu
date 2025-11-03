@@ -643,8 +643,38 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   openViewModal(invoice: HoaDonDTO): void {
+    // Validate invoice ID before navigation
+    if (!invoice || invoice.id === undefined || invoice.id === null) {
+      console.error('❌ Invalid invoice data:', invoice);
+      alert('Không thể xem chi tiết hóa đơn: thiếu thông tin ID');
+      return;
+    }
+
+    // Đảm bảo ID là số
+    const invoiceId = Number(invoice.id);
+    if (isNaN(invoiceId) || invoiceId <= 0) {
+      console.error('❌ Invalid invoice ID:', invoice.id);
+      alert('Mã hóa đơn không hợp lệ');
+      return;
+    }
+
+    console.log('🔍 [openViewModal] Invoice data:', invoice);
+    console.log('🔍 [openViewModal] Parsed invoiceId:', invoiceId);
+    console.log('🔍 [openViewModal] Current route:', this.router.url);
+    console.log('🔍 [openViewModal] Navigating to:', `/invoices/${invoiceId}`);
+    
     // Navigate to detail view instead of opening modal
-    this.router.navigate(['/invoices', invoice.id]);
+    // Sử dụng navigateByUrl để đảm bảo route chính xác
+    this.router.navigateByUrl(`/invoices/${invoiceId}`).then(
+      (success) => {
+        console.log('✅ [openViewModal] Navigation successful:', success);
+      },
+      (error) => {
+        console.error('❌ [openViewModal] Navigation error:', error);
+        console.error('❌ [openViewModal] Error details:', JSON.stringify(error, null, 2));
+        alert('Không thể mở chi tiết hóa đơn. Vui lòng đăng nhập lại hoặc liên hệ quản trị viên!');
+      }
+    );
   }
 
 
