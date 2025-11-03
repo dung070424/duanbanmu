@@ -86,6 +86,8 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   // Error handling
   errorMessage = '';
   fieldErrors: { [key: string]: string } = {};
+  // Xác nhận lưu giống phần nhân viên
+  showConfirm = false;
 
   // New UI properties for address navigation
   currentAddressIndex = 0;
@@ -642,6 +644,29 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     };
     this.formattedNgaySinh = '';
     this.cdr.detectChanges();
+  }
+
+  // Yêu cầu xác nhận trước khi lưu
+  requestSave(): void {
+    this.clearFieldErrors();
+    this.errorMessage = '';
+    if (!this.isFormValid()) {
+      this.errorMessage = 'Vui lòng kiểm tra lại thông tin đã nhập';
+      return;
+    }
+    this.showConfirm = true;
+    this.cdr.detectChanges();
+  }
+
+  // Người dùng xác nhận lưu
+  confirmSave(): void {
+    this.showConfirm = false;
+    this.save();
+  }
+
+  // Hủy xác nhận
+  cancelConfirm(): void {
+    this.showConfirm = false;
   }
 
   // Save customer
