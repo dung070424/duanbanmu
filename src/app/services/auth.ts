@@ -69,20 +69,8 @@ export class AuthService {
 
   register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/register`, request).pipe(
-      tap((response: AuthResponse) => {
-        if (response.token) {
-          const user: User = {
-            id: response.id,
-            username: response.username,
-            email: response.email,
-            fullName: response.fullName,
-            roles: response.roles || []
-          };
-
-          this.saveAuthData(response.token, user, false);
-          this.isAuthenticatedSubject.next(true);
-          this.currentUserSubject.next(user);
-        }
+      tap(() => {
+        // Không tự động đăng nhập sau khi đăng ký
       }),
       catchError((error) => {
         console.error('Register error:', error);
@@ -119,22 +107,9 @@ export class AuthService {
     const request: ResetPasswordRequest = { email, otp, newPassword, confirmPassword };
     
     return this.http.post<AuthResponse>(`${this.apiUrl}/reset-password`, request).pipe(
-      map((response: AuthResponse) => {
-        if (response.token) {
-          const user: User = {
-            id: response.id,
-            username: response.username,
-            email: response.email,
-            fullName: response.fullName,
-            roles: response.roles || []
-          };
-
-          this.saveAuthData(response.token, user, false);
-          this.isAuthenticatedSubject.next(true);
-          this.currentUserSubject.next(user);
-          return true;
-        }
-        throw new Error(response.message || 'Đặt lại mật khẩu thất bại');
+      map(() => {
+        // Không tự động đăng nhập; chỉ báo thành công
+        return true;
       }),
       catchError((error) => {
         console.error('Reset password error:', error);
