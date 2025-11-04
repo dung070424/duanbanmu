@@ -238,19 +238,7 @@
               (selectionChangeMulti)="selectedColors = $event"
             ></app-searchable-dropdown>
           </div>
-          <div class="col-md-4">
-            <label class="form-label fw-semibold">Chọn trọng lượng</label>
-            <app-searchable-dropdown
-              [options]="trongLuongOptions"
-              [multiSelect]="true"
-              [selectedValues]="selectedWeights"
-              [placeholder]="'-- Chọn trọng lượng --'"
-              [showAddButton]="true"
-              [addButtonTitle]="'Thêm trọng lượng mới'"
-              (addButtonClick)="openQuickAddModal('trongLuong')"
-              (selectionChangeMulti)="selectedWeights = $event"
-            ></app-searchable-dropdown>
-          </div>
+          <!-- Trọng lượng sẽ nhập trực tiếp ở bảng biến thể phía dưới -->
           <div class="col-12 mt-3 text-end">
             <button type="button" class="btn btn-primary btn-sm" (click)="generateVariants()">
               <i class="bi bi-plus-circle me-2"></i>Tạo lại biến thể
@@ -318,7 +306,16 @@
                       "
                     ></span>
                   </td>
-                  <td>{{ getTrongLuongTenById(v.trongLuongId) }}</td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="trongLuongTen_{{ i }}"
+                      [(ngModel)]="v.trongLuongTen"
+                      [ngModelOptions]="{ standalone: true }"
+                      placeholder="VD: 500g, 1kg"
+                    />
+                  </td>
                   <td>
                     <input
                       type="text"

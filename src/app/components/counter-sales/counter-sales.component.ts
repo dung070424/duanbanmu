@@ -291,28 +291,37 @@ export class CounterSalesComponent implements OnInit {
   loadAvailableProducts(): void {
     // Lấy dữ liệu từ BẢNG SẢN PHẨM CHI TIẾT theo yêu cầu
     this.chiTietApi.getAll().subscribe({
-      next: (rows: ChiTietSanPhamResponse[]) => {
-        const variants = (rows || []).map((r) => ({
-          id: r.id,
-          code: `${r.sanPhamId}-${r.kichThuocId}-${r.mauSacId}-${r.trongLuongId}`,
-          name: r.sanPhamTen,
-          category: undefined,
-          price: this.parsePrice(r.giaBan),
-          stock: Number(r.soLuongTon ?? 0),
-          color: r.mauSacTen,
-          colorName: r.mauSacTen,
-          colorCode: r.mauSacMa,
-          ram: r.kichThuocTen,
-          storage: r.trongLuongTen,
-          productId: r.sanPhamId,
-          imageUrl: undefined as string | undefined,
-        }));
+      next: (rows: ChiTietSanPhamResponse[] | any) => {
+        // Xử lý response structure khác nhau
+        const raw = Array.isArray(rows) ? rows : rows?.data || rows?.content || [];
+
+        const variants = (raw || []).map((r: any) => {
+          // Lấy trongLuongTen từ DB - không dùng trongLuongId
+          const trongLuongTen = r.trongLuongTen || r.trong_luong_ten || '';
+          return {
+            id: r.id,
+            code: `${r.sanPhamId || r.san_pham_id}-${r.kichThuocId || r.kich_thuoc_id}-${
+              r.mauSacId || r.mau_sac_id
+            }-${trongLuongTen}`,
+            name: r.sanPhamTen || r.san_pham_ten || '',
+            category: undefined,
+            price: this.parsePrice(r.giaBan || r.gia_ban),
+            stock: Number((r.soLuongTon || r.so_luong_ton) ?? 0),
+            color: r.mauSacTen || r.mau_sac_ten || '',
+            colorName: r.mauSacTen || r.mau_sac_ten || '',
+            colorCode: r.mauSacMa || r.mau_sac_ma || '',
+            ram: r.kichThuocTen || r.kich_thuoc_ten || '',
+            storage: trongLuongTen, // Dùng trongLuongTen từ DB
+            productId: r.sanPhamId || r.san_pham_id,
+            imageUrl: undefined as string | undefined,
+          };
+        });
         this.availableProducts = variants;
         // Build options động từ dữ liệu
         const colors = new Set<string>();
         const sizes = new Set<string>();
         const weights = new Set<string>();
-        variants.forEach((v) => {
+        variants.forEach((v: any) => {
           if (v.colorName) colors.add(String(v.colorName));
           if (v.ram) sizes.add(String(v.ram));
           if (v.storage) weights.add(String(v.storage));
@@ -325,8 +334,10 @@ export class CounterSalesComponent implements OnInit {
         this.selectedRam = 'all';
         this.selectedStorage = 'all';
         // Lấy ảnh sản phẩm từ bảng sản phẩm cha (nếu có)
-        const uniqueProductIds = Array.from(new Set(variants.map((v) => v.productId)));
-        uniqueProductIds.forEach((pid) => {
+        const uniqueProductIds = Array.from(new Set(variants.map((v: any) => v.productId))).filter(
+          (id): id is number => typeof id === 'number'
+        );
+        uniqueProductIds.forEach((pid: number) => {
           this.productApi.getById(pid, true).subscribe((p) => {
             if (p?.anhSanPham) {
               this.productIdToImageUrl[pid] = p.anhSanPham as string;
@@ -339,9 +350,14 @@ export class CounterSalesComponent implements OnInit {
         });
         this.filterProducts();
       },
-      error: () => {
+      error: (err) => {
         this.availableProducts = [];
         this.filterProducts();
+        this.showToast(
+          'Lỗi khi tải danh sách sản phẩm: ' +
+            (err.error?.message || err.message || 'Không xác định'),
+          'error'
+        );
       },
     });
   }
@@ -543,7 +559,6 @@ export class CounterSalesComponent implements OnInit {
                 this.showToast('Thêm khách hàng thành công', 'success');
               },
               error: (err) => {
-                console.error(err);
                 this.showToast('Không thể thêm khách hàng. Vui lòng thử lại.', 'error');
               },
             })

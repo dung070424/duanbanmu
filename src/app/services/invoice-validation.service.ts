@@ -31,15 +31,15 @@ export class InvoiceValidationService {
       };
     }
 
-    // Rule 2: no special characters (letters and spaces only, including Vietnamese)
-    const vietnameseLettersAndSpaces = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƯưăâêô\s]+$/;
-    if (!vietnameseLettersAndSpaces.test(name.trim())) {
-      return {
-        field: 'tenKhachHang',
-        isValid: false,
-        errorMessage: 'Tên khách hàng không được chứa ký tự đặc biệt'
-      };
-    }
+    // // Rule 2: no special characters (letters and spaces only, including Vietnamese)
+    // const vietnameseLettersAndSpaces = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƯưăâêô\s]+$/;
+    // if (!vietnameseLettersAndSpaces.test(name.trim())) {
+    //   return {
+    //     field: 'tenKhachHang',
+    //     isValid: false,
+    //     errorMessage: 'Tên khách hàng không được chứa ký tự đặc biệt'
+    //   };
+    // }
 
     return {
       field: 'tenKhachHang',

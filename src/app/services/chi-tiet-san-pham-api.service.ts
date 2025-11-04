@@ -23,7 +23,8 @@ export interface ChiTietSanPhamRequest {
   sanPhamId: number;
   kichThuocId: number;
   mauSacId: number;
-  trongLuongId: number;
+  trongLuongId?: number | null;
+  trongLuongTen?: string | null;
   giaBan: string;
   soLuongTon: string;
   trangThai: boolean;
@@ -31,7 +32,8 @@ export interface ChiTietSanPhamRequest {
 
 @Injectable({ providedIn: 'root' })
 export class ChiTietSanPhamApiService {
-  private baseUrl = environment.apiBaseUrl + '/api/chi-tiet-san-pham';
+  // Dùng apiUrl (đã bao gồm prefix '/api') để khớp với BE mapping '/api/chi-tiet-san-pham'
+  private baseUrl = environment.apiUrl + '/chi-tiet-san-pham';
 
   constructor(private http: HttpClient) {}
 
@@ -58,6 +60,4 @@ export class ChiTietSanPhamApiService {
   getBySanPhamId(sanPhamId: number): Observable<ChiTietSanPhamResponse[]> {
     return this.http.get<ChiTietSanPhamResponse[]>(`${this.baseUrl}/san-pham/${sanPhamId}`);
   }
-
- 
 }

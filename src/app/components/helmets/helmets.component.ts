@@ -110,7 +110,8 @@ export class HelmetsComponent implements OnInit {
     id?: number;
     kichThuocId: number;
     mauSacId: number;
-    trongLuongId: number;
+    trongLuongId?: number | null;
+    trongLuongTen?: string | null;
     giaBan: number;
     soLuongTon: number;
     trangThai: boolean;
@@ -160,21 +161,6 @@ export class HelmetsComponent implements OnInit {
   ngOnInit() {
     this.loadLookups();
     this.fetchProducts();
-
-    // Test API connection
-    this.testApiConnection();
-  }
-
-  testApiConnection() {
-    console.log('Testing API connection...');
-    this.productApi.getLoaiMuBaoHiemAll().subscribe({
-      next: (data) => {
-        console.log('API Test Success - Helmet types:', data?.length || 0, 'items');
-      },
-      error: (error) => {
-        console.error('API Test Failed:', error);
-      },
-    });
   }
 
   loadLookups() {
@@ -190,9 +176,7 @@ export class HelmetsComponent implements OnInit {
         this.nsxOptions = this.nsxList.map((x) => ({ id: x.id, name: x.tenNhaSanXuat }));
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('Error loading manufacturers:', error);
-      },
+      error: (error) => {},
     });
     this.productApi.getChatLieuVoAll().subscribe((res: any) => {
       this.chatLieuList = (res.content || []).map((x: any) => ({
@@ -364,7 +348,6 @@ export class HelmetsComponent implements OnInit {
           });
         },
         error: (err) => {
-          console.error('SanPham search error:', err);
           this.helmetProducts = [];
           this.filteredProducts = [];
           this.totalElements = 0;
@@ -709,7 +692,6 @@ export class HelmetsComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error(err);
           const msg =
             (err?.error && (err.error.message || err.error.error)) ||
             'Cập nhật thất bại. Vui lòng kiểm tra dữ liệu.';
@@ -743,7 +725,6 @@ export class HelmetsComponent implements OnInit {
         this.closeModal();
       },
       error: (err) => {
-        console.error(err);
         if (err?.status === 409) {
           // Xóa thông báo lỗi mã sản phẩm trùng lặp
           return;
@@ -788,7 +769,6 @@ export class HelmetsComponent implements OnInit {
           this.fetchProducts();
         },
         error: (err) => {
-          console.error(err);
           alert('Xóa thất bại');
         },
       });
@@ -821,7 +801,6 @@ export class HelmetsComponent implements OnInit {
 
     // Force reload helmet types if empty
     if (this.loaiMuList.length === 0) {
-      console.log('Reloading helmet types for modal...');
       this.loadHelmetTypes();
     }
 
@@ -833,17 +812,13 @@ export class HelmetsComponent implements OnInit {
   }
 
   loadHelmetTypes() {
-    console.log('Loading helmet types...');
     this.productApi.getLoaiMuBaoHiemAll().subscribe({
       next: (data) => {
-        console.log('Helmet types loaded:', data);
         this.loaiMuList = (data || []).map((x) => ({ id: x.id, tenLoai: x.tenLoai }));
         this.loaiMuOptions = this.loaiMuList.map((x) => ({ id: x.id, name: x.tenLoai }));
-        console.log('LoaiMuList updated:', this.loaiMuList);
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('Error loading helmet types:', error);
         alert(
           'Lỗi khi tải danh sách loại mũ bảo hiểm: ' +
             (error.message || 'Không thể kết nối đến server')
@@ -853,10 +828,8 @@ export class HelmetsComponent implements OnInit {
   }
 
   loadColors() {
-    console.log('Loading colors...');
     this.colorApi.getAllActive().subscribe({
       next: (data) => {
-        console.log('Colors loaded:', data);
         this.mauSacList = data.map((x) => ({
           id: x.id,
           tenMau: x.tenMau,
@@ -866,11 +839,9 @@ export class HelmetsComponent implements OnInit {
           id: x.id,
           name: `${x.tenMau}${x.maMau ? ' (' + x.maMau + ')' : ''}`,
         }));
-        console.log('MauSacList updated:', this.mauSacList);
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('Error loading colors:', error);
         alert(
           'Lỗi khi tải danh sách màu sắc: ' + (error.message || 'Không thể kết nối đến server')
         );
@@ -920,20 +891,27 @@ export class HelmetsComponent implements OnInit {
       this.cdr.detectChanges();
       return;
     }
-    console.log('Loading helmet versions for productId =', sanPhamId);
     this.helmetVersionApi.getBySanPhamId(sanPhamId).subscribe({
       next: (res: any) => {
         const raw = Array.isArray(res) ? res : res?.data ?? res?.content ?? res?.items ?? [];
-        this.helmetVersions = (raw || []).map((v: any) => ({
-          id: v.id,
-          kichThuocId: v.kichThuocId,
-          mauSacId: v.mauSacId,
-          trongLuongId: v.trongLuongId,
-          giaBan: v.giaBan,
-          soLuongTon: v.soLuongTon,
-          trangThai: v.trangThai !== false,
-        }));
-        console.log('Loaded versions:', this.helmetVersions?.length || 0);
+        this.helmetVersions = (raw || []).map((v: any) => {
+          // Lấy trongLuongTen từ DB - ƯU TIÊN, không dùng trongLuongId
+          let trongLuongTen = v.trongLuongTen || v.trong_luong_ten || '';
+          // Nếu null hoặc undefined, chuyển thành chuỗi rỗng
+          if (trongLuongTen === null || trongLuongTen === undefined || trongLuongTen === 'null') {
+            trongLuongTen = '';
+          }
+          return {
+            id: v.id,
+            kichThuocId: v.kichThuocId,
+            mauSacId: v.mauSacId,
+            trongLuongId: null, // KHÔNG DÙNG ID - chỉ dùng trongLuongTen
+            trongLuongTen: trongLuongTen, // Lấy TỪ CỘT trong_luong_ten trong DB
+            giaBan: v.giaBan || '',
+            soLuongTon: v.soLuongTon || '',
+            trangThai: v.trangThai !== false,
+          };
+        });
         this.cdr.detectChanges();
       },
       error: () => {
@@ -1091,15 +1069,12 @@ export class HelmetsComponent implements OnInit {
 
   // Method để mở modal thêm nhanh
   openQuickAddModal(type: string) {
-    console.log('Opening quick add modal for:', type);
     this.quickAddModalType = type;
     this.showQuickAddModal = true;
   }
 
   // Method để xử lý save từ quick add modal
   onQuickAddSave(event: { type: string; data: any }) {
-    console.log('Quick add save event:', event);
-
     if (event.type === 'loaiMuBaoHiem') {
       const request: LoaiMuBaoHiemRequest = {
         tenLoai: event.data.tenLoai,
@@ -1109,13 +1084,11 @@ export class HelmetsComponent implements OnInit {
 
       this.loaiMuBaoHiemApi.create(request).subscribe({
         next: (response) => {
-          console.log('LoaiMuBaoHiem created:', response);
           alert('Thêm mới Loại mũ bảo hiểm thành công!');
           this.loadHelmetTypes(); // Refresh dropdown
           this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Error creating LoaiMuBaoHiem:', error);
           alert(
             'Lỗi khi thêm mới Loại mũ bảo hiểm: ' +
               (error.error?.message || error.message || 'Không thể kết nối đến server')
@@ -1131,13 +1104,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            console.log('MauSac created:', response);
             alert('Thêm mới Màu sắc thành công!');
             this.loadColors(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            console.error('Error creating MauSac:', error);
             alert(
               'Lỗi khi thêm mới Màu sắc: ' +
                 (error.error?.message || error.message || 'Không thể kết nối đến server')
@@ -1154,13 +1125,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            console.log('Manufacturer created:', response);
             alert('Thêm mới Nhà sản xuất thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            console.error('Error creating Manufacturer:', error);
             alert(
               'Lỗi khi thêm mới Nhà sản xuất: ' +
                 (error.error?.message || error.message || 'Không thể kết nối đến server')
@@ -1176,13 +1145,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            console.log('Material created:', response);
             alert('Thêm mới Chất liệu vỏ thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            console.error('Error creating Material:', error);
             alert(
               'Lỗi khi thêm mới Chất liệu vỏ: ' +
                 (error.error?.message || error.message || 'Không thể kết nối đến server')
@@ -1199,13 +1166,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            console.log('TrongLuong created:', response);
             alert('Thêm mới Trọng lượng thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            console.error('Error creating TrongLuong:', error);
             alert(
               'Lỗi khi thêm mới Trọng lượng: ' +
                 (error.error?.message || error.message || 'Không thể kết nối đến server')
@@ -1221,13 +1186,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            console.log('Origin created:', response);
             alert('Thêm mới Xuất xứ thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            console.error('Error creating Origin:', error);
             alert(
               'Lỗi khi thêm mới Xuất xứ: ' +
                 (error.error?.message || error.message || 'Không thể kết nối đến server')
@@ -1243,13 +1206,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            console.log('HelmetStyle created:', response);
             alert('Thêm mới Kiểu dáng mũ thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            console.error('Error creating HelmetStyle:', error);
             alert(
               'Lỗi khi thêm mới Kiểu dáng mũ: ' +
                 (error.error?.message || error.message || 'Không thể kết nối đến server')
@@ -1265,13 +1226,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            console.log('CongNgheAnToan created:', response);
             alert('Thêm mới Công nghệ an toàn thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            console.error('Error creating CongNgheAnToan:', error);
             alert(
               'Lỗi khi thêm mới Công nghệ an toàn: ' +
                 (error.error?.message || error.message || 'Không thể kết nối đến server')

@@ -8,7 +8,8 @@ export interface HelmetVersion {
   sanPhamId: number;
   kichThuocId: number;
   mauSacId: number;
-  trongLuongId: number;
+  trongLuongId?: number | null;
+  trongLuongTen?: string | null;
   giaBan: string;
   soLuongTon: string;
   trangThai: boolean;
@@ -17,7 +18,8 @@ export interface HelmetVersionRequest {
   sanPhamId: number;
   kichThuocId: number;
   mauSacId: number;
-  trongLuongId: number;
+  trongLuongId?: number | null;
+  trongLuongTen?: string | null;
   giaBan: string;
   soLuongTon: string;
   trangThai: boolean;

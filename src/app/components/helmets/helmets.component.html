@@ -523,7 +523,7 @@
                       "
                     ></span>
                   </td>
-                  <td>{{ getTrongLuongTenById(v.trongLuongId) }}</td>
+                  <td>{{ v.trongLuongTen || 'N/A' }}</td>
                   <td>
                     <ng-container *ngIf="!isViewMode; else priceView">
                       <input
