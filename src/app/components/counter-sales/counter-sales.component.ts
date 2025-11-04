@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -8,6 +9,7 @@ import {
   ChiTietSanPhamResponse,
 } from '../../services/chi-tiet-san-pham-api.service';
 import { KhachHangService } from '../../services/khach-hang.service';
+import { HoaDonService } from '../../services/hoa-don.service';
 import { PhieuGiamGiaService } from '../../services/phieu-giam-gia.service';
 import {
   CounterSale,
@@ -40,6 +42,8 @@ export class CounterSalesComponent implements OnInit {
   cartDiscount: number = 0;
   cartTax: number = 10;
   couponDiscount: number = 0;
+  // Cash received from customer at checkout
+  cashReceived: number | null = null;
 
   // POS state
   invoiceSearch: string = '';
@@ -179,12 +183,20 @@ export class CounterSalesComponent implements OnInit {
     { value: 'other', label: 'Khác' },
   ];
 
+  // Computed change to return to customer
+  get changeDue(): number {
+    const received = this.cashReceived ?? 0;
+    return Math.max(0, received - this.cartTotal);
+  }
+
   constructor(
     private http: HttpClient,
     private productApi: ProductApiService,
     private chiTietApi: ChiTietSanPhamApiService,
     private khachHangService: KhachHangService,
-    private phieuGiamGiaService: PhieuGiamGiaService
+    private phieuGiamGiaService: PhieuGiamGiaService,
+    private hoaDonService: HoaDonService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -927,7 +939,6 @@ export class CounterSalesComponent implements OnInit {
       alert('Giỏ hàng trống!');
       return;
     }
-
     const newSale: CounterSale = {
       id: this.counterSales.length + 1,
       saleNumber: this.newSale.saleNumber!,
@@ -965,11 +976,50 @@ export class CounterSalesComponent implements OnInit {
       updatedBy: this.newSale.updatedBy!,
     };
 
-    this.counterSales.unshift(newSale);
-    this.cart = [];
-    this.calculateCartTotal();
-    this.closeModals();
-    this.filterSales();
+    // Gọi BE tạo hóa đơn rồi điều hướng sang trang chi tiết
+    const payload: any = {
+      maHoaDon: this.generateSaleNumber().replace('CS', 'HD'),
+      khachHangId: this.newSale.customerId,
+      tenKhachHang: this.newSale.customerName,
+      soDienThoaiKhachHang: this.newSale.customerPhone,
+      ngayTao: new Date().toISOString(),
+      tongTien: Math.round(this.cartTotal),
+      thanhTien: Math.round(this.cartTotal),
+      tienGiamGia: Math.round(this.cartDiscount + this.couponDiscount),
+      phuongThucThanhToan: this.newSale.paymentMethod,
+      trangThai: 'DA_XAC_NHAN',
+      danhSachChiTiet: this.cart.map((item) => ({
+        chiTietSanPhamId: item.productId,
+        tenSanPham: item.productName,
+        soLuong: item.quantity,
+        donGia: item.unitPrice,
+        giamGia: item.discountAmount,
+        thanhTien: item.totalPrice - item.discountAmount,
+      })),
+    };
+
+    this.hoaDonService.createHoaDon(payload).subscribe({
+      next: (created: any) => {
+        const createdId = created?.id;
+        // reset POS state trước khi điều hướng
+        this.counterSales.unshift(newSale);
+        this.cart = [];
+        this.calculateCartTotal();
+        this.closeModals();
+        this.filterSales();
+        if (createdId) {
+          this.router.navigate(['/invoices', createdId]);
+        }
+      },
+      error: () => {
+        // Nếu lỗi tạo hóa đơn, vẫn dọn trạng thái giỏ và ở lại trang hiện tại
+        this.counterSales.unshift(newSale);
+        this.cart = [];
+        this.calculateCartTotal();
+        this.closeModals();
+        this.filterSales();
+      },
+    });
   }
 
   getStatusClass(status: string): string {
