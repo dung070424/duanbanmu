@@ -163,6 +163,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     { value: 'pending', label: 'Chờ thanh toán' },
     { value: 'paid', label: 'Đã thanh toán' },
     { value: 'cancelled', label: 'Đã hủy' },
+    
   ];
 
   paymentMethodOptions = [
