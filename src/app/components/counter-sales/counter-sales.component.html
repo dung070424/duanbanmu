@@ -1,573 +1,428 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-12">
-      <div class="page-header">
-        <h2>Bán tại quầy</h2>
-        <div class="header-actions">
-          <button class="btn btn-success me-2" (click)="openAddModal()">
-            <i class="bi bi-plus-circle"></i>
-            Tạo giao dịch mới
-          </button>
-          <button class="btn btn-outline-primary" (click)="openCartModal()">
-            <i class="bi bi-cart"></i>
-            Giỏ hàng ({{ cart.length }})
-          </button>
+<div class="container-fluid pos-wrapper">
+  <div class="row g-3">
+    <!-- Main left area -->
+    <div class="col-lg-8">
+      <!-- Header search + create invoice -->
+      <div class="pos-header card p-3">
+        <div class="d-flex gap-2">
+          <div class="flex-grow-1 position-relative">
+            <i class="bi bi-search position-absolute ms-3 mt-3 text-muted"></i>
+            <input
+              class="form-control ps-5"
+              type="text"
+              placeholder="Tìm kiếm hóa đơn..."
+              [(ngModel)]="invoiceSearch"
+            />
+          </div>
+          <button class="btn btn-primary" (click)="createNewInvoice()">Tạo hóa đơn</button>
         </div>
       </div>
 
-      <!-- Bộ lọc -->
-      <div class="filter-section">
-        <div class="row">
-          <div class="col-md-3">
-            <div class="form-group">
-              <label>Tìm kiếm:</label>
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Tìm theo số giao dịch, tên khách hàng, SĐT..."
-                [(ngModel)]="searchTerm"
-                (input)="onSearchChange()"
-              />
-            </div>
-          </div>
-          <div class="col-md-2">
-            <div class="form-group">
-              <label>Trạng thái:</label>
-              <select class="form-control" [(ngModel)]="selectedStatus" (change)="onStatusChange()">
-                <option *ngFor="let option of statusOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="col-md-2">
-            <div class="form-group">
-              <label>Thanh toán:</label>
-              <select
-                class="form-control"
-                [(ngModel)]="selectedPaymentStatus"
-                (change)="onPaymentStatusChange()"
-              >
-                <option *ngFor="let option of paymentStatusOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="col-md-2">
-            <div class="form-group">
-              <label>Phương thức:</label>
-              <select
-                class="form-control"
-                [(ngModel)]="selectedPaymentMethod"
-                (change)="onPaymentMethodChange()"
-              >
-                <option *ngFor="let option of paymentMethodOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="form-group">
-              <label>&nbsp;</label>
-              <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary" (click)="filterSales()">
-                  <i class="bi bi-search"></i>
-                  Lọc
-                </button>
-                <button class="btn btn-outline-secondary" (click)="resetFilters()">
-                  <i class="bi bi-arrow-clockwise"></i>
-                  Reset
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bảng giao dịch -->
-      <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
-            <tr>
-              <th class="sortable" (click)="sort('saleNumber')">
-                Số giao dịch
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'saleNumber'"></i>
-                <i
-                  class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'saleNumber' && sortDirection === 'asc'"
-                ></i>
-                <i
-                  class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'saleNumber' && sortDirection === 'desc'"
-                ></i>
-              </th>
-              <th class="sortable" (click)="sort('customerName')">
-                Khách hàng
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'customerName'"></i>
-                <i
-                  class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'customerName' && sortDirection === 'asc'"
-                ></i>
-                <i
-                  class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'customerName' && sortDirection === 'desc'"
-                ></i>
-              </th>
-              <th class="sortable" (click)="sort('totalAmount')">
-                Tổng tiền
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'totalAmount'"></i>
-                <i
-                  class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'totalAmount' && sortDirection === 'asc'"
-                ></i>
-                <i
-                  class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'totalAmount' && sortDirection === 'desc'"
-                ></i>
-              </th>
-              <th class="sortable" (click)="sort('status')">
-                Trạng thái
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'status'"></i>
-                <i
-                  class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'status' && sortDirection === 'asc'"
-                ></i>
-                <i
-                  class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'status' && sortDirection === 'desc'"
-                ></i>
-              </th>
-              <th class="sortable" (click)="sort('paymentStatus')">
-                Thanh toán
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'paymentStatus'"></i>
-                <i
-                  class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'paymentStatus' && sortDirection === 'asc'"
-                ></i>
-                <i
-                  class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'paymentStatus' && sortDirection === 'desc'"
-                ></i>
-              </th>
-              <th class="sortable" (click)="sort('paymentMethod')">
-                Phương thức
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'paymentMethod'"></i>
-                <i
-                  class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'paymentMethod' && sortDirection === 'asc'"
-                ></i>
-                <i
-                  class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'paymentMethod' && sortDirection === 'desc'"
-                ></i>
-              </th>
-              <th class="sortable" (click)="sort('createdAt')">
-                Ngày tạo
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'createdAt'"></i>
-                <i
-                  class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'createdAt' && sortDirection === 'asc'"
-                ></i>
-                <i
-                  class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'createdAt' && sortDirection === 'desc'"
-                ></i>
-              </th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let sale of paginatedSales">
-              <td>
-                <span class="sale-number">{{ sale.saleNumber }}</span>
-              </td>
-              <td>
-                <div class="customer-info">
-                  <div class="customer-name">{{ sale.customerName }}</div>
-                  <div class="customer-phone text-muted">{{ sale.customerPhone }}</div>
-                </div>
-              </td>
-              <td>
-                <span class="total-amount">{{ formatCurrency(sale.totalAmount) }}</span>
-              </td>
-              <td>
-                <span class="badge" [ngClass]="getStatusClass(sale.status)">
-                  {{ getStatusLabel(sale.status) }}
-                </span>
-              </td>
-              <td>
-                <span class="badge" [ngClass]="getPaymentStatusClass(sale.paymentStatus)">
-                  {{ getPaymentStatusLabel(sale.paymentStatus) }}
-                </span>
-              </td>
-              <td>
-                <span class="payment-method">{{ getPaymentMethodLabel(sale.paymentMethod) }}</span>
-              </td>
-              <td>
-                <span class="created-date">{{ formatDate(sale.createdAt) }}</span>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button
-                    class="btn btn-sm btn-outline-info"
-                    (click)="openViewModal(sale)"
-                    title="Xem chi tiết"
-                  >
-                    <i class="bi bi-eye"></i>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-warning"
-                    (click)="openEditModal(sale)"
-                    title="Chỉnh sửa"
-                  >
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-danger"
-                    (click)="openDeleteModal(sale)"
-                    title="Xóa"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination Controls -->
-      <div
-        class="d-flex justify-content-between align-items-center mt-3"
-        *ngIf="filteredSales.length > 0"
-      >
-        <div class="d-flex align-items-center">
-          <label class="form-label me-2 mb-0">Hiển thị:</label>
-          <select
-            class="form-select form-select-sm"
-            style="width: auto"
-            [value]="itemsPerPage"
-            (change)="onItemsPerPageChange($event)"
-          >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-          <span class="ms-2 text-muted">mục mỗi trang</span>
-        </div>
-
-        <div class="pagination-info">
-          Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} -
-          {{ Math.min(currentPage * itemsPerPage, totalItems) }} trong tổng số {{ totalItems }} mục
-        </div>
-
-        <nav aria-label="Page navigation">
-          <ul class="pagination justify-content-end mb-0">
-            <li class="page-item" [class.disabled]="currentPage === 1">
-              <a class="page-link" (click)="onPageChange(1)" aria-label="First">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-            <li class="page-item" [class.disabled]="currentPage === 1">
-              <a class="page-link" (click)="onPageChange(currentPage - 1)" aria-label="Previous">
-                <span aria-hidden="true">&lsaquo;</span>
-              </a>
-            </li>
-            <li
-              class="page-item"
-              [class.disabled]="currentPage === Math.ceil(totalItems / itemsPerPage)"
+      <!-- Pending invoices -->
+      <div class="card p-3 mt-3 section-card">
+        <h6 class="mb-2 section-title">Hóa đơn chờ</h6>
+        <div class="text-muted small" *ngIf="pendingInvoices.length === 0">Chưa có hóa đơn chờ</div>
+        <div class="d-flex flex-wrap gap-2" *ngIf="pendingInvoices.length > 0">
+          <div class="pending-item" *ngFor="let inv of pendingInvoices">
+            <button class="btn btn-outline-secondary btn-sm" (click)="loadPending(inv)">
+              {{ inv.code }} - {{ inv.items.length }} sp
+            </button>
+            <button
+              class="btn btn-light btn-sm pending-delete"
+              (click)="deletePending(inv, $event)"
+              title="Xóa hóa đơn chờ"
             >
-              <a class="page-link" (click)="onPageChange(currentPage + 1)" aria-label="Next">
-                <span aria-hidden="true">&rsaquo;</span>
-              </a>
-            </li>
-            <li
-              class="page-item"
-              [class.disabled]="currentPage === Math.ceil(totalItems / itemsPerPage)"
-            >
-              <a
-                class="page-link"
-                (click)="onPageChange(Math.ceil(totalItems / itemsPerPage))"
-                aria-label="Last"
-              >
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-
-      <!-- Empty state -->
-      <div class="text-center py-5" *ngIf="filteredSales.length === 0">
-        <i class="bi bi-cart display-1 text-muted"></i>
-        <h4 class="text-muted mt-3">Không có giao dịch nào</h4>
-        <p class="text-muted">Chưa có giao dịch nào phù hợp với bộ lọc hiện tại</p>
-        <button class="btn btn-success" (click)="openAddModal()">
-          <i class="bi bi-plus-circle"></i>
-          Tạo giao dịch đầu tiên
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal tạo giao dịch mới -->
-<div
-  class="modal fade"
-  [class.show]="showAddModal"
-  [style.display]="showAddModal ? 'block' : 'none'"
-  tabindex="-1"
->
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Tạo giao dịch mới</h5>
-        <button type="button" class="btn-close" (click)="closeModals()"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-          <!-- Thông tin khách hàng -->
-          <div class="col-md-4">
-            <h6>Thông tin khách hàng</h6>
-            <div class="form-group mb-3">
-              <label>Tên khách hàng:</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="newSale.customerName"
-                placeholder="Nhập tên khách hàng"
-              />
-            </div>
-            <div class="form-group mb-3">
-              <label>Số điện thoại:</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="newSale.customerPhone"
-                placeholder="Nhập SĐT"
-              />
-            </div>
-            <div class="form-group mb-3">
-              <label>Ghi chú:</label>
-              <textarea
-                class="form-control"
-                [(ngModel)]="newSale.notes"
-                rows="3"
-                placeholder="Ghi chú thêm"
-              ></textarea>
-            </div>
+              <i class="bi bi-x-lg"></i>
+            </button>
           </div>
+        </div>
+      </div>
 
-          <!-- Danh sách sản phẩm -->
-          <div class="col-md-4">
-            <h6>Danh sách sản phẩm</h6>
-            <div class="form-group mb-3">
-              <label>Tìm sản phẩm:</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="productSearchTerm"
-                placeholder="Tìm theo tên, mã sản phẩm"
-              />
-            </div>
-            <div class="product-list" style="max-height: 300px; overflow-y: auto">
-              <div
-                class="product-item"
-                *ngFor="let product of availableProducts"
-                (click)="addToCart(product)"
-                style="
-                  padding: 0.5rem;
-                  border: 1px solid #ddd;
-                  margin-bottom: 0.5rem;
-                  cursor: pointer;
-                  border-radius: 4px;
-                "
-              >
-                <div class="product-name">{{ product.name }}</div>
-                <div class="product-code text-muted">{{ product.code }}</div>
-                <div class="product-price">{{ formatCurrency(product.price) }}</div>
-                <div class="product-stock">Còn: {{ product.stock }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Giỏ hàng -->
-          <div class="col-md-4">
-            <h6>Giỏ hàng</h6>
-            <div class="cart-items" style="max-height: 300px; overflow-y: auto">
-              <div
-                class="cart-item"
-                *ngFor="let item of cart"
-                style="
-                  border: 1px solid #ddd;
-                  padding: 0.5rem;
-                  margin-bottom: 0.5rem;
-                  border-radius: 4px;
-                "
-              >
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <div class="item-name">{{ item.productName }}</div>
-                    <div class="item-code text-muted">{{ item.productCode }}</div>
-                  </div>
-                  <button
-                    class="btn btn-sm btn-outline-danger"
-                    (click)="removeFromCart(item.productId)"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-                <div class="row mt-2">
-                  <div class="col-6">
-                    <label>Số lượng:</label>
+      <!-- Cart items section (left area) -->
+      <div class="card p-3 mt-3 section-card">
+        <h6 class="mb-2 section-title">Sản Phẩm Trong Giỏ hàng</h6>
+        <div class="table-container" *ngIf="cart.length > 0; else emptyCartLeft">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th class="text-center">SL</th>
+                <th>Giá</th>
+                <th>Thành tiền</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of cart; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <img
+                    *ngIf="item.imageUrl"
+                    [src]="item.imageUrl"
+                    alt="{{ item.productName }}"
+                    class="product-thumb"
+                  />
+                  <div *ngIf="!item.imageUrl" class="product-thumb"></div>
+                </td>
+                <td>
+                  <div class="fw-semibold">{{ item.productName }}</div>
+                </td>
+                <td class="text-center">
+                  <div class="qty">
+                    <button
+                      class="btn-qty"
+                      (click)="updateCartQuantity(item.productId, item.quantity - 1)"
+                    >
+                      -
+                    </button>
                     <input
-                      type="number"
-                      class="form-control form-control-sm"
+                      class="qty-input"
                       [value]="item.quantity"
                       (change)="updateCartQuantity(item.productId, $event.target.value)"
                     />
+                    <button
+                      class="btn-qty"
+                      (click)="updateCartQuantity(item.productId, item.quantity + 1)"
+                    >
+                      +
+                    </button>
                   </div>
-                  <div class="col-6">
-                    <label>Giảm giá (%):</label>
-                    <input
-                      type="number"
-                      class="form-control form-control-sm"
-                      [value]="item.discount"
-                      (change)="updateCartDiscount(item.productId, $event.target.value)"
-                    />
-                  </div>
-                </div>
-                <div class="item-total mt-2 text-end">
-                  <strong>{{ formatCurrency(item.totalPrice - item.discountAmount) }}</strong>
-                </div>
-              </div>
-            </div>
+                </td>
+                <td>{{ formatCurrency(item.unitPrice) }}</td>
+                <td class="text-success fw-semibold">
+                  {{ formatCurrency(item.totalPrice - item.discountAmount) }}
+                </td>
+                <td class="text-center">
+                  <button class="btn-remove" (click)="removeFromCart(item.productId)" title="Xóa">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #emptyCartLeft>
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-info-circle fs-1"></i>
+            <div>Chưa có sản phẩm trong giỏ hàng</div>
+          </div>
+        </ng-template>
+      </div>
 
-            <!-- Tổng tiền -->
-            <div class="cart-total mt-3" style="border-top: 2px solid #ddd; padding-top: 1rem">
-              <div class="d-flex justify-content-between">
-                <span>Tạm tính:</span>
-                <span>{{ formatCurrency(cartSubtotal) }}</span>
+      <!-- Product list with filters -->
+      <div class="card p-3 mt-3 section-card">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h6 class="mb-0 section-title">Danh Sách Sản Phẩm</h6>
+          <div class="d-none d-lg-block small text-muted">144 mục</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <div class="flex-grow-1">
+            <input
+              class="form-control"
+              placeholder="Tìm sản phẩm..."
+              [(ngModel)]="productSearchTerm"
+              (input)="filterProducts()"
+            />
+          </div>
+          <select
+            class="form-select w-auto"
+            [(ngModel)]="selectedColor"
+            (change)="filterProducts()"
+          >
+            <option value="all">Tất cả màu sắc</option>
+            <option *ngFor="let c of colorOptions" [value]="c">{{ c }}</option>
+          </select>
+          <select class="form-select w-auto" [(ngModel)]="selectedRam" (change)="filterProducts()">
+            <option value="all">Tất cả kích thước</option>
+            <option *ngFor="let r of ramOptions" [value]="r">{{ r }}</option>
+          </select>
+          <select
+            class="form-select w-auto"
+            [(ngModel)]="selectedStorage"
+            (change)="filterProducts()"
+          >
+            <option value="all">Tất cả trọng lượng</option>
+            <option *ngFor="let s of storageOptions" [value]="s">{{ s }}</option>
+          </select>
+          <button class="btn btn-outline-primary" (click)="scanQr()">Quét QR</button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Kích thước</th>
+                <th>Trọng lượng</th>
+                <th>Màu sắc</th>
+                <th>Số lượng</th>
+                <th>Giá</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of pagedProducts; let i = index">
+                <td>{{ (productPage - 1) * productPageSize + i + 1 }}</td>
+                <td>
+                  <img
+                    *ngIf="p.imageUrl"
+                    [src]="p.imageUrl"
+                    alt="{{ p.name }}"
+                    class="product-thumb"
+                  />
+                  <div *ngIf="!p.imageUrl" class="product-thumb"></div>
+                </td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.ram }}</td>
+                <td>{{ p.storage }}</td>
+                <td>
+                  <span class="color-dot" [style.background]="p.colorCode || p.color"></span>
+                  <span>{{ p.colorName || p.color }}</span>
+                </td>
+                <td>{{ p.stock }}</td>
+                <td class="text-success fw-semibold">{{ formatCurrency(p.price) }}</td>
+                <td>
+                  <button class="btn-edit" (click)="addToCart(p)" title="Thêm vào giỏ">
+                    <i class="bi bi-cart-plus"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Hiển thị</span>
+            <select
+              class="form-select form-select-sm w-auto"
+              [value]="productPageSize"
+              (change)="onChangeProductPageSize($event)"
+            >
+              <option>5</option>
+              <option>10</option>
+              <option>20</option>
+            </select>
+            <span class="text-muted small">mục/trang</span>
+          </div>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="productPage === 1">
+              <a class="page-link" (click)="gotoProductPage(1)">&laquo;</a>
+            </li>
+            <li class="page-item" [class.disabled]="productPage === 1">
+              <a class="page-link" (click)="gotoProductPage(productPage - 1)">&lsaquo;</a>
+            </li>
+            <li class="page-item" [class.disabled]="productPage === maxProductPage">
+              <a class="page-link" (click)="gotoProductPage(productPage + 1)">&rsaquo;</a>
+            </li>
+            <li class="page-item" [class.disabled]="productPage === maxProductPage">
+              <a class="page-link" (click)="gotoProductPage(maxProductPage)">&raquo;</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right sidebar -->
+    <div class="col-lg-4">
+      <!-- Customer -->
+      <div class="card p-3 mb-3 section-card">
+        <h6 class="mb-3 section-title">Khách Hàng</h6>
+        <div class="input-group mb-1 position-relative">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            class="form-control"
+            placeholder="Tìm kiếm khách hàng, sđt..."
+            [(ngModel)]="customerSearch"
+            (input)="onCustomerSearchChange()"
+            autocomplete="off"
+          />
+          <!-- dropdown results -->
+          <div
+            class="list-group position-absolute w-100"
+            style="top: 100%; z-index: 1051; max-height: 240px; overflow: auto"
+            *ngIf="customerResults.length > 0"
+          >
+            <button
+              type="button"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              *ngFor="let c of customerResults"
+              (click)="selectCustomer(c)"
+            >
+              <span>{{ c.name }}</span>
+              <span class="text-muted small">{{ c.phone }}</span>
+            </button>
+          </div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Tên khách hàng *</label>
+          <input class="form-control" [(ngModel)]="newSale.customerName" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Số điện thoại *</label>
+          <input class="form-control" [(ngModel)]="newSale.customerPhone" />
+        </div>
+        <button
+          class="btn btn-primary w-100"
+          (click)="quickAddCustomer()"
+          [disabled]="!newSale.customerName || !newSale.customerPhone || customerCreating"
+        >
+          Thêm khách hàng
+        </button>
+      </div>
+
+      <!-- Order info -->
+      <div class="card p-3 section-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" [(ngModel)]="isDelivery" />
+            <label class="form-check-label">Bàn giao hàng</label>
+          </div>
+        </div>
+
+        <div class="text-center text-muted py-4" *ngIf="cart.length === 0">
+          <i class="bi bi-info-circle fs-1"></i>
+          <div>Chưa có sản phẩm trong đơn hàng</div>
+        </div>
+
+        <div *ngIf="cart.length > 0">
+          <div class="d-flex justify-content-between mb-1">
+            <span>Tạm tính</span><span>{{ formatCurrency(cartSubtotal) }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span>Giảm giá</span
+            ><span class="text-danger">-{{ formatCurrency(cartDiscount) }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Thuế ({{ cartTax }}%)</span
+            ><span>{{ formatCurrency(((cartSubtotal - cartDiscount) * cartTax) / 100) }}</span>
+          </div>
+          <!-- Coupon select -->
+          <div class="mb-2">
+            <label class="form-label">Mã giảm giá</label>
+            <div class="card p-2">
+              <div class="d-flex gap-2 mb-2">
+                <button
+                  class="btn btn-sm"
+                  [ngClass]="showBestTab ? 'btn-primary' : 'btn-outline-primary'"
+                  (click)="showBestTab = true"
+                >
+                  Mã tốt nhất
+                </button>
+                <button
+                  class="btn btn-sm"
+                  [ngClass]="!showBestTab ? 'btn-primary' : 'btn-outline-primary'"
+                  (click)="showBestTab = false"
+                >
+                  Mã thay thế
+                </button>
+                <div class="ms-auto">
+                  <div class="input-group input-group-sm">
+                    <input
+                      class="form-control"
+                      placeholder="Nhập mã..."
+                      [(ngModel)]="couponCode"
+                      (input)="onCouponInput()"
+                    />
+                    <button class="btn btn-outline-primary" (click)="applyCoupon()">Áp dụng</button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      *ngIf="appliedCoupon"
+                      (click)="removeCoupon()"
+                    >
+                      Bỏ
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="d-flex justify-content-between">
-                <span>Giảm giá:</span>
-                <span class="text-danger">-{{ formatCurrency(cartDiscount) }}</span>
+              <div *ngIf="showBestTab">
+                <div class="alert alert-success py-2" *ngIf="bestVoucher">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                      <input
+                        type="radio"
+                        name="voucherChoice"
+                        [checked]="appliedCoupon?.code === bestVoucher.code"
+                        (change)="applyCouponFromSuggestion(bestVoucher)"
+                      />
+                      <span class="badge bg-success me-2">{{ bestVoucher.code }}</span>
+                      <span>Giảm: -{{ formatCurrency(bestVoucher.discount) }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-muted small" *ngIf="!bestVoucher">
+                  Không có mã giảm giá phù hợp
+                </div>
               </div>
-              <div class="d-flex justify-content-between">
-                <span>Thuế ({{ cartTax }}%):</span>
-                <span>{{ formatCurrency(((cartSubtotal - cartDiscount) * cartTax) / 100) }}</span>
-              </div>
-              <div
-                class="d-flex justify-content-between fw-bold fs-5"
-                style="border-top: 1px solid #ddd; padding-top: 0.5rem"
-              >
-                <span>Tổng cộng:</span>
-                <span class="text-success">{{ formatCurrency(cartTotal) }}</span>
+              <div *ngIf="!showBestTab">
+                <div class="list-group">
+                  <label
+                    class="list-group-item d-flex justify-content-between align-items-center"
+                    *ngFor="let v of alternativeVouchers"
+                  >
+                    <div class="d-flex align-items-center gap-2">
+                      <input
+                        type="radio"
+                        name="voucherChoice"
+                        [checked]="appliedCoupon?.code === v.code"
+                        (change)="applyCouponFromSuggestion(v)"
+                      />
+                      <span class="badge bg-secondary me-2">{{ v.code }}</span>
+                      <span>Giảm: -{{ formatCurrency(v.discount) }}</span>
+                    </div>
+                  </label>
+                </div>
+                <div class="text-muted small" *ngIf="alternativeVouchers.length === 0">
+                  Không có mã thay thế
+                </div>
               </div>
             </div>
           </div>
+          <div class="d-flex justify-content-between mb-1" *ngIf="appliedCoupon">
+            <span>Phiếu giảm giá ({{ appliedCoupon?.code }})</span>
+            <span class="text-danger">-{{ formatCurrency(couponDiscount) }}</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold fs-5 pt-2 border-top">
+            <span>Tổng cộng</span><span class="text-success">{{ formatCurrency(cartTotal) }}</span>
+          </div>
+          <button
+            class="btn btn-primary w-100 mt-3"
+            (click)="processSale()"
+            [disabled]="cart.length === 0"
+          >
+            Hoàn thành
+          </button>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModals()">Hủy</button>
-        <button
-          type="button"
-          class="btn btn-success"
-          (click)="processSale()"
-          [disabled]="cart.length === 0"
-        >
-          <i class="bi bi-check-circle"></i>
-          Hoàn thành giao dịch
-        </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal giỏ hàng -->
+<!-- Toast top-right (no dependency on utility classes) -->
 <div
-  class="modal fade"
-  [class.show]="showCartModal"
-  [style.display]="showCartModal ? 'block' : 'none'"
-  tabindex="-1"
+  style="position: fixed; top: 12px; right: 12px; z-index: 50000; min-width: 260px"
+  *ngIf="toastVisible"
 >
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Giỏ hàng ({{ cart.length }} sản phẩm)</h5>
-        <button type="button" class="btn-close" (click)="closeModals()"></button>
-      </div>
-      <div class="modal-body">
-        <div class="cart-items">
-          <div
-            class="cart-item"
-            *ngFor="let item of cart"
-            style="border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 8px"
-          >
-            <div class="row">
-              <div class="col-md-6">
-                <div class="item-name fw-bold">{{ item.productName }}</div>
-                <div class="item-code text-muted">{{ item.productCode }}</div>
-                <div class="item-price">
-                  {{ formatCurrency(item.unitPrice) }} x {{ item.quantity }}
-                </div>
-              </div>
-              <div class="col-md-3">
-                <label>Giảm giá (%):</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  [value]="item.discount"
-                  (change)="updateCartDiscount(item.productId, $event.target.value)"
-                />
-              </div>
-              <div class="col-md-3 text-end">
-                <div class="item-total fw-bold">
-                  {{ formatCurrency(item.totalPrice - item.discountAmount) }}
-                </div>
-                <button
-                  class="btn btn-sm btn-outline-danger mt-2"
-                  (click)="removeFromCart(item.productId)"
-                >
-                  <i class="bi bi-trash"></i> Xóa
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="cart-total" style="border-top: 2px solid #ddd; padding-top: 1rem">
-          <div class="d-flex justify-content-between">
-            <span>Tạm tính:</span>
-            <span>{{ formatCurrency(cartSubtotal) }}</span>
-          </div>
-          <div class="d-flex justify-content-between">
-            <span>Giảm giá:</span>
-            <span class="text-danger">-{{ formatCurrency(cartDiscount) }}</span>
-          </div>
-          <div class="d-flex justify-content-between">
-            <span>Thuế ({{ cartTax }}%):</span>
-            <span>{{ formatCurrency(((cartSubtotal - cartDiscount) * cartTax) / 100) }}</span>
-          </div>
-          <div
-            class="d-flex justify-content-between fw-bold fs-4"
-            style="border-top: 1px solid #ddd; padding-top: 0.5rem"
-          >
-            <span>Tổng cộng:</span>
-            <span class="text-success">{{ formatCurrency(cartTotal) }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModals()">Đóng</button>
-        <button type="button" class="btn btn-success" (click)="openAddModal()">
-          <i class="bi bi-plus-circle"></i>
-          Tạo giao dịch mới
-        </button>
-      </div>
+  <div
+    class="toast show text-white"
+    [ngClass]="{
+      'bg-success': toastType === 'success',
+      'bg-warning': toastType === 'warning',
+      'bg-danger': toastType === 'error'
+    }"
+    role="alert"
+  >
+    <div class="d-flex align-items-center px-3 py-2" style="border-radius: 6px">
+      <div class="me-2">{{ toastMessage }}</div>
+      <button
+        type="button"
+        class="btn-close btn-close-white ms-auto"
+        (click)="toastVisible = false"
+      ></button>
     </div>
   </div>
 </div>

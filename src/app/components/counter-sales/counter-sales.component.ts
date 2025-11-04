@@ -1,6 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { ProductApiService, SanPhamResponse } from '../../services/product-api.service';
+import {
+  ChiTietSanPhamApiService,
+  ChiTietSanPhamResponse,
+} from '../../services/chi-tiet-san-pham-api.service';
+import { KhachHangService } from '../../services/khach-hang.service';
+import { PhieuGiamGiaService } from '../../services/phieu-giam-gia.service';
 import {
   CounterSale,
   CounterSaleItem,
@@ -8,10 +16,12 @@ import {
   CounterSaleFilter,
 } from '../../interfaces/counter-sale.interface';
 
+type UICartItem = CartItem & { imageUrl?: string };
+
 @Component({
   selector: 'app-counter-sales',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './counter-sales.component.html',
   styleUrls: ['./counter-sales.component.scss'],
 })
@@ -24,11 +34,62 @@ export class CounterSalesComponent implements OnInit {
   Math = Math;
 
   // Cart
-  cart: CartItem[] = [];
+  cart: UICartItem[] = [];
   cartTotal: number = 0;
   cartSubtotal: number = 0;
   cartDiscount: number = 0;
   cartTax: number = 10;
+  couponDiscount: number = 0;
+
+  // POS state
+  invoiceSearch: string = '';
+  pendingInvoices: { code: string; items: CartItem[] }[] = [];
+  customerSearch: string = '';
+  customerResults: { id: number; name: string; phone: string }[] = [];
+  private customerSearchTimer: any;
+  customerCreating: boolean = false;
+  // simple toast
+  toastVisible: boolean = false;
+  toastMessage: string = '';
+  toastType: 'success' | 'warning' | 'error' = 'success';
+  isDelivery: boolean = false;
+
+  // Coupon state
+  couponCode: string = '';
+  couponResults: any[] = [];
+  appliedCoupon: {
+    id: number;
+    code: string;
+    type: 'PERCENT' | 'FIXED';
+    value: number;
+    maxDiscount?: number;
+    minOrder?: number;
+  } | null = null;
+  bestVoucher: {
+    id: number;
+    code: string;
+    type: 'PERCENT' | 'FIXED';
+    value: number;
+    maxDiscount?: number;
+    minOrder?: number;
+    discount: number;
+  } | null = null;
+  alternativeVouchers: any[] = [];
+  showBestTab: boolean = true;
+
+  // Product filter + pagination for POS list
+  // Options cho bộ lọc – được build động từ dữ liệu sản phẩm chi tiết
+  colorOptions: string[] = [];
+  ramOptions: string[] = [];
+  storageOptions: string[] = [];
+  selectedColor: string = 'all';
+  selectedRam: string = 'all';
+  selectedStorage: string = 'all';
+  filteredProducts: any[] = [];
+  pagedProducts: any[] = [];
+  productPage: number = 1;
+  productPageSize: number = 10;
+  maxProductPage: number = 1;
 
   // Pagination
   currentPage: number = 1;
@@ -82,6 +143,16 @@ export class CounterSalesComponent implements OnInit {
   // Product search
   productSearchTerm: string = '';
   availableProducts: any[] = [];
+  productIdToImageUrl: { [productId: number]: string } = {};
+
+  private parsePrice(value: any): number {
+    if (typeof value === 'number' && isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const digits = value.replace(/[^0-9]/g, '');
+      return digits ? Number(digits) : 0;
+    }
+    return 0;
+  }
 
   // Status options
   statusOptions = [
@@ -108,12 +179,20 @@ export class CounterSalesComponent implements OnInit {
     { value: 'other', label: 'Khác' },
   ];
 
-  constructor() {}
+  constructor(
+    private http: HttpClient,
+    private productApi: ProductApiService,
+    private chiTietApi: ChiTietSanPhamApiService,
+    private khachHangService: KhachHangService,
+    private phieuGiamGiaService: PhieuGiamGiaService
+  ) {}
 
   ngOnInit(): void {
     this.loadSampleData();
     this.loadAvailableProducts();
     this.filterSales();
+    this.filterProducts();
+    this.refreshVoucherSuggestions();
   }
 
   loadSampleData(): void {
@@ -198,32 +277,358 @@ export class CounterSalesComponent implements OnInit {
   }
 
   loadAvailableProducts(): void {
-    this.availableProducts = [
-      {
-        id: 1,
-        code: 'P001',
-        name: 'AGV K1 Helmet',
-        category: 'Mũ bảo hiểm toàn đầu',
-        price: 1500000,
-        stock: 50,
+    // Lấy dữ liệu từ BẢNG SẢN PHẨM CHI TIẾT theo yêu cầu
+    this.chiTietApi.getAll().subscribe({
+      next: (rows: ChiTietSanPhamResponse[]) => {
+        const variants = (rows || []).map((r) => ({
+          id: r.id,
+          code: `${r.sanPhamId}-${r.kichThuocId}-${r.mauSacId}-${r.trongLuongId}`,
+          name: r.sanPhamTen,
+          category: undefined,
+          price: this.parsePrice(r.giaBan),
+          stock: Number(r.soLuongTon ?? 0),
+          color: r.mauSacTen,
+          colorName: r.mauSacTen,
+          colorCode: r.mauSacMa,
+          ram: r.kichThuocTen,
+          storage: r.trongLuongTen,
+          productId: r.sanPhamId,
+          imageUrl: undefined as string | undefined,
+        }));
+        this.availableProducts = variants;
+        // Build options động từ dữ liệu
+        const colors = new Set<string>();
+        const sizes = new Set<string>();
+        const weights = new Set<string>();
+        variants.forEach((v) => {
+          if (v.colorName) colors.add(String(v.colorName));
+          if (v.ram) sizes.add(String(v.ram));
+          if (v.storage) weights.add(String(v.storage));
+        });
+        this.colorOptions = Array.from(colors);
+        this.ramOptions = Array.from(sizes);
+        this.storageOptions = Array.from(weights);
+        // Đặt về 'all' sau khi load
+        this.selectedColor = 'all';
+        this.selectedRam = 'all';
+        this.selectedStorage = 'all';
+        // Lấy ảnh sản phẩm từ bảng sản phẩm cha (nếu có)
+        const uniqueProductIds = Array.from(new Set(variants.map((v) => v.productId)));
+        uniqueProductIds.forEach((pid) => {
+          this.productApi.getById(pid, true).subscribe((p) => {
+            if (p?.anhSanPham) {
+              this.productIdToImageUrl[pid] = p.anhSanPham as string;
+              // Gán vào các biến thể cùng productId
+              this.availableProducts
+                .filter((v) => v.productId === pid)
+                .forEach((v) => (v.imageUrl = p.anhSanPham as string));
+            }
+          });
+        });
+        this.filterProducts();
       },
-      {
-        id: 2,
-        code: 'P002',
-        name: 'Shoei X14 Helmet',
-        category: 'Mũ bảo hiểm đua xe',
-        price: 2500000,
-        stock: 30,
+      error: () => {
+        this.availableProducts = [];
+        this.filterProducts();
       },
-      {
-        id: 3,
-        code: 'P003',
-        name: 'Arai RX7V Helmet',
-        category: 'Mũ bảo hiểm toàn đầu',
-        price: 3200000,
-        stock: 25,
+    });
+  }
+
+  // Filter products for POS list
+  filterProducts(): void {
+    const term = (this.productSearchTerm || '').toLowerCase().trim();
+    const selColor = (this.selectedColor || 'all').toString().trim();
+    const selSize = (this.selectedRam || 'all').toString().trim();
+    const selWeight = (this.selectedStorage || 'all').toString().trim();
+
+    this.filteredProducts = this.availableProducts.filter((p) => {
+      const name = (p.name || '').toLowerCase();
+      const code = (p.code || '').toLowerCase();
+      const color = (p.color || p.colorName || '').toString().trim();
+      const size = (p.ram || '').toString().trim();
+      const weight = (p.storage || '').toString().trim();
+
+      const matchTerm = !term || name.includes(term) || code.includes(term);
+      const matchColor = selColor === 'all' || color === selColor;
+      const matchSize = selSize === 'all' || size === selSize;
+      const matchWeight = selWeight === 'all' || weight === selWeight;
+      return matchTerm && matchColor && matchSize && matchWeight;
+    });
+    this.productPage = 1;
+    this.updateProductPagination();
+  }
+
+  updateProductPagination(): void {
+    this.maxProductPage = Math.max(
+      1,
+      Math.ceil(this.filteredProducts.length / this.productPageSize)
+    );
+    const start = (this.productPage - 1) * this.productPageSize;
+    const end = start + this.productPageSize;
+    this.pagedProducts = this.filteredProducts.slice(start, end);
+  }
+
+  gotoProductPage(page: number): void {
+    if (page < 1 || page > this.maxProductPage) return;
+    this.productPage = page;
+    this.updateProductPagination();
+  }
+
+  onChangeProductPageSize(event: any): void {
+    this.productPageSize = parseInt(event.target.value, 10) || 10;
+    this.productPage = 1;
+    this.updateProductPagination();
+  }
+
+  // POS helpers
+  createNewInvoice(): void {
+    // Luôn tạo 1 hóa đơn chờ mới (kể cả khi giỏ hàng trống)
+    const code = this.generateSaleNumber();
+    const snapshot = JSON.parse(JSON.stringify(this.cart));
+    this.pendingInvoices.unshift({ code, items: snapshot });
+    // Reset giỏ hiện tại cho hóa đơn mới
+    this.cart = [];
+    this.calculateCartTotal();
+  }
+
+  loadPending(inv: { code: string; items: CartItem[] }): void {
+    this.cart = JSON.parse(JSON.stringify(inv.items));
+    this.calculateCartTotal();
+  }
+
+  deletePending(inv: { code: string; items: CartItem[] }, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.pendingInvoices = this.pendingInvoices.filter((p) => p !== inv);
+  }
+
+  scanQr(): void {
+    alert('QR scanner is not implemented in demo.');
+  }
+
+  saveCustomerDraft(): void {
+    // Intentionally simple for demo
+    if (!this.newSale.customerName || !this.newSale.customerPhone) {
+      alert('Vui lòng nhập tên và số điện thoại khách hàng');
+      return;
+    }
+  }
+
+  // Customer search (typeahead)
+  onCustomerSearchChange(): void {
+    const keyword = (this.customerSearch || '').trim();
+    clearTimeout(this.customerSearchTimer);
+    if (!keyword) {
+      this.customerResults = [];
+      // reset selection when user clears
+      this.newSale.customerId = undefined;
+      this.newSale.customerName = '';
+      this.newSale.customerPhone = '';
+      return;
+    }
+    // Chỉ cho tìm khi từ khóa đủ dài hoặc có khả năng là SĐT hợp lệ
+    const digits = keyword.replace(/\D/g, '');
+    // nếu là số điện thoại (>=9 chữ số) thì ưu tiên tìm theo SĐT chính xác
+    if (digits.length >= 9) {
+      this.customerSearchTimer = setTimeout(() => {
+        this.khachHangService.getKhachHangBySoDienThoai(digits).subscribe({
+          next: (kh: any) => {
+            if (kh) {
+              this.customerResults = [
+                {
+                  id: kh.id ?? 0,
+                  name: kh.tenKhachHang ?? kh.hoTen ?? kh.name ?? '',
+                  phone: kh.soDienThoai ?? kh.sdt ?? kh.phone ?? '',
+                },
+              ];
+            } else {
+              this.customerResults = [];
+            }
+          },
+          error: () => (this.customerResults = []),
+        });
+      }, 300);
+      return;
+    }
+
+    // tên khách hàng: chỉ tìm khi từ khóa >= 3 ký tự để tránh trả về quá rộng
+    if (keyword.length < 3) {
+      this.customerResults = [];
+      return;
+    }
+
+    this.customerSearchTimer = setTimeout(() => {
+      this.khachHangService
+        .searchKhachHang({
+          keyword,
+          page: 0,
+          size: 8,
+          sortBy: 'id',
+          sortDir: 'desc',
+          trangThai: true,
+        } as any)
+        .subscribe({
+          next: (res: any) => {
+            const rows: any[] = res?.content || [];
+            const lower = keyword.toLowerCase();
+            const digitsOnly = keyword.replace(/\D/g, '');
+            const filtered = rows.filter((r) => {
+              const name = (r.tenKhachHang ?? r.hoTen ?? r.name ?? '').toLowerCase();
+              const phone = (r.soDienThoai ?? r.sdt ?? r.phone ?? '').toString();
+              const nameMatch = name.includes(lower);
+              const phoneMatch = digitsOnly.length >= 3 && phone.includes(digitsOnly);
+              return nameMatch || phoneMatch;
+            });
+            this.customerResults = filtered.slice(0, 8).map((r) => ({
+              id: r.id ?? r.khachHangId ?? 0,
+              name: r.tenKhachHang ?? r.hoTen ?? r.name ?? '',
+              phone: r.soDienThoai ?? r.sdt ?? r.phone ?? '',
+            }));
+          },
+          error: () => (this.customerResults = []),
+        });
+    }, 300);
+  }
+
+  selectCustomer(c: { id: number; name: string; phone: string }): void {
+    this.newSale.customerId = c.id;
+    this.newSale.customerName = c.name;
+    this.newSale.customerPhone = c.phone;
+    this.customerSearch = `${c.name} - ${c.phone}`;
+    this.customerResults = [];
+    this.refreshVoucherSuggestions();
+  }
+
+  // Quick add customer
+  quickAddCustomer(): void {
+    const name = (this.newSale.customerName || '').trim();
+    const phone = (this.newSale.customerPhone || '').trim();
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (!name || phoneDigits.length < 9) {
+      this.showToast('Vui lòng nhập tên và số điện thoại hợp lệ (>=9 chữ số).', 'warning');
+      return;
+    }
+    this.customerCreating = true;
+    // kiểm tra tồn tại theo SĐT trước khi tạo
+    this.khachHangService.checkSoDienThoaiExists(phoneDigits).subscribe({
+      next: (exists) => {
+        if (exists) {
+          this.showToast('Khách hàng này đã tồn tại', 'warning');
+          this.customerCreating = false;
+        } else {
+          const payload: any = {
+            tenKhachHang: name,
+            soDienThoai: phoneDigits,
+            trangThai: true,
+          };
+          this.khachHangService
+            .createKhachHang(payload)
+            .subscribe({
+              next: (res: any) => {
+                const id = res?.id ?? 0;
+                this.newSale.customerId = id;
+                this.customerSearch = `${name} - ${phoneDigits}`;
+                this.customerResults = [];
+                this.showToast('Thêm khách hàng thành công', 'success');
+              },
+              error: (err) => {
+                console.error(err);
+                this.showToast('Không thể thêm khách hàng. Vui lòng thử lại.', 'error');
+              },
+            })
+            .add(() => (this.customerCreating = false));
+        }
       },
-    ];
+      error: () => {
+        this.customerCreating = false;
+        this.showToast('Không thể kiểm tra số điện thoại.', 'error');
+      },
+    });
+  }
+
+  private showToast(message: string, type: 'success' | 'warning' | 'error' = 'success') {
+    this.toastMessage = message;
+    this.toastType = type;
+    this.toastVisible = true;
+    setTimeout(() => (this.toastVisible = false), 2500);
+  }
+
+  // Coupon handlers
+  onCouponInput(): void {
+    const code = (this.couponCode || '').trim();
+    if (!code || code.length < 2) {
+      this.couponResults = [];
+      return;
+    }
+    // tìm chính xác theo mã
+    this.phieuGiamGiaService.getPhieuGiamGiaByMaPhieu(code).subscribe({
+      next: (res: any) => {
+        const v = res?.data || res?.result || res;
+        if (v) this.couponResults = [this.mapVoucher(v)];
+      },
+      error: () => {},
+    });
+    // tìm kiếm gần đúng
+    this.phieuGiamGiaService.searchPhieuGiamGia(code).subscribe({
+      next: (res: any) => {
+        const list = res?.data || res?.content || res || [];
+        this.couponResults = (Array.isArray(list) ? list : []).map((x) => this.mapVoucher(x));
+      },
+    });
+  }
+
+  applyCouponFromSuggestion(v: any): void {
+    const mapped = this.mapVoucher(v);
+    this.appliedCoupon = mapped;
+    this.couponCode = mapped.code;
+    this.couponResults = [];
+    this.calculateCartTotal();
+  }
+
+  applyCoupon(): void {
+    const code = (this.couponCode || '').trim();
+    if (!code) return;
+    this.phieuGiamGiaService.getPhieuGiamGiaByMaPhieu(code).subscribe({
+      next: (res: any) => {
+        const v = res?.data || res?.result || res;
+        if (v) {
+          this.applyCouponFromSuggestion(v);
+          this.showToast('Đã áp dụng phiếu giảm giá', 'success');
+        } else {
+          this.showToast('Không tìm thấy phiếu giảm giá', 'warning');
+        }
+      },
+      error: () => this.showToast('Không tìm thấy phiếu giảm giá', 'warning'),
+    });
+  }
+
+  removeCoupon(): void {
+    this.appliedCoupon = null;
+    this.couponCode = '';
+    this.calculateCartTotal();
+  }
+
+  private mapVoucher(v: any) {
+    return {
+      id: v.id ?? v.voucherId ?? 0,
+      code: v.code ?? v.maPhieu ?? v.ma ?? '',
+      type:
+        (v.type ?? v.loaiPhieuGiamGia ?? v.loaiGiam ?? v.kieuGiam ?? 'PERCENT')
+          .toString()
+          .toUpperCase() === 'PERCENT'
+          ? 'PERCENT'
+          : 'FIXED',
+      value: Number(v.value ?? v.giaTri ?? v.giaTriGiam ?? 0),
+      maxDiscount: v.maxDiscount ?? v.giamToiDa ?? v.soTienToiDa ?? undefined,
+      minOrder:
+        v.minOrder ?? v.dieuKienToiThieu ?? v.hoaDonToiThieu ?? v.giaTriToiThieu ?? undefined,
+    } as {
+      id: number;
+      code: string;
+      type: 'PERCENT' | 'FIXED';
+      value: number;
+      maxDiscount?: number;
+      minOrder?: number;
+    };
   }
 
   filterSales(): void {
@@ -395,12 +800,14 @@ export class CounterSalesComponent implements OnInit {
 
     if (existingItem) {
       existingItem.quantity += 1;
+      existingItem.totalPrice = existingItem.unitPrice * existingItem.quantity;
     } else {
       this.cart.push({
         productId: product.id,
         productCode: product.code,
         productName: product.name,
         category: product.category,
+        imageUrl: product.imageUrl,
         quantity: 1,
         unitPrice: product.price,
         totalPrice: product.price,
@@ -441,10 +848,78 @@ export class CounterSalesComponent implements OnInit {
   calculateCartTotal(): void {
     this.cartSubtotal = this.cart.reduce((sum, item) => sum + item.totalPrice, 0);
     this.cartDiscount = this.cart.reduce((sum, item) => sum + item.discountAmount, 0);
-    this.cartTotal =
-      this.cartSubtotal -
-      this.cartDiscount +
-      (this.cartSubtotal - this.cartDiscount) * (this.cartTax / 100);
+    // tính coupon
+    this.couponDiscount = 0;
+    if (this.appliedCoupon) {
+      const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
+      if (this.appliedCoupon.minOrder && base < this.appliedCoupon.minOrder) {
+        this.couponDiscount = 0;
+      } else if (this.appliedCoupon.type === 'PERCENT') {
+        this.couponDiscount = (base * this.appliedCoupon.value) / 100;
+        if (
+          this.appliedCoupon.maxDiscount !== undefined &&
+          this.appliedCoupon.maxDiscount !== null
+        ) {
+          this.couponDiscount = Math.min(this.couponDiscount, this.appliedCoupon.maxDiscount);
+        }
+      } else {
+        this.couponDiscount = this.appliedCoupon.value;
+      }
+      this.couponDiscount = Math.min(this.couponDiscount, base);
+    }
+    const afterDiscount = Math.max(0, this.cartSubtotal - this.cartDiscount - this.couponDiscount);
+    this.cartTotal = afterDiscount + afterDiscount * (this.cartTax / 100);
+    this.refreshVoucherSuggestions();
+  }
+
+  private refreshVoucherSuggestions(): void {
+    const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
+    const customerId = this.newSale.customerId;
+    const collected: any[] = [];
+    // lấy mã chung đang hoạt động
+    this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
+      next: (res: any) => {
+        const general = (res?.data || res?.content || res || []) as any[];
+        collected.push(...general);
+        if (customerId) {
+          // lấy toàn bộ mã cá nhân rồi lọc theo khách hàng hiện tại
+          this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+            next: (pers: any) => {
+              const raw = pers?.data || pers?.content || pers || [];
+              const personal = (Array.isArray(raw) ? raw : [])
+                .filter((r: any) => (r?.khachHangId ?? r?.khachHang?.id) === customerId)
+                .map((r: any) => r?.phieuGiamGia || r?.voucher || r);
+              this.computeVoucherLists([...collected, ...personal], base);
+            },
+            error: () => this.computeVoucherLists(collected, base),
+          });
+        } else {
+          this.computeVoucherLists(collected, base);
+        }
+      },
+      error: () => this.computeVoucherLists([], base),
+    });
+  }
+
+  private computeVoucherLists(raw: any[], base: number): void {
+    const mapped = (raw || [])
+      .map((v) => this.mapVoucher(v))
+      .filter((m) => m && (!m.minOrder || base >= m.minOrder));
+    const usable = mapped
+      .map((m) => ({ ...m, discount: this.computeVoucherDiscount(m, base) }))
+      .filter((x) => x.discount > 0)
+      .sort((a, b) => b.discount - a.discount);
+    this.bestVoucher = usable[0] || null;
+    this.alternativeVouchers = usable.slice(1, 5);
+  }
+
+  private computeVoucherDiscount(v: any, base: number): number {
+    if (v.type === 'PERCENT') {
+      let d = (base * v.value) / 100;
+      if (v.maxDiscount !== undefined && v.maxDiscount !== null) d = Math.min(d, v.maxDiscount);
+      return Math.min(d, base);
+    }
+    return Math.min(v.value, base);
   }
 
   processSale(): void {

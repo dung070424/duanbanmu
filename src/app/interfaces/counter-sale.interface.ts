@@ -53,6 +53,7 @@ export interface CartItem {
   productCode: string;
   productName: string;
   category: string;
+  imageUrl?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
