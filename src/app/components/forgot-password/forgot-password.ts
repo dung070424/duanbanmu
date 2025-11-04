@@ -98,16 +98,12 @@ export class ForgotPasswordComponent {
     this.authService.resetPassword(this.email, this.otp, this.newPassword, this.confirmPassword).subscribe({
       next: (success) => {
         if (success) {
-          this.successMessage = 'Đặt lại mật khẩu thành công! Đang chuyển hướng...';
-          // Redirect sau 2 giây
-          setTimeout(() => {
-            const user = this.authService.getCurrentUser();
-            if (user?.roles?.includes('CUSTOMER')) {
-              this.router.navigate(['/shop']);
-            } else {
-              this.router.navigate(['/dashboard']);
-            }
-          }, 2000);
+          // Chuyển về trang đăng nhập và hiển thị thông báo thành công
+          this.router.navigate(['/login'], {
+            queryParams: { changedPassword: 'true' },
+            state: { successMessage: 'Thay đổi mật khẩu thành công! Vui lòng đăng nhập.' },
+            replaceUrl: true
+          });
         }
         this.isLoading = false;
       },
