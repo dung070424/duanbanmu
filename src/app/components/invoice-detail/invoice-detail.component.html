@@ -3,13 +3,13 @@
   <div class="detail-header">
     <div class="header-left">
       <button class="btn btn-outline-secondary me-3" (click)="goBack()">
-        <i class="fas fa-arrow-left"></i> Quay lại
+         Quay lại
       </button>
-      <h2><i class="fas fa-receipt"></i> Chi tiết hóa đơn</h2>
+      <h2> Chi tiết hóa đơn</h2>
     </div>
     <div class="header-right">
       <button class="btn btn-outline-primary" (click)="printInvoice()">
-        <i class="fas fa-print"></i> In hóa đơn
+         In hóa đơn
       </button>
     </div>
   </div>
@@ -28,11 +28,11 @@
   <!-- Error State -->
   <div *ngIf="error" class="error-container">
     <div class="alert alert-danger">
-      <i class="fas fa-exclamation-triangle"></i>
+      
       {{ error }}
       <br>
       <button class="btn btn-sm btn-outline-danger mt-2" (click)="loadInvoiceDetail()">
-        <i class="fas fa-redo"></i> Thử lại
+         Thử lại
       </button>
     </div>
   </div>
@@ -160,7 +160,7 @@
 
         <!-- Order Information -->
         <div class="info-card">
-          <h4><i class="fas fa-shopping-cart"></i> Thông tin đơn hàng</h4>
+      <h4> Thông tin đơn hàng</h4>
           <div class="info-table">
             <div class="info-row">
               <span class="label">Mã hóa đơn:</span>
@@ -188,7 +188,7 @@
 
         <!-- Customer Information -->
         <div class="info-card">
-          <h4><i class="fas fa-user"></i> Thông tin khách hàng</h4>
+          <h4> Thông tin khách hàng</h4>
           <div class="info-table">
             <div class="info-row">
               <span class="label">Tên khách hàng:</span>
@@ -206,7 +206,7 @@
               <span class="label">Địa chỉ:</span>
               <span class="value" [class.no-address]="!hasCustomerAddress()">
                 <span *ngIf="loadingAddresses" class="loading-text">
-                  <i class="fas fa-spinner fa-spin"></i> Đang tải địa chỉ...
+               Đang tải địa chỉ...
                 </span>
                 <span *ngIf="!loadingAddresses">
                   {{ getCustomerAddress() }}
@@ -224,15 +224,16 @@
       </div>
 
       <!-- Middle Column -->
+
       <div class="middle-column">
         <!-- Payment Information -->
         <div class="info-card">
-          <h4><i class="fas fa-credit-card"></i> Thông tin thanh toán</h4>
+          <h4>Thông tin thanh toán</h4>
           <div class="info-table">
             <div class="info-row">
               <span class="label">Trạng thái thanh toán:</span>
-              <span class="value" [ngClass]="invoice.ngayThanhToan ? 'text-success' : 'text-warning'">
-                {{ invoice.ngayThanhToan ? 'Đã thanh toán' : 'Chờ thanh toán' }}
+              <span class="value" [ngClass]="getDerivedPaymentStatusClass()">
+                {{ getDerivedPaymentStatusLabel() }}
               </span>
             </div>
             <div class="info-row" *ngIf="invoice.ngayThanhToan">
@@ -252,7 +253,7 @@
 
         <!-- Order Summary -->
         <div class="info-card">
-          <h4><i class="fas fa-calculator"></i> Tổng kết đơn hàng</h4>
+          <h4>Tổng kết đơn hàng</h4>
           <div class="info-table">
             <div class="info-row">
               <span class="label">Tổng tiền:</span>
@@ -282,7 +283,7 @@
 
         <!-- Invoice History -->
         <div class="info-card">
-          <h4><i class="fas fa-history"></i> Lịch sử hóa đơn</h4>
+          <h4> Lịch sử hóa đơn</h4>
           <div class="info-table">
             <div class="info-row">
               <span class="label">Mã hóa đơn:</span>
@@ -331,7 +332,7 @@
 
         <!-- Product List -->
         <div class="info-card">
-          <h4><i class="fas fa-box"></i> Danh sách sản phẩm</h4>
+          <h4>Danh sách sản phẩm</h4>
           
           <!-- Bảng sản phẩm chi tiết -->
           <div class="table-responsive" *ngIf="invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0">
@@ -376,7 +377,7 @@
 
           <!-- Thông báo khi không có sản phẩm -->
           <div *ngIf="!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0" class="alert alert-info">
-            <i class="fas fa-info-circle"></i>
+            
             Chưa có sản phẩm nào trong hóa đơn này.
             <br>
             <small>Debug: danhSachSanPham = {{ invoice.danhSachSanPham | json }}</small>
@@ -464,10 +465,10 @@
         </div>
         <div class="edit-actions">
           <button class="btn btn-success" (click)="saveChanges()">
-            <i class="fas fa-save"></i> Lưu thay đổi
+      Lưu thay đổi
           </button>
           <button class="btn btn-secondary" (click)="cancelEdit()">
-            <i class="fas fa-times"></i> Hủy
+            Hủy
           </button>
         </div>
       </div>
@@ -483,14 +484,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="productSelectionModalLabel">
-          <i class="fas fa-shopping-cart"></i>
+          
           Chọn sản phẩm
         </h5>
         <button type="button" class="btn-close" (click)="closeProductModal()" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div *ngIf="loadingProducts" class="text-center py-4">
-          <i class="fas fa-spinner fa-spin"></i> Đang tải danh sách sản phẩm...
+          Đang tải danh sách sản phẩm...
         </div>
         <div *ngIf="!loadingProducts && allProducts && allProducts.length > 0">
         <div class="table-responsive">
@@ -548,10 +549,10 @@
         <span class="fw-bold">Đã chọn: {{ selectedProductsForUpdate.length }} sản phẩm</span>
         <div>
           <button type="button" class="btn btn-secondary me-2" (click)="closeProductModal()">
-            <i class="fas fa-times"></i> Hủy
+             Hủy
           </button>
           <button type="button" class="btn btn-primary" (click)="confirmProductSelection()">
-            <i class="fas fa-check"></i> Xác nhận ({{ selectedProductsForUpdate.length }})
+             Xác nhận ({{ selectedProductsForUpdate.length }})
           </button>
         </div>
       </div>

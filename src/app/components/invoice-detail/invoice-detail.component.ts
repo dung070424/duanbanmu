@@ -1370,6 +1370,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   // Derived payment status from current invoice status
+  
   public getDerivedPaymentStatus(): 'pending' | 'paid' | 'cancelled' {
     const status = this.invoice?.trangThai;
     if (status === 'DA_GIAO_HANG') return 'paid';
