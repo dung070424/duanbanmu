@@ -67,6 +67,9 @@
         <div class="total-customers">Tổng số nhân viên: {{ totalElements }}</div>
         <div class="action-buttons">
           <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
+          <button class="btn-export" (click)="exportToExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+          </button>
           <button class="btn-add" (click)="openAdd()">Thêm Nhân Viên</button>
         </div>
       </div>

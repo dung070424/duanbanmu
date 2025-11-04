@@ -180,6 +180,28 @@
   transform: translateY(-1px);
 }
 
+.btn-export {
+  padding: 10px 20px;
+  background-color: #febc49;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.btn-export:hover {
+  background-color: #e6a742;
+  transform: translateY(-1px);
+}
+
+.btn-export i {
+  font-size: 1rem;
+  margin-right: 4px;
+}
+
 .btn-add {
   padding: 10px 20px;
   background-color: #febc49;

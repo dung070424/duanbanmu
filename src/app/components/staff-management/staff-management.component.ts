@@ -555,4 +555,71 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     }
     return Object.keys(this.fieldErrors).every((key) => !this.fieldErrors[key]);
   }
+
+  // Export to Excel (CSV format)
+  exportToExcel(): void {
+    // Use filtered list if available, otherwise use full list
+    const dataSource =
+      this.filteredList && this.filteredList.length > 0 ? this.filteredList : this.nhanVienList;
+
+    if (!dataSource || dataSource.length === 0) {
+      alert('Không có dữ liệu để xuất Excel!');
+      return;
+    }
+
+    const headers = [
+      'STT',
+      'Mã NV',
+      'Họ tên',
+      'Email',
+      'Điện thoại',
+      'Giới tính',
+      'Ngày sinh',
+      'Địa chỉ',
+      'Trạng thái',
+      'Ngày vào',
+    ];
+
+    const rows = dataSource.map((nv, index) => [
+      (index + 1).toString(),
+      nv.maNhanVien || '',
+      nv.hoTen || '',
+      nv.email || '',
+      nv.soDienThoai || '',
+      this.getGioiTinhText(nv.gioiTinh),
+      this.formatDate(nv.ngaySinh),
+      nv.diaChi || '',
+      this.getTrangThaiText(nv.trangThai),
+      nv.ngayVaoLam ? new Date(nv.ngayVaoLam).toLocaleDateString('vi-VN') : '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) =>
+        row
+          .map((cell) => {
+            const cellStr = String(cell ?? '');
+            return cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')
+              ? '"' + cellStr.replace(/"/g, '""') + '"'
+              : cellStr;
+          })
+          .join(',')
+      ),
+    ].join('\n');
+
+    // Add BOM for UTF-8 encoding to support Vietnamese characters
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `Danh_sach_nhan_vien_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }
