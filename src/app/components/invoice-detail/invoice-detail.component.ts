@@ -1328,6 +1328,28 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     return method;
   }
 
+  // Derived payment status from current invoice status
+  public getDerivedPaymentStatus(): 'pending' | 'paid' | 'cancelled' {
+    const status = this.invoice?.trangThai;
+    if (status === 'DA_GIAO_HANG') return 'paid';
+    if (status === 'HUY') return 'cancelled';
+    return 'pending';
+  }
+
+  public getDerivedPaymentStatusLabel(): string {
+    const s = this.getDerivedPaymentStatus();
+    if (s === 'paid') return 'Đã thanh toán';
+    if (s === 'cancelled') return 'Đã hủy';
+    return 'Chờ thanh toán';
+  }
+
+  public getDerivedPaymentStatusClass(): string {
+    const s = this.getDerivedPaymentStatus();
+    if (s === 'paid') return 'text-success';
+    if (s === 'cancelled') return 'text-danger';
+    return 'text-warning';
+  }
+
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',

@@ -162,7 +162,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     { value: 'all', label: 'Tất cả' },
     { value: 'pending', label: 'Chờ thanh toán' },
     { value: 'paid', label: 'Đã thanh toán' },
-   
+    { value: 'cancelled', label: 'Đã hủy' },
   ];
 
   paymentMethodOptions = [
@@ -334,16 +334,16 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       filtered = filtered.filter(invoice => invoice.trangThai === this.selectedStatus);
     }
 
-    // Apply payment status filter if backend didn't handle it properly
+    // Derive payment status from order status for display/filtering
+    const derivePaymentStatus = (orderStatus: string): 'pending' | 'paid' | 'cancelled' => {
+      if (orderStatus === 'DA_GIAO_HANG') return 'paid';
+      if (orderStatus === 'HUY') return 'cancelled';
+      return 'pending';
+    };
+
+    // Apply payment status filter based on derived status
     if (this.selectedPaymentStatus && this.selectedPaymentStatus !== 'all') {
-      filtered = filtered.filter(invoice => {
-        if (this.selectedPaymentStatus === 'pending') {
-          return !invoice.ngayThanhToan;
-        } else if (this.selectedPaymentStatus === 'paid') {
-          return !!invoice.ngayThanhToan;
-        }
-        return true;
-      });
+      filtered = filtered.filter(invoice => derivePaymentStatus(invoice.trangThai) === this.selectedPaymentStatus);
     }
 
     // Apply payment method filter if backend didn't handle it properly
@@ -737,8 +737,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const statusClasses: { [key: string]: string } = {
       pending: 'badge-warning',
       paid: 'badge-success',
-      partial: 'badge-info',
-      refunded: 'badge-danger',
+      cancelled: 'badge-danger',
     };
     return statusClasses[paymentStatus] || 'badge-secondary';
   }
@@ -746,6 +745,14 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   getPaymentStatusLabel(paymentStatus: string): string {
     const option = this.paymentStatusOptions.find((opt) => opt.value === paymentStatus);
     return option ? option.label : paymentStatus;
+  }
+
+  // Helper for templates: get derived payment status from invoice
+  getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
+    if (!invoice || !invoice.trangThai) return 'pending';
+    if (invoice.trangThai === 'DA_GIAO_HANG') return 'paid';
+    if (invoice.trangThai === 'HUY') return 'cancelled';
+    return 'pending';
   }
 
   getPaymentMethodLabel(method?: string | null): string {

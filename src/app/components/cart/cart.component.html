@@ -1,0 +1,38 @@
+<div class="cart-container">
+  <h2>Giỏ hàng</h2>
+
+  <div *ngIf="items.length === 0" class="empty">
+    Giỏ hàng của bạn đang trống.
+    <a routerLink="/shop">Tiếp tục mua sắm</a>
+  </div>
+
+  <div *ngIf="items.length > 0" class="cart-list">
+    <div class="cart-item" *ngFor="let p of items; let i = index">
+      <img [src]="p.anhSanPham || '/favicon.ico'" alt="" />
+      <div class="info">
+        <div class="name">{{ p.tenSanPham }}</div>
+        <div class="price">{{ (p.donGia | number:'1.0-0') }} ₫</div>
+        <div class="qty">
+          <button (click)="dec(i)">-</button>
+          <span>{{ p.soLuong }}</span>
+          <button (click)="inc(i)">+</button>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="subtotal">{{ (p.soLuong * p.donGia | number:'1.0-0') }} ₫</div>
+        <button class="remove" (click)="remove(i)">Xóa</button>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="label">Tổng cộng</div>
+      <div class="value">{{ total | number:'1.0-0' }} ₫</div>
+    </div>
+
+    <div class="footer">
+      <button class="clear" (click)="clear()">Xóa giỏ hàng</button>
+      <button class="checkout" (click)="checkout()">Thanh toán</button>
+    </div>
+  </div>
+</div>
+
