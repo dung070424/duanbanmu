@@ -233,7 +233,7 @@
               </td>
               <td>
                 <span class="text-dark">
-                  {{ getPaymentStatusLabel(invoice.ngayThanhToan ? 'paid' : 'pending') }}
+                  {{ getPaymentStatusLabel(getInvoicePaymentStatus(invoice)) }}
                 </span>
               </td>
               <td>
