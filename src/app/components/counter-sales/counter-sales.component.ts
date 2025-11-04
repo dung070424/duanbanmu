@@ -543,26 +543,34 @@ export class CounterSalesComponent implements OnInit {
           this.showToast('Khách hàng này đã tồn tại', 'warning');
           this.customerCreating = false;
         } else {
+          // Tạo email tạm unique từ số điện thoại và timestamp để tránh trùng
+          const timestamp = Date.now();
+          const tempEmail = `kh${phoneDigits}${timestamp}@temp.local`;
           const payload: any = {
             tenKhachHang: name,
             soDienThoai: phoneDigits,
+            email: tempEmail,
             trangThai: true,
           };
-          this.khachHangService
-            .createKhachHang(payload)
-            .subscribe({
-              next: (res: any) => {
-                const id = res?.id ?? 0;
-                this.newSale.customerId = id;
-                this.customerSearch = `${name} - ${phoneDigits}`;
-                this.customerResults = [];
-                this.showToast('Thêm khách hàng thành công', 'success');
-              },
-              error: (err) => {
-                this.showToast('Không thể thêm khách hàng. Vui lòng thử lại.', 'error');
-              },
-            })
-            .add(() => (this.customerCreating = false));
+          this.khachHangService.createKhachHang(payload).subscribe({
+            next: (res: any) => {
+              const id = res?.id ?? 0;
+              this.newSale.customerId = id;
+              this.customerSearch = `${name} - ${phoneDigits}`;
+              this.customerResults = [];
+              this.showToast('Thêm khách hàng thành công', 'success');
+              this.customerCreating = false;
+              this.refreshVoucherSuggestions();
+            },
+            error: (err) => {
+              const errorMsg =
+                err?.error?.message ||
+                err?.message ||
+                'Không thể thêm khách hàng. Vui lòng thử lại.';
+              this.showToast(errorMsg, 'error');
+              this.customerCreating = false;
+            },
+          });
         }
       },
       error: () => {
