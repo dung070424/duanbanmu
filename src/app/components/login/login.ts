@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
 interface LoginData {
@@ -27,26 +26,8 @@ export class LoginComponent {
 
   isLoading = false;
   errorMessage = '';
-  successMessage = '';
 
-  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) {
-    // Hiển thị thông báo sau khi đăng ký
-    this.route.queryParams.subscribe(params => {
-      if (params['registered'] === 'true' && params['username']) {
-        this.successMessage = `Đăng ký tài khoản ${params['username']} thành công! Vui lòng đăng nhập.`;
-      }
-      if (params['changedPassword'] === 'true') {
-        this.successMessage = 'Thay đổi mật khẩu thành công! Vui lòng đăng nhập.';
-      }
-    });
-
-    // Fallback: đọc từ navigation state nếu có
-    const nav = this.router.getCurrentNavigation();
-    const stateMsg = nav?.extras?.state && (nav.extras.state as any).successMessage;
-    if (stateMsg) {
-      this.successMessage = stateMsg as string;
-    }
-  }
+  constructor(private authService: AuthService, private router: Router) {}
 
   onLogin() {
     if (this.isLoading) return;

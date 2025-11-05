@@ -38,7 +38,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   itemsPerPage: number = 5;
   totalItems: number = 0;
 
-  // Sorting
+  // Sorting - Không có sort mặc định, để hiển thị data theo thứ tự tự nhiên (mới nhất ở cuối)
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
@@ -256,11 +256,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       filterParams.ngayKetThuc = this.endDate;
     }
 
-    // Add sorting if specified
-    if (this.sortColumn) {
+    // Add sorting - chỉ gửi sort parameters nếu người dùng đã click sort
+    // Không gửi sort mặc định để data hiển thị theo thứ tự tự nhiên (mới nhất ở cuối)
+    if (this.sortColumn && this.sortColumn.trim() !== '') {
       filterParams.sortBy = this.sortColumn;
       filterParams.sortDirection = this.sortDirection;
     }
+    // Nếu không có sort, không gửi sortBy và sortDirection để backend không sort
 
     console.log('Filter params:', filterParams);
 
@@ -2737,6 +2739,4 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-
-  
 }
