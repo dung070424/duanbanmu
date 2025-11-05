@@ -38,7 +38,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   itemsPerPage: number = 5;
   totalItems: number = 0;
 
-  // Sorting
+  // Sorting - Không có sort mặc định, để hiển thị data theo thứ tự tự nhiên (mới nhất ở cuối)
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
@@ -256,11 +256,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       filterParams.ngayKetThuc = this.endDate;
     }
 
-    // Add sorting if specified
-    if (this.sortColumn) {
+    // Add sorting - chỉ gửi sort parameters nếu người dùng đã click sort
+    // Không gửi sort mặc định để data hiển thị theo thứ tự tự nhiên (mới nhất ở cuối)
+    if (this.sortColumn && this.sortColumn.trim() !== '') {
       filterParams.sortBy = this.sortColumn;
       filterParams.sortDirection = this.sortDirection;
     }
+    // Nếu không có sort, không gửi sortBy và sortDirection để backend không sort
 
     console.log('Filter params:', filterParams);
 
@@ -2735,6 +2737,103 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     } else {
       return this.getDeleteRestrictionMessage();
     }
+  }
+
+  /**
+   * Kiểm tra xem có nên hiển thị button "Xác nhận" không
+   * Hiển thị cho tất cả hóa đơn chưa hoàn thành và chưa bị hủy
+   */
+  shouldShowConfirmButton(invoice: HoaDonDTO): boolean {
+    if (!invoice) {
+      return false;
+    }
+    
+    // Kiểm tra nếu chưa hoàn thành
+    const isNotCompleted = invoice.trangThai !== 'DA_GIAO_HANG';
+    
+    // Kiểm tra nếu chưa bị hủy
+    const isNotCancelled = invoice.trangThai !== 'HUY';
+    
+    // Hiển thị button "Xác nhận" cho tất cả hóa đơn chưa hoàn thành và chưa bị hủy
+    return isNotCompleted && isNotCancelled;
+  }
+
+  /**
+   * Xác nhận hóa đơn - chuyển sang trạng thái "Đã hoàn thành"
+   */
+  confirmInvoice(invoice: HoaDonDTO): void {
+    if (!invoice || !invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Xác nhận với người dùng
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn xác nhận hoàn thành hóa đơn "${invoice.maHoaDon}"?\n\n` +
+      `Hóa đơn sẽ được chuyển sang trạng thái "Đã giao hàng".`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Cập nhật trạng thái sang "Đã giao hàng"
+    this.hoaDonService.updateTrangThaiHoaDon(invoice.id, 'DA_GIAO_HANG').subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Invoice confirmed successfully:', updatedInvoice);
+        this.showToast('Xác nhận hóa đơn thành công!', 'success');
+        
+        // Reload danh sách để cập nhật UI
+        this.loadHoaDon();
+      },
+      error: (error) => {
+        console.error('❌ Error confirming invoice:', error);
+        const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+        this.showToast('Lỗi khi xác nhận hóa đơn: ' + errorMessage, 'error');
+      }
+    });
+  }
+
+  /**
+   * Hủy hóa đơn - chuyển sang trạng thái "Hủy"
+   */
+  cancelInvoice(invoice: HoaDonDTO): void {
+    if (!invoice || !invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Kiểm tra nếu đã bị hủy
+    if (invoice.trangThai === 'HUY') {
+      this.showToast('Hóa đơn này đã bị hủy', 'warning');
+      return;
+    }
+
+    // Xác nhận với người dùng
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn hủy hóa đơn "${invoice.maHoaDon}"?\n\n` +
+      `Hành động này không thể hoàn tác.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Cập nhật trạng thái sang "Hủy"
+    this.hoaDonService.updateTrangThaiHoaDon(invoice.id, 'HUY').subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Invoice cancelled successfully:', updatedInvoice);
+        this.showToast('Hủy hóa đơn thành công!', 'success');
+        
+        // Reload danh sách để cập nhật UI
+        this.loadHoaDon();
+      },
+      error: (error) => {
+        console.error('❌ Error cancelling invoice:', error);
+        const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+        this.showToast('Lỗi khi hủy hóa đơn: ' + errorMessage, 'error');
+      }
+    });
   }
 
 }

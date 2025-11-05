@@ -402,6 +402,38 @@ $text-light: #6c757d;
                 }
               }
               
+              &.btn-success {
+                background: linear-gradient(135deg, $success-color, #1e8449);
+                border-color: $success-color;
+                color: $white;
+                
+                &:hover {
+                  background: linear-gradient(135deg, #1e8449, $success-color);
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+                }
+                
+                &:active {
+                  transform: translateY(0);
+                }
+              }
+              
+              &.btn-danger {
+                background: linear-gradient(135deg, $danger-color, #c0392b);
+                border-color: $danger-color;
+                color: $white;
+                
+                &:hover {
+                  background: linear-gradient(135deg, #c0392b, $danger-color);
+                  transform: translateY(-2px);
+                  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+                }
+                
+                &:active {
+                  transform: translateY(0);
+                }
+              }
+              
               &.btn-outline-danger {
                 color: $danger-color;
                 border-color: $danger-color;

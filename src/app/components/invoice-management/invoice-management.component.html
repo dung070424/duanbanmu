@@ -190,14 +190,14 @@
               </th>
               <th class="sortable" (click)="sort('createdAt')">
                 Ngày tạo
-                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'createdAt'"></i>
+                <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'ngayTao'"></i>
                 <i
                   class="bi bi-arrow-up-short"
-                  *ngIf="sortColumn === 'createdAt' && sortDirection === 'asc'"
+                  *ngIf="sortColumn === 'ngayTao' && sortDirection === 'asc'"
                 ></i>
                 <i
                   class="bi bi-arrow-down-short"
-                  *ngIf="sortColumn === 'createdAt' && sortDirection === 'desc'"
+                  *ngIf="sortColumn === 'ngayTao' && sortDirection === 'desc'"
                 ></i>
               </th>
               <th>Thao tác</th>
@@ -248,13 +248,32 @@
               <td>
                 <div class="action-buttons">
                   <button
-                    class="btn btn-sm btn-outline-info"
+                    class="btn btn-sm btn-outline-info me-2"
                     (click)="openViewModal(invoice)"
                     title="Xem chi tiết"
                   >
                     <i class="bi bi-eye"></i>
                   </button>
-                
+                  
+                  <!-- Button Xác nhận - chỉ hiển thị khi hóa đơn từ "Tại quầy" và chưa hoàn thành -->
+                  <button
+                    *ngIf="shouldShowConfirmButton(invoice)"
+                    class="btn btn-sm btn-success me-2"
+                    (click)="confirmInvoice(invoice)"
+                    title="Xác nhận hoàn thành"
+                  >
+                    <i class="bi bi-check-circle me-1"></i>Xác nhận
+                  </button>
+                  
+                  <!-- Button Hủy - chỉ hiển thị khi chưa bị hủy -->
+                  <button
+                    *ngIf="invoice.trangThai !== 'HUY'"
+                    class="btn btn-sm btn-danger"
+                    (click)="cancelInvoice(invoice)"
+                    title="Hủy hóa đơn"
+                  >
+                    <i class="bi bi-x-circle me-1"></i>Hủy
+                  </button>
                 </div>
               </td>
             </tr>
