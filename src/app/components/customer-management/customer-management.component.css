@@ -1353,6 +1353,58 @@
   border-top: 1px solid #e9ecef;
 }
 
+.address-card-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  margin-top: 12px;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-nav-prev,
+.btn-nav-next {
+  width: 36px;
+  height: 36px;
+  background-color: #febc49;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.btn-nav-prev:hover:not(:disabled),
+.btn-nav-next:hover:not(:disabled) {
+  background-color: #e6a742;
+  transform: scale(1.05);
+}
+
+.btn-nav-prev:disabled,
+.btn-nav-next:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #ced4da;
+}
+
+.btn-nav-prev i,
+.btn-nav-next i {
+  font-size: 1rem;
+}
+
+.address-nav-info {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+  min-width: 60px;
+  text-align: center;
+}
+
 .default-address-checkbox {
   display: flex;
   align-items: center;

@@ -18,6 +18,25 @@ import {
   getMacDinhText,
   formatDiaChiFull,
 } from '../../interfaces/dia-chi-khach-hang.interface';
+// Dữ liệu địa danh Việt Nam: import trực tiếp JSON để tương thích Vite
+import provincesData from 'sub-vn/json_data/provinces.json';
+import districtsData from 'sub-vn/json_data/districts.json';
+import wardsData from 'sub-vn/json_data/wards.json';
+
+export interface Province {
+  code: string;
+  name: string;
+}
+export interface District {
+  code: string;
+  name: string;
+  province_code: string;
+}
+export interface Ward {
+  code: string;
+  name: string;
+  district_code: string;
+}
 
 @Component({
   selector: 'app-customer-management',
@@ -94,6 +113,14 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
   formattedNgaySinh = '';
   currentAddressMacDinh = false;
 
+  // Address location data from sub-vn library
+  selectedTinhCode: string = '';
+  selectedQuanCode: string = '';
+  selectedXaCode: string = '';
+  provinces: Province[] = [];
+  districts: District[] = [];
+  wards: Ward[] = [];
+
   constructor(
     private khachHangService: KhachHangService,
     private diaChiKhachHangService: DiaChiKhachHangService,
@@ -104,6 +131,8 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     console.log('Customer Management Component initialized');
     this.loadKhachHangList();
     this.loadAllAddresses();
+    // Load danh sách tỉnh ngay khi vào màn
+    this.provinces = provincesData as any as Province[];
 
     // Fallback: Load sample data if API fails
     setTimeout(() => {
@@ -1028,8 +1057,52 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       macDinh: address.macDinh,
       trangThai: address.trangThai,
     };
+    
+    // Load location data based on existing address
+    this.loadLocationDataFromAddress(address);
+    
     this.showAddressModal = true;
     this.cdr.detectChanges();
+  }
+
+  // Helper method to load location data from address name
+  private loadLocationDataFromAddress(address: DiaChiKhachHang): void {
+    // Reset first
+    this.selectedTinhCode = '';
+    this.selectedQuanCode = '';
+    this.selectedXaCode = '';
+    this.districts = [];
+    this.wards = [];
+
+    // Find province code by name
+    if (address.tinhThanh) {
+      const province = this.provinces.find((p) => p.name === address.tinhThanh);
+      if (province) {
+        this.selectedTinhCode = province.code;
+        // Load districts for this province
+        const allDistricts = districtsData as any as District[];
+        this.districts = allDistricts.filter((d) => d.province_code === this.selectedTinhCode);
+        
+        // Find district code by name
+        if (address.quanHuyen) {
+          const district = this.districts.find((d) => d.name === address.quanHuyen);
+          if (district) {
+            this.selectedQuanCode = district.code;
+            // Load wards for this district
+            const allWards = wardsData as any as Ward[];
+            this.wards = allWards.filter((w) => w.district_code === this.selectedQuanCode);
+            
+            // Find ward code by name
+            if (address.phuongXa) {
+              const ward = this.wards.find((w) => w.name === address.phuongXa);
+              if (ward) {
+                this.selectedXaCode = ward.code;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   closeAddressModal(): void {
@@ -1334,6 +1407,66 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       macDinh: false,
       trangThai: true,
     };
+    this.selectedTinhCode = '';
+    this.selectedQuanCode = '';
+    this.selectedXaCode = '';
+    this.districts = [];
+    this.wards = [];
+    this.cdr.detectChanges();
+  }
+
+  // Handlers cho chọn tỉnh/quận/xã
+  onProvinceChange(code: string): void {
+    this.selectedTinhCode = code || '';
+    const allDistricts = districtsData as any as District[];
+    this.districts = this.selectedTinhCode
+      ? allDistricts.filter((d) => d.province_code === this.selectedTinhCode)
+      : [];
+    this.wards = [];
+    this.selectedQuanCode = '';
+    this.selectedXaCode = '';
+    
+    // Update addressForm.tinhThanh with province name
+    if (this.selectedTinhCode) {
+      const province = this.provinces.find((p) => p.code === this.selectedTinhCode);
+      this.addressForm.tinhThanh = province ? province.name : '';
+    } else {
+      this.addressForm.tinhThanh = '';
+    }
+    this.addressForm.quanHuyen = '';
+    this.addressForm.phuongXa = '';
+    this.cdr.detectChanges();
+  }
+
+  onDistrictChange(code: string): void {
+    this.selectedQuanCode = code || '';
+    const allWards = wardsData as any as Ward[];
+    this.wards = this.selectedQuanCode
+      ? allWards.filter((w) => w.district_code === this.selectedQuanCode)
+      : [];
+    this.selectedXaCode = '';
+    
+    // Update addressForm.quanHuyen with district name
+    if (this.selectedQuanCode) {
+      const district = this.districts.find((d) => d.code === this.selectedQuanCode);
+      this.addressForm.quanHuyen = district ? district.name : '';
+    } else {
+      this.addressForm.quanHuyen = '';
+    }
+    this.addressForm.phuongXa = '';
+    this.cdr.detectChanges();
+  }
+
+  onWardChange(code: string): void {
+    this.selectedXaCode = code || '';
+    
+    // Update addressForm.phuongXa with ward name
+    if (this.selectedXaCode) {
+      const ward = this.wards.find((w) => w.code === this.selectedXaCode);
+      this.addressForm.phuongXa = ward ? ward.name : '';
+    } else {
+      this.addressForm.phuongXa = '';
+    }
     this.cdr.detectChanges();
   }
 
@@ -1678,7 +1811,8 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       this.selectedAddress = {
         ...address,
         khachHangId: 0, // Temporary ID for pending addresses
-      };
+        id: index + 1, // Temporary ID
+      } as DiaChiKhachHang;
       this.addressForm = {
         tenNguoiNhan: address.tenNguoiNhan || '',
         soDienThoai: address.soDienThoai || '',
@@ -1689,6 +1823,10 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         macDinh: address.macDinh || false,
         trangThai: address.trangThai || true,
       };
+      
+      // Load location data based on existing address
+      this.loadLocationDataFromAddress(this.selectedAddress);
+      
       this.isEditAddressMode = true;
       this.showAddressModal = true;
       this.cdr.detectChanges();
