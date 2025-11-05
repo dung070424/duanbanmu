@@ -682,3 +682,102 @@ $text-light: #6c757d;
     }
   }
 }
+
+// Status filter buttons
+.status-filter-buttons {
+  background: $white;
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(254, 188, 73, 0.1);
+  border: 1px solid rgba(254, 188, 73, 0.2);
+
+  .status-filter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    background: $white;
+    color: $text-dark;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-width: 150px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      border-color: $primary-color;
+      background: rgba(254, 188, 73, 0.05);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(254, 188, 73, 0.2);
+    }
+
+    &.active {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(138, 43, 226, 0.05) 100%);
+      border-color: #8a2be2;
+      color: #8a2be2;
+      box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+
+      .status-label {
+        color: #8a2be2;
+        font-weight: 700;
+      }
+
+      .status-count {
+        background: #8a2be2;
+        color: $white;
+      }
+    }
+
+    .status-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: $text-dark;
+      transition: color 0.3s ease;
+    }
+
+    .status-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 8px;
+      background: $danger-color;
+      color: $white;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    &:not(.active) .status-count {
+      background: $text-light;
+    }
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    .status-filter-btn {
+      min-width: 120px;
+      padding: 10px 15px;
+      font-size: 0.8rem;
+
+      .status-label {
+        font-size: 0.8rem;
+      }
+
+      .status-count {
+        min-width: 20px;
+        height: 20px;
+        font-size: 0.7rem;
+      }
+    }
+  }
+}

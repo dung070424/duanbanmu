@@ -29,6 +29,14 @@ export interface HoaDonDTO {
   quanHuyen?: string;
   phuongXa?: string;
   diaChiChiTiet?: string;
+  // Thông tin vận chuyển
+  ngayDuKienGiao?: string;
+  khoiLuong?: number;
+  chieuDai?: number;
+  chieuRong?: number;
+  chieuCao?: number;
+  phiGiaoHang?: number;
+  nguoiChiuPhi?: string; // 'nguoi_gui' hoặc 'nguoi_nhan'
 }
 
 export interface HoaDonChiTietDTO {

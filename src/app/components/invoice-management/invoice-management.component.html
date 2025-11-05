@@ -109,6 +109,65 @@
         </div>
       </div>
 
+      <!-- Bộ lọc trạng thái dạng nút -->
+      <div class="status-filter-buttons mt-3 mb-3">
+        <div class="d-flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="status-filter-btn"
+            [class.active]="selectedStatus === 'all'"
+            (click)="selectStatusFilter('all')"
+          >
+            <span class="status-label">TẤT CẢ</span>
+            <span class="status-count">{{ getTotalInvoicesCount() }}</span>
+          </button>
+          <button
+            type="button"
+            class="status-filter-btn"
+            [class.active]="selectedStatus === 'CHO_XAC_NHAN'"
+            (click)="selectStatusFilter('CHO_XAC_NHAN')"
+          >
+            <span class="status-label">CHỜ XÁC NHẬN</span>
+            <span class="status-count">{{ getStatusCount('CHO_XAC_NHAN') }}</span>
+          </button>
+          <button
+            type="button"
+            class="status-filter-btn"
+            [class.active]="selectedStatus === 'DA_XAC_NHAN'"
+            (click)="selectStatusFilter('DA_XAC_NHAN')"
+          >
+            <span class="status-label">CHỜ VẬN CHUYỂN</span>
+            <span class="status-count">{{ getStatusCount('DA_XAC_NHAN') }}</span>
+          </button>
+          <button
+            type="button"
+            class="status-filter-btn"
+            [class.active]="selectedStatus === 'DANG_GIAO_HANG'"
+            (click)="selectStatusFilter('DANG_GIAO_HANG')"
+          >
+            <span class="status-label">ĐANG VẬN CHUYỂN</span>
+            <span class="status-count">{{ getStatusCount('DANG_GIAO_HANG') }}</span>
+          </button>
+          <button
+            type="button"
+            class="status-filter-btn"
+            [class.active]="selectedStatus === 'DA_GIAO_HANG'"
+            (click)="selectStatusFilter('DA_GIAO_HANG')"
+          >
+            <span class="status-label">ĐÃ HOÀN THÀNH</span>
+            <span class="status-count">{{ getStatusCount('DA_GIAO_HANG') }}</span>
+          </button>
+          <button
+            type="button"
+            class="status-filter-btn"
+            [class.active]="selectedStatus === 'HUY'"
+            (click)="selectStatusFilter('HUY')"
+          >
+            <span class="status-label">ĐÃ HỦY</span>
+            <span class="status-count">{{ getStatusCount('HUY') }}</span>
+          </button>
+        </div>
+      </div>
 
       <!-- Bảng hóa đơn -->
       <div class="table-responsive">
@@ -140,6 +199,8 @@
                   *ngIf="sortColumn === 'customerName' && sortDirection === 'desc'"
                 ></i>
               </th>
+              <th>Nhân viên</th>
+              <th>Loại đơn</th>
               <th class="sortable" (click)="sort('totalAmount')">
                 Tổng tiền
                 <i class="bi bi-arrow-up-down" *ngIf="sortColumn !== 'totalAmount'"></i>
@@ -200,6 +261,7 @@
                   *ngIf="sortColumn === 'ngayTao' && sortDirection === 'desc'"
                 ></i>
               </th>
+              <th>Thời gian sửa</th>
               <th>Thao tác</th>
             </tr>
           </thead>
@@ -224,6 +286,12 @@
                 </div>
               </td>
               <td>
+                <span class="employee-name">{{ invoice.tenNhanVien || 'Chưa có' }}</span>
+              </td>
+              <td>
+                <span class="order-type">{{ getOrderTypeLabel(invoice.viTriBanHang) }}</span>
+              </td>
+              <td>
                 <span class="total-amount">{{ formatCurrency(invoice.tongTien) }}</span>
               </td>
               <td>
@@ -243,36 +311,19 @@
                 }}</span>
               </td>
               <td>
-                <span class="created-date">{{ formatDate(invoice.ngayTao) }}</span>
+                <span class="created-date">{{ formatDateTime(invoice.ngayTao) }}</span>
+              </td>
+              <td>
+                <span class="updated-time">{{ getRelativeTime(invoice.ngayTao) }}</span>
               </td>
               <td>
                 <div class="action-buttons">
                   <button
-                    class="btn btn-sm btn-outline-info me-2"
+                    class="btn btn-sm btn-outline-info"
                     (click)="openViewModal(invoice)"
                     title="Xem chi tiết"
                   >
                     <i class="bi bi-eye"></i>
-                  </button>
-                  
-                  <!-- Button Xác nhận - chỉ hiển thị khi hóa đơn từ "Tại quầy" và chưa hoàn thành -->
-                  <button
-                    *ngIf="shouldShowConfirmButton(invoice)"
-                    class="btn btn-sm btn-success me-2"
-                    (click)="confirmInvoice(invoice)"
-                    title="Xác nhận hoàn thành"
-                  >
-                    <i class="bi bi-check-circle me-1"></i>Xác nhận
-                  </button>
-                  
-                  <!-- Button Hủy - chỉ hiển thị khi chưa bị hủy -->
-                  <button
-                    *ngIf="invoice.trangThai !== 'HUY'"
-                    class="btn btn-sm btn-danger"
-                    (click)="cancelInvoice(invoice)"
-                    title="Hủy hóa đơn"
-                  >
-                    <i class="bi bi-x-circle me-1"></i>Hủy
                   </button>
                 </div>
               </td>
@@ -1072,13 +1123,194 @@
   </div>
 </div>
 
+<!-- Confirm Invoice Modal -->
+<div
+  class="modal fade"
+  [class.show]="showConfirmInvoiceModal"
+  [style.display]="showConfirmInvoiceModal ? 'block' : 'none'"
+  tabindex="-1"
+  role="dialog"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-check-circle me-2"></i>
+          Xác nhận hóa đơn - {{ invoiceToConfirm?.maHoaDon }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeConfirmInvoiceModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          Vui lòng nhập thông tin vận chuyển để chuyển hóa đơn sang trạng thái "Đã xác nhận"
+        </div>
+
+        <form>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label required">Ngày dự kiến giao *</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  [(ngModel)]="confirmInvoiceData.ngayDuKienGiao"
+                  name="ngayDuKienGiao"
+                  [min]="getTodayDate()"
+                  required
+                />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label required">Khối lượng (kg) *</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="confirmInvoiceData.khoiLuong"
+                  name="khoiLuong"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+              <label class="form-label required">Kích thước (cm) *</label>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label small">Chiều dài</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="confirmInvoiceData.chieuDai"
+                  name="chieuDai"
+                  min="0"
+                  step="0.1"
+                  placeholder="0.0"
+                  required
+                />
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label small">Chiều rộng</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="confirmInvoiceData.chieuRong"
+                  name="chieuRong"
+                  min="0"
+                  step="0.1"
+                  placeholder="0.0"
+                  required
+                />
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label small">Chiều cao</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="confirmInvoiceData.chieuCao"
+                  name="chieuCao"
+                  min="0"
+                  step="0.1"
+                  placeholder="0.0"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label required">Phí giao hàng (VNĐ) *</label>
+                <div class="input-group">
+                  <span class="input-group-text">₫</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    [(ngModel)]="confirmInvoiceData.phiGiaoHang"
+                    name="phiGiaoHang"
+                    min="0"
+                    step="1000"
+                    required
+                  />
+                </div>
+                <small class="text-muted">Mặc định: 30.000đ</small>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label required">Người chịu phí *</label>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="nguoiChiuPhi"
+                    id="nguoiGui"
+                    value="nguoi_gui"
+                    [(ngModel)]="confirmInvoiceData.nguoiChiuPhi"
+                    checked
+                  />
+                  <label class="form-check-label" for="nguoiGui">
+                    Người gửi (Shop chịu phí)
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="nguoiChiuPhi"
+                    id="nguoiNhan"
+                    value="nguoi_nhan"
+                    [(ngModel)]="confirmInvoiceData.nguoiChiuPhi"
+                  />
+                  <label class="form-check-label" for="nguoiNhan">
+                    Người nhận (Khách hàng chịu phí)
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-warning" *ngIf="confirmInvoiceData.nguoiChiuPhi === 'nguoi_nhan'">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Phí giao hàng sẽ được tính vào tổng tiền của khách hàng.
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeConfirmInvoiceModal()">
+          <i class="bi bi-x-circle me-1"></i> Hủy
+        </button>
+        <button
+          type="button"
+          class="btn btn-success"
+          (click)="submitConfirmInvoice()"
+        >
+          <i class="bi bi-check-circle me-1"></i> Xác nhận
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div
   class="modal-backdrop fade"
   [class.show]="
-    showEditModal || showViewModal || showProductModal || showCustomerAddressModal || showAddAddressModal
+    showEditModal || showViewModal || showProductModal || showCustomerAddressModal || showAddAddressModal || showConfirmInvoiceModal
   "
   [style.display]="
-    showEditModal || showViewModal || showProductModal || showCustomerAddressModal || showAddAddressModal
+    showEditModal || showViewModal || showProductModal || showCustomerAddressModal || showAddAddressModal || showConfirmInvoiceModal
       ? 'block'
       : 'none'
   "
