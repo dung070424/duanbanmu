@@ -48,16 +48,22 @@ export interface HoaDonChiTietDTO {
 
 export interface SanPhamTrongHoaDon {
   id?: number;
+  chiTietSanPhamId?: number;
   tenSanPham: string;
   soLuong: number;
   donGia: number;
   thanhTien: number;
+  giamGia?: number; // Giảm giá
   ghiChu?: string;
   sanPhamId?: number; // ID sản phẩm từ database
   soLuongTon?: number; // Số lượng tồn kho
   maSanPham?: string; // Mã sản phẩm
   danhMuc?: string; // Danh mục sản phẩm
   thuongHieu?: string; // Thương hiệu sản phẩm
+  mauSac?: string; // Màu sắc
+  kichThuoc?: string; // Kích thước
+  anhSanPham?: string; // Hình ảnh sản phẩm
+  nhaSanXuat?: string; // Nhà sản xuất
 }
 
 export interface HoaDonPaginatedResponse {

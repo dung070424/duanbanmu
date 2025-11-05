@@ -193,7 +193,7 @@
           </div>
         </div>
       </div>
-    </div>
+            </div>
 
 
     <!-- Main Content Tables -->
@@ -236,7 +236,7 @@
             </tr>
           </tbody>
         </table>
-      </div>
+        </div>
 
       <!-- Table 2: Thông tin khách hàng và thanh toán -->
       <div class="table-responsive mb-4">
@@ -246,9 +246,9 @@
               <th colspan="2" class="table-header-secondary">
                 Thông tin khách hàng & Thanh toán
               </th>
-            </tr>
-          </thead>
-          <tbody>
+                </tr>
+              </thead>
+              <tbody>
             <tr>
               <td class="label-cell"><strong>Tên khách hàng:</strong></td>
               <td class="value-cell">{{ customer?.tenKhachHang || invoice.tenKhachHang || 'Không có thông tin' }}</td>
@@ -266,7 +266,7 @@
               <td class="value-cell">
                 <span *ngIf="loadingAddresses" class="loading-text">Đang tải địa chỉ...</span>
                 <span *ngIf="!loadingAddresses">{{ getCustomerAddress() }}</span>
-              </td>
+                  </td>
             </tr>
             <tr>
               <td class="label-cell"><strong>ID khách hàng:</strong></td>
@@ -276,7 +276,7 @@
               <td class="label-cell"><strong>Trạng thái thanh toán:</strong></td>
               <td class="value-cell" [ngClass]="getDerivedPaymentStatusClass()">
                 {{ getDerivedPaymentStatusLabel() }}
-              </td>
+                  </td>
             </tr>
             <tr *ngIf="invoice.ngayThanhToan">
               <td class="label-cell"><strong>Ngày thanh toán:</strong></td>
@@ -297,60 +297,100 @@
             <tr class="total-row">
               <td class="label-cell"><strong>Thành tiền:</strong></td>
               <td class="value-cell amount total">{{ formatCurrency(invoice.thanhTien || invoice.tongTien) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
       <!-- Table 3: Danh sách sản phẩm -->
       <div class="table-responsive">
         <table class="table table-bordered table-striped invoice-products-table">
           <thead>
             <tr>
-              <th colspan="6" class="table-header-success">
+              <th colspan="8" class="table-header-success">
                 Danh sách sản phẩm
               </th>
             </tr>
             <tr class="sub-header">
-              <th style="width: 5%">STT</th>
-              <th style="width: 10%">Mã SP</th>
-              <th style="width: 35%">Tên sản phẩm</th>
-              <th style="width: 10%">Số lượng</th>
-              <th style="width: 20%">Đơn giá</th>
-              <th style="width: 20%">Thành tiền</th>
+              <th style="width: 4%">STT</th>
+              <th style="width: 8%">Hình ảnh</th>
+              <th style="width: 28%">Thông tin sản phẩm</th>
+              <th style="width: 12%">Đặc tính</th>
+              <th style="width: 8%">Số lượng</th>
+              <th style="width: 15%">Đơn giá</th>
+              <th style="width: 10%">Giảm giá</th>
+              <th style="width: 15%">Thành tiền</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngIf="!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0">
-              <td colspan="6" class="text-center text-muted py-4">
+              <td colspan="8" class="text-center text-muted py-4">
                 <i class="fas fa-inbox me-2"></i>Chưa có sản phẩm nào trong hóa đơn này
               </td>
             </tr>
             <tr *ngFor="let product of invoice.danhSachSanPham; let i = index">
               <td class="text-center">{{ i + 1 }}</td>
-              <td>
-                <span class="text-muted">{{ product.maSanPham || 'N/A' }}</span>
+              <td class="product-image-cell">
+                <div class="product-image-wrapper">
+                  <img 
+                    [src]="product.anhSanPham || 'assets/images/no-image.png'" 
+                    [alt]="product.tenSanPham"
+                    class="product-image"
+                    (error)="$event.target.src='assets/images/no-image.png'"
+                  />
+          </div>
               </td>
-              <td>
-                <div>
-                  <strong>{{ product.tenSanPham }}</strong>
-                  <div class="text-muted small mt-1">
-                    {{ product.danhMuc || 'Chưa phân loại' }} - {{ product.thuongHieu || 'Chưa có' }}
+              <td class="product-info-cell">
+                <div class="product-info">
+                  <div class="product-code">
+                    <span class="badge bg-secondary">{{ product.maSanPham || 'N/A' }}</span>
+                  </div>
+                  <div class="product-name">
+                    <strong>{{ product.tenSanPham }}</strong>
+                  </div>
+                  <div class="product-category-brand">
+                    <span class="category-badge" *ngIf="product.danhMuc">
+                      <i class="fas fa-tag me-1"></i>{{ product.danhMuc }}
+                    </span>
+                    <span class="brand-badge" *ngIf="product.thuongHieu">
+                      <i class="fas fa-building me-1"></i>{{ product.thuongHieu }}
+                    </span>
                   </div>
                 </div>
               </td>
-              <td class="text-center">
-                <span class="badge bg-info">{{ product.soLuong }}</span>
+              <td class="product-specs-cell">
+                <div class="product-specs">
+                  <div class="spec-item" *ngIf="product.mauSac">
+                    <span class="spec-label">Màu:</span>
+                    <span class="spec-value color-spec">{{ product.mauSac }}</span>
+              </div>
+                  <div class="spec-item" *ngIf="product.kichThuoc">
+                    <span class="spec-label">Kích thước:</span>
+                    <span class="spec-value size-spec">{{ product.kichThuoc }}</span>
+            </div>
+                  <div class="spec-item" *ngIf="!product.mauSac && !product.kichThuoc">
+                    <span class="text-muted small">Chưa có thông tin</span>
+          </div>
+        </div>
               </td>
-              <td class="text-end">
-                <span class="text-success">{{ formatCurrency(product.donGia) }}</span>
+              <td class="text-center quantity-cell">
+                <span class="quantity-value">{{ product.soLuong }}</span>
               </td>
-              <td class="text-end">
-                <strong class="text-primary">{{ formatCurrency(product.thanhTien) }}</strong>
+              <td class="text-end price-cell">
+                <span class="price-value">{{ formatCurrency(product.donGia) }}</span>
+              </td>
+              <td class="text-end discount-cell">
+                <span class="discount-value" *ngIf="product.giamGia && product.giamGia > 0">
+                  {{ formatCurrency(product.giamGia) }}
+                </span>
+                <span class="text-muted" *ngIf="!product.giamGia || product.giamGia === 0">-</span>
+              </td>
+              <td class="text-end amount-cell">
+                <span class="amount-value">{{ formatCurrency(product.thanhTien) }}</span>
               </td>
             </tr>
             <tr *ngIf="invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0" class="summary-row">
-              <td colspan="4" class="text-end"><strong>Tổng cộng:</strong></td>
+              <td colspan="6" class="text-end"><strong>Tổng cộng:</strong></td>
               <td colspan="2" class="text-end">
                 <strong class="text-success fs-5">{{ formatCurrency(invoice.thanhTien || invoice.tongTien) }}</strong>
               </td>

@@ -2851,7 +2851,7 @@ $text-light: #6c757d;
     margin-bottom: 20px;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(252, 250, 250, 0.1);
   }
   
   .invoice-info-table {
@@ -2987,6 +2987,53 @@ $text-light: #6c757d;
     background: $white;
     border-collapse: collapse;
     
+    thead {
+      th {
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+        padding: 14px 12px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        
+        // Căn chỉnh header theo cột
+        &:nth-child(1) {
+          // STT - căn giữa
+          text-align: center;
+        }
+        
+        &:nth-child(3) {
+          // Thông tin sản phẩm - căn trái
+          text-align: left;
+        }
+        
+        &:nth-child(4) {
+          // Đặc tính - căn trái
+          text-align: left;
+        }
+        
+        &:nth-child(5) {
+          // Header cột Số lượng - căn giữa
+          text-align: center;
+        }
+        
+        &:nth-child(6) {
+          // Header cột Đơn giá - căn phải
+          text-align: right;
+        }
+        
+        &:nth-child(7) {
+          // Header cột Giảm giá - căn phải
+          text-align: right;
+        }
+        
+        &:nth-child(8) {
+          // Header cột Thành tiền - căn phải
+          text-align: right;
+        }
+      }
+    }
+    
     tbody {
       tr {
         td {
@@ -2994,6 +3041,192 @@ $text-light: #6c757d;
           vertical-align: middle;
           border: 1px solid #dee2e6;
         }
+      }
+    }
+    
+    // Style cho cột số lượng - không có background, căn giữa
+    .quantity-cell {
+      text-align: center;
+      vertical-align: middle;
+      
+      .quantity-value {
+        display: inline-block;
+        font-weight: 600;
+        font-size: 1rem;
+        color: $text-dark;
+        padding: 0;
+        background: none;
+        border: none;
+        min-width: 30px;
+      }
+    }
+    
+    // Style cho cột đơn giá - căn phải, màu xanh lá
+    .price-cell {
+      text-align: right;
+      vertical-align: middle;
+      
+      .price-value {
+        display: inline-block;
+        font-weight: 600;
+        font-size: 1rem;
+        color: #28a745;
+        padding: 0;
+      }
+    }
+    
+    // Style cho cột thành tiền - căn phải, màu cam
+    .amount-cell {
+      text-align: right;
+      vertical-align: middle;
+      
+      .amount-value {
+        display: inline-block;
+        font-weight: 700;
+        font-size: 1rem;
+        color: $primary-color;
+        padding: 0;
+      }
+    }
+    
+    // Style cho cột hình ảnh sản phẩm
+    .product-image-cell {
+      text-align: center;
+      vertical-align: middle;
+      padding: 10px;
+      
+      .product-image-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #e9ecef;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        .product-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s ease;
+          
+          &:hover {
+            transform: scale(1.1);
+          }
+        }
+      }
+    }
+    
+    // Style cho cột thông tin sản phẩm
+    .product-info-cell {
+      vertical-align: middle;
+      padding: 12px;
+      
+      .product-info {
+        .product-code {
+          margin-bottom: 6px;
+          
+          .badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            font-weight: 600;
+          }
+        }
+        
+        .product-name {
+          margin-bottom: 8px;
+          
+          strong {
+            font-size: 1rem;
+            color: $text-dark;
+            font-weight: 700;
+            line-height: 1.4;
+          }
+        }
+        
+        .product-category-brand {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 6px;
+          
+          .category-badge,
+          .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            
+            i {
+              font-size: 0.7rem;
+            }
+          }
+          
+          .category-badge {
+            background-color: #e3f2fd;
+            color: #1976d2;
+          }
+          
+          .brand-badge {
+            background-color: #fff3e0;
+            color: #f57c00;
+          }
+        }
+      }
+    }
+    
+    // Style cho cột đặc tính (màu sắc, kích thước)
+    .product-specs-cell {
+      vertical-align: middle;
+      padding: 12px;
+      
+      .product-specs {
+        .spec-item {
+          margin-bottom: 6px;
+          
+          &:last-child {
+            margin-bottom: 0;
+          }
+          
+          .spec-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 500;
+            margin-right: 6px;
+          }
+          
+          .spec-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            
+            &.color-spec {
+              color: #6c5ce7;
+            }
+            
+            &.size-spec {
+              color: #00b894;
+            }
+          }
+        }
+      }
+    }
+    
+    // Style cho cột giảm giá
+    .discount-cell {
+      text-align: right;
+      vertical-align: middle;
+      
+      .discount-value {
+        display: inline-block;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #dc3545;
+        padding: 0;
       }
     }
   }
