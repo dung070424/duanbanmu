@@ -2696,6 +2696,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (!this.invoice || !this.statusChanged) {
       return;
     }
+    
 
     this.savingStatus = true;
     const newStatus = this.invoice.trangThai;
