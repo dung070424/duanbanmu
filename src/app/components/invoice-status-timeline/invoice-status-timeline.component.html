@@ -5,42 +5,21 @@
   </div>
   
   <div class="timeline-container">
-    <div class="timeline-line">
-      <div class="timeline-progress" 
-           [style.width.%]="getProgressPercentage()"
-           [class.progress-stopped]="getProgressPercentage() > 0"></div>
-    </div>
-    
-    <div class="timeline-steps">
-      <div 
-        *ngFor="let step of statusSteps; let i = index" 
-        class="timeline-step"
-        [ngClass]="getStepClass(step)"
-        [class.clickable]="enableClick && canClickStep(step)"
-        [title]="enableClick && canClickStep(step) ? 'Click để đổi sang ' + step.label : ''"
-        (click)="onStepClick(step); $event.stopPropagation()"
-        (touchstart)="onStepClick(step); $event.stopPropagation()"
-        [style.pointer-events]="enableClick && canClickStep(step) ? 'auto' : 'auto'"
-        [style.z-index]="'101'"
-      >
-        <div 
-          class="step-circle" 
-          (click)="onStepClick(step); $event.stopPropagation()"
-          (touchstart)="onStepClick(step); $event.stopPropagation()"
-          style="pointer-events: auto !important; z-index: 102;"
-        >
-          <i 
-            [ngClass]="getStepIconClass(step)" 
-            style="pointer-events: auto !important; z-index: 103;"
-            (click)="onStepClick(step); $event.stopPropagation()"
-            (touchstart)="onStepClick(step); $event.stopPropagation()"
-          ></i>
+    @if (currentStep) {
+      <div class="current-status-display">
+        <div class="status-icon-wrapper">
+          <div class="step-circle" [ngClass]="getStepClass(currentStep)">
+            <i [ngClass]="getStepIconClass(currentStep)"></i>
+          </div>
         </div>
-        
-        <div class="step-content" style="pointer-events: none;">
-          <div class="step-label">{{ step.label }}</div>
+        <div class="step-content">
+          <div class="step-label">{{ currentStep.label }}</div>
         </div>
       </div>
-    </div>
+    } @else {
+      <div class="no-status-message">
+        <p>Chưa có trạng thái</p>
+      </div>
+    }
   </div>
 </div>

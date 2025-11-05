@@ -69,8 +69,20 @@ export class AuthService {
 
   register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/register`, request).pipe(
-      tap(() => {
-        // Không tự động đăng nhập sau khi đăng ký
+      tap((response: AuthResponse) => {
+        if (response.token) {
+          const user: User = {
+            id: response.id,
+            username: response.username,
+            email: response.email,
+            fullName: response.fullName,
+            roles: response.roles || []
+          };
+
+          this.saveAuthData(response.token, user, false);
+          this.isAuthenticatedSubject.next(true);
+          this.currentUserSubject.next(user);
+        }
       }),
       catchError((error) => {
         console.error('Register error:', error);
@@ -118,6 +130,7 @@ export class AuthService {
     );
   }
 
+  
   private saveAuthData(token: string, user: User, rememberMe: boolean): void {
     if (typeof window !== 'undefined') {
       const storage = rememberMe ? localStorage : sessionStorage;

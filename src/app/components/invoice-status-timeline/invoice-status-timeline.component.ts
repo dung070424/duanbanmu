@@ -24,6 +24,8 @@ export class InvoiceStatusTimelineComponent implements OnInit, OnChanges {
   @Input() enableClick: boolean = true; // Cho phép click để thay đổi trạng thái
   @Output() statusChange = new EventEmitter<string>(); // Emit khi click vào step
   
+  currentStep: StatusStep | null = null;
+  
   constructor(
     private el: ElementRef,
     private renderer: Renderer2
@@ -89,42 +91,24 @@ export class InvoiceStatusTimelineComponent implements OnInit, OnChanges {
   }
 
   private updateStatusSteps(): void {
-    if (!this.currentStatus) return;
+    if (!this.currentStatus) {
+      this.currentStep = null;
+      return;
+    }
 
-    const statusOrder = ['CHO_XAC_NHAN', 'DA_XAC_NHAN', 'DANG_GIAO_HANG', 'DA_GIAO_HANG'];
-    const currentIndex = statusOrder.indexOf(this.currentStatus);
+    // Tìm step hiện tại
+    const foundStep = this.statusSteps.find(step => step.id === this.currentStatus);
     
-    // Reset all steps
-    this.statusSteps.forEach(step => {
-      step.isCompleted = false;
-      step.isCurrent = false;
-      step.isFuture = false;
-    });
-
-    if (this.currentStatus === 'HUY') {
-      // Special case for cancelled invoices
-      this.statusSteps.forEach(step => {
-        if (step.id === 'HUY') {
-          step.isCurrent = true;
-        } else {
-          step.isFuture = true;
-        }
-      });
+    if (foundStep) {
+      // Tạo một bản sao của step hiện tại
+      this.currentStep = {
+        ...foundStep,
+        isCurrent: true,
+        isCompleted: false,
+        isFuture: false
+      };
     } else {
-      // Normal flow
-      this.statusSteps.forEach((step, index) => {
-        const stepIndex = statusOrder.indexOf(step.id);
-        
-        if (stepIndex !== -1) {
-          if (stepIndex < currentIndex) {
-            step.isCompleted = true;
-          } else if (stepIndex === currentIndex) {
-            step.isCurrent = true;
-          } else {
-            step.isFuture = true;
-          }
-        }
-      });
+      this.currentStep = null;
     }
   }
 

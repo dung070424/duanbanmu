@@ -46,6 +46,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   statusChanged: boolean = false;
   savingStatus: boolean = false;
   originalStatus: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY' | '' = '';
+  selectedStatus: string = '';
 
   // Auto-refreshhhh
   private destroy$ = new Subject<void>();
@@ -361,6 +362,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.invoice = invoice;
         this.originalStatus = invoice.trangThai; // Lưu trạng thái ban đầu
         this.statusChanged = false; // Reset flag
+        this.selectedStatus = ''; // Reset selected status
 
         // getHoaDonDetail() đã load sản phẩm rồi, không cần gọi loadProductDetails()
         console.log('✅ Invoice with products loaded:', invoice.danhSachSanPham);
@@ -2576,6 +2578,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.originalStatus = updatedInvoice.trangThai as 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY';
         this.statusChanged = false;
         this.savingStatus = false;
+        this.selectedStatus = ''; // Reset selected status after successful update
         
         // Hiển thị thông báo thành công
         const statusLabel = this.getStatusLabel(updatedInvoice.trangThai);
@@ -2619,6 +2622,45 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.loadInvoiceDetail();
       }
     });
+  }
+
+  /**
+   * Xử lý khi thay đổi trạng thái từ dropdown
+   */
+  onStatusSelectChange(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    this.selectedStatus = selectElement.value;
+    console.log('📝 Status selected from dropdown:', this.selectedStatus);
+  }
+
+  /**
+   * Cập nhật trạng thái hóa đơn từ dropdown
+   */
+  updateInvoiceStatus(): void {
+    if (!this.selectedStatus || !this.invoice) {
+      this.showToast('Vui lòng chọn trạng thái mới', 'error');
+      return;
+    }
+
+    if (this.selectedStatus === this.invoice.trangThai) {
+      this.showToast('Trạng thái đã được chọn là trạng thái hiện tại', 'info');
+      return;
+    }
+
+    // Xác nhận với người dùng
+    const currentStatusLabel = this.getStatusLabel(this.invoice.trangThai);
+    const newStatusLabel = this.getStatusLabel(this.selectedStatus);
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn đổi trạng thái từ "${currentStatusLabel}" sang "${newStatusLabel}"?`
+    );
+
+    if (!confirmed) {
+      console.log('❌ User cancelled status change');
+      return;
+    }
+
+    // Gọi phương thức cập nhật trạng thái hiện có
+    this.onStatusChangeFromTimeline(this.selectedStatus);
   }
 
   /**
