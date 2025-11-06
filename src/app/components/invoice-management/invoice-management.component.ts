@@ -3224,6 +3224,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
   }
 
+
   /**
    * Kiểm tra xem có nên hiển thị button "Xác nhận" không
    * Hiển thị cho hóa đơn ở trạng thái "CHỜ XÁC NHẬN" hoặc các trạng thái khác chưa hoàn thành
@@ -3467,3 +3468,4 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
 }
+
