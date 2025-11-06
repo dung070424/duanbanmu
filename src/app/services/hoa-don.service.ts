@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -136,6 +136,10 @@ export class HoaDonService {
   getHoaDonById(id: number): Observable<HoaDonDTO> {
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
       map((response: any) => {
+        // QUAN TRỌNG: Giữ lại danhSachChiTiet gốc từ backend để có thể dùng khi update
+        // Lưu danhSachChiTiet gốc trước khi map
+        const originalDanhSachChiTiet = response.danhSachChiTiet ? [...response.danhSachChiTiet] : null;
+        
         // Map danhSachChiTiet từ backend sang danhSachSanPham cho frontend
         if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet)) {
           response.danhSachSanPham = response.danhSachChiTiet.map((item: any) => ({
@@ -156,6 +160,11 @@ export class HoaDonService {
         } else {
           response.danhSachSanPham = [];
         }
+        
+        // Giữ lại danhSachChiTiet gốc trong response để có thể dùng khi update
+        // (ép kiểu để TypeScript không báo lỗi vì HoaDonDTO không có field này)
+        (response as any).danhSachChiTiet = originalDanhSachChiTiet;
+        
         return response as HoaDonDTO;
       })
     );
@@ -238,7 +247,16 @@ export class HoaDonService {
   }
 
   updateHoaDonNew(id: number, hoaDon: Partial<HoaDonDTO>): Observable<HoaDonDTO> {
-    return this.http.put<HoaDonDTO>(`${this.apiUrl}/${id}`, hoaDon);
+    // Đảm bảo Content-Type header được set đúng
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+    
+    console.log('📤 Sending PUT request to:', `${this.apiUrl}/${id}`);
+    console.log('📦 Request body:', JSON.stringify(hoaDon, null, 2));
+    
+    return this.http.put<HoaDonDTO>(`${this.apiUrl}/${id}`, hoaDon, { headers });
   }
 
   deleteHoaDonNew(id: number): Observable<void> {
