@@ -19,6 +19,8 @@ export interface PeriodStatisticsDTO {
   sanPhamDaBan: number;     // Tổng soLuongSanPham
   donHang: number;           // Số lượng đơn hàng
   period: string;           // Loại khoảng thời gian: "day", "week", "month", "year"
+  actualRevenue?: number;    // Tổng thanhTien của các hóa đơn đã thanh toán
+  debtRevenue?: number;      // Công nợ = doanhThu - actualRevenue
 }
 
 export interface WeeklyRevenueDTO {
@@ -114,6 +116,25 @@ export class StatisticsService {
         },
         error: (error) => {
           console.error(`❌ [StatisticsService] Period Statistics (${period}) Error:`, error);
+          if (error.error) {
+            console.error('   - Error Body:', error.error);
+          }
+        }
+      })
+    );
+  }
+
+  getPeriodStatisticsByDateRange(startDate: string, endDate: string): Observable<PeriodStatisticsDTO> {
+    const fullUrl = `${this.apiUrl}/period/date-range?startDate=${startDate}&endDate=${endDate}`;
+    console.log('📡 [StatisticsService] Calling Date Range Statistics API:', fullUrl);
+    
+    return this.http.get<PeriodStatisticsDTO>(fullUrl).pipe(
+      tap({
+        next: (response) => {
+          console.log(`📥 [StatisticsService] Date Range Statistics (${startDate} to ${endDate}) received:`, response);
+        },
+        error: (error) => {
+          console.error(`❌ [StatisticsService] Date Range Statistics Error:`, error);
           if (error.error) {
             console.error('   - Error Body:', error.error);
           }

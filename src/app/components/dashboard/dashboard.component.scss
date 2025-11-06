@@ -44,7 +44,11 @@
 }
 
 .filter-group.time-range {
-  flex: 0 0 280px; // rút gọn chiều rộng dropdown
+  flex: 0 0 200px; // rút gọn chiều rộng dropdown
+}
+
+.filter-group.date-range {
+  flex: 0 0 180px; // chiều rộng cho date picker
 }
 
 .filter-group.chart-type {
@@ -91,6 +95,14 @@
       
       &.revenue {
         color: #febc49;
+      }
+      
+      &.actual-revenue {
+        color: #28a745;
+      }
+      
+      &.debt-revenue {
+        color: #dc3545;
       }
     }
   }
@@ -181,32 +193,45 @@
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.period-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  .icon-inner {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-  }
+  border: 3px solid;
 }
 
 .period-content {
   flex: 1;
   
-  .period-revenue {
+  .period-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .period-revenue,
+  .period-actual-revenue,
+  .period-debt-revenue {
     font-size: 20px;
     font-weight: 700;
     color: #212529;
     margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    
+    .revenue-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #495057;
+      text-transform: none;
+      letter-spacing: 0.3px;
+    }
+    
+    .revenue-amount {
+      font-size: 18px;
+      font-weight: 700;
+      color: #212529;
+    }
   }
   
   .period-change {
@@ -671,15 +696,24 @@
   }
 }
 
+// Nhãn tuần trên trục X trong SVG - Hiển thị cho line chart
+.x-axis-labels {
+  display: block; // Hiển thị labels trong SVG cho line chart
+}
+
 .x-labels-revenue {
-  display: flex;
-  justify-content: space-between;
+  display: flex; // Hiển thị nhãn tuần dưới biểu đồ
+  justify-content: space-around; // Căn đều các nhãn để khớp với các cột
   margin-top: 10px;
-  padding: 0 10px;
+  padding: 0 20px; // Padding khớp với column-chart
+  align-items: center;
   
   span {
-    font-size: 11px;
+    font-size: 12px;
     color: #6c757d;
+    font-weight: 500;
+    flex: 1;
+    text-align: center;
   }
 }
 
@@ -713,6 +747,7 @@
   }
   
   .bar-label {
+    display: none; // Ẩn nhãn tuần trong biểu đồ cột (vì đã có labels dưới biểu đồ)
     font-size: 10px;
     color: white;
     opacity: 0.9;
@@ -1035,6 +1070,105 @@
     background: #fff3cd;
     color: #856404;
   }
+  
+  &.status-active {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  &.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
+}
+
+// New Customers Section
+.new-customers-section {
+  margin-bottom: 24px;
+  
+  .stats-table-card {
+    margin-bottom: 0;
+  }
+  
+  .card-header {
+    .new-customers-filter-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .new-customers-filter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      
+      label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #495057;
+        margin: 0;
+        white-space: nowrap;
+      }
+      
+      .form-control {
+        min-width: 150px;
+        padding: 6px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #495057;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: #febc49;
+        }
+        
+        &:focus {
+          outline: none;
+          border-color: #febc49;
+          box-shadow: 0 0 0 3px rgba(254, 188, 73, 0.1);
+        }
+      }
+    }
+    
+    .custom-date-inputs {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      
+      .form-control {
+        flex: 0 0 180px;
+        padding: 6px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #495057;
+        background: white;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: #febc49;
+        }
+        
+        &:focus {
+          outline: none;
+          border-color: #febc49;
+          box-shadow: 0 0 0 3px rgba(254, 188, 73, 0.1);
+        }
+      }
+      
+      .date-separator {
+        font-size: 14px;
+        font-weight: 500;
+        color: #495057;
+        white-space: nowrap;
+        margin: 0 4px;
+      }
+    }
+  }
 }
 
 .product-image-cell {
@@ -1130,6 +1264,25 @@
 }
 
 // Low Stock Card
+// Stock Products Section (Sắp Hết Hàng và Hết Hàng)
+.stock-products-section {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  
+  .stats-table-card {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+.out-of-stock-card {
+  .out-of-stock-quantity {
+    color: #dc3545;
+    font-weight: 600;
+  }
+}
+
 .low-stock-card {
   .low-stock-quantity {
     color: #dc3545;

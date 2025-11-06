@@ -29,6 +29,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   invoices: HoaDonDTO[] = [];
   filteredInvoices: HoaDonDTO[] = [];
   paginatedInvoices: HoaDonDTO[] = [];
+  allInvoices: HoaDonDTO[] = []; // Tất cả invoices để đếm số lượng theo trạng thái
 
   // Math object for templatee
   Math = Math;
@@ -54,8 +55,21 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   showEditModal: boolean = false;
   showViewModal: boolean = false;
   showProductModal: boolean = false;
+  showConfirmInvoiceModal: boolean = false;
   loadingProducts: boolean = false;
   loadingInvoices: boolean = false;
+
+  // Confirm invoice form data
+  confirmInvoiceData = {
+    ngayDuKienGiao: '',
+    khoiLuong: null as number | null,
+    chieuDai: null as number | null,
+    chieuRong: null as number | null,
+    chieuCao: null as number | null,
+    phiGiaoHang: 30000,
+    nguoiChiuPhi: 'nguoi_gui' as 'nguoi_gui' | 'nguoi_nhan',
+  };
+  invoiceToConfirm: HoaDonDTO | null = null;
 
   // Form data
   newInvoice: Partial<HoaDonDTO> = {
@@ -189,6 +203,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.setupAutoSearch();
     this.loadHoaDon();
     this.loadEmployees(); // Load employees when component initializes
+    this.loadAllInvoicesForCount(); // Load tất cả invoices để đếm số lượng
   }
 
   ngOnDestroy(): void {
@@ -236,6 +251,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Add status filter if not 'all'
     if (this.selectedStatus && this.selectedStatus !== 'all') {
       filterParams.trangThai = this.selectedStatus;
+      console.log('🔍 Setting status filter:', {
+        selectedStatus: this.selectedStatus,
+        filterParam: filterParams.trangThai
+      });
+    } else {
+      console.log('🔍 No status filter (selectedStatus is "all" or empty)');
     }
 
     // Add payment status filter if not 'all'
@@ -272,24 +293,275 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         // Handle different response structures
         if (response.content) {
           this.paginatedInvoices = response.content;
-          this.totalItems = response.totalElements || 0;
+          // Khi filter theo trạng thái, backend trả về totalElements là tổng số items sau khi filter
+          this.totalItems = response.totalElements || response.totalElements === 0 ? response.totalElements : 0;
+          console.log('📊 Pagination info:', {
+            currentPage: this.currentPage,
+            itemsPerPage: this.itemsPerPage,
+            totalElements: response.totalElements,
+            totalItems: this.totalItems,
+            returnedItems: response.content.length,
+            selectedStatus: this.selectedStatus
+          });
         } else if (response.hoaDonList) {
           this.paginatedInvoices = response.hoaDonList;
           this.totalItems = response.totalItems || 0;
+          console.log('📊 Pagination info (hoaDonList):', {
+            currentPage: this.currentPage,
+            itemsPerPage: this.itemsPerPage,
+            totalItems: response.totalItems,
+            returnedItems: response.hoaDonList.length,
+            selectedStatus: this.selectedStatus
+          });
         } else if (Array.isArray(response)) {
           this.paginatedInvoices = response;
           this.totalItems = response.length;
+          console.log('📊 Pagination info (array):', {
+            currentPage: this.currentPage,
+            itemsPerPage: this.itemsPerPage,
+            totalItems: response.length,
+            returnedItems: response.length,
+            selectedStatus: this.selectedStatus
+          });
         } else {
           this.paginatedInvoices = [];
           this.totalItems = 0;
+          console.log('📊 Pagination info (empty):', {
+            currentPage: this.currentPage,
+            itemsPerPage: this.itemsPerPage,
+            totalItems: 0,
+            selectedStatus: this.selectedStatus
+          });
         }
-        this.filteredInvoices = this.paginatedInvoices;
+        // Backend đã filter theo trạng thái, frontend chỉ cần apply search/date filter nếu có
+        // KHÔNG filter lại status ở frontend vì backend đã làm rồi
+        if (this.selectedStatus && this.selectedStatus !== 'all') {
+          // Backend đã filter theo trạng thái, chỉ cần apply search/date filter nếu có
+          let filtered = [...this.paginatedInvoices];
 
-        // Apply additional frontend filtering if needed
-        this.applyFrontendFilters();
+          // Verify that all invoices match the selected status (chỉ để log và debug)
+          const mismatchedStatuses = this.paginatedInvoices.filter(
+            inv => inv.trangThai !== this.selectedStatus
+          );
+
+          if (mismatchedStatuses.length > 0) {
+            const mismatchRatio = mismatchedStatuses.length / this.paginatedInvoices.length;
+            console.warn('⚠️ Backend returned invoices with wrong status (should not happen after fix):', {
+              expected: this.selectedStatus,
+              totalReceived: this.paginatedInvoices.length,
+              mismatched: mismatchedStatuses.length,
+              mismatchRatio: `${(mismatchRatio * 100).toFixed(1)}%`,
+              mismatchedDetails: mismatchedStatuses.map(inv => ({
+                maHoaDon: inv.maHoaDon,
+                trangThai: inv.trangThai
+              }))
+            });
+
+            // Nếu backend vẫn filter sai, filter lại để đảm bảo hiển thị đúng
+            // (Đây chỉ là safety net, backend nên đã filter đúng rồi)
+            filtered = filtered.filter(invoice => invoice.trangThai === this.selectedStatus);
+            console.warn('🔧 Frontend safety filter applied:', {
+              before: this.paginatedInvoices.length,
+              after: filtered.length
+            });
+          }
+
+          const beforeSearchCount = filtered.length;
+
+          // Chỉ apply search nếu có
+          if (this.searchTerm && this.searchTerm.trim()) {
+            const searchTerm = this.searchTerm.trim().toLowerCase();
+            filtered = filtered.filter(invoice => {
+              if (invoice.maHoaDon && invoice.maHoaDon.toLowerCase().includes(searchTerm)) return true;
+              if (invoice.tenKhachHang && invoice.tenKhachHang.toLowerCase().includes(searchTerm)) return true;
+              if (invoice.soDienThoaiKhachHang && invoice.soDienThoaiKhachHang.includes(searchTerm)) return true;
+              if (invoice.emailKhachHang && invoice.emailKhachHang.toLowerCase().includes(searchTerm)) return true;
+              return false;
+            });
+            console.log('🔍 After search filter:', {
+              before: beforeSearchCount,
+              after: filtered.length,
+              searchTerm: this.searchTerm
+            });
+          }
+
+          const beforeDateCount = filtered.length;
+
+          // Apply date filter nếu có
+          if (this.startDate || this.endDate) {
+            filtered = filtered.filter(invoice => {
+              if (!invoice.ngayTao) {
+                console.warn('⚠️ Invoice missing ngayTao:', invoice.maHoaDon);
+                return false;
+              }
+              const invoiceDate = new Date(invoice.ngayTao);
+              const startDate = this.startDate ? new Date(this.startDate) : null;
+              const endDate = this.endDate ? new Date(this.endDate) : null;
+
+              if (startDate && invoiceDate < startDate) {
+                console.log('🔍 Invoice filtered out (before startDate):', {
+                  maHoaDon: invoice.maHoaDon,
+                  invoiceDate: invoice.ngayTao,
+                  startDate: this.startDate
+                });
+                return false;
+              }
+              if (endDate && invoiceDate > endDate) {
+                console.log('🔍 Invoice filtered out (after endDate):', {
+                  maHoaDon: invoice.maHoaDon,
+                  invoiceDate: invoice.ngayTao,
+                  endDate: this.endDate
+                });
+                return false;
+              }
+              return true;
+            });
+            console.log('🔍 After date filter:', {
+              before: beforeDateCount,
+              after: filtered.length,
+              startDate: this.startDate,
+              endDate: this.endDate
+            });
+          }
+
+          this.filteredInvoices = filtered;
+
+          // Đảm bảo rằng nếu không có search/date filter và backend filter đúng,
+          // filteredInvoices phải bằng paginatedInvoices (không filter lại status)
+          const hasNoFrontendFilters = !this.searchTerm?.trim() && !this.startDate && !this.endDate;
+          if (hasNoFrontendFilters && mismatchedStatuses.length === 0) {
+            // Backend filter đúng và không có frontend filter: filteredInvoices = paginatedInvoices
+            // Đây là trường hợp lý tưởng - không cần làm gì thêm
+            if (this.filteredInvoices.length !== this.paginatedInvoices.length) {
+              console.error('❌ Unexpected mismatch! filteredInvoices should equal paginatedInvoices:', {
+                paginatedInvoices: this.paginatedInvoices.length,
+                filteredInvoices: this.filteredInvoices.length,
+                difference: this.paginatedInvoices.length - this.filteredInvoices.length
+              });
+              // Force fix: set filteredInvoices to paginatedInvoices
+              this.filteredInvoices = [...this.paginatedInvoices];
+              console.log('✅ Fixed: Set filteredInvoices = paginatedInvoices');
+            } else {
+              console.log('✅ Backend filter correct, no frontend filtering needed');
+            }
+          } else if (hasNoFrontendFilters && mismatchedStatuses.length > 0) {
+            // Backend filter sai: frontend đã filter lại (safety net)
+            console.warn('⚠️ Backend returned incorrect data. Frontend safety filter applied:', {
+              received: this.paginatedInvoices.length,
+              correct: this.filteredInvoices.length,
+              filteredOut: mismatchedStatuses.length
+            });
+            console.warn('💡 Recommendation: Fix backend filtering logic to return correct invoices.');
+          }
+
+          console.log('🔍 Final filtered count:', {
+            paginatedInvoices: this.paginatedInvoices.length,
+            filteredInvoices: this.filteredInvoices.length,
+            difference: this.paginatedInvoices.length - this.filteredInvoices.length,
+            hasNoFrontendFilters: hasNoFrontendFilters,
+            mismatchedCount: mismatchedStatuses.length,
+            backendFilterCorrect: mismatchedStatuses.length === 0
+          });
+
+          // Tính toán lại totalItems dựa trên số lượng invoices thực tế sau khi filter
+          // Nếu backend filter đúng và không có search/date filter, giữ nguyên totalItems từ backend
+          // Nếu có filter ở frontend hoặc backend filter sai, cần điều chỉnh totalItems
+
+          // Chỉ tính lại totalItems nếu có search hoặc date filter ở frontend
+          // (vì backend đã filter theo status rồi, totalItems từ backend là đúng)
+          const hasFrontendFilter = (this.searchTerm && this.searchTerm.trim()) || this.startDate || this.endDate;
+
+          if (hasFrontendFilter && this.allInvoices.length > 0) {
+            // Có frontend filter và có allInvoices: tính lại từ allInvoices
+            let countFromAll = this.allInvoices.filter(inv => inv.trangThai === this.selectedStatus);
+            if (this.searchTerm && this.searchTerm.trim()) {
+              const searchTerm = this.searchTerm.trim().toLowerCase();
+              countFromAll = countFromAll.filter(inv => {
+                if (inv.maHoaDon && inv.maHoaDon.toLowerCase().includes(searchTerm)) return true;
+                if (inv.tenKhachHang && inv.tenKhachHang.toLowerCase().includes(searchTerm)) return true;
+                if (inv.soDienThoaiKhachHang && inv.soDienThoaiKhachHang.includes(searchTerm)) return true;
+                if (inv.emailKhachHang && inv.emailKhachHang.toLowerCase().includes(searchTerm)) return true;
+                return false;
+              });
+            }
+            if (this.startDate || this.endDate) {
+              countFromAll = countFromAll.filter(inv => {
+                if (!inv.ngayTao) return false;
+                const invoiceDate = new Date(inv.ngayTao);
+                const startDate = this.startDate ? new Date(this.startDate) : null;
+                const endDate = this.endDate ? new Date(this.endDate) : null;
+                if (startDate && invoiceDate < startDate) return false;
+                if (endDate && invoiceDate > endDate) return false;
+                return true;
+              });
+            }
+            this.totalItems = countFromAll.length;
+            console.log('📊 Calculated totalItems from allInvoices (with frontend filters):', {
+              totalItems: this.totalItems,
+              allInvoicesCount: this.allInvoices.length,
+              filteredCount: countFromAll.length,
+              hasSearchFilter: !!(this.searchTerm && this.searchTerm.trim()),
+              hasDateFilter: !!(this.startDate || this.endDate)
+            });
+          } else if (mismatchedStatuses.length > 0) {
+            // Backend filter sai: điều chỉnh totalItems dựa trên tỷ lệ
+            const correctRatio = filtered.length / this.paginatedInvoices.length;
+            if (correctRatio < 1 && this.totalItems > 0 && this.paginatedInvoices.length > 0) {
+              // Lưu giá trị gốc trước khi điều chỉnh
+              const originalTotalItems = this.totalItems;
+              // Ước tính totalItems dựa trên tỷ lệ invoices đúng trong trang hiện tại
+              this.totalItems = Math.max(1, Math.floor(this.totalItems * correctRatio));
+              console.log('📊 Adjusted totalItems due to backend filtering mismatch:', {
+                originalTotalItems: originalTotalItems,
+                adjustedTotalItems: this.totalItems,
+                correctRatio: correctRatio,
+                filteredInPage: filtered.length,
+                paginatedInPage: this.paginatedInvoices.length
+              });
+            }
+          } else {
+            // Backend filter đúng và không có frontend filter: giữ nguyên totalItems từ backend
+            // Không cần làm gì, totalItems đã được set từ response.totalElements ở trên
+            console.log('✅ Backend filter correct, totalItems from backend:', this.totalItems);
+          }
+          // Nếu backend filter đúng và không có search/date filter, totalItems từ backend đã chính xác
+          // (không cần làm gì, giữ nguyên totalItems đã set ở trên từ response.totalElements)
+
+          console.log('🔍 After filtering (status filtered by backend + frontend safety check):', {
+            paginatedInvoices: this.paginatedInvoices.length,
+            filteredInvoices: this.filteredInvoices.length,
+            totalItems: this.totalItems,
+            currentPage: this.currentPage,
+            itemsPerPage: this.itemsPerPage,
+            totalPages: Math.ceil(this.totalItems / this.itemsPerPage),
+            selectedStatus: this.selectedStatus,
+            searchTerm: this.searchTerm,
+            startDate: this.startDate,
+            endDate: this.endDate,
+            sampleInvoiceStatus: this.paginatedInvoices[0]?.trangThai || 'N/A',
+            allInvoiceStatuses: this.paginatedInvoices.map(inv => inv.trangThai),
+            mismatchedCount: mismatchedStatuses.length
+          });
+        } else {
+          // Nếu không filter theo trạng thái, apply tất cả filters
+        this.filteredInvoices = this.paginatedInvoices;
+          // Chỉ skip payment filters nếu backend đã filter theo payment status/method
+          const skipPaymentFilters = Boolean(
+            (this.selectedPaymentStatus && this.selectedPaymentStatus !== 'all') ||
+            (this.selectedPaymentMethod && this.selectedPaymentMethod !== 'all')
+          );
+          this.applyFrontendFilters(false, skipPaymentFilters);
+
+          // Nếu có search hoặc date filter, totalItems cần được tính lại
+          // Nhưng vì chỉ có dữ liệu của trang hiện tại, tạm thời giữ nguyên
+          // Trong thực tế, backend nên xử lý tất cả các filter
+        }
 
         // Load customer names for invoices that have khachHangId but no tenKhachHang
         this.loadCustomerNames();
+
+        // Refresh all invoices count sau khi load
+        this.loadAllInvoicesForCount();
 
         this.loadingInvoices = false;
         this.cdr.detectChanges();
@@ -304,8 +576,10 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   /**
    * Apply frontend filtering to ensure correct display
+   * @param skipStatusFilter - Nếu true, bỏ qua filter trạng thái (vì backend đã filter)
+   * @param skipPaymentFilters - Nếu true, bỏ qua filter payment status và payment method (vì backend đã filter)
    */
-  private applyFrontendFilters(): void {
+  private applyFrontendFilters(skipStatusFilter: boolean = false, skipPaymentFilters: boolean = false): void {
     let filtered = [...this.paginatedInvoices];
 
     // Apply search term filter - tìm kiếm ngay lập tức
@@ -332,11 +606,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Apply status filter if backend didn't handle it properly
-    if (this.selectedStatus && this.selectedStatus !== 'all') {
+    // Apply status filter if backend didn't handle it properly (chỉ khi không skip)
+    if (!skipStatusFilter && this.selectedStatus && this.selectedStatus !== 'all') {
       filtered = filtered.filter(invoice => invoice.trangThai === this.selectedStatus);
     }
 
+    // Chỉ apply payment filters nếu không skip
+    if (!skipPaymentFilters) {
     // Derive payment status from order status for display/filtering
     const derivePaymentStatus = (orderStatus: string): 'pending' | 'paid' | 'cancelled' => {
       if (orderStatus === 'DA_GIAO_HANG') return 'paid';
@@ -354,10 +630,38 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       filtered = filtered.filter(invoice => {
         const invoiceMethod = invoice.phuongThucThanhToan || 'cash'; // Default to 'cash' if null
         return invoiceMethod === this.selectedPaymentMethod;
+        });
+      }
+    }
+
+    // Apply date filter
+    if (this.startDate || this.endDate) {
+      filtered = filtered.filter(invoice => {
+        if (!invoice.ngayTao) return false;
+        const invoiceDate = new Date(invoice.ngayTao);
+        const startDate = this.startDate ? new Date(this.startDate) : null;
+        const endDate = this.endDate ? new Date(this.endDate) : null;
+
+        if (startDate && invoiceDate < startDate) return false;
+        if (endDate && invoiceDate > endDate) return false;
+        return true;
       });
     }
 
     this.filteredInvoices = filtered;
+
+    console.log('🔍 Frontend filtering applied:', {
+      skipStatusFilter,
+      skipPaymentFilters,
+      paginatedInvoices: this.paginatedInvoices.length,
+      filteredInvoices: filtered.length,
+      selectedStatus: this.selectedStatus,
+      selectedPaymentStatus: this.selectedPaymentStatus,
+      selectedPaymentMethod: this.selectedPaymentMethod,
+      searchTerm: this.searchTerm,
+      startDate: this.startDate,
+      endDate: this.endDate
+    });
   }
 
   // Employee management methods
@@ -535,10 +839,107 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   onStatusChange(): void {
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // Không cần gọi applyFrontendFilters() ở đây vì loadHoaDon() sẽ xử lý filtering
+    // Gọi API để lấy dữ liệu mới với filter trạng thái
     this.loadHoaDon();
+  }
+
+  selectStatusFilter(status: string): void {
+    this.selectedStatus = status;
+    this.currentPage = 1;
+    // Không cần gọi applyFrontendFilters() ở đây vì loadHoaDon() sẽ xử lý filtering
+    // Gọi API để lấy dữ liệu mới với filter trạng thái
+    this.loadHoaDon();
+  }
+
+  /**
+   * Load tất cả invoices để đếm số lượng theo trạng thái
+   */
+  loadAllInvoicesForCount(): void {
+    // Load tất cả invoices không phân trang để đếm chính xác
+    const filterParams: any = {
+      page: 0,
+      size: 10000, // Load số lượng lớn để lấy tất cả
+    };
+
+    this.hoaDonService.getAllHoaDon(filterParams).subscribe({
+      next: (response: any) => {
+        let allInvoices: HoaDonDTO[] = [];
+        if (response.content) {
+          allInvoices = response.content;
+        } else if (response.hoaDonList) {
+          allInvoices = response.hoaDonList;
+        } else if (Array.isArray(response)) {
+          allInvoices = response;
+        }
+        this.allInvoices = allInvoices;
+
+        // Sau khi load xong allInvoices, cập nhật lại totalItems nếu đang filter theo status
+        if (this.selectedStatus && this.selectedStatus !== 'all' && this.allInvoices.length > 0) {
+          let countFromAll = this.allInvoices.filter(inv => inv.trangThai === this.selectedStatus);
+          if (this.searchTerm && this.searchTerm.trim()) {
+            const searchTerm = this.searchTerm.trim().toLowerCase();
+            countFromAll = countFromAll.filter(inv => {
+              if (inv.maHoaDon && inv.maHoaDon.toLowerCase().includes(searchTerm)) return true;
+              if (inv.tenKhachHang && inv.tenKhachHang.toLowerCase().includes(searchTerm)) return true;
+              if (inv.soDienThoaiKhachHang && inv.soDienThoaiKhachHang.includes(searchTerm)) return true;
+              if (inv.emailKhachHang && inv.emailKhachHang.toLowerCase().includes(searchTerm)) return true;
+              return false;
+            });
+          }
+          if (this.startDate || this.endDate) {
+            countFromAll = countFromAll.filter(inv => {
+              if (!inv.ngayTao) return false;
+              const invoiceDate = new Date(inv.ngayTao);
+              const startDate = this.startDate ? new Date(this.startDate) : null;
+              const endDate = this.endDate ? new Date(this.endDate) : null;
+              if (startDate && invoiceDate < startDate) return false;
+              if (endDate && invoiceDate > endDate) return false;
+              return true;
+            });
+          }
+          const newTotalItems = countFromAll.length;
+          if (newTotalItems !== this.totalItems) {
+            console.log('📊 Updated totalItems after loadAllInvoicesForCount:', {
+              oldTotalItems: this.totalItems,
+              newTotalItems: newTotalItems,
+              selectedStatus: this.selectedStatus
+            });
+            this.totalItems = newTotalItems;
+          }
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading all invoices for count:', error);
+        // Fallback: dùng paginatedInvoices nếu load all fails
+        this.allInvoices = this.paginatedInvoices;
+      }
+    });
+  }
+
+  /**
+   * Đếm số lượng hóa đơn theo trạng thái
+   */
+  getStatusCount(status: string): number {
+    if (status === 'all') {
+      return this.getTotalInvoicesCount();
+    }
+    // Đếm từ allInvoices để có số chính xác
+    const invoicesToCount = this.allInvoices.length > 0 ? this.allInvoices : this.paginatedInvoices;
+    return invoicesToCount.filter(invoice => invoice.trangThai === status).length;
+  }
+
+  /**
+   * Lấy tổng số hóa đơn
+   */
+  getTotalInvoicesCount(): number {
+    // Ưu tiên dùng allInvoices.length, nếu không có thì dùng totalItems
+    if (this.allInvoices.length > 0) {
+      return this.allInvoices.length;
+    }
+    return this.totalItems || this.paginatedInvoices.length || 0;
   }
 
   onPaymentStatusChange(): void {
@@ -687,6 +1088,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.showProductModal = false;
     this.showCustomerAddressModal = false;
     this.showAddAddressModal = false;
+    this.showConfirmInvoiceModal = false;
 
     // Reset form data
     this.resetNewInvoiceForm();
@@ -815,6 +1217,87 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     return new Intl.DateTimeFormat('vi-VN').format(new Date(date));
   }
 
+  formatDateTime(date: string): string {
+    if (!date) return 'Chưa có';
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(new Date(date));
+  }
+
+  getRelativeTime(date: string): string {
+    if (!date) return 'Chưa có';
+    const now = new Date();
+    const past = new Date(date);
+    const diffInMs = now.getTime() - past.getTime();
+    const diffInSeconds = Math.floor(diffInMs / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInSeconds < 60) {
+      return 'Vừa xong';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} phút trước`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} giờ trước`;
+    } else if (diffInDays < 30) {
+      return `${diffInDays} ngày trước`;
+    } else {
+      const diffInMonths = Math.floor(diffInDays / 30);
+      if (diffInMonths < 12) {
+        return `${diffInMonths} tháng trước`;
+      } else {
+        const diffInYears = Math.floor(diffInMonths / 12);
+        return `${diffInYears} năm trước`;
+      }
+    }
+  }
+
+  getOrderTypeLabel(viTriBanHang?: string | null): string {
+    // Kiểm tra nếu giá trị rỗng, null, hoặc undefined
+    if (!viTriBanHang || viTriBanHang.trim() === '') {
+      // Nếu không có giá trị, mặc định là "Tại Cửa Hàng" vì đa phần hóa đơn được tạo tại quầy
+      return 'Tại Cửa Hàng';
+    }
+
+    const normalized = viTriBanHang.toLowerCase().trim();
+
+    // Kiểm tra các giá trị có thể là "Tại quầy" hoặc "Tại Cửa Hàng"
+    if (
+      normalized === 'tại quầy' ||
+      normalized === 'tai quay' ||
+      normalized === 'counter' ||
+      normalized === 'tại cửa hàng' ||
+      normalized === 'tai cua hang' ||
+      normalized === 'tại quầy' ||
+      normalized.includes('quầy') ||
+      normalized.includes('quay') ||
+      normalized.includes('cửa hàng') ||
+      normalized.includes('cua hang')
+    ) {
+      return 'Tại Cửa Hàng';
+    }
+    // Kiểm tra các giá trị có thể là "Online"
+    else if (
+      normalized === 'online' ||
+      normalized === 'trực tuyến' ||
+      normalized === 'website' ||
+      normalized.includes('online') ||
+      normalized.includes('website')
+    ) {
+      return 'Online';
+    }
+
+    // Nếu không khớp với bất kỳ giá trị nào, trả về giá trị gốc hoặc mặc định
+    console.warn('Unknown viTriBanHang value:', viTriBanHang);
+    return 'Tại Cửa Hàng'; // Mặc định là "Tại Cửa Hàng"
+  }
+
   formatDateTimeForAPI(dateTime: string): string | undefined {
     if (!dateTime) return undefined;
     // Chuyển đổi từ datetime-local format sang ISO string
@@ -896,6 +1379,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         };
 
         console.log('📝 Preparing invoice data for database:', invoiceData);
+        console.log('📦 viTriBanHang value:', invoiceData.viTriBanHang);
         console.log('📦 danhSachChiTiet:', danhSachChiTiet);
 
         // Validation: Kiểm tra dữ liệu trước khi gửi
@@ -920,6 +1404,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         this.hoaDonService.createHoaDon(invoiceData).subscribe({
           next: (result) => {
             console.log('✅ Invoice created successfully:', result);
+            console.log('📋 viTriBanHang in result:', result?.viTriBanHang);
 
             // Reload danh sách từ server
             this.loadHoaDon();
@@ -2739,27 +3224,28 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
   }
 
+
   /**
    * Kiểm tra xem có nên hiển thị button "Xác nhận" không
-   * Hiển thị cho tất cả hóa đơn chưa hoàn thành và chưa bị hủy
+   * Hiển thị cho hóa đơn ở trạng thái "CHỜ XÁC NHẬN" hoặc các trạng thái khác chưa hoàn thành
    */
   shouldShowConfirmButton(invoice: HoaDonDTO): boolean {
     if (!invoice) {
       return false;
     }
 
-    // Kiểm tra nếu chưa hoàn thành
-    const isNotCompleted = invoice.trangThai !== 'DA_GIAO_HANG';
-
     // Kiểm tra nếu chưa bị hủy
     const isNotCancelled = invoice.trangThai !== 'HUY';
 
-    // Hiển thị button "Xác nhận" cho tất cả hóa đơn chưa hoàn thành và chưa bị hủy
+    // Kiểm tra nếu chưa hoàn thành
+    const isNotCompleted = invoice.trangThai !== 'DA_GIAO_HANG';
+
+    // Hiển thị button "Xác nhận" cho hóa đơn chưa hoàn thành và chưa bị hủy
     return isNotCompleted && isNotCancelled;
   }
 
   /**
-   * Xác nhận hóa đơn - chuyển sang trạng thái "Đã hoàn thành"
+   * Xác nhận hóa đơn - mở modal nhập thông tin nếu là CHO_XAC_NHAN, ngược lại xác nhận hoàn thành
    */
   confirmInvoice(invoice: HoaDonDTO): void {
     if (!invoice || !invoice.id) {
@@ -2767,7 +3253,15 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Xác nhận với người dùng
+    // Nếu là trạng thái "CHỜ XÁC NHẬN", mở modal nhập thông tin
+    if (invoice.trangThai === 'CHO_XAC_NHAN') {
+      this.invoiceToConfirm = invoice;
+      this.resetConfirmInvoiceForm();
+      this.showConfirmInvoiceModal = true;
+      return;
+    }
+
+    // Các trạng thái khác: xác nhận hoàn thành trực tiếp
     const confirmed = window.confirm(
       `Bạn có chắc chắn muốn xác nhận hoàn thành hóa đơn "${invoice.maHoaDon}"?\n\n` +
       `Hóa đơn sẽ được chuyển sang trạng thái "Đã giao hàng".`
@@ -2790,6 +3284,143 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         console.error('❌ Error confirming invoice:', error);
         const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
         this.showToast('Lỗi khi xác nhận hóa đơn: ' + errorMessage, 'error');
+      }
+    });
+  }
+
+  /**
+   * Reset form xác nhận hóa đơn
+   */
+  resetConfirmInvoiceForm(): void {
+    this.confirmInvoiceData = {
+      ngayDuKienGiao: '',
+      khoiLuong: null,
+      chieuDai: null,
+      chieuRong: null,
+      chieuCao: null,
+      phiGiaoHang: 30000,
+      nguoiChiuPhi: 'nguoi_gui',
+    };
+  }
+
+  /**
+   * Lấy ngày hôm nay để set min cho date picker
+   */
+  getTodayDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  }
+
+  /**
+   * Đóng modal xác nhận hóa đơn
+   */
+  closeConfirmInvoiceModal(): void {
+    this.showConfirmInvoiceModal = false;
+    this.invoiceToConfirm = null;
+    this.resetConfirmInvoiceForm();
+  }
+
+  /**
+   * Xác nhận hóa đơn với thông tin đã nhập
+   */
+  submitConfirmInvoice(): void {
+    if (!this.invoiceToConfirm || !this.invoiceToConfirm.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Validate form
+    if (!this.confirmInvoiceData.ngayDuKienGiao) {
+      this.showToast('Vui lòng nhập ngày dự kiến giao', 'warning');
+      return;
+    }
+
+    if (!this.confirmInvoiceData.khoiLuong || this.confirmInvoiceData.khoiLuong <= 0) {
+      this.showToast('Vui lòng nhập khối lượng hợp lệ', 'warning');
+      return;
+    }
+
+    if (!this.confirmInvoiceData.chieuDai || !this.confirmInvoiceData.chieuRong || !this.confirmInvoiceData.chieuCao) {
+      this.showToast('Vui lòng nhập đầy đủ kích thước (dài, rộng, cao)', 'warning');
+      return;
+    }
+
+    this.loadingInvoices = true;
+
+    // Load hóa đơn hiện tại để lấy đầy đủ thông tin bắt buộc
+    this.hoaDonService.getHoaDonById(this.invoiceToConfirm.id).subscribe({
+      next: (currentInvoice) => {
+        // Merge dữ liệu mới vào hóa đơn hiện tại - đảm bảo có đủ các trường bắt buộc
+        const updateData: any = {
+          // Các trường bắt buộc từ hóa đơn hiện tại
+          maHoaDon: currentInvoice.maHoaDon,
+          khachHangId: currentInvoice.khachHangId,
+          tongTien: currentInvoice.tongTien,
+          thanhTien: currentInvoice.thanhTien,
+          tienGiamGia: currentInvoice.tienGiamGia || 0,
+          soLuongSanPham: currentInvoice.soLuongSanPham || 0,
+          nhanVienId: currentInvoice.nhanVienId,
+          ghiChu: currentInvoice.ghiChu || '',
+
+          // Cập nhật trạng thái mới
+          trangThai: 'DA_XAC_NHAN', // Cập nhật trạng thái từ "CHỜ XÁC NHẬN" sang "ĐÃ XÁC NHẬN"
+
+          // Thông tin vận chuyển mới
+          ngayDuKienGiao: new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString(),
+          khoiLuong: this.confirmInvoiceData.khoiLuong,
+          chieuDai: this.confirmInvoiceData.chieuDai,
+          chieuRong: this.confirmInvoiceData.chieuRong,
+          chieuCao: this.confirmInvoiceData.chieuCao,
+          phiGiaoHang: this.confirmInvoiceData.phiGiaoHang,
+          nguoiChiuPhi: this.confirmInvoiceData.nguoiChiuPhi,
+        };
+
+        console.log('📝 Updating invoice with complete data:', updateData);
+        console.log('📋 Current invoice status:', currentInvoice.trangThai);
+        console.log('📋 New status will be: DA_XAC_NHAN');
+
+        // Cập nhật hóa đơn với đầy đủ thông tin
+        if (!this.invoiceToConfirm || !this.invoiceToConfirm.id) {
+          this.showToast('Không tìm thấy hóa đơn', 'error');
+          this.loadingInvoices = false;
+          return;
+        }
+
+        this.hoaDonService.updateHoaDonNew(this.invoiceToConfirm.id, updateData).subscribe({
+          next: (updatedInvoice) => {
+            console.log('✅ Invoice confirmed with shipping info:', updatedInvoice);
+            console.log('📋 Updated invoice status:', updatedInvoice.trangThai);
+
+            // Đóng modal
+            this.closeConfirmInvoiceModal();
+
+            // Hiển thị thông báo thành công
+            this.showToast('Xác nhận hóa đơn thành công! Trạng thái đã được cập nhật thành "Đã xác nhận".', 'success');
+
+            // Reload danh sách để cập nhật UI và trạng thái
+            this.loadHoaDon();
+
+            // Reload all invoices để cập nhật số lượng đếm
+            this.loadAllInvoicesForCount();
+
+            this.loadingInvoices = false;
+            this.cdr.detectChanges();
+          },
+          error: (error) => {
+            console.error('❌ Error updating invoice:', error);
+            console.error('❌ Error details:', JSON.stringify(error, null, 2));
+            this.loadingInvoices = false;
+            const errorMessage = error.error?.message || error.error || error.message || 'Vui lòng thử lại';
+            this.showToast('Lỗi khi xác nhận hóa đơn: ' + errorMessage, 'error');
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error loading current invoice:', error);
+        this.loadingInvoices = false;
+        this.showToast('Lỗi khi tải thông tin hóa đơn: ' + (error.message || 'Vui lòng thử lại'), 'error');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -2837,3 +3468,4 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
 }
+
