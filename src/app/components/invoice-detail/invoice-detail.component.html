@@ -8,8 +8,13 @@
       <h2> Chi tiết hóa đơn</h2>
     </div>
     <div class="header-right">
-      <button class="btn btn-outline-primary" (click)="printInvoice()">
-         In hóa đơn
+      <!-- Chỉ hiển thị button In hóa đơn khi trạng thái là Đã Giao Hàng (Đã Hoàn Thành) -->
+      <button 
+        class="btn btn-outline-primary" 
+        (click)="printInvoice()"
+        *ngIf="invoice && (invoice.trangThai === 'DA_GIAO_HANG')"
+      >
+        <i class="bi bi-printer me-2"></i>In hóa đơn
       </button>
     </div>
   </div>
@@ -334,8 +339,8 @@
       </div>
     </div>
 
-    <!-- Status Update Control (chỉ hiển thị khi KHÔNG phải Đã Xác Nhận, KHÔNG phải Chờ Xác Nhận, KHÔNG phải Đang Vận Chuyển, và KHÔNG phải Đã Giao Hàng) -->
-    <div class="status-update-control" *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG'">
+    <!-- Status Update Control (chỉ hiển thị khi KHÔNG phải Đã Xác Nhận, KHÔNG phải Chờ Xác Nhận, KHÔNG phải Đang Vận Chuyển, KHÔNG phải Đã Giao Hàng, và KHÔNG phải Hủy) -->
+    <div class="status-update-control" *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'">
       <div class="status-update-card">
         <div class="status-update-header">
           
@@ -378,8 +383,8 @@
       </div>
             </div>
 
-    <!-- Chi tiết hóa đơn khi trạng thái là Đã Xác Nhận, Đang Vận Chuyển hoặc Đã Giao Hàng -->
-    <div *ngIf="invoice && (invoice.trangThai === 'DA_XAC_NHAN' || invoice.trangThai === 'DANG_GIAO_HANG' || invoice.trangThai === 'DA_GIAO_HANG')" class="confirmed-invoice-details-view">
+    <!-- Chi tiết hóa đơn khi trạng thái là Đã Xác Nhận, Đang Vận Chuyển, Đã Giao Hàng hoặc Đã Hủy -->
+    <div *ngIf="invoice && (invoice.trangThai === 'DA_XAC_NHAN' || invoice.trangThai === 'DANG_GIAO_HANG' || invoice.trangThai === 'DA_GIAO_HANG' || invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY')" class="confirmed-invoice-details-view">
       <!-- Thông tin Shop -->
       <div class="shop-info-section mb-4">
         <div class="shop-name">Shop TDK</div>
@@ -428,73 +433,78 @@
         </table>
       </div>
 
-      <!-- Thông tin người nhận -->
-      <div class="recipient-info-card mb-4">
-        <h5 class="card-title mb-3">
-          <i class="bi bi-person-fill me-2"></i>Thông tin người nhận
-        </h5>
-        <div class="row">
-          <div class="col-md-6">
+      <!-- Thông tin người nhận và Tổng kết (nằm ngang nhau) -->
+      <div class="row mb-4">
+        <!-- Thông tin người nhận -->
+        <div class="col-md-6">
+          <div class="recipient-info-card">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-person-fill me-2"></i>Thông tin người nhận
+            </h5>
             <div class="info-item">
               <span class="label">Họ tên người nhận:</span>
               <span class="value">{{ invoice.tenKhachHang || customer?.tenKhachHang || 'Chưa có' }}</span>
             </div>
-          </div>
-          <div class="col-md-6">
-            <div class="info-item">
-              <span class="label">Sđt:</span>
-              <span class="value">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai || 'Chưa có' }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="row mt-2">
-          <div class="col-12">
-            <div class="info-item">
+            <div class="info-item mt-2">
               <span class="label">Địa chỉ:</span>
               <span class="value">{{ getCustomerAddress() }}</span>
             </div>
+            <div class="info-item mt-2">
+              <span class="label">Sđt:</span>
+              <span class="value">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai || 'Chưa có' }}</span>
+            </div>
+            <!-- Ghi chú khi trạng thái là Hủy -->
+            <div class="info-item mt-3" *ngIf="(invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY') && invoice.ghiChu">
+              <span class="label text-danger">
+                <i class="bi bi-exclamation-circle me-2"></i>Lý do hủy:
+              </span>
+              <span class="value text-danger">{{ invoice.ghiChu }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Tổng kết tiền -->
-      <div class="cost-summary-card mb-4">
-        <h5 class="card-title mb-3">
-          <i class="bi bi-calculator me-2"></i>Tổng kết
-        </h5>
-        <div class="cost-summary">
-          <div class="cost-row">
-            <span class="cost-label">Tổng tiền các sản phẩm:</span>
-            <span class="cost-value">{{ formatCurrency(invoice.tongTien || 0) }} ₫</span>
-          </div>
-          <!-- Phí vận chuyển chỉ hiển thị khi đã có giá trị (đã xác nhận) -->
-          <div class="cost-row" *ngIf="invoice.phiGiaoHang && invoice.phiGiaoHang > 0">
-            <span class="cost-label">Phí vận chuyển:</span>
-            <span class="cost-value">{{ formatCurrency(invoice.phiGiaoHang) }} ₫</span>
-          </div>
-          <!-- Tiền giảm chỉ hiển thị khi có giá trị -->
-          <div class="cost-row" *ngIf="invoice.tienGiamGia && invoice.tienGiamGia > 0">
-            <span class="cost-label">Tiền giảm:</span>
-            <span class="cost-value text-danger">-{{ formatCurrency(invoice.tienGiamGia) }} ₫</span>
-          </div>
-          <div class="cost-row total-cost-row">
-            <span class="cost-label">Tổng tiền:</span>
-            <span class="cost-value total-amount">{{ formatCurrency(getTotalAmountWithShipping()) }} ₫</span>
+        <!-- Tổng kết tiền -->
+        <div class="col-md-6">
+          <div class="cost-summary-card">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-calculator me-2"></i>Tổng kết
+            </h5>
+            <div class="cost-summary">
+              <div class="cost-row">
+                <span class="cost-label">Tổng tiền các sản phẩm:</span>
+                <span class="cost-value">{{ formatCurrency(invoice.tongTien || 0) }} ₫</span>
+              </div>
+              <!-- Phí vận chuyển chỉ hiển thị khi đã có giá trị (đã xác nhận) -->
+              <div class="cost-row" *ngIf="invoice.phiGiaoHang && invoice.phiGiaoHang > 0">
+                <span class="cost-label">Phí vận chuyển:</span>
+                <span class="cost-value">{{ formatCurrency(invoice.phiGiaoHang) }} ₫</span>
+              </div>
+              <!-- Tiền giảm chỉ hiển thị khi có giá trị -->
+              <div class="cost-row" *ngIf="invoice.tienGiamGia && invoice.tienGiamGia > 0">
+                <span class="cost-label">Tiền giảm:</span>
+                <span class="cost-value text-danger">-{{ formatCurrency(invoice.tienGiamGia) }} ₫</span>
+              </div>
+              <div class="cost-row total-cost-row">
+                <span class="cost-label">Tổng tiền:</span>
+                <span class="cost-value total-amount">{{ formatCurrency(getTotalAmountWithShipping()) }} ₫</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="action-buttons-section">
-        <!-- Action buttons chỉ hiển thị khi trạng thái là DA_XAC_NHAN hoặc DANG_GIAO_HANG (không hiển thị cho DA_GIAO_HANG) -->
-        <div class="d-flex justify-content-end gap-3" *ngIf="invoice.trangThai !== 'DA_GIAO_HANG'">
+        <!-- Action buttons chỉ hiển thị khi trạng thái là DA_XAC_NHAN hoặc DANG_GIAO_HANG (không hiển thị cho DA_GIAO_HANG và DA_HUY/HUY) -->
+        <div class="d-flex justify-content-end gap-3" *ngIf="invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'">
           <button
             type="button"
             class="btn btn-outline-danger"
-            (click)="markAsFailed()"
+            (click)="openCancelInvoiceModal()"
             [disabled]="savingStatus"
           >
-            <i class="bi bi-x-circle me-2"></i>Thất bại
+            <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+            <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>Hủy
           </button>
           <button
             type="button"
@@ -516,8 +526,8 @@
             </div>
 
 
-    <!-- Main Content Tables (ẩn khi trạng thái là Đã Xác Nhận, Đang Vận Chuyển hoặc Đã Giao Hàng) -->
-    <div class="invoice-detail-tables" *ngIf="!invoice || (invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG')">
+    <!-- Main Content Tables (ẩn khi trạng thái là Đã Xác Nhận, Đang Vận Chuyển, Đã Giao Hàng hoặc Đã Hủy) -->
+    <div class="invoice-detail-tables" *ngIf="!invoice || (invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY')">
       <!-- Table 1: Thông tin đơn hàng và khách hàng -->
       <div class="table-responsive mb-4">
         <table class="table table-bordered invoice-info-table">
@@ -870,3 +880,57 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Hủy Hóa Đơn -->
+<div class="modal fade" [class.show]="showCancelInvoiceModal" [style.display]="showCancelInvoiceModal ? 'block' : 'none'" 
+     id="cancelInvoiceModal" tabindex="-1" role="dialog" 
+     [attr.aria-hidden]="!showCancelInvoiceModal">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Hủy Hóa Đơn
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeCancelInvoiceModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning mb-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Lưu ý:</strong> Bạn có chắc chắn muốn hủy hóa đơn <strong>{{ invoice?.maHoaDon }}</strong>?
+          <br>
+          Hóa đơn sẽ được chuyển sang trạng thái <strong>"Đã Hủy"</strong>.
+        </div>
+        
+        <div class="mb-3">
+          <label for="cancelInvoiceNote" class="form-label required">
+            <i class="bi bi-pencil-square me-2"></i>Lý do hủy hóa đơn <span class="text-danger">*</span>
+          </label>
+          <textarea
+            class="form-control"
+            id="cancelInvoiceNote"
+            rows="4"
+            [(ngModel)]="cancelInvoiceNote"
+            name="cancelInvoiceNote"
+            placeholder="Vui lòng nhập lý do hủy hóa đơn..."
+            required
+            [disabled]="savingStatus"
+          ></textarea>
+          <small class="text-muted">Vui lòng nhập lý do hủy để lưu trữ thông tin.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCancelInvoiceModal()" [disabled]="savingStatus">
+          <i class="bi bi-x-circle me-2"></i>Đóng
+        </button>
+        <button type="button" class="btn btn-danger" (click)="markAsFailed()" [disabled]="savingStatus || !cancelInvoiceNote || cancelInvoiceNote.trim().length === 0">
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
+          {{ savingStatus ? 'Đang xử lý...' : 'Xác nhận hủy' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="showCancelInvoiceModal" 
+     [style.display]="showCancelInvoiceModal ? 'block' : 'none'" 
+     (click)="closeCancelInvoiceModal()"></div>
