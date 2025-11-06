@@ -3359,30 +3359,42 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         const cancelNote = this.cancelInvoiceNote ? this.cancelInvoiceNote.trim() : '';
         console.log('📝 Cancel note to save:', cancelNote, '(length:', cancelNote.length, ')');
         
-        const updateData: any = {
-          maHoaDon: currentInvoice.maHoaDon.trim(),
-          khachHangId: currentInvoice.khachHangId,
-          tongTien: Number(currentInvoice.tongTien),
-          thanhTien: currentInvoice.thanhTien ? Number(currentInvoice.thanhTien) : Number(currentInvoice.tongTien),
-          tienGiamGia: currentInvoice.tienGiamGia ? Number(currentInvoice.tienGiamGia) : 0,
-          soLuongSanPham: currentInvoice.soLuongSanPham || 0,
-          nhanVienId: currentInvoice.nhanVienId || null,
-          ghiChu: cancelNote, // Lưu ghi chú hủy (đảm bảo không null)
-          trangThai: 'HUY', // Sẽ được backend map thành DA_HUY
-          danhSachChiTiet: (currentInvoice as any).danhSachChiTiet || currentInvoice.danhSachSanPham || []
-        };
+        // QUAN TRỌNG: Lấy danhSachChiTiet từ currentInvoice (đã được load với đầy đủ thông tin)
+        // Ưu tiên: danhSachChiTiet gốc > danhSachSanPham đã map
+        const originalDanhSachChiTiet = (currentInvoice as any).danhSachChiTiet;
+        const mappedDanhSachSanPham = currentInvoice.danhSachSanPham || [];
         
-        console.log('📦 Update data prepared:', {
-          maHoaDon: updateData.maHoaDon,
-          trangThai: updateData.trangThai,
-          ghiChu: updateData.ghiChu,
-          ghiChuLength: updateData.ghiChu ? updateData.ghiChu.length : 0,
-          danhSachChiTietCount: updateData.danhSachChiTiet?.length || 0
+        console.log('📦 Product data sources:', {
+          originalDanhSachChiTiet: originalDanhSachChiTiet?.length || 0,
+          mappedDanhSachSanPham: mappedDanhSachSanPham.length,
+          invoiceId: currentInvoice.id,
+          trangThai: currentInvoice.trangThai
         });
-
-        // Map danhSachChiTiet nếu cần
-        if (updateData.danhSachChiTiet && updateData.danhSachChiTiet.length > 0) {
-          updateData.danhSachChiTiet = updateData.danhSachChiTiet.map((item: any) => ({
+        
+        // Map danhSachChiTiet từ nguồn phù hợp
+        let danhSachChiTietToUpdate: any[] = [];
+        
+        if (originalDanhSachChiTiet && originalDanhSachChiTiet.length > 0) {
+          // Nếu có danhSachChiTiet gốc, dùng nó
+          console.log('✅ Using original danhSachChiTiet from backend');
+          danhSachChiTietToUpdate = originalDanhSachChiTiet.map((item: any) => ({
+            id: item.id || null,
+            chiTietSanPhamId: item.chiTietSanPhamId || null,
+            tenSanPham: item.tenSanPham || '',
+            maSanPham: item.maSanPham || '',
+            soLuong: item.soLuong ? Number(item.soLuong) : 0,
+            donGia: item.donGia != null ? Number(item.donGia) : 0,
+            thanhTien: item.thanhTien != null ? Number(item.thanhTien) : 0,
+            giamGia: item.giamGia != null ? Number(item.giamGia) : 0,
+            mauSac: item.mauSac || '',
+            kichThuoc: item.kichThuoc || '',
+            nhaSanXuat: item.nhaSanXuat || '',
+            anhSanPham: item.anhSanPham || ''
+          })).filter((item: any) => item.chiTietSanPhamId != null);
+        } else if (mappedDanhSachSanPham && mappedDanhSachSanPham.length > 0) {
+          // Nếu không có danhSachChiTiet gốc, map từ danhSachSanPham
+          console.log('⚠️ No original danhSachChiTiet, mapping from danhSachSanPham');
+          danhSachChiTietToUpdate = mappedDanhSachSanPham.map((item: any) => ({
             id: item.id || null,
             chiTietSanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
             tenSanPham: item.tenSanPham || '',
@@ -3396,14 +3408,41 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             nhaSanXuat: item.nhaSanXuat || '',
             anhSanPham: item.anhSanPham || ''
           })).filter((item: any) => item.chiTietSanPhamId != null);
+        } else {
+          console.warn('⚠️ No products found in invoice. This might cause products to be deleted when cancelling.');
         }
-
-        // Validate: Đảm bảo có ít nhất một sản phẩm hợp lệ (nhưng không chặn nếu không có, vì có thể hóa đơn đã bị xóa sản phẩm)
-        if (!updateData.danhSachChiTiet || updateData.danhSachChiTiet.length === 0) {
-          console.warn('⚠️ No valid products found in invoice. Proceeding with cancellation anyway...');
-          // Không chặn, vì có thể hóa đơn đã bị xóa sản phẩm nhưng vẫn cần hủy
-          updateData.danhSachChiTiet = [];
-        }
+        
+        console.log('📦 Final danhSachChiTiet to update:', {
+          count: danhSachChiTietToUpdate.length,
+          items: danhSachChiTietToUpdate.map((item: any) => ({
+            id: item.id,
+            chiTietSanPhamId: item.chiTietSanPhamId,
+            tenSanPham: item.tenSanPham,
+            soLuong: item.soLuong
+          }))
+        });
+        
+        const updateData: any = {
+          maHoaDon: currentInvoice.maHoaDon.trim(),
+          khachHangId: currentInvoice.khachHangId,
+          tongTien: Number(currentInvoice.tongTien),
+          thanhTien: currentInvoice.thanhTien ? Number(currentInvoice.thanhTien) : Number(currentInvoice.tongTien),
+          tienGiamGia: currentInvoice.tienGiamGia ? Number(currentInvoice.tienGiamGia) : 0,
+          soLuongSanPham: currentInvoice.soLuongSanPham || danhSachChiTietToUpdate.length || 0,
+          nhanVienId: currentInvoice.nhanVienId || null,
+          ghiChu: cancelNote, // Lưu ghi chú hủy (đảm bảo không null)
+          trangThai: 'HUY', // Sẽ được backend map thành DA_HUY
+          danhSachChiTiet: danhSachChiTietToUpdate // QUAN TRỌNG: Giữ lại danhSachChiTiet khi hủy
+        };
+        
+        console.log('📦 Update data prepared:', {
+          maHoaDon: updateData.maHoaDon,
+          trangThai: updateData.trangThai,
+          ghiChu: updateData.ghiChu,
+          ghiChuLength: updateData.ghiChu ? updateData.ghiChu.length : 0,
+          danhSachChiTietCount: updateData.danhSachChiTiet?.length || 0,
+          soLuongSanPham: updateData.soLuongSanPham
+        });
 
         // Đảm bảo format đúng cho backend
         const finalUpdateData: any = {

@@ -1,78 +1,244 @@
 <div class="shop-container">
-  <!-- Header -->
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-content">
+        <div class="top-bar-left">
+          <span class="top-bar-item">
+            <i class="fas fa-envelope"></i>
+            contact@tdkstore.com
+          </span>
+          <span class="top-bar-item">
+            <i class="fas fa-phone"></i>
+            1900 636 648
+          </span>
+        </div>
+        <div class="top-bar-right">
+          <a routerLink="/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/customer/profile" class="top-bar-link" *ngIf="authService.isLoggedIn()">Tài khoản</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Header -->
   <header class="shop-header">
     <div class="container">
       <div class="header-content">
         <div class="logo-section">
-          <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo">
-          <h1>TDK Store</h1>
+          <a routerLink="/shop" class="logo-link">
+            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+            <span class="logo-text">TDK Store</span>
+          </a>
         </div>
         <nav class="nav-menu">
           <a routerLink="/shop" routerLinkActive="active">Trang chủ</a>
-          <a routerLink="/shop/products" routerLinkActive="active">Sản phẩm</a>
-          <a routerLink="/shop/cart" routerLinkActive="active" class="cart-link">
+          <a routerLink="/shop" routerLinkActive="active">Giới thiệu</a>
+          <a routerLink="/shop/products" routerLinkActive="active" class="has-dropdown">
+            Sản phẩm
+            <i class="fas fa-chevron-down"></i>
+            <div class="dropdown-menu">
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}">Nón 3/4</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}">Nón Full Face</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}">Nón lật cằm</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}">Nón trẻ em</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}">Nón Carbon</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}">Phụ kiện</a>
+            </div>
+          </a>
+          <a routerLink="/shop" routerLinkActive="active">Tin tức</a>
+          <a routerLink="/shop" routerLinkActive="active">Liên hệ</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-btn search-btn" (click)="toggleSearch()">
+            <i class="fas fa-search"></i>
+          </button>
+          <a routerLink="/shop/cart" class="icon-btn cart-link">
             <i class="fas fa-shopping-cart"></i>
-            Giỏ hàng
             <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
           </a>
-          <a *ngIf="authService.isLoggedIn() && authService.isCustomer()" routerLink="/customer/orders" routerLinkActive="active">
-            <i class="fas fa-shopping-bag"></i> Đơn hàng
-          </a>
-          <a *ngIf="authService.isLoggedIn()" routerLink="/customer/profile" routerLinkActive="active">
-            <i class="fas fa-user"></i> Tài khoản
-          </a>
-          <a *ngIf="!authService.isLoggedIn()" routerLink="/login" routerLinkActive="active">
-            <i class="fas fa-sign-in-alt"></i> Đăng nhập
-          </a>
-        </nav>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="container">
-      <h2>Mũ Bảo Hiểm Chất Lượng Cao</h2>
-      <p>An toàn - Bền bỉ - Thời trang</p>
+  <!-- Search Overlay -->
+  <div class="search-overlay" *ngIf="showSearch" (click)="toggleSearch()">
+    <div class="search-modal" (click)="$event.stopPropagation()">
+      <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          type="text" 
+          [(ngModel)]="searchKeyword"
+          (ngModelChange)="filterProducts()"
+          placeholder="Tìm kiếm sản phẩm..."
+          class="search-input"
+          (keyup.enter)="toggleSearch()"
+        />
+      </div>
     </div>
-  </section>
+  </div>
 
-  <!-- Filter Section -->
-  <section class="filter-section">
+  <!-- Feature Cards Section -->
+  <section class="features-section">
     <div class="container">
-      <div class="filter-content">
-        <div class="search-box">
-          <i class="fas fa-search search-icon"></i>
-          <input 
-            type="text" 
-            [(ngModel)]="searchKeyword"
-            (ngModelChange)="filterProducts()"
-            placeholder="Tìm kiếm sản phẩm..."
-            class="search-input"
-          />
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-truck"></i>
+          </div>
+          <h3 class="feature-title">FREESHIP</h3>
+          <p class="feature-text">Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.</p>
         </div>
-        
-        <div class="filter-controls">
-          <select 
-            [(ngModel)]="selectedPriceRange"
-            (ngModelChange)="filterProducts()"
-            class="filter-select"
-          >
-            <option *ngFor="let range of priceRanges" [value]="range.value">
-              {{ range.label }}
-            </option>
-          </select>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-undo-alt"></i>
+          </div>
+          <h3 class="feature-title">HOÀN TIỀN 100%</h3>
+          <p class="feature-text">Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-headset"></i>
+          </div>
+          <h3 class="feature-title">HỖ TRỢ 24/7</h3>
+          <p class="feature-text">Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Products Section -->
-  <section class="products-section">
+  <!-- Product Tabs Section -->
+  <section class="product-tabs-section">
+    <div class="container">
+      <div class="tabs-header">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'best-selling'"
+          (click)="setActiveTab('best-selling')"
+        >
+          BÁN CHẠY
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'featured'"
+          (click)="setActiveTab('featured')"
+        >
+          NỔI BẬT
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'best-price'"
+          (click)="setActiveTab('best-price')"
+        >
+          GIÁ TỐT
+        </button>
+      </div>
+
+      <div class="tab-content">
+        <div *ngIf="isLoading" class="loading">
+          <div class="spinner"></div>
+          <p>Đang tải sản phẩm...</p>
+        </div>
+
+        <div *ngIf="!isLoading && getActiveProducts().length === 0" class="no-products">
+          <i class="fas fa-box-open"></i>
+          <p>Không tìm thấy sản phẩm nào</p>
+        </div>
+
+        <div class="products-grid" *ngIf="!isLoading && getActiveProducts().length > 0">
+          <div 
+            *ngFor="let product of getActiveProducts()" 
+            class="product-card"
+            (click)="viewProduct(product.id)"
+          >
+            <div class="product-image">
+              <img [src]="getProductImageUrl(product)" [alt]="product.tenSanPham" />
+              <div class="product-overlay">
+                <button class="btn-quick-view" (click)="viewProduct(product.id); $event.stopPropagation()">
+                  <i class="fas fa-eye"></i> Xem nhanh
+                </button>
+              </div>
+            </div>
+            <div class="product-info">
+              <h4 class="product-name">{{ product.tenSanPham }}</h4>
+              <div class="product-price">{{ formatCurrency(getProductPrice(product)) }}</div>
+              <button 
+                class="btn-add-cart" 
+                (click)="addToCart(product); $event.stopPropagation()"
+                [disabled]="!product.trangThai"
+              >
+                <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
+              </button>
+            </div>
+            <div class="product-badge" *ngIf="!product.trangThai">
+              <span class="badge-out-of-stock">Hết hàng</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="categories-section" *ngIf="categories.length > 0">
+    <div class="container">
+      <div class="categories-grid">
+        <div class="category-section" *ngFor="let category of categories.slice(0, 3)">
+          <h2 class="category-title">{{ category.tenLoaiMu }}</h2>
+          <div class="category-products">
+            <div 
+              *ngFor="let product of getProductsByCategory(category.id).slice(0, 4)" 
+              class="category-product-card"
+              (click)="viewProduct(product.id)"
+            >
+              <div class="category-product-image">
+                <img [src]="getProductImageUrl(product)" [alt]="product.tenSanPham" />
+              </div>
+              <div class="category-product-info">
+                <h4 class="category-product-name">{{ product.tenSanPham }}</h4>
+                <div class="category-product-price">{{ formatCurrency(getProductPrice(product)) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- All Products Section -->
+  <section class="all-products-section">
     <div class="container">
       <div class="section-header">
-        <h3>Sản phẩm nổi bật</h3>
+        <h3>Tất cả sản phẩm</h3>
         <p>{{ filteredProducts.length }} sản phẩm</p>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-content">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input 
+              type="text" 
+              [(ngModel)]="searchKeyword"
+              (ngModelChange)="filterProducts()"
+              placeholder="Tìm kiếm sản phẩm..."
+              class="search-input"
+            />
+          </div>
+          
+          <div class="filter-controls">
+            <select 
+              [(ngModel)]="selectedPriceRange"
+              (ngModelChange)="filterProducts()"
+              class="filter-select"
+            >
+              <option *ngFor="let range of priceRanges" [value]="range.value">
+                {{ range.label }}
+              </option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div *ngIf="isLoading" class="loading">
@@ -133,25 +299,49 @@
     <div class="container">
       <div class="footer-content">
         <div class="footer-section">
-          <h4>Về chúng tôi</h4>
-          <p>TDK Store - Chuyên bán mũ bảo hiểm chất lượng cao</p>
-        </div>
-        <div class="footer-section">
           <h4>Liên hệ</h4>
-          <p><i class="fas fa-phone"></i> Hotline: 0123456789</p>
-          <p><i class="fas fa-envelope"></i> Email: contact@tdkstore.com</p>
+          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Phường 15, Quận 11, Tp.HCM</p>
+          <p><i class="fas fa-phone"></i> 076 922 0162</p>
+          <p><i class="fas fa-envelope"></i> contact@tdkstore.com</p>
+          <p><i class="fas fa-envelope"></i> mon@mona.media</p>
         </div>
         <div class="footer-section">
-          <h4>Theo dõi chúng tôi</h4>
-          <div class="social-links">
-            <a href="#"><i class="fab fa-facebook"></i></a>
-            <a href="#"><i class="fab fa-instagram"></i></a>
-            <a href="#"><i class="fab fa-youtube"></i></a>
+          <h4>Menu</h4>
+          <ul>
+            <li><a routerLink="/shop">Giới thiệu</a></li>
+            <li><a routerLink="/shop/products">Cửa hàng</a></li>
+            <li><a routerLink="/shop">Tin tức</a></li>
+            <li><a routerLink="/shop">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Tài khoản</h4>
+          <ul>
+            <li><a routerLink="/customer/profile">My account</a></li>
+            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
+            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Dịch vụ</h4>
+          <ul>
+            <li><a routerLink="/shop">Giới thiệu</a></li>
+            <li><a routerLink="/shop/products">Cửa hàng</a></li>
+            <li><a routerLink="/shop">Tin tức</a></li>
+            <li><a routerLink="/shop">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Đăng ký</h4>
+          <p>Đăng ký để nhận được thông tin mới nhất từ chúng tôi.</p>
+          <div class="newsletter-form">
+            <input type="email" placeholder="Email của bạn" class="newsletter-input">
+            <button class="newsletter-btn">Đăng ký</button>
           </div>
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2024 TDK Store. All rights reserved.</p>
+        <p>&copy; Bản quyền thuộc về TDK Store. Thiết kế website MonaMedia <strong>Mona Media</strong></p>
       </div>
     </div>
   </footer>
