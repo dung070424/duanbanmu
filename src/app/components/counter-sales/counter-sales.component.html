@@ -25,7 +25,7 @@
         <div class="d-flex flex-wrap gap-2" *ngIf="pendingInvoices.length > 0">
           <div class="pending-item" *ngFor="let inv of pendingInvoices">
             <button class="btn btn-outline-secondary btn-sm" (click)="loadPending(inv)">
-              {{ inv.maHoaDonCho }} - {{ (inv.danhSachGioHang?.length || 0) }} sp
+              {{ inv.maHoaDonCho }} - {{ inv.danhSachGioHang?.length || 0 }} sp
             </button>
             <button
               class="btn btn-light btn-sm pending-delete"
@@ -186,9 +186,9 @@
                 <td>{{ p.stock }}</td>
                 <td class="text-success fw-semibold">{{ formatCurrency(p.price) }}</td>
                 <td>
-                  <button 
-                    class="btn-edit" 
-                    (click)="addToCart(p)" 
+                  <button
+                    class="btn-edit"
+                    (click)="addToCart(p)"
                     [disabled]="!isInvoiceCreated"
                     [title]="isInvoiceCreated ? 'Thêm vào giỏ' : 'Vui lòng tạo hóa đơn trước'"
                     [class.disabled]="!isInvoiceCreated"
@@ -292,10 +292,17 @@
       <!-- Order info -->
       <div class="card p-3 section-card">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" [(ngModel)]="isDelivery" />
-            <label class="form-check-label">Bàn giao hàng</label>
-          </div>
+          <h6 class="mb-2 section-title">
+            Bàn giao hàng
+            <span class="form-switch ms-2 align-middle">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                [(ngModel)]="isDelivery"
+                (change)="onDeliveryToggleChange()"
+              />
+            </span>
+          </h6>
         </div>
 
         <div class="text-center text-muted py-4" *ngIf="cart.length === 0">
@@ -318,33 +325,18 @@
           <!-- Coupon select -->
           <div class="mb-2">
             <label class="form-label">Mã giảm giá</label>
-            <div class="card p-2">
-              <div class="d-flex gap-2 mb-2">
-                <button
-                  class="btn btn-sm"
-                  [ngClass]="showBestTab ? 'btn-primary' : 'btn-outline-primary'"
-                  (click)="showBestTab = true"
-                >
-                  Mã tốt nhất
-                </button>
-                <button
-                  class="btn btn-sm"
-                  [ngClass]="!showBestTab ? 'btn-primary' : 'btn-outline-primary'"
-                  (click)="showBestTab = false"
-                >
-                  Mã thay thế
-                </button>
-                <div class="ms-auto">
+            <div class="card p-3 shadow-sm border-0">
+              <div class="d-flex mb-2 align-items-center">
+                <div class="ms-auto" style="max-width: 720px; width: 100%">
                   <div class="input-group input-group-sm">
                     <input
-                      class="form-control"
-                      placeholder="Nhập mã..."
+                      class="form-control rounded-pill"
+                      placeholder="Nhập mã và Enter"
                       [(ngModel)]="couponCode"
-                      (input)="onCouponInput()"
+                      (keyup.enter)="applyCoupon()"
                     />
-                    <button class="btn btn-outline-primary" (click)="applyCoupon()">Áp dụng</button>
                     <button
-                      class="btn btn-outline-secondary"
+                      class="btn btn-outline-secondary ms-2 rounded-pill"
                       *ngIf="appliedCoupon"
                       (click)="removeCoupon()"
                     >
@@ -353,46 +345,44 @@
                   </div>
                 </div>
               </div>
-              <div *ngIf="showBestTab">
-                <div class="alert alert-success py-2" *ngIf="bestVoucher">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                      <input
-                        type="radio"
-                        name="voucherChoice"
-                        [checked]="appliedCoupon?.code === bestVoucher.code"
-                        (change)="applyCouponFromSuggestion(bestVoucher)"
-                      />
-                      <span class="badge bg-success me-2">{{ bestVoucher.code }}</span>
-                      <span>Giảm: -{{ formatCurrency(bestVoucher.discount) }}</span>
+              <div class="voucher-list">
+                <div
+                  class="voucher-card"
+                  *ngFor="let v of allVouchers; let i = index"
+                  [ngClass]="{ best: i < 3 }"
+                >
+                  <div class="voucher-header">
+                    <span class="code-chip">{{ v.code }}</span>
+                    <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
+                  </div>
+                  <div class="voucher-body">
+                    <div class="discount-row">
+                      <span class="tag">Giảm:</span>
+                      <span class="value">-{{ formatCurrency(v.discount) }}</span>
+                    </div>
+                    <div class="extra" *ngIf="v.expiry || v.expiredAt">
+                      Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
+                    </div>
+                    <div class="extra" *ngIf="v.minOrder">
+                      Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
                     </div>
                   </div>
-                </div>
-                <div class="text-muted small" *ngIf="!bestVoucher">
-                  Không có mã giảm giá phù hợp
-                </div>
-              </div>
-              <div *ngIf="!showBestTab">
-                <div class="list-group">
-                  <label
-                    class="list-group-item d-flex justify-content-between align-items-center"
-                    *ngFor="let v of alternativeVouchers"
-                  >
-                    <div class="d-flex align-items-center gap-2">
+                  <div class="voucher-actions">
+                    <label class="form-check m-0">
                       <input
                         type="radio"
+                        class="form-check-input"
                         name="voucherChoice"
                         [checked]="appliedCoupon?.code === v.code"
                         (change)="applyCouponFromSuggestion(v)"
                       />
-                      <span class="badge bg-secondary me-2">{{ v.code }}</span>
-                      <span>Giảm: -{{ formatCurrency(v.discount) }}</span>
-                    </div>
-                  </label>
+                      <span>Chọn</span>
+                    </label>
+                  </div>
                 </div>
-                <div class="text-muted small" *ngIf="alternativeVouchers.length === 0">
-                  Không có mã thay thế
-                </div>
+              </div>
+              <div class="text-muted small" *ngIf="allVouchers.length === 0">
+                Không có mã giảm giá phù hợp
               </div>
             </div>
           </div>
@@ -404,52 +394,139 @@
             <span>Tổng cộng</span><span class="text-success">{{ formatCurrency(cartTotal) }}</span>
           </div>
 
-          <!-- Payment method selector -->
-          <div class="mt-2">
-            <label class="form-label mb-1">Hình thức thanh toán</label>
-            <div class="d-flex gap-3">
-              <label class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="pm"
-                  value="cash"
-                  [(ngModel)]="checkoutPaymentMethod"
-                />
-                <span class="ms-1">Tiền mặt</span>
-              </label>
-              <label class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="pm"
-                  value="transfer"
-                  [(ngModel)]="checkoutPaymentMethod"
-                />
-                <span class="ms-1">Chuyển khoản</span>
-              </label>
+          <!-- Payment method & cash input: only when KHÔNG giao hàng -->
+          <ng-container *ngIf="!isDelivery">
+            <!-- Payment method selector -->
+            <div class="mt-2">
+              <label class="form-label mb-1">Hình thức thanh toán</label>
+              <div class="d-flex gap-3">
+                <label class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="pm"
+                    value="cash"
+                    [(ngModel)]="checkoutPaymentMethod"
+                  />
+                  <span class="ms-1">Tiền mặt</span>
+                </label>
+                <label class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="pm"
+                    value="transfer"
+                    [(ngModel)]="checkoutPaymentMethod"
+                  />
+                  <span class="ms-1">Chuyển khoản</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Cash payment -->
+            <div class="mt-2" *ngIf="checkoutPaymentMethod === 'cash'">
+              <label class="form-label mb-1">Tiền khách đưa</label>
+              <input
+                class="form-control"
+                type="number"
+                min="0"
+                [(ngModel)]="cashReceived"
+                placeholder="Nhập số tiền khách đưa"
+              />
+              <div class="d-flex justify-content-between mt-2" *ngIf="cashReceived !== null">
+                <span>Tiền trả lại</span>
+                <span class="fw-semibold">{{ formatCurrency(changeDue) }}</span>
+              </div>
+            </div>
+
+            <!-- Bank transfer payment -->
+            <div class="mt-2" *ngIf="checkoutPaymentMethod === 'transfer'">
+              <div class="text-muted small">Bấm "Thanh toán" để hiển thị mã QR chuyển khoản.</div>
+            </div>
+          </ng-container>
+
+          <!-- Saved address selector when customer has multiple addresses -->
+          <div *ngIf="isDelivery && customerAddresses.length > 0" class="mb-2">
+            <label class="form-label mb-1">Địa chỉ đã lưu</label>
+            <select
+              class="form-select"
+              [(ngModel)]="selectedSavedAddressId"
+              (change)="onSelectSavedAddress()"
+            >
+              <option [ngValue]="''">-- Chọn địa chỉ --</option>
+              <option *ngFor="let a of customerAddresses" [ngValue]="a.id + ''">
+                {{ a.diaChiChiTiet }}, {{ a.phuongXa }}, {{ a.quanHuyen }}, {{ a.tinhThanh }}
+              </option>
+              <option [ngValue]="'new'">+ Nhập địa chỉ mới</option>
+            </select>
+            <div
+              class="form-text mt-1"
+              *ngIf="customerSavedAddress && selectedSavedAddressId !== 'new'"
+            >
+              Địa chỉ giao hàng: <b>{{ customerSavedAddress }}</b>
             </div>
           </div>
 
-          <!-- Cash payment -->
-          <div class="mt-2" *ngIf="checkoutPaymentMethod === 'cash'">
-            <label class="form-label mb-1">Tiền khách đưa</label>
+          <!-- Delivery address (when customer has no saved address or choose new) -->
+          <div *ngIf="shouldShowShippingAddress()" class="mb-2">
+            <div class="text-muted small mb-1">
+              Khách hàng chưa có địa chỉ lưu sẵn. Vui lòng nhập địa chỉ giao hàng:
+            </div>
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Tỉnh/Thành</label>
+                <select
+                  class="form-select"
+                  [(ngModel)]="selectedProvinceCode"
+                  (change)="onProvinceChange()"
+                >
+                  <option [ngValue]="''">-- Chọn tỉnh/thành --</option>
+                  <option *ngFor="let p of provinces" [ngValue]="p.code">{{ p.name }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Quận/Huyện</label>
+                <select
+                  class="form-select"
+                  [(ngModel)]="selectedDistrictCode"
+                  (change)="onDistrictChange()"
+                >
+                  <option [ngValue]="''">-- Chọn quận/huyện --</option>
+                  <option *ngFor="let d of districts" [ngValue]="d.code">{{ d.name }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Phường/Xã</label>
+                <select
+                  class="form-select"
+                  [(ngModel)]="selectedWardCode"
+                  (change)="onWardChange()"
+                >
+                  <option [ngValue]="''">-- Chọn phường/xã --</option>
+                  <option *ngFor="let w of wards" [ngValue]="w.code">{{ w.name }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Địa chỉ chi tiết</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  [(ngModel)]="addressDetail"
+                  (input)="composeShippingAddress()"
+                  placeholder="Số nhà, đường, toà nhà..."
+                />
+              </div>
+            </div>
+            <div class="form-text mt-1">
+              Địa chỉ đầy đủ: <b>{{ shippingAddress || '—' }}</b>
+            </div>
+            <label class="form-label mb-1 mt-2">Ghi chú giao hàng (tuỳ chọn)</label>
             <input
               class="form-control"
-              type="number"
-              min="0"
-              [(ngModel)]="cashReceived"
-              placeholder="Nhập số tiền khách đưa"
+              type="text"
+              [(ngModel)]="shippingNote"
+              placeholder="Ghi chú cho shipper"
             />
-            <div class="d-flex justify-content-between mt-2" *ngIf="cashReceived !== null">
-              <span>Tiền trả lại</span>
-              <span class="fw-semibold">{{ formatCurrency(changeDue) }}</span>
-            </div>
-          </div>
-
-          <!-- Bank transfer payment -->
-          <div class="mt-2" *ngIf="checkoutPaymentMethod === 'transfer'">
-            <div class="text-muted small">Bấm "Thanh toán" để hiển thị mã QR chuyển khoản.</div>
           </div>
 
           <button
@@ -466,22 +543,41 @@
 </div>
 
 <!-- Modal QR chuyển khoản -->
-<div *ngIf="showTransferQrModal" style="position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1050; display: flex; align-items: center; justify-content: center;">
-  <div class="card p-3" style="width: 380px; max-width: 92vw;">
+<div
+  *ngIf="showTransferQrModal"
+  style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  "
+>
+  <div class="card p-3" style="width: 380px; max-width: 92vw">
     <h6 class="mb-2">Quét QR để chuyển khoản</h6>
     <div class="text-muted small mb-2">Vui lòng quét mã bên dưới để chuyển khoản đúng số tiền.</div>
     <div class="d-flex align-items-center justify-content-center">
       <img [src]="transferQrUrl" alt="QR chuyển khoản" style="width: 260px; height: 260px" />
     </div>
     <div class="mt-2 small">
-      <div>Chủ tài khoản: <b>{{ qrAccountName }}</b></div>
+      <div>
+        Chủ tài khoản: <b>{{ qrAccountName }}</b>
+      </div>
       <div>Ngân hàng: <b>VPBank</b></div>
-      <div>Số tài khoản: <b>{{ qrAccount }}</b></div>
-      <div>Số tiền: <b>{{ formatCurrency(cartTotal) }}</b></div>
+      <div>
+        Số tài khoản: <b>{{ qrAccount }}</b>
+      </div>
+      <div>
+        Số tiền: <b>{{ formatCurrency(cartTotal) }}</b>
+      </div>
     </div>
     <div class="d-flex gap-2 mt-3">
       <button class="btn btn-secondary flex-fill" (click)="cancelTransferQr()">Hủy</button>
-      <button class="btn btn-primary flex-fill" (click)="confirmTransferQrAndPay()">Đã thanh toán</button>
+      <button class="btn btn-primary flex-fill" (click)="confirmTransferQrAndPay()">
+        Đã thanh toán
+      </button>
     </div>
   </div>
 </div>

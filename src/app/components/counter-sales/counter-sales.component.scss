@@ -832,3 +832,66 @@
     }
   }
 }
+
+.voucher-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.voucher-card {
+  position: relative;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e6e6e6;
+  padding: 12px 14px;
+}
+.voucher-card.best {
+  background: #eaf8f0; /* light green */
+  border-color: #ccebd9;
+}
+
+.voucher-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.code-chip {
+  background: #116c3f;
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.best-badge {
+  background: #21a366;
+  color: #fff;
+  padding: 2px 8px;
+  font-size: 12px;
+  border-radius: 12px;
+}
+
+.voucher-body .discount-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.voucher-body .discount-row .tag {
+  font-weight: 600;
+}
+.voucher-body .discount-row .value {
+  color: #c91c1c; /* red like screenshot */
+  font-weight: 700;
+}
+.voucher-body .extra {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.voucher-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}

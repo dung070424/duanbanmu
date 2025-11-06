@@ -18,6 +18,10 @@ import {
   CartItem,
   CounterSaleFilter,
 } from '../../interfaces/counter-sale.interface';
+import provincesData from 'sub-vn/json_data/provinces.json';
+import districtsData from 'sub-vn/json_data/districts.json';
+import wardsData from 'sub-vn/json_data/wards.json';
+import { DiaChiKhachHangService } from '../../services/dia-chi-khach-hang.service';
 
 type UICartItem = CartItem & { imageUrl?: string; gioHangChoId?: number };
 
@@ -79,6 +83,9 @@ export class CounterSalesComponent implements OnInit {
   toastMessage: string = '';
   toastType: 'success' | 'warning' | 'error' = 'success';
   isDelivery: boolean = false;
+  // Delivery input (when customer has no saved address)
+  shippingAddress: string = '';
+  shippingNote: string = '';
 
   // Coupon state
   couponCode: string = '';
@@ -101,6 +108,7 @@ export class CounterSalesComponent implements OnInit {
     discount: number;
   } | null = null;
   alternativeVouchers: any[] = [];
+  allVouchers: any[] = [];
   showBestTab: boolean = true;
 
   // Product filter + pagination for POS list
@@ -162,6 +170,20 @@ export class CounterSalesComponent implements OnInit {
     createdBy: 1,
     updatedBy: 1,
   };
+
+  // Saved customer address (if any) set when selecting customer
+  customerSavedAddress: string | null = null;
+  customerAddresses: Array<any> = [];
+  selectedSavedAddressId: string = '';
+
+  // Address selections (similar to customer management)
+  provinces: Array<{ code: string; name: string }> = [];
+  districts: Array<{ code: string; name: string; province_code: string }> = [];
+  wards: Array<{ code: string; name: string; district_code: string }> = [];
+  selectedProvinceCode: string = '';
+  selectedDistrictCode: string = '';
+  selectedWardCode: string = '';
+  addressDetail: string = '';
 
   selectedSale: CounterSale | null = null;
   editingSale: CounterSale | null = null;
@@ -253,7 +275,8 @@ export class CounterSalesComponent implements OnInit {
     private hoaDonService: HoaDonService,
     private hoaDonChoService: HoaDonChoService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private diaChiKhachHangService: DiaChiKhachHangService
   ) {}
 
   ngOnInit(): void {
@@ -263,6 +286,7 @@ export class CounterSalesComponent implements OnInit {
     this.filterProducts();
     this.refreshVoucherSuggestions();
     this.loadPendingInvoices();
+    this.loadProvinces();
   }
 
   loadSampleData(): void {
@@ -1351,6 +1375,7 @@ export class CounterSalesComponent implements OnInit {
       .sort((a, b) => b.discount - a.discount);
     this.bestVoucher = usable[0] || null;
     this.alternativeVouchers = usable.slice(1, 5);
+    this.allVouchers = usable; // flat, sorted desc
   }
 
   private computeVoucherDiscount(v: any, base: number): number {
@@ -1366,6 +1391,15 @@ export class CounterSalesComponent implements OnInit {
     if (this.cart.length === 0) {
       alert('Giỏ hàng trống!');
       return;
+    }
+
+    // Nếu chọn giao hàng, bắt buộc có địa chỉ nhận
+    if (this.isDelivery) {
+      const finalAddress = this.customerSavedAddress || this.shippingAddress;
+      if (!finalAddress || String(finalAddress).trim().length === 0) {
+        this.showToast('Vui lòng nhập địa chỉ giao hàng', 'warning');
+        return;
+      }
     }
 
     // Nếu chọn chuyển khoản và chưa xác nhận QR, hiện QR trước
@@ -1427,7 +1461,7 @@ export class CounterSalesComponent implements OnInit {
       thanhTien: Math.round(this.cartTotal),
       tienGiamGia: Math.round(this.cartDiscount + this.couponDiscount),
       phuongThucThanhToan: this.newSale.paymentMethod,
-      trangThai: 'DA_GIAO_HANG',
+      trangThai: this.isDelivery ? 'DANG_GIAO_HANG' : 'DA_GIAO_HANG',
       danhSachChiTiet: this.cart.map((item) => ({
         chiTietSanPhamId: item.productId,
         tenSanPham: item.productName,
@@ -1437,6 +1471,35 @@ export class CounterSalesComponent implements OnInit {
         thanhTien: item.totalPrice - item.discountAmount,
       })),
     };
+
+    // Giao hàng
+    if (this.isDelivery) {
+      const finalAddress = this.customerSavedAddress || this.shippingAddress;
+      // Resolve address component names
+      const provinceName =
+        this.provinces.find((p) => p.code === this.selectedProvinceCode)?.name || '';
+      const districtName =
+        this.districts.find((d) => d.code === this.selectedDistrictCode)?.name || '';
+      const wardName = this.wards.find((w) => w.code === this.selectedWardCode)?.name || '';
+      const detail = this.addressDetail || '';
+
+      payload.giaoHang = {
+        // Common fields
+        diaChiNhan: finalAddress,
+        diaChiGiaoHang: finalAddress,
+        diaChi: finalAddress,
+        // Component fields for rendering
+        diaChiChiTiet: detail,
+        phuongXa: wardName,
+        quanHuyen: districtName,
+        tinhThanh: provinceName,
+        // Recipient info
+        tenNguoiNhan: this.newSale.customerName,
+        soDienThoaiNguoiNhan: this.newSale.customerPhone,
+        // Note
+        ghiChuGiaoHang: this.shippingNote,
+      };
+    }
 
     // Đính kèm thông tin chuyển khoản nếu có
     if (this.checkoutPaymentMethod === 'transfer') {
@@ -1458,6 +1521,30 @@ export class CounterSalesComponent implements OnInit {
     this.hoaDonService.createHoaDon(payload).subscribe({
       next: (created: any) => {
         const createdId = created?.id;
+
+        // Nếu là giao hàng và KH chưa có địa chỉ lưu sẵn -> Lưu địa chỉ mới vào sổ địa chỉ KH
+        if (this.isDelivery && !this.customerSavedAddress && this.newSale.customerId) {
+          const provinceName =
+            this.provinces.find((p) => p.code === this.selectedProvinceCode)?.name || '';
+          const districtName =
+            this.districts.find((d) => d.code === this.selectedDistrictCode)?.name || '';
+          const wardName = this.wards.find((w) => w.code === this.selectedWardCode)?.name || '';
+          const detail = this.addressDetail || '';
+          const addressToSave = {
+            tenNguoiNhan: this.newSale.customerName || '',
+            soDienThoai: this.newSale.customerPhone || '',
+            diaChiChiTiet: detail,
+            tinhThanh: provinceName,
+            quanHuyen: districtName,
+            phuongXa: wardName,
+            macDinh: false,
+            trangThai: true,
+            khachHangId: this.newSale.customerId as number,
+          } as any;
+          this.diaChiKhachHangService
+            .createDiaChi(addressToSave)
+            .subscribe({ next: () => {}, error: () => {} });
+        }
 
         // Xóa hóa đơn chờ nếu có
         if (this.currentHoaDonChoId) {
@@ -1588,5 +1675,123 @@ export class CounterSalesComponent implements OnInit {
     this.selectedPaymentStatus = 'all';
     this.selectedPaymentMethod = 'all';
     this.filterSales();
+  }
+
+  // Load provinces from sub-vn library
+  loadProvinces(): void {
+    this.provinces = provincesData as any as Array<{ code: string; name: string }>;
+  }
+
+  onProvinceChange(): void {
+    this.selectedDistrictCode = '';
+    this.selectedWardCode = '';
+    const allDistricts = districtsData as any as Array<{
+      code: string;
+      name: string;
+      province_code: string;
+    }>;
+    this.districts = allDistricts.filter((d) => d.province_code === this.selectedProvinceCode);
+    this.wards = [];
+    this.composeShippingAddress();
+  }
+
+  onDistrictChange(): void {
+    this.selectedWardCode = '';
+    const allWards = wardsData as any as Array<{
+      code: string;
+      name: string;
+      district_code: string;
+    }>;
+    this.wards = allWards.filter((w) => w.district_code === this.selectedDistrictCode);
+    this.composeShippingAddress();
+  }
+
+  onWardChange(): void {
+    this.composeShippingAddress();
+  }
+
+  composeShippingAddress(): void {
+    const province = this.provinces.find((p) => p.code === this.selectedProvinceCode)?.name || '';
+    const district = this.districts.find((d) => d.code === this.selectedDistrictCode)?.name || '';
+    const ward = this.wards.find((w) => w.code === this.selectedWardCode)?.name || '';
+    const detail = this.addressDetail || '';
+    const parts = [detail, ward, district, province].filter((x) => x && x.trim().length > 0);
+    this.shippingAddress = parts.join(', ');
+  }
+
+  // Load customer's default (or first) address when available and delivery enabled
+  onDeliveryToggleChange(): void {
+    if (this.isDelivery) {
+      this.tryLoadCustomerDefaultAddress();
+    }
+  }
+
+  private tryLoadCustomerDefaultAddress(): void {
+    const customerId = this.newSale.customerId as any;
+    if (!customerId) return;
+    this.diaChiKhachHangService.getDiaChiByKhachHangId(customerId).subscribe({
+      next: (addresses: any[]) => {
+        this.customerAddresses = Array.isArray(addresses) ? addresses : [];
+        if (this.customerAddresses.length > 0) {
+          const def =
+            this.customerAddresses.find((a: any) => a.macDinh) || this.customerAddresses[0];
+          this.applyAddressFromSaved(def);
+          this.selectedSavedAddressId = String(def.id);
+        } else {
+          // No saved addresses
+          this.customerSavedAddress = null;
+          this.selectedSavedAddressId = 'new';
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.customerAddresses = [];
+      },
+    });
+  }
+
+  onSelectSavedAddress(): void {
+    if (!this.selectedSavedAddressId || this.selectedSavedAddressId === 'new') {
+      this.customerSavedAddress = null;
+      return;
+    }
+    const addr = this.customerAddresses.find((a) => String(a.id) === this.selectedSavedAddressId);
+    if (addr) {
+      this.applyAddressFromSaved(addr);
+    }
+  }
+
+  private applyAddressFromSaved(def: any): void {
+    const full = [def?.diaChiChiTiet, def?.phuongXa, def?.quanHuyen, def?.tinhThanh]
+      .filter((x) => !!x)
+      .join(', ');
+    this.customerSavedAddress = full;
+    // Map names back to codes for selectors
+    try {
+      const province = (this.provinces as any[]).find((p) => p.name === def?.tinhThanh);
+      if (province) {
+        this.selectedProvinceCode = province.code;
+        this.onProvinceChange();
+        const district = (this.districts as any[]).find((d) => d.name === def?.quanHuyen);
+        if (district) {
+          this.selectedDistrictCode = district.code;
+          this.onDistrictChange();
+          const ward = (this.wards as any[]).find((w) => w.name === def?.phuongXa);
+          if (ward) {
+            this.selectedWardCode = ward.code;
+          }
+        }
+        this.addressDetail = def?.diaChiChiTiet || '';
+        this.composeShippingAddress();
+      }
+    } catch {}
+  }
+
+  shouldShowShippingAddress(): boolean {
+    // Show manual input only when delivery ON and either no saved addresses or user chooses 'new'
+    return (
+      this.isDelivery &&
+      (this.customerAddresses.length === 0 || this.selectedSavedAddressId === 'new')
+    );
   }
 }
