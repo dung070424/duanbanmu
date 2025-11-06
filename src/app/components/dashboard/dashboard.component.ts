@@ -3,10 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { StatisticsService, BestSellingProductDTO, BrandStatisticsDTO, LowStockProductDTO, OrderStatusStatisticsDTO, PeriodStatisticsDTO, WeeklyRevenueDTO } from '../../services/statistics.service';
+import { KhachHangService } from '../../services/khach-hang.service';
+import { KhachHang } from '../../interfaces/khach-hang.interface';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 interface PeriodCard {
   label: string;
+  periodLabel: string; // Label ngắn: "Ngày", "Tuần", "Tháng", "Năm"
   revenue: number;
+  actualRevenue: number; // Doanh thu thực tế (đã thanh toán)
+  debtRevenue: number; // Công nợ (doanh số - thực tế)
   productsSold: number;
   orders: number;
   iconColor: string;
@@ -33,8 +40,14 @@ export class DashboardComponent implements OnInit {
   selectedTimeRange: string = 'month';
   chartType: 'line' | 'column' = 'line';
   
+  // Custom date range
+  customStartDate: string = '';
+  customEndDate: string = '';
+  
   totalOrders: number = 0;
   totalRevenue: number = 0;
+  totalActualRevenue: number = 0;
+  totalDebtRevenue: number = 0;
   
   periodCards: PeriodCard[] = [];
   
@@ -89,6 +102,13 @@ export class DashboardComponent implements OnInit {
     quantity: number;
   }[] = [];
 
+  // Sản phẩm hết hàng
+  outOfStockProducts: {
+    rank: number;
+    name: string;
+    quantity: number;
+  }[] = [];
+
   // Pagination cho bảng Top sản phẩm
   topSellingCurrentPage: number = 1;
   topSellingPageSize: number = 5;
@@ -105,8 +125,15 @@ export class DashboardComponent implements OnInit {
 
   circumference = 2 * Math.PI * 70; // r=70
 
+  // Khách hàng mới
+  newCustomers: KhachHang[] = [];
+  newCustomersFilter: 'today' | 'week' | 'month' | 'custom' = 'today'; // Mặc định là hôm nay
+  newCustomersCustomStartDate: string = '';
+  newCustomersCustomEndDate: string = '';
+
   constructor(
     private statisticsService: StatisticsService,
+    private khachHangService: KhachHangService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -123,6 +150,8 @@ export class DashboardComponent implements OnInit {
     this.loadStatsTableData();
     this.loadTopSellingProductsTable();
     this.loadLowStockProducts();
+    this.loadOutOfStockProducts();
+    this.loadNewCustomers();
   }
 
   /**
@@ -138,10 +167,14 @@ export class DashboardComponent implements OnInit {
           this.totalRevenue = typeof response.doanhThu === 'number' 
             ? response.doanhThu 
             : Number(response.doanhThu) || 0;
+          this.totalActualRevenue = response.actualRevenue != null ? Number(response.actualRevenue) : 0;
+          this.totalDebtRevenue = response.debtRevenue != null ? Number(response.debtRevenue) : 0;
           
           console.log('✅ [Dashboard] Initial totals loaded:', {
             totalOrders: this.totalOrders,
-            totalRevenue: this.totalRevenue
+            totalRevenue: this.totalRevenue,
+            totalActualRevenue: this.totalActualRevenue,
+            totalDebtRevenue: this.totalDebtRevenue
           });
           
           this.cdr.detectChanges();
@@ -152,6 +185,8 @@ export class DashboardComponent implements OnInit {
         // Giữ giá trị mặc định (0) nếu có lỗi
         this.totalOrders = 0;
         this.totalRevenue = 0;
+        this.totalActualRevenue = 0;
+        this.totalDebtRevenue = 0;
         this.cdr.detectChanges();
       }
     });
@@ -164,28 +199,40 @@ export class DashboardComponent implements OnInit {
     this.periodCards = [
       {
         label: 'Năm nay',
+        periodLabel: 'Năm',
         revenue: 0,
+        actualRevenue: 0,
+        debtRevenue: 0,
         productsSold: 0,
         orders: 0,
         iconColor: '#fbb544' // Orange/Yellow
       },
       {
         label: 'Tháng này',
+        periodLabel: 'Tháng',
         revenue: 0,
+        actualRevenue: 0,
+        debtRevenue: 0,
         productsSold: 0,
         orders: 0,
         iconColor: '#f3c57a' // Light Orange/Yellow
       },
       {
         label: 'Tuần này',
+        periodLabel: 'Tuần',
         revenue: 0,
+        actualRevenue: 0,
+        debtRevenue: 0,
         productsSold: 0,
         orders: 0,
         iconColor: '#f0d9b6' // Beige/Light Tan
       },
       {
         label: 'Hôm nay',
+        periodLabel: 'Ngày',
         revenue: 0,
+        actualRevenue: 0,
+        debtRevenue: 0,
         productsSold: 0,
         orders: 0,
         iconColor: '#f5e8d3' // Light Beige/Cream
@@ -201,12 +248,25 @@ export class DashboardComponent implements OnInit {
       { period: 'day', index: 3 }
     ];
 
-    periods.forEach(({ period, index }) => {
-      this.statisticsService.getPeriodStatistics(period).subscribe({
-        next: (response: PeriodStatisticsDTO) => {
-          console.log(`✅ [Dashboard] Loaded ${period} statistics:`, response);
-          
+    // Tạo array các observables với error handling
+    const periodObservables = periods.map(({ period, index }) => 
+      this.statisticsService.getPeriodStatistics(period).pipe(
+        catchError((error) => {
+          console.error(`❌ [Dashboard] Error loading ${period} statistics:`, error);
+          // Trả về null nếu có lỗi để không làm gián đoạn forkJoin
+          return of(null);
+        })
+      )
+    );
+
+    // Sử dụng forkJoin để load tất cả cùng lúc và chỉ gọi detectChanges một lần
+    forkJoin(periodObservables).subscribe({
+      next: (responses) => {
+        responses.forEach((response: PeriodStatisticsDTO | null, index) => {
           if (response && this.periodCards[index]) {
+            const periodInfo = periods[index];
+            console.log(`✅ [Dashboard] Loaded ${periodInfo.period} statistics:`, response);
+            
             // Xử lý doanhThu - có thể là number hoặc string từ BigDecimal
             let revenue = 0;
             if (response.doanhThu != null) {
@@ -219,26 +279,32 @@ export class DashboardComponent implements OnInit {
             // Xử lý sanPhamDaBan và donHang
             const productsSold = response.sanPhamDaBan != null ? Number(response.sanPhamDaBan) : 0;
             const orders = response.donHang != null ? Number(response.donHang) : 0;
+            
+            // Xử lý actualRevenue và debtRevenue
+            const actualRevenue = response.actualRevenue != null ? Number(response.actualRevenue) : 0;
+            const debtRevenue = response.debtRevenue != null ? Number(response.debtRevenue) : 0;
 
             this.periodCards[index] = {
               ...this.periodCards[index],
               revenue: revenue,
+              actualRevenue: isNaN(actualRevenue) ? 0 : actualRevenue,
+              debtRevenue: isNaN(debtRevenue) ? 0 : debtRevenue,
               productsSold: isNaN(productsSold) ? 0 : productsSold,
               orders: isNaN(orders) ? 0 : orders
             };
 
-            console.log(`✅ [Dashboard] Updated ${period} card:`, this.periodCards[index]);
-            
-            // Force change detection để cập nhật UI
-            this.cdr.detectChanges();
+            console.log(`✅ [Dashboard] Updated ${periodInfo.period} card:`, this.periodCards[index]);
           }
-        },
-        error: (error) => {
-          console.error(`❌ [Dashboard] Error loading ${period} statistics:`, error);
-          // Giữ nguyên dữ liệu mặc định (0) nếu có lỗi
-          this.cdr.detectChanges();
-        }
-      });
+        });
+        
+        // Chỉ gọi detectChanges một lần sau khi tất cả responses đã được xử lý
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading period statistics:', error);
+        // Giữ nguyên dữ liệu mặc định (0) nếu có lỗi
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -533,38 +599,129 @@ export class DashboardComponent implements OnInit {
   onTimeRangeChange() {
     console.log('🔄 [Dashboard] Time range changed to:', this.selectedTimeRange);
     
-    // Reload tất cả dữ liệu dựa trên khoảng thời gian đã chọn
-    this.loadPeriodStatistics();
-    this.loadWeeklyRevenue();
+    // Nếu chọn custom, khởi tạo date range mặc định (30 ngày gần nhất)
+    if (this.selectedTimeRange === 'custom') {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      this.customEndDate = this.formatDateForInput(today);
+      this.customStartDate = this.formatDateForInput(thirtyDaysAgo);
+      
+      // Load dữ liệu với date range mặc định
+      if (this.customStartDate && this.customEndDate) {
+        this.loadCustomDateRange();
+      }
+    } else {
+      // Reload tất cả dữ liệu dựa trên khoảng thời gian đã chọn
+      this.loadPeriodStatistics();
+      this.loadWeeklyRevenue();
+      
+      // Cập nhật totalOrders, totalRevenue, totalActualRevenue, totalDebtRevenue từ period statistics tương ứng
+      this.statisticsService.getPeriodStatistics(this.selectedTimeRange as 'day' | 'week' | 'month' | 'year').subscribe({
+        next: (response) => {
+          if (response) {
+            this.totalOrders = response.donHang || 0;
+            this.totalRevenue = typeof response.doanhThu === 'number' 
+              ? response.doanhThu 
+              : Number(response.doanhThu) || 0;
+            this.totalActualRevenue = response.actualRevenue != null ? Number(response.actualRevenue) : 0;
+            this.totalDebtRevenue = response.debtRevenue != null ? Number(response.debtRevenue) : 0;
+            
+            console.log('✅ [Dashboard] Updated totals:', {
+              totalOrders: this.totalOrders,
+              totalRevenue: this.totalRevenue,
+              totalActualRevenue: this.totalActualRevenue,
+              totalDebtRevenue: this.totalDebtRevenue
+            });
+            
+            // Force change detection để cập nhật UI
+            this.cdr.detectChanges();
+          }
+        },
+        error: (error) => {
+          console.error('❌ [Dashboard] Error loading period statistics for time range:', error);
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+  
+  onCustomDateChange() {
+    console.log('🔄 [Dashboard] Custom date changed:', {
+      startDate: this.customStartDate,
+      endDate: this.customEndDate
+    });
     
-    // Cập nhật totalOrders và totalRevenue từ period statistics tương ứng
-    this.statisticsService.getPeriodStatistics(this.selectedTimeRange as 'day' | 'week' | 'month' | 'year').subscribe({
+    // Validate dates
+    if (this.customStartDate && this.customEndDate) {
+      if (new Date(this.customStartDate) > new Date(this.customEndDate)) {
+        console.warn('⚠️ Start date is after end date');
+        return;
+      }
+      this.loadCustomDateRange();
+    }
+  }
+  
+  loadCustomDateRange() {
+    if (!this.customStartDate || !this.customEndDate) {
+      console.warn('⚠️ [Dashboard] Custom date range is incomplete');
+      return;
+    }
+    
+    console.log('🔄 [Dashboard] Loading custom date range statistics:', {
+      startDate: this.customStartDate,
+      endDate: this.customEndDate
+    });
+    
+    this.statisticsService.getPeriodStatisticsByDateRange(this.customStartDate, this.customEndDate).subscribe({
       next: (response) => {
         if (response) {
           this.totalOrders = response.donHang || 0;
           this.totalRevenue = typeof response.doanhThu === 'number' 
             ? response.doanhThu 
             : Number(response.doanhThu) || 0;
+          this.totalActualRevenue = response.actualRevenue != null ? Number(response.actualRevenue) : 0;
+          this.totalDebtRevenue = response.debtRevenue != null ? Number(response.debtRevenue) : 0;
           
-          console.log('✅ [Dashboard] Updated totals:', {
+          console.log('✅ [Dashboard] Custom date range statistics loaded:', {
             totalOrders: this.totalOrders,
-            totalRevenue: this.totalRevenue
+            totalRevenue: this.totalRevenue,
+            totalActualRevenue: this.totalActualRevenue,
+            totalDebtRevenue: this.totalDebtRevenue
           });
           
-          // Force change detection để cập nhật UI
+          // Reload period statistics và weekly revenue (có thể cần điều chỉnh)
+          this.loadPeriodStatistics();
+          this.loadWeeklyRevenue();
+          
           this.cdr.detectChanges();
         }
       },
       error: (error) => {
-        console.error('❌ [Dashboard] Error loading period statistics for time range:', error);
+        console.error('❌ [Dashboard] Error loading custom date range statistics:', error);
         this.cdr.detectChanges();
       }
     });
+  }
+  
+  getTodayDate(): string {
+    return this.formatDateForInput(new Date());
+  }
+  
+  formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   resetFilters() {
     this.selectedTimeRange = 'month';
     this.chartType = 'line';
+    this.customStartDate = '';
+    this.customEndDate = '';
+    this.onTimeRangeChange();
     this.loadWeeklyRevenue();
   }
 
@@ -1191,11 +1348,14 @@ export class DashboardComponent implements OnInit {
         console.log('✅ [Dashboard] Low stock products loaded:', response);
         
         if (response && response.data) {
-          this.lowStockProducts = response.data.map((product, index) => ({
-            rank: index + 1,
-            name: product.tenSanPham,
-            quantity: product.soLuongTon
-          }));
+          // Filter loại bỏ sản phẩm hết hàng (quantity = 0) vì đã có bảng riêng
+          this.lowStockProducts = response.data
+            .filter(product => product.soLuongTon > 0) // Chỉ lấy sản phẩm còn hàng (> 0)
+            .map((product, index) => ({
+              rank: index + 1,
+              name: product.tenSanPham,
+              quantity: product.soLuongTon
+            }));
           
           console.log(`✅ [Dashboard] Loaded ${this.lowStockProducts.length} low stock products`);
           this.cdr.detectChanges();
@@ -1220,6 +1380,43 @@ export class DashboardComponent implements OnInit {
         
         // Set empty array và hiển thị message trong UI
         this.lowStockProducts = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Load out of stock products (products with quantity = 0)
+   */
+  loadOutOfStockProducts() {
+    console.log('🔄 [Dashboard] Loading out of stock products...');
+    
+    // Gọi API với threshold = 0 để lấy sản phẩm hết hàng
+    this.statisticsService.getLowStockProducts(0, 10).subscribe({
+      next: (response) => {
+        console.log('✅ [Dashboard] Out of stock products loaded:', response);
+        
+        if (response && response.data) {
+          // Filter chỉ lấy sản phẩm có quantity = 0
+          this.outOfStockProducts = response.data
+            .filter(product => product.soLuongTon === 0)
+            .map((product, index) => ({
+              rank: index + 1,
+              name: product.tenSanPham,
+              quantity: product.soLuongTon
+            }));
+          
+          console.log(`✅ [Dashboard] Loaded ${this.outOfStockProducts.length} out of stock products`);
+          this.cdr.detectChanges();
+        } else {
+          console.warn('⚠️ [Dashboard] No data in response');
+          this.outOfStockProducts = [];
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading out of stock products:', error);
+        this.outOfStockProducts = [];
         this.cdr.detectChanges();
       }
     });
@@ -1257,6 +1454,137 @@ export class DashboardComponent implements OnInit {
       this.topSellingPageSize = size;
       this.topSellingCurrentPage = 1;
       this.updateTopSellingPagination();
+    }
+  }
+
+  /**
+   * Load danh sách khách hàng mới (5 khách hàng mới nhất) theo filter thời gian
+   */
+  loadNewCustomers() {
+    console.log('🔄 [Dashboard] Loading new customers with filter:', this.newCustomersFilter);
+    
+    this.khachHangService.getAllKhachHang(0, 50, 'id', 'desc').subscribe({
+      next: (response) => {
+        console.log('✅ [Dashboard] New customers loaded:', response);
+        
+        if (response && response.content) {
+          // Filter khách hàng theo thời gian
+          const filteredCustomers = this.filterCustomersByTime(response.content, this.newCustomersFilter);
+          // Lấy 5 khách hàng mới nhất sau khi filter
+          this.newCustomers = filteredCustomers.slice(0, 5);
+          console.log(`✅ [Dashboard] Loaded ${this.newCustomers.length} new customers (filter: ${this.newCustomersFilter})`);
+          this.cdr.detectChanges();
+        } else {
+          console.warn('⚠️ [Dashboard] No customers data in response');
+          this.newCustomers = [];
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ [Dashboard] Error loading new customers:', error);
+        this.newCustomers = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Filter khách hàng theo thời gian (hôm nay, tuần này, tháng này, custom)
+   */
+  filterCustomersByTime(customers: KhachHang[], filter: 'today' | 'week' | 'month' | 'custom'): KhachHang[] {
+    if (!customers || customers.length === 0) {
+      return [];
+    }
+
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = now;
+
+    switch (filter) {
+      case 'today':
+        // Hôm nay: từ 00:00:00 hôm nay đến hiện tại
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        break;
+      case 'week':
+        // Tuần này: từ đầu tuần (Thứ 2) đến hiện tại
+        const dayOfWeek = now.getDay(); // 0 = Chủ nhật, 1 = Thứ 2, ...
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Nếu là Chủ nhật thì lùi 6 ngày, còn lại lùi (dayOfWeek - 1) ngày
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - daysToMonday);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        // Tháng này: từ ngày 1 tháng hiện tại đến hiện tại
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        break;
+      case 'custom':
+        // Tùy chọn: sử dụng ngày từ custom date range
+        if (this.newCustomersCustomStartDate && this.newCustomersCustomEndDate) {
+          startDate = new Date(this.newCustomersCustomStartDate);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(this.newCustomersCustomEndDate);
+          endDate.setHours(23, 59, 59, 999);
+        } else {
+          // Nếu chưa chọn ngày, return empty array
+          return [];
+        }
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    }
+
+    return customers.filter(customer => {
+      if (!customer.ngayTao) {
+        return false;
+      }
+
+      const customerDate = new Date(customer.ngayTao);
+      return customerDate >= startDate && customerDate <= endDate;
+    });
+  }
+
+  /**
+   * Thay đổi filter thời gian cho khách hàng mới
+   */
+  onNewCustomersFilterChange(filter: 'today' | 'week' | 'month' | 'custom') {
+    console.log('🔄 [Dashboard] New customers filter changed to:', filter);
+    this.newCustomersFilter = filter;
+    
+    // Nếu chọn custom, khởi tạo date range mặc định (30 ngày gần nhất)
+    if (filter === 'custom') {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      this.newCustomersCustomEndDate = this.formatDateForInput(today);
+      this.newCustomersCustomStartDate = this.formatDateForInput(thirtyDaysAgo);
+      
+      // Load dữ liệu với date range mặc định
+      this.loadNewCustomers();
+    } else {
+      // Reset custom dates khi chọn filter khác
+      this.newCustomersCustomStartDate = '';
+      this.newCustomersCustomEndDate = '';
+      this.loadNewCustomers();
+    }
+  }
+
+  /**
+   * Xử lý khi thay đổi custom date range cho khách hàng mới
+   */
+  onNewCustomersCustomDateChange() {
+    console.log('🔄 [Dashboard] New customers custom date changed:', {
+      startDate: this.newCustomersCustomStartDate,
+      endDate: this.newCustomersCustomEndDate
+    });
+    
+    // Validate dates
+    if (this.newCustomersCustomStartDate && this.newCustomersCustomEndDate) {
+      if (new Date(this.newCustomersCustomStartDate) > new Date(this.newCustomersCustomEndDate)) {
+        console.warn('⚠️ Start date is after end date');
+        return;
+      }
+      this.loadNewCustomers();
     }
   }
 }

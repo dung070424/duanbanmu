@@ -109,12 +109,34 @@
         <div class="filter-group time-range">
           <label>Khoảng thời gian thống kê</label>
           <select class="form-control" [(ngModel)]="selectedTimeRange" (change)="onTimeRangeChange()">
-            <option value="today">Hôm nay</option>
+            <option value="day">Hôm nay</option>
             <option value="week">Tuần này</option>
             <option value="month" [selected]="true">Tháng này</option>
             <option value="year">Năm nay</option>
             <option value="custom">Tùy chọn</option>
           </select>
+        </div>
+        
+        <!-- Date range picker - chỉ hiển thị khi chọn "Tùy chọn" -->
+        <div class="filter-group date-range" *ngIf="selectedTimeRange === 'custom'">
+          <label>Từ ngày</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            [(ngModel)]="customStartDate"
+            (change)="onCustomDateChange()"
+            [max]="customEndDate || getTodayDate()">
+        </div>
+        
+        <div class="filter-group date-range" *ngIf="selectedTimeRange === 'custom'">
+          <label>Đến ngày</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            [(ngModel)]="customEndDate"
+            (change)="onCustomDateChange()"
+            [min]="customStartDate"
+            [max]="getTodayDate()">
         </div>
         
         <div class="filter-group chart-type">
@@ -149,6 +171,14 @@
           <span class="metric-label">Tổng doanh thu:</span>
           <span class="metric-value revenue">{{ totalRevenue | number }} ₫</span>
         </div>
+        <div class="metric-item">
+          <span class="metric-label">Thực Tế:</span>
+          <span class="metric-value actual-revenue">{{ totalActualRevenue | number }} ₫</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Công Nợ:</span>
+          <span class="metric-value debt-revenue">{{ totalDebtRevenue | number }} ₫</span>
+        </div>
       </div>
       
       <div class="filter-actions">
@@ -170,12 +200,21 @@
 
   <!-- 4 Card tổng quan -->
   <div class="period-cards">
-    <div class="period-card" *ngFor="let period of periodCards">
-      <div class="period-icon" [style.background-color]="period.iconColor">
-        <div class="icon-inner"></div>
-      </div>
+    <div class="period-card" *ngFor="let period of periodCards" [style.border-color]="period.iconColor">
       <div class="period-content">
-        <div class="period-revenue">{{ period.revenue | number }} ₫</div>
+        <div class="period-label">{{ period.periodLabel }}</div>
+        <div class="period-revenue">
+          <span class="revenue-label">Doanh Số :</span>
+          <span class="revenue-amount">{{ period.revenue | number }} ₫</span>
+        </div>
+        <div class="period-actual-revenue">
+          <span class="revenue-label">Thực Tế :</span>
+          <span class="revenue-amount">{{ period.actualRevenue | number }} ₫</span>
+        </div>
+        <div class="period-debt-revenue">
+          <span class="revenue-label">Công Nợ :</span>
+          <span class="revenue-amount">{{ period.debtRevenue | number }} ₫</span>
+        </div>
         <div class="period-change">
           <span class="change-indicator">↓0%</span>
         </div>
@@ -227,7 +266,7 @@
                 {{ label.value }}.0M
               </text>
             </g>
-            <!-- X-axis labels -->
+            <!-- X-axis labels - Hiển thị nhãn tuần bên dưới các điểm dữ liệu trong line chart -->
             <g class="x-axis-labels">
               <text *ngFor="let label of chartLabels; let i = index" 
                 [attr.x]="40 + (i * ((lineChartWidth - 80) / (chartLabels.length - 1)))" 
@@ -238,8 +277,8 @@
               </text>
             </g>
           </svg>
-          <!-- X-axis labels below chart -->
-          <div class="x-labels-revenue">
+          <!-- X-axis labels below chart - Chỉ hiển thị khi là column chart -->
+          <div class="x-labels-revenue" *ngIf="chartType === 'column'">
             <span *ngFor="let label of chartLabels">{{ label }}</span>
           </div>
           
@@ -285,6 +324,76 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Khách hàng mới -->
+  <div class="new-customers-section">
+    <div class="stats-table-card">
+      <div class="card-header">
+        <h3><i class="bi bi-person-plus-fill"></i> Khách hàng mới</h3>
+        <div class="new-customers-filter-row">
+          <div class="new-customers-filter">
+            <label>Bộ lọc thời gian:</label>
+            <select class="form-control" [(ngModel)]="newCustomersFilter" (change)="onNewCustomersFilterChange(newCustomersFilter)">
+              <option value="today">Hôm nay</option>
+              <option value="week">Tuần này</option>
+              <option value="month">Tháng này</option>
+              <option value="custom">Tùy chọn</option>
+            </select>
+          </div>
+          <!-- Custom date range picker - chỉ hiển thị khi chọn "Tùy chọn" -->
+          <div class="custom-date-inputs" *ngIf="newCustomersFilter === 'custom'">
+            <input 
+              type="date" 
+              class="form-control" 
+              [(ngModel)]="newCustomersCustomStartDate"
+              (change)="onNewCustomersCustomDateChange()"
+              [max]="newCustomersCustomEndDate || getTodayDate()">
+            <span class="date-separator">đến</span>
+            <input 
+              type="date" 
+              class="form-control" 
+              [(ngModel)]="newCustomersCustomEndDate"
+              (change)="onNewCustomersCustomDateChange()"
+              [min]="newCustomersCustomStartDate"
+              [max]="getTodayDate()">
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Mã khách hàng</th>
+              <th>Tên khách hàng</th>
+              <th>Email</th>
+              <th>Số điện thoại</th>
+              <th>Ngày tạo</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let customer of newCustomers; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ customer.maKhachHang || 'N/A' }}</td>
+              <td>{{ customer.tenKhachHang }}</td>
+              <td>{{ customer.email }}</td>
+              <td>{{ customer.soDienThoai }}</td>
+              <td>{{ customer.ngayTao ? (customer.ngayTao | date:'dd/MM/yyyy') : 'N/A' }}</td>
+              <td>
+                <span class="status-badge" [class.status-active]="customer.trangThai" [class.status-inactive]="!customer.trangThai">
+                  {{ customer.trangThai ? 'Hoạt động' : 'Dừng hoạt động' }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="newCustomers.length === 0">
+              <td colspan="7" class="empty-message">Không có khách hàng mới</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -526,31 +635,62 @@
     </div>
   </div>
 
-  <!-- Sản Phẩm Sắp Hết Hàng -->
-  <div class="stats-table-card low-stock-card">
-    <div class="card-header">
-      <h3><i class="bi bi-exclamation-triangle-fill"></i> Sản Phẩm Sắp Hết Hàng</h3>
+  <!-- Sản Phẩm Sắp Hết Hàng và Hết Hàng -->
+  <div class="stock-products-section">
+    <!-- Sản Phẩm Sắp Hết Hàng -->
+    <div class="stats-table-card low-stock-card">
+      <div class="card-header">
+        <h3><i class="bi bi-exclamation-triangle-fill"></i> Sản Phẩm Sắp Hết Hàng</h3>
+      </div>
+      <div class="card-body">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tên Sản Phẩm</th>
+              <th>Số Lượng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of lowStockProducts">
+              <td>{{ product.rank }}</td>
+              <td>{{ product.name }}</td>
+              <td class="low-stock-quantity">{{ product.quantity }}</td>
+            </tr>
+            <tr *ngIf="lowStockProducts.length === 0">
+              <td colspan="3" class="empty-message">Không có sản phẩm sắp hết hàng</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="card-body">
-      <table class="stats-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tên Sản Phẩm</th>
-            <th>Số Lượng</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let product of lowStockProducts">
-            <td>{{ product.rank }}</td>
-            <td>{{ product.name }}</td>
-            <td class="low-stock-quantity">{{ product.quantity }}</td>
-          </tr>
-          <tr *ngIf="lowStockProducts.length === 0">
-            <td colspan="3" class="empty-message">Không có sản phẩm sắp hết hàng</td>
-          </tr>
-        </tbody>
-      </table>
+
+    <!-- Sản Phẩm Hết Hàng -->
+    <div class="stats-table-card out-of-stock-card">
+      <div class="card-header">
+        <h3><i class="bi bi-x-circle-fill"></i> Sản Phẩm Hết Hàng</h3>
+      </div>
+      <div class="card-body">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tên Sản Phẩm</th>
+              <th>Số Lượng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of outOfStockProducts">
+              <td>{{ product.rank }}</td>
+              <td>{{ product.name }}</td>
+              <td class="out-of-stock-quantity">{{ product.quantity }}</td>
+            </tr>
+            <tr *ngIf="outOfStockProducts.length === 0">
+              <td colspan="3" class="empty-message">Không có sản phẩm hết hàng</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
