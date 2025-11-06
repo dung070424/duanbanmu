@@ -163,7 +163,9 @@ export class HoaDonService {
         
         // Giữ lại danhSachChiTiet gốc trong response để có thể dùng khi update
         // (ép kiểu để TypeScript không báo lỗi vì HoaDonDTO không có field này)
-        (response as any).danhSachChiTiet = originalDanhSachChiTiet;
+        if (originalDanhSachChiTiet) {
+          (response as any).danhSachChiTiet = originalDanhSachChiTiet;
+        }
         
         return response as HoaDonDTO;
       })
@@ -224,9 +226,28 @@ export class HoaDonService {
   }
 
   updateTrangThaiHoaDon(id: number, trangThai: string): Observable<HoaDonDTO> {
-    let params = new HttpParams();
-    params = params.append('trangThai', trangThai);
-    return this.http.patch<HoaDonDTO>(`${this.apiUrl}/${id}/trang-thai`, null, { params });
+    // Best practice: PATCH request nên dùng @RequestBody thay vì @RequestParam
+    // RFC 5789 (PATCH) khuyến nghị dùng request body
+    const body = { trangThai: trangThai };
+    
+    // Log để debug
+    console.log('📤 Sending PATCH request:', {
+      url: `${this.apiUrl}/${id}/trang-thai`,
+      body: body,
+      bodyStringified: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    // Đảm bảo body được stringify đúng cách
+    // Angular HttpClient tự động serialize object thành JSON, nhưng đôi khi cần explicit
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      })
+    };
+    
+    return this.http.patch<HoaDonDTO>(`${this.apiUrl}/${id}/trang-thai`, body, httpOptions);
   }
 
   getHoaDonDashboard(): Observable<any> {
