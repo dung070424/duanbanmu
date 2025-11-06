@@ -403,7 +403,36 @@
           <div class="d-flex justify-content-between fw-bold fs-5 pt-2 border-top">
             <span>Tổng cộng</span><span class="text-success">{{ formatCurrency(cartTotal) }}</span>
           </div>
+
+          <!-- Payment method selector -->
           <div class="mt-2">
+            <label class="form-label mb-1">Hình thức thanh toán</label>
+            <div class="d-flex gap-3">
+              <label class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="pm"
+                  value="cash"
+                  [(ngModel)]="checkoutPaymentMethod"
+                />
+                <span class="ms-1">Tiền mặt</span>
+              </label>
+              <label class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="pm"
+                  value="transfer"
+                  [(ngModel)]="checkoutPaymentMethod"
+                />
+                <span class="ms-1">Chuyển khoản</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Cash payment -->
+          <div class="mt-2" *ngIf="checkoutPaymentMethod === 'cash'">
             <label class="form-label mb-1">Tiền khách đưa</label>
             <input
               class="form-control"
@@ -412,11 +441,17 @@
               [(ngModel)]="cashReceived"
               placeholder="Nhập số tiền khách đưa"
             />
+            <div class="d-flex justify-content-between mt-2" *ngIf="cashReceived !== null">
+              <span>Tiền trả lại</span>
+              <span class="fw-semibold">{{ formatCurrency(changeDue) }}</span>
+            </div>
           </div>
-          <div class="d-flex justify-content-between mt-2" *ngIf="cashReceived !== null">
-            <span>Tiền trả lại</span>
-            <span class="fw-semibold">{{ formatCurrency(changeDue) }}</span>
+
+          <!-- Bank transfer payment -->
+          <div class="mt-2" *ngIf="checkoutPaymentMethod === 'transfer'">
+            <div class="text-muted small">Bấm "Thanh toán" để hiển thị mã QR chuyển khoản.</div>
           </div>
+
           <button
             class="btn btn-primary w-100 mt-3"
             (click)="processSale()"
@@ -426,6 +461,27 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal QR chuyển khoản -->
+<div *ngIf="showTransferQrModal" style="position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1050; display: flex; align-items: center; justify-content: center;">
+  <div class="card p-3" style="width: 380px; max-width: 92vw;">
+    <h6 class="mb-2">Quét QR để chuyển khoản</h6>
+    <div class="text-muted small mb-2">Vui lòng quét mã bên dưới để chuyển khoản đúng số tiền.</div>
+    <div class="d-flex align-items-center justify-content-center">
+      <img [src]="transferQrUrl" alt="QR chuyển khoản" style="width: 260px; height: 260px" />
+    </div>
+    <div class="mt-2 small">
+      <div>Chủ tài khoản: <b>{{ qrAccountName }}</b></div>
+      <div>Ngân hàng: <b>VPBank</b></div>
+      <div>Số tài khoản: <b>{{ qrAccount }}</b></div>
+      <div>Số tiền: <b>{{ formatCurrency(cartTotal) }}</b></div>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-secondary flex-fill" (click)="cancelTransferQr()">Hủy</button>
+      <button class="btn btn-primary flex-fill" (click)="confirmTransferQrAndPay()">Đã thanh toán</button>
     </div>
   </div>
 </div>

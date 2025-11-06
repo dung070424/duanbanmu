@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -45,6 +45,25 @@ export class CounterSalesComponent implements OnInit {
   couponDiscount: number = 0;
   // Cash received from customer at checkout
   cashReceived: number | null = null;
+
+  // Payment method state (cash | transfer)
+  checkoutPaymentMethod: 'cash' | 'transfer' = 'cash';
+  transferInfo: {
+    bankName: string;
+    accountNumber: string;
+    transactionCode: string;
+    amount: number | null;
+  } = { bankName: '', accountNumber: '', transactionCode: '', amount: null };
+
+  // QR payment modal state
+  showTransferQrModal: boolean = false;
+  transferQrUrl: string = '';
+  private transferQrConfirmed: boolean = false;
+
+  // VietQR config (from image): VPBank - CHU DUC DUNG - 0789196545
+  qrBankCode: string = 'vpbank';
+  qrAccount: string = '0789196545';
+  qrAccountName: string = 'CHU DUC DUNG';
 
   // POS state
   invoiceSearch: string = '';
@@ -233,7 +252,8 @@ export class CounterSalesComponent implements OnInit {
     private phieuGiamGiaService: PhieuGiamGiaService,
     private hoaDonService: HoaDonService,
     private hoaDonChoService: HoaDonChoService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -500,7 +520,35 @@ export class CounterSalesComponent implements OnInit {
     this.hoaDonChoService.createHoaDonCho(hoaDonChoData).subscribe({
       next: (created: HoaDonCho) => {
         this.currentHoaDonChoId = created.id || null;
-        this.loadPendingInvoices();
+
+        // Thêm hóa đơn mới vào danh sách ngay lập tức để hiển thị ngay
+        // Đảm bảo có danhSachGioHang rỗng nếu chưa có
+        if (!created.danhSachGioHang) {
+          created.danhSachGioHang = [];
+        }
+
+        // Thêm vào đầu danh sách ngay lập tức
+        this.pendingInvoices = [created, ...this.pendingInvoices];
+        this.cdr.detectChanges();
+
+        // Sau đó reload để lấy đầy đủ thông tin (bao gồm danhSachGioHang) nếu cần
+        if (created.id) {
+          this.hoaDonChoService.getHoaDonChoById(created.id).subscribe({
+            next: (fullHoaDonCho: HoaDonCho) => {
+              // Cập nhật lại hóa đơn trong danh sách với thông tin đầy đủ
+              const index = this.pendingInvoices.findIndex((inv) => inv.id === created.id);
+              if (index !== -1) {
+                this.pendingInvoices[index] = fullHoaDonCho;
+                this.cdr.detectChanges();
+              }
+            },
+            error: () => {
+              // Nếu không load được chi tiết, giữ nguyên dữ liệu cơ bản
+              console.warn('Không thể load chi tiết hóa đơn chờ');
+            },
+          });
+        }
+
         // Reset giỏ hiện tại cho hóa đơn mới
         this.cart = [];
         this.calculateCartTotal();
@@ -521,10 +569,12 @@ export class CounterSalesComponent implements OnInit {
     this.hoaDonChoService.getHoaDonChoByTrangThai('DANG_CHO').subscribe({
       next: (invoices: HoaDonCho[]) => {
         this.pendingInvoices = invoices;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi khi tải hóa đơn chờ:', err);
         this.pendingInvoices = [];
+        this.cdr.detectChanges();
       },
     });
   }
@@ -1317,6 +1367,17 @@ export class CounterSalesComponent implements OnInit {
       alert('Giỏ hàng trống!');
       return;
     }
+
+    // Nếu chọn chuyển khoản và chưa xác nhận QR, hiện QR trước
+    if (this.checkoutPaymentMethod === 'transfer' && !this.transferQrConfirmed) {
+      this.transferQrUrl = this.buildTransferQrUrl();
+      this.showTransferQrModal = true;
+      return; // Dừng tại đây, sau khi xác nhận sẽ tiếp tục
+    }
+
+    // Set payment method based on selection
+    this.newSale.paymentMethod = this.checkoutPaymentMethod;
+
     const newSale: CounterSale = {
       id: this.counterSales.length + 1,
       saleNumber: this.newSale.saleNumber!,
@@ -1377,6 +1438,23 @@ export class CounterSalesComponent implements OnInit {
       })),
     };
 
+    // Đính kèm thông tin chuyển khoản nếu có
+    if (this.checkoutPaymentMethod === 'transfer') {
+      payload.thanhToanChuyenKhoan = {
+        soTienChuyen: this.transferInfo.amount ?? this.cartTotal,
+        nganHang: this.transferInfo.bankName,
+        soTaiKhoan: this.transferInfo.accountNumber,
+        maGiaoDich: this.transferInfo.transactionCode,
+      };
+    } else {
+      // Tiền mặt
+      payload.tienMatKhachDua = this.cashReceived ?? this.cartTotal;
+    }
+
+    this.submitSale(payload, newSale);
+  }
+
+  private submitSale(payload: any, newSale: CounterSale): void {
     this.hoaDonService.createHoaDon(payload).subscribe({
       next: (created: any) => {
         const createdId = created?.id;
@@ -1384,12 +1462,8 @@ export class CounterSalesComponent implements OnInit {
         // Xóa hóa đơn chờ nếu có
         if (this.currentHoaDonChoId) {
           this.hoaDonChoService.deleteHoaDonCho(this.currentHoaDonChoId).subscribe({
-            next: () => {
-              console.log('Hóa đơn chờ đã được xóa sau khi thanh toán');
-            },
-            error: (err) => {
-              console.error('Lỗi khi xóa hóa đơn chờ:', err);
-            },
+            next: () => {},
+            error: () => {},
           });
         }
 
@@ -1419,6 +1493,32 @@ export class CounterSalesComponent implements OnInit {
         this.isInvoiceCreated = false;
       },
     });
+  }
+
+  confirmTransferQrAndPay(): void {
+    this.transferQrConfirmed = true;
+    this.showTransferQrModal = false;
+    // Gọi lại processSale để tiếp tục submit
+    this.processSale();
+  }
+
+  cancelTransferQr(): void {
+    this.showTransferQrModal = false;
+    this.transferQrConfirmed = false;
+  }
+
+  private buildTransferQrUrl(): string {
+    const amount = this.cartTotal;
+    const info = `Thanh toan tai quay`; // ghi nội dung chuyển khoản
+    const params = new URLSearchParams({
+      amount: String(amount || 0),
+      addInfo: info,
+      accountName: this.qrAccountName,
+    });
+    // VietQR image API
+    return `https://img.vietqr.io/image/${this.qrBankCode}-${
+      this.qrAccount
+    }-compact.png?${params.toString()}`;
   }
 
   getStatusClass(status: string): string {
