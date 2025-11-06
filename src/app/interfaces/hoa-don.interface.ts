@@ -14,7 +14,7 @@ export interface HoaDonDTO {
   giamGiaPhanTram?: number; // Thêm field giảm giá phần trăm
   thanhTien: number;
   ghiChu?: string;
-  trangThai: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY';
+  trangThai: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY' | 'DA_HUY'; // DA_HUY là fallback từ backend cũ
   soLuongSanPham?: number;
   viTriBanHang?: string; // "Tại quầy" hoặc "Online"
   danhSachSanPham?: SanPhamTrongHoaDon[]; // Danh sách sản phẩm trong hóa đơn (frontend only)

@@ -333,229 +333,20 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
             selectedStatus: this.selectedStatus
           });
         }
-        // Backend đã filter theo trạng thái, frontend chỉ cần apply search/date filter nếu có
-        // KHÔNG filter lại status ở frontend vì backend đã làm rồi
-        if (this.selectedStatus && this.selectedStatus !== 'all') {
-          // Backend đã filter theo trạng thái, chỉ cần apply search/date filter nếu có
-          let filtered = [...this.paginatedInvoices];
-
-          // Verify that all invoices match the selected status (chỉ để log và debug)
-          const mismatchedStatuses = this.paginatedInvoices.filter(
-            inv => inv.trangThai !== this.selectedStatus
-          );
-
-          if (mismatchedStatuses.length > 0) {
-            const mismatchRatio = mismatchedStatuses.length / this.paginatedInvoices.length;
-            console.warn('⚠️ Backend returned invoices with wrong status (should not happen after fix):', {
-              expected: this.selectedStatus,
-              totalReceived: this.paginatedInvoices.length,
-              mismatched: mismatchedStatuses.length,
-              mismatchRatio: `${(mismatchRatio * 100).toFixed(1)}%`,
-              mismatchedDetails: mismatchedStatuses.map(inv => ({
-                maHoaDon: inv.maHoaDon,
-                trangThai: inv.trangThai
-              }))
-            });
-
-            // Nếu backend vẫn filter sai, filter lại để đảm bảo hiển thị đúng
-            // (Đây chỉ là safety net, backend nên đã filter đúng rồi)
-            filtered = filtered.filter(invoice => invoice.trangThai === this.selectedStatus);
-            console.warn('🔧 Frontend safety filter applied:', {
-              before: this.paginatedInvoices.length,
-              after: filtered.length
-            });
-          }
-
-          const beforeSearchCount = filtered.length;
-
-          // Chỉ apply search nếu có
-          if (this.searchTerm && this.searchTerm.trim()) {
-            const searchTerm = this.searchTerm.trim().toLowerCase();
-            filtered = filtered.filter(invoice => {
-              if (invoice.maHoaDon && invoice.maHoaDon.toLowerCase().includes(searchTerm)) return true;
-              if (invoice.tenKhachHang && invoice.tenKhachHang.toLowerCase().includes(searchTerm)) return true;
-              if (invoice.soDienThoaiKhachHang && invoice.soDienThoaiKhachHang.includes(searchTerm)) return true;
-              if (invoice.emailKhachHang && invoice.emailKhachHang.toLowerCase().includes(searchTerm)) return true;
-              return false;
-            });
-            console.log('🔍 After search filter:', {
-              before: beforeSearchCount,
-              after: filtered.length,
-              searchTerm: this.searchTerm
-            });
-          }
-
-          const beforeDateCount = filtered.length;
-
-          // Apply date filter nếu có
-          if (this.startDate || this.endDate) {
-            filtered = filtered.filter(invoice => {
-              if (!invoice.ngayTao) {
-                console.warn('⚠️ Invoice missing ngayTao:', invoice.maHoaDon);
-                return false;
-              }
-              const invoiceDate = new Date(invoice.ngayTao);
-              const startDate = this.startDate ? new Date(this.startDate) : null;
-              const endDate = this.endDate ? new Date(this.endDate) : null;
-
-              if (startDate && invoiceDate < startDate) {
-                console.log('🔍 Invoice filtered out (before startDate):', {
-                  maHoaDon: invoice.maHoaDon,
-                  invoiceDate: invoice.ngayTao,
-                  startDate: this.startDate
-                });
-                return false;
-              }
-              if (endDate && invoiceDate > endDate) {
-                console.log('🔍 Invoice filtered out (after endDate):', {
-                  maHoaDon: invoice.maHoaDon,
-                  invoiceDate: invoice.ngayTao,
-                  endDate: this.endDate
-                });
-                return false;
-              }
-              return true;
-            });
-            console.log('🔍 After date filter:', {
-              before: beforeDateCount,
-              after: filtered.length,
-              startDate: this.startDate,
-              endDate: this.endDate
-            });
-          }
-
-          this.filteredInvoices = filtered;
-
-          // Đảm bảo rằng nếu không có search/date filter và backend filter đúng,
-          // filteredInvoices phải bằng paginatedInvoices (không filter lại status)
-          const hasNoFrontendFilters = !this.searchTerm?.trim() && !this.startDate && !this.endDate;
-          if (hasNoFrontendFilters && mismatchedStatuses.length === 0) {
-            // Backend filter đúng và không có frontend filter: filteredInvoices = paginatedInvoices
-            // Đây là trường hợp lý tưởng - không cần làm gì thêm
-            if (this.filteredInvoices.length !== this.paginatedInvoices.length) {
-              console.error('❌ Unexpected mismatch! filteredInvoices should equal paginatedInvoices:', {
-                paginatedInvoices: this.paginatedInvoices.length,
-                filteredInvoices: this.filteredInvoices.length,
-                difference: this.paginatedInvoices.length - this.filteredInvoices.length
-              });
-              // Force fix: set filteredInvoices to paginatedInvoices
-              this.filteredInvoices = [...this.paginatedInvoices];
-              console.log('✅ Fixed: Set filteredInvoices = paginatedInvoices');
-            } else {
-              console.log('✅ Backend filter correct, no frontend filtering needed');
-            }
-          } else if (hasNoFrontendFilters && mismatchedStatuses.length > 0) {
-            // Backend filter sai: frontend đã filter lại (safety net)
-            console.warn('⚠️ Backend returned incorrect data. Frontend safety filter applied:', {
-              received: this.paginatedInvoices.length,
-              correct: this.filteredInvoices.length,
-              filteredOut: mismatchedStatuses.length
-            });
-            console.warn('💡 Recommendation: Fix backend filtering logic to return correct invoices.');
-          }
-
-          console.log('🔍 Final filtered count:', {
-            paginatedInvoices: this.paginatedInvoices.length,
-            filteredInvoices: this.filteredInvoices.length,
-            difference: this.paginatedInvoices.length - this.filteredInvoices.length,
-            hasNoFrontendFilters: hasNoFrontendFilters,
-            mismatchedCount: mismatchedStatuses.length,
-            backendFilterCorrect: mismatchedStatuses.length === 0
-          });
-
-          // Tính toán lại totalItems dựa trên số lượng invoices thực tế sau khi filter
-          // Nếu backend filter đúng và không có search/date filter, giữ nguyên totalItems từ backend
-          // Nếu có filter ở frontend hoặc backend filter sai, cần điều chỉnh totalItems
-
-          // Chỉ tính lại totalItems nếu có search hoặc date filter ở frontend
-          // (vì backend đã filter theo status rồi, totalItems từ backend là đúng)
-          const hasFrontendFilter = (this.searchTerm && this.searchTerm.trim()) || this.startDate || this.endDate;
-
-          if (hasFrontendFilter && this.allInvoices.length > 0) {
-            // Có frontend filter và có allInvoices: tính lại từ allInvoices
-            let countFromAll = this.allInvoices.filter(inv => inv.trangThai === this.selectedStatus);
-            if (this.searchTerm && this.searchTerm.trim()) {
-              const searchTerm = this.searchTerm.trim().toLowerCase();
-              countFromAll = countFromAll.filter(inv => {
-                if (inv.maHoaDon && inv.maHoaDon.toLowerCase().includes(searchTerm)) return true;
-                if (inv.tenKhachHang && inv.tenKhachHang.toLowerCase().includes(searchTerm)) return true;
-                if (inv.soDienThoaiKhachHang && inv.soDienThoaiKhachHang.includes(searchTerm)) return true;
-                if (inv.emailKhachHang && inv.emailKhachHang.toLowerCase().includes(searchTerm)) return true;
-                return false;
-              });
-            }
-            if (this.startDate || this.endDate) {
-              countFromAll = countFromAll.filter(inv => {
-                if (!inv.ngayTao) return false;
-                const invoiceDate = new Date(inv.ngayTao);
-                const startDate = this.startDate ? new Date(this.startDate) : null;
-                const endDate = this.endDate ? new Date(this.endDate) : null;
-                if (startDate && invoiceDate < startDate) return false;
-                if (endDate && invoiceDate > endDate) return false;
-                return true;
-              });
-            }
-            this.totalItems = countFromAll.length;
-            console.log('📊 Calculated totalItems from allInvoices (with frontend filters):', {
-              totalItems: this.totalItems,
-              allInvoicesCount: this.allInvoices.length,
-              filteredCount: countFromAll.length,
-              hasSearchFilter: !!(this.searchTerm && this.searchTerm.trim()),
-              hasDateFilter: !!(this.startDate || this.endDate)
-            });
-          } else if (mismatchedStatuses.length > 0) {
-            // Backend filter sai: điều chỉnh totalItems dựa trên tỷ lệ
-            const correctRatio = filtered.length / this.paginatedInvoices.length;
-            if (correctRatio < 1 && this.totalItems > 0 && this.paginatedInvoices.length > 0) {
-              // Lưu giá trị gốc trước khi điều chỉnh
-              const originalTotalItems = this.totalItems;
-              // Ước tính totalItems dựa trên tỷ lệ invoices đúng trong trang hiện tại
-              this.totalItems = Math.max(1, Math.floor(this.totalItems * correctRatio));
-              console.log('📊 Adjusted totalItems due to backend filtering mismatch:', {
-                originalTotalItems: originalTotalItems,
-                adjustedTotalItems: this.totalItems,
-                correctRatio: correctRatio,
-                filteredInPage: filtered.length,
-                paginatedInPage: this.paginatedInvoices.length
-              });
-            }
-          } else {
-            // Backend filter đúng và không có frontend filter: giữ nguyên totalItems từ backend
-            // Không cần làm gì, totalItems đã được set từ response.totalElements ở trên
-            console.log('✅ Backend filter correct, totalItems from backend:', this.totalItems);
-          }
-          // Nếu backend filter đúng và không có search/date filter, totalItems từ backend đã chính xác
-          // (không cần làm gì, giữ nguyên totalItems đã set ở trên từ response.totalElements)
-
-          console.log('🔍 After filtering (status filtered by backend + frontend safety check):', {
-            paginatedInvoices: this.paginatedInvoices.length,
-            filteredInvoices: this.filteredInvoices.length,
-            totalItems: this.totalItems,
-            currentPage: this.currentPage,
-            itemsPerPage: this.itemsPerPage,
-            totalPages: Math.ceil(this.totalItems / this.itemsPerPage),
-            selectedStatus: this.selectedStatus,
-            searchTerm: this.searchTerm,
-            startDate: this.startDate,
-            endDate: this.endDate,
-            sampleInvoiceStatus: this.paginatedInvoices[0]?.trangThai || 'N/A',
-            allInvoiceStatuses: this.paginatedInvoices.map(inv => inv.trangThai),
-            mismatchedCount: mismatchedStatuses.length
-          });
-        } else {
-          // Nếu không filter theo trạng thái, apply tất cả filters
-        this.filteredInvoices = this.paginatedInvoices;
-          // Chỉ skip payment filters nếu backend đã filter theo payment status/method
-          const skipPaymentFilters = Boolean(
-            (this.selectedPaymentStatus && this.selectedPaymentStatus !== 'all') ||
-            (this.selectedPaymentMethod && this.selectedPaymentMethod !== 'all')
-          );
-          this.applyFrontendFilters(false, skipPaymentFilters);
-
-          // Nếu có search hoặc date filter, totalItems cần được tính lại
-          // Nhưng vì chỉ có dữ liệu của trang hiện tại, tạm thời giữ nguyên
-          // Trong thực tế, backend nên xử lý tất cả các filter
-        }
+        
+        // ✅ QUAN TRỌNG: Tin tưởng backend - gán trực tiếp không filter lại
+        // Backend đã xử lý tất cả filters (status, search, date, payment, etc.)
+        // Frontend chỉ cần hiển thị chính xác những gì backend trả về
+        this.filteredInvoices = [...this.paginatedInvoices];
+        
+        console.log('✅ Data from backend (no frontend filtering):', {
+          paginatedInvoices: this.paginatedInvoices.length,
+          filteredInvoices: this.filteredInvoices.length,
+          totalItems: this.totalItems,
+          currentPage: this.currentPage,
+          itemsPerPage: this.itemsPerPage,
+          selectedStatus: this.selectedStatus
+        });
 
         // Load customer names for invoices that have khachHangId but no tenKhachHang
         this.loadCustomerNames();
@@ -575,93 +366,15 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Apply frontend filtering to ensure correct display
-   * @param skipStatusFilter - Nếu true, bỏ qua filter trạng thái (vì backend đã filter)
-   * @param skipPaymentFilters - Nếu true, bỏ qua filter payment status và payment method (vì backend đã filter)
+   * DEPRECATED: Không còn sử dụng - Backend đã xử lý tất cả filters
+   * Method này được giữ lại để tránh lỗi compile nhưng không thực hiện gì cả
+   * @deprecated Backend đã filter tất cả, không cần frontend filter lại
    */
   private applyFrontendFilters(skipStatusFilter: boolean = false, skipPaymentFilters: boolean = false): void {
-    let filtered = [...this.paginatedInvoices];
-
-    // Apply search term filter - tìm kiếm ngay lập tức
-    if (this.searchTerm && this.searchTerm.trim()) {
-      const searchTerm = this.searchTerm.trim().toLowerCase();
-      filtered = filtered.filter(invoice => {
-        // Search in invoice number
-        if (invoice.maHoaDon && invoice.maHoaDon.toLowerCase().includes(searchTerm)) {
-          return true;
-        }
-        // Search in customer name
-        if (invoice.tenKhachHang && invoice.tenKhachHang.toLowerCase().includes(searchTerm)) {
-          return true;
-        }
-        // Search in phone number
-        if (invoice.soDienThoaiKhachHang && invoice.soDienThoaiKhachHang.includes(searchTerm)) {
-          return true;
-        }
-        // Search in email
-        if (invoice.emailKhachHang && invoice.emailKhachHang.toLowerCase().includes(searchTerm)) {
-          return true;
-        }
-        return false;
-      });
-    }
-
-    // Apply status filter if backend didn't handle it properly (chỉ khi không skip)
-    if (!skipStatusFilter && this.selectedStatus && this.selectedStatus !== 'all') {
-      filtered = filtered.filter(invoice => invoice.trangThai === this.selectedStatus);
-    }
-
-    // Chỉ apply payment filters nếu không skip
-    if (!skipPaymentFilters) {
-    // Derive payment status from order status for display/filtering
-    const derivePaymentStatus = (orderStatus: string): 'pending' | 'paid' | 'cancelled' => {
-      if (orderStatus === 'DA_GIAO_HANG') return 'paid';
-      if (orderStatus === 'HUY') return 'cancelled';
-      return 'pending';
-    };
-
-    // Apply payment status filter based on derived status
-    if (this.selectedPaymentStatus && this.selectedPaymentStatus !== 'all') {
-      filtered = filtered.filter(invoice => derivePaymentStatus(invoice.trangThai) === this.selectedPaymentStatus);
-    }
-
-    // Apply payment method filter if backend didn't handle it properly
-    if (this.selectedPaymentMethod && this.selectedPaymentMethod !== 'all') {
-      filtered = filtered.filter(invoice => {
-        const invoiceMethod = invoice.phuongThucThanhToan || 'cash'; // Default to 'cash' if null
-        return invoiceMethod === this.selectedPaymentMethod;
-        });
-      }
-    }
-
-    // Apply date filter
-    if (this.startDate || this.endDate) {
-      filtered = filtered.filter(invoice => {
-        if (!invoice.ngayTao) return false;
-        const invoiceDate = new Date(invoice.ngayTao);
-        const startDate = this.startDate ? new Date(this.startDate) : null;
-        const endDate = this.endDate ? new Date(this.endDate) : null;
-
-        if (startDate && invoiceDate < startDate) return false;
-        if (endDate && invoiceDate > endDate) return false;
-        return true;
-      });
-    }
-
-    this.filteredInvoices = filtered;
-
-    console.log('🔍 Frontend filtering applied:', {
-      skipStatusFilter,
-      skipPaymentFilters,
-      paginatedInvoices: this.paginatedInvoices.length,
-      filteredInvoices: filtered.length,
-      selectedStatus: this.selectedStatus,
-      selectedPaymentStatus: this.selectedPaymentStatus,
-      selectedPaymentMethod: this.selectedPaymentMethod,
-      searchTerm: this.searchTerm,
-      startDate: this.startDate,
-      endDate: this.endDate
-    });
+    // ✅ Backend đã xử lý tất cả filters, frontend không filter lại
+    // Chỉ gán trực tiếp từ paginatedInvoices
+    this.filteredInvoices = [...this.paginatedInvoices];
+    console.log('ℹ️ applyFrontendFilters() called but skipped - backend handles all filtering');
   }
 
   // Employee management methods
@@ -785,9 +498,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const value = event.target.value;
     // Cập nhật searchTerm ngay lập tức để UI phản hồi
     this.searchTerm = value;
-    // Áp dụng filter ngay lập tức cho dữ liệu hiện tại
-    this.applyFrontendFilters();
-    // Gửi đến searchSubject để xử lý debounced search với backend
+    // ✅ Backend xử lý search - chỉ cần gửi đến searchSubject để gọi API
     this.searchSubject.next(value);
   }
 
@@ -799,36 +510,28 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   clearSearch(): void {
     this.searchTerm = '';
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gửi đến searchSubject
+    // ✅ Backend xử lý search - chỉ cần gửi đến searchSubject để gọi API
     this.searchSubject.next('');
   }
 
   clearStatusFilter(): void {
     this.selectedStatus = 'all';
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
   }
 
   clearPaymentStatusFilter(): void {
     this.selectedPaymentStatus = 'all';
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
   }
 
   clearPaymentMethodFilter(): void {
     this.selectedPaymentMethod = 'all';
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
   }
 
@@ -854,6 +557,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   /**
    * Load tất cả invoices để đếm số lượng theo trạng thái
+   * QUAN TRỌNG: Backend trả về "HUY" (đã map từ DA_HUY), frontend filter buttons dùng "HUY"
    */
   loadAllInvoicesForCount(): void {
     // Load tất cả invoices không phân trang để đếm chính xác
@@ -875,35 +579,24 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         this.allInvoices = allInvoices;
 
         // Sau khi load xong allInvoices, cập nhật lại totalItems nếu đang filter theo status
+        // QUAN TRỌNG: Normalize status để so sánh đúng (HUY và DA_HUY đều là HUY)
         if (this.selectedStatus && this.selectedStatus !== 'all' && this.allInvoices.length > 0) {
-          let countFromAll = this.allInvoices.filter(inv => inv.trangThai === this.selectedStatus);
-          if (this.searchTerm && this.searchTerm.trim()) {
-            const searchTerm = this.searchTerm.trim().toLowerCase();
-            countFromAll = countFromAll.filter(inv => {
-              if (inv.maHoaDon && inv.maHoaDon.toLowerCase().includes(searchTerm)) return true;
-              if (inv.tenKhachHang && inv.tenKhachHang.toLowerCase().includes(searchTerm)) return true;
-              if (inv.soDienThoaiKhachHang && inv.soDienThoaiKhachHang.includes(searchTerm)) return true;
-              if (inv.emailKhachHang && inv.emailKhachHang.toLowerCase().includes(searchTerm)) return true;
-              return false;
-            });
-          }
-          if (this.startDate || this.endDate) {
-            countFromAll = countFromAll.filter(inv => {
-              if (!inv.ngayTao) return false;
-              const invoiceDate = new Date(inv.ngayTao);
-              const startDate = this.startDate ? new Date(this.startDate) : null;
-              const endDate = this.endDate ? new Date(this.endDate) : null;
-              if (startDate && invoiceDate < startDate) return false;
-              if (endDate && invoiceDate > endDate) return false;
-              return true;
-            });
-          }
+          const selectedStatusNormalized = (this.selectedStatus === 'DA_HUY' || this.selectedStatus === 'HUY') ? 'HUY' : this.selectedStatus;
+          let countFromAll = this.allInvoices.filter(inv => {
+            const invStatus = (inv.trangThai === 'DA_HUY' || inv.trangThai === 'HUY') ? 'HUY' : inv.trangThai;
+            return invStatus === selectedStatusNormalized;
+          });
+          
+          // Frontend filters (search/date) không áp dụng ở đây vì backend đã xử lý
+          // Chỉ cần đếm theo status là đủ
+          
           const newTotalItems = countFromAll.length;
           if (newTotalItems !== this.totalItems) {
             console.log('📊 Updated totalItems after loadAllInvoicesForCount:', {
               oldTotalItems: this.totalItems,
               newTotalItems: newTotalItems,
-              selectedStatus: this.selectedStatus
+              selectedStatus: this.selectedStatus,
+              normalizedStatus: selectedStatusNormalized
             });
             this.totalItems = newTotalItems;
           }
@@ -921,6 +614,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   /**
    * Đếm số lượng hóa đơn theo trạng thái
+   * QUAN TRỌNG: Backend trả về "HUY" (đã map từ DA_HUY), frontend filter buttons dùng "HUY"
    */
   getStatusCount(status: string): number {
     if (status === 'all') {
@@ -928,7 +622,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
     // Đếm từ allInvoices để có số chính xác
     const invoicesToCount = this.allInvoices.length > 0 ? this.allInvoices : this.paginatedInvoices;
-    return invoicesToCount.filter(invoice => invoice.trangThai === status).length;
+    // Normalize status để so sánh: cả "HUY" và "DA_HUY" đều được coi là "HUY"
+    return invoicesToCount.filter(invoice => {
+      const invoiceStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
+      const statusNormalized = (status === 'DA_HUY' || status === 'HUY') ? 'HUY' : status;
+      return invoiceStatus === statusNormalized;
+    }).length;
   }
 
   /**
@@ -944,17 +643,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   onPaymentStatusChange(): void {
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
   }
 
   onDateFilterChange(): void {
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
   }
 
@@ -962,17 +657,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.startDate = '';
     this.endDate = '';
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
   }
 
   onPaymentMethodChange(): void {
     this.currentPage = 1;
-    // Áp dụng filter ngay lập tức
-    this.applyFrontendFilters();
-    // Gọi API để lấy dữ liệu mới
+    // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
   }
 
@@ -1133,14 +824,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   getStatusText(status: string): string {
+    // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
+    const normalizedStatus = (status === 'DA_HUY' || status === 'HUY') ? 'HUY' : status;
     const statusMap: { [key: string]: string } = {
       CHO_XAC_NHAN: 'Chờ xác nhận',
       DA_XAC_NHAN: 'Đã xác nhận',
       DANG_GIAO_HANG: 'Đang giao hàng',
       DA_GIAO_HANG: 'Đã giao hàng',
       HUY: 'Hủy',
+      DA_HUY: 'Hủy', // Backward compatible
     };
-    return statusMap[status] || status;
+    return statusMap[normalizedStatus] || status;
   }
 
   printInvoice(): void {
@@ -1153,14 +847,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   // Status and display methods
   getStatusClass(status: string): string {
+    // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
+    const normalizedStatus = (status === 'DA_HUY' || status === 'HUY') ? 'HUY' : status;
     const statusClasses: { [key: string]: string } = {
       CHO_XAC_NHAN: 'badge-warning',
       DA_XAC_NHAN: 'badge-primary',
       DANG_GIAO_HANG: 'badge-info',
       DA_GIAO_HANG: 'badge-success',
       HUY: 'badge-danger',
+      DA_HUY: 'badge-danger', // Backward compatible
     };
-    return statusClasses[status] || 'badge-secondary';
+    return statusClasses[normalizedStatus] || 'badge-secondary';
   }
 
   getStatusLabel(status: string): string {
@@ -1183,10 +880,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   // Helper for templates: get derived payment status from invoice
+  // QUAN TRỌNG: Normalize status để handle cả "HUY" và "DA_HUY"
   getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
     if (!invoice || !invoice.trangThai) return 'pending';
-    if (invoice.trangThai === 'DA_GIAO_HANG') return 'paid';
-    if (invoice.trangThai === 'HUY') return 'cancelled';
+    // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
+    const normalizedStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
+    if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';
+    if (normalizedStatus === 'HUY') return 'cancelled';
     return 'pending';
   }
 
