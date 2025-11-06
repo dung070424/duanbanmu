@@ -348,8 +348,21 @@ export class HoaDonService {
   getHoaDonDetail(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
       map((response: any) => {
+        console.log('📦 getHoaDonDetail - Raw response from backend:', {
+          id: response.id,
+          maHoaDon: response.maHoaDon,
+          trangThai: response.trangThai,
+          danhSachChiTiet: response.danhSachChiTiet?.length || 0,
+          danhSachSanPham: response.danhSachSanPham?.length || 0
+        });
+        
+        // QUAN TRỌNG: Giữ lại danhSachChiTiet gốc từ backend để có thể dùng khi update
+        // Lưu danhSachChiTiet gốc trước khi map
+        const originalDanhSachChiTiet = response.danhSachChiTiet ? [...response.danhSachChiTiet] : null;
+        
         // Map danhSachChiTiet từ backend sang danhSachSanPham cho frontend
-        if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet)) {
+        if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet) && response.danhSachChiTiet.length > 0) {
+          console.log('📦 Mapping danhSachChiTiet to danhSachSanPham, count:', response.danhSachChiTiet.length);
           response.danhSachSanPham = response.danhSachChiTiet.map((item: any) => ({
             id: item.id,
             chiTietSanPhamId: item.chiTietSanPhamId,
@@ -365,9 +378,26 @@ export class HoaDonService {
             anhSanPham: item.anhSanPham,
             sanPhamId: item.chiTietSanPhamId // Map chiTietSanPhamId to sanPhamId for compatibility
           }));
+          console.log('✅ Mapped danhSachSanPham, count:', response.danhSachSanPham.length);
         } else {
+          console.warn('⚠️ No danhSachChiTiet found in response or empty array');
           response.danhSachSanPham = [];
         }
+        
+        // Giữ lại danhSachChiTiet gốc trong response để có thể dùng khi update
+        // (ép kiểu để TypeScript không báo lỗi vì HoaDonDTO không có field này)
+        if (originalDanhSachChiTiet) {
+          (response as any).danhSachChiTiet = originalDanhSachChiTiet;
+        }
+        
+        console.log('✅ getHoaDonDetail - Final response:', {
+          id: response.id,
+          maHoaDon: response.maHoaDon,
+          trangThai: response.trangThai,
+          danhSachChiTiet: (response as any).danhSachChiTiet?.length || 0,
+          danhSachSanPham: response.danhSachSanPham?.length || 0
+        });
+        
         return response;
       })
     );

@@ -3,11 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ProductApiService, SanPhamResponse } from '../../services/product-api.service';
+import { StatisticsService } from '../../services/statistics.service';
+import { LoaiMuBaoHiemApiService } from '../../services/loai-mu-bao-hiem-api.service';
 import { AuthService } from '../../services/auth';
 
 interface CartItem {
   product: SanPhamResponse;
   quantity: number;
+}
+
+interface Category {
+  id: number;
+  tenLoaiMu: string;
+  trangThai: boolean;
 }
 
 @Component({
@@ -20,9 +28,16 @@ interface CartItem {
 export class ShopComponent implements OnInit {
   products: SanPhamResponse[] = [];
   filteredProducts: SanPhamResponse[] = [];
+  bestSellingProducts: SanPhamResponse[] = [];
+  featuredProducts: SanPhamResponse[] = [];
+  bestPriceProducts: SanPhamResponse[] = [];
+  categories: Category[] = [];
+  
+  activeTab: 'best-selling' | 'featured' | 'best-price' = 'best-selling';
   searchKeyword = '';
   selectedPriceRange = 'all';
   isLoading = false;
+  showSearch = false;
   cart: CartItem[] = [];
   cartCount = 0;
 
@@ -36,7 +51,9 @@ export class ShopComponent implements OnInit {
 
   constructor(
     private productApiService: ProductApiService,
-    public authService: AuthService, // Public để template có thể access
+    private statisticsService: StatisticsService,
+    private loaiMuBaoHiemService: LoaiMuBaoHiemApiService,
+    public authService: AuthService,
     private router: Router
   ) {
     this.loadCart();
@@ -44,11 +61,12 @@ export class ShopComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProducts();
+    this.loadBestSellingProducts();
+    this.loadCategories();
   }
 
   loadProducts(): void {
     this.isLoading = true;
-    // Sử dụng endpoint customer - không cần authentication
     this.productApiService.search({
       trangThai: true,
       page: 0,
@@ -56,9 +74,17 @@ export class ShopComponent implements OnInit {
       useCustomerEndpoint: true
     }).subscribe({
       next: (response) => {
-        // Chỉ hiển thị sản phẩm có trạng thái active
         this.products = response.content.filter(p => p.trangThai === true);
         this.filteredProducts = [...this.products];
+        
+        // Featured products: lấy 8 sản phẩm đầu tiên
+        this.featuredProducts = this.products.slice(0, 8);
+        
+        // Best price products: sắp xếp theo giá tăng dần, lấy 8 sản phẩm
+        this.bestPriceProducts = [...this.products]
+          .sort((a, b) => (Number(a.giaBan) || 0) - (Number(b.giaBan) || 0))
+          .slice(0, 8);
+        
         this.isLoading = false;
       },
       error: (error) => {
@@ -66,6 +92,79 @@ export class ShopComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  loadBestSellingProducts(): void {
+    this.statisticsService.getBestSellingProducts(8).subscribe({
+      next: (response) => {
+        if (response && response.data) {
+          // Map best selling products từ statistics service
+          // Cần load chi tiết sản phẩm từ product service
+          const bestSellingIds = response.data.map(item => item.sanPhamId);
+          this.productApiService.search({
+            trangThai: true,
+            page: 0,
+            size: 1000,
+            useCustomerEndpoint: true
+          }).subscribe({
+            next: (productResponse) => {
+              this.bestSellingProducts = productResponse.content
+                .filter(p => bestSellingIds.includes(p.id))
+                .slice(0, 8);
+            },
+            error: (error) => {
+              console.error('Error loading best selling product details:', error);
+            }
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error loading best selling products:', error);
+        // Fallback: lấy 8 sản phẩm đầu tiên
+        this.bestSellingProducts = this.products.slice(0, 8);
+      }
+    });
+  }
+
+  loadCategories(): void {
+    this.loaiMuBaoHiemService.getAllActive().subscribe({
+      next: (categories) => {
+        this.categories = categories.map(cat => ({
+          id: cat.id,
+          tenLoaiMu: cat.tenLoai || '', // Map tenLoai to tenLoaiMu
+          trangThai: cat.trangThai || true
+        }));
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+        this.categories = [];
+      }
+    });
+  }
+
+  getActiveProducts(): SanPhamResponse[] {
+    switch (this.activeTab) {
+      case 'best-selling':
+        return this.bestSellingProducts;
+      case 'featured':
+        return this.featuredProducts;
+      case 'best-price':
+        return this.bestPriceProducts;
+      default:
+        return [];
+    }
+  }
+
+  setActiveTab(tab: 'best-selling' | 'featured' | 'best-price'): void {
+    this.activeTab = tab;
+  }
+
+  getProductsByCategory(categoryId: number): SanPhamResponse[] {
+    return this.products.filter(p => p.loaiMuBaoHiemId === categoryId);
+  }
+
+  toggleSearch(): void {
+    this.showSearch = !this.showSearch;
   }
 
   filterProducts(): void {
@@ -122,7 +221,7 @@ export class ShopComponent implements OnInit {
     this.saveCart();
     this.updateCartCount();
     
-    // Hiển thị thông báo (có thể dùng toast service)
+    // Hiển thị thông báo
     alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
   }
 

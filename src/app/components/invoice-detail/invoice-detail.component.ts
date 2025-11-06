@@ -3336,7 +3336,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate ghi chú (không bắt buộc nhưng nên có)
+    // Validate ghi chú (bắt buộc)
     if (!this.cancelInvoiceNote || this.cancelInvoiceNote.trim().length === 0) {
       this.showToast('Vui lòng nhập lý do hủy hóa đơn', 'warning');
       return;
@@ -3345,25 +3345,56 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.savingStatus = true;
 
     // Load hóa đơn hiện tại để lấy đầy đủ thông tin
+    console.log('🔄 Loading current invoice data...');
     this.hoaDonService.getHoaDonById(this.invoice.id).subscribe({
       next: (currentInvoice) => {
-        // Cập nhật ghi chú và trạng thái
-        const updateData: any = {
-          maHoaDon: currentInvoice.maHoaDon.trim(),
-          khachHangId: currentInvoice.khachHangId,
-          tongTien: Number(currentInvoice.tongTien),
-          thanhTien: currentInvoice.thanhTien ? Number(currentInvoice.thanhTien) : Number(currentInvoice.tongTien),
-          tienGiamGia: currentInvoice.tienGiamGia ? Number(currentInvoice.tienGiamGia) : 0,
-          soLuongSanPham: currentInvoice.soLuongSanPham || 0,
-          nhanVienId: currentInvoice.nhanVienId || null,
-          ghiChu: this.cancelInvoiceNote.trim(), // Lưu ghi chú hủy
-          trangThai: 'HUY', // Sẽ được backend map thành DA_HUY
-          danhSachChiTiet: (currentInvoice as any).danhSachChiTiet || currentInvoice.danhSachSanPham || []
-        };
+        console.log('✅ Current invoice loaded:', {
+          id: currentInvoice.id,
+          maHoaDon: currentInvoice.maHoaDon,
+          danhSachSanPham: currentInvoice.danhSachSanPham?.length || 0,
+          danhSachChiTiet: (currentInvoice as any).danhSachChiTiet?.length || 0
+        });
 
-        // Map danhSachChiTiet nếu cần
-        if (updateData.danhSachChiTiet && updateData.danhSachChiTiet.length > 0) {
-          updateData.danhSachChiTiet = updateData.danhSachChiTiet.map((item: any) => ({
+        // Chuẩn bị dữ liệu cập nhật: cả trạng thái và ghi chú
+        const cancelNote = this.cancelInvoiceNote ? this.cancelInvoiceNote.trim() : '';
+        console.log('📝 Cancel note to save:', cancelNote, '(length:', cancelNote.length, ')');
+        
+        // QUAN TRỌNG: Lấy danhSachChiTiet từ currentInvoice (đã được load với đầy đủ thông tin)
+        // Ưu tiên: danhSachChiTiet gốc > danhSachSanPham đã map
+        const originalDanhSachChiTiet = (currentInvoice as any).danhSachChiTiet;
+        const mappedDanhSachSanPham = currentInvoice.danhSachSanPham || [];
+        
+        console.log('📦 Product data sources:', {
+          originalDanhSachChiTiet: originalDanhSachChiTiet?.length || 0,
+          mappedDanhSachSanPham: mappedDanhSachSanPham.length,
+          invoiceId: currentInvoice.id,
+          trangThai: currentInvoice.trangThai
+        });
+        
+        // Map danhSachChiTiet từ nguồn phù hợp
+        let danhSachChiTietToUpdate: any[] = [];
+        
+        if (originalDanhSachChiTiet && originalDanhSachChiTiet.length > 0) {
+          // Nếu có danhSachChiTiet gốc, dùng nó
+          console.log('✅ Using original danhSachChiTiet from backend');
+          danhSachChiTietToUpdate = originalDanhSachChiTiet.map((item: any) => ({
+            id: item.id || null,
+            chiTietSanPhamId: item.chiTietSanPhamId || null,
+            tenSanPham: item.tenSanPham || '',
+            maSanPham: item.maSanPham || '',
+            soLuong: item.soLuong ? Number(item.soLuong) : 0,
+            donGia: item.donGia != null ? Number(item.donGia) : 0,
+            thanhTien: item.thanhTien != null ? Number(item.thanhTien) : 0,
+            giamGia: item.giamGia != null ? Number(item.giamGia) : 0,
+            mauSac: item.mauSac || '',
+            kichThuoc: item.kichThuoc || '',
+            nhaSanXuat: item.nhaSanXuat || '',
+            anhSanPham: item.anhSanPham || ''
+          })).filter((item: any) => item.chiTietSanPhamId != null);
+        } else if (mappedDanhSachSanPham && mappedDanhSachSanPham.length > 0) {
+          // Nếu không có danhSachChiTiet gốc, map từ danhSachSanPham
+          console.log('⚠️ No original danhSachChiTiet, mapping from danhSachSanPham');
+          danhSachChiTietToUpdate = mappedDanhSachSanPham.map((item: any) => ({
             id: item.id || null,
             chiTietSanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
             tenSanPham: item.tenSanPham || '',
@@ -3377,16 +3408,68 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             nhaSanXuat: item.nhaSanXuat || '',
             anhSanPham: item.anhSanPham || ''
           })).filter((item: any) => item.chiTietSanPhamId != null);
+        } else {
+          console.warn('⚠️ No products found in invoice. This might cause products to be deleted when cancelling.');
         }
+        
+        console.log('📦 Final danhSachChiTiet to update:', {
+          count: danhSachChiTietToUpdate.length,
+          items: danhSachChiTietToUpdate.map((item: any) => ({
+            id: item.id,
+            chiTietSanPhamId: item.chiTietSanPhamId,
+            tenSanPham: item.tenSanPham,
+            soLuong: item.soLuong
+          }))
+        });
+        
+        const updateData: any = {
+          maHoaDon: currentInvoice.maHoaDon.trim(),
+          khachHangId: currentInvoice.khachHangId,
+          tongTien: Number(currentInvoice.tongTien),
+          thanhTien: currentInvoice.thanhTien ? Number(currentInvoice.thanhTien) : Number(currentInvoice.tongTien),
+          tienGiamGia: currentInvoice.tienGiamGia ? Number(currentInvoice.tienGiamGia) : 0,
+          soLuongSanPham: currentInvoice.soLuongSanPham || danhSachChiTietToUpdate.length || 0,
+          nhanVienId: currentInvoice.nhanVienId || null,
+          ghiChu: cancelNote, // Lưu ghi chú hủy (đảm bảo không null)
+          trangThai: 'HUY', // Sẽ được backend map thành DA_HUY
+          danhSachChiTiet: danhSachChiTietToUpdate // QUAN TRỌNG: Giữ lại danhSachChiTiet khi hủy
+        };
+        
+        console.log('📦 Update data prepared:', {
+          maHoaDon: updateData.maHoaDon,
+          trangThai: updateData.trangThai,
+          ghiChu: updateData.ghiChu,
+          ghiChuLength: updateData.ghiChu ? updateData.ghiChu.length : 0,
+          danhSachChiTietCount: updateData.danhSachChiTiet?.length || 0,
+          soLuongSanPham: updateData.soLuongSanPham
+        });
 
-        // Cập nhật hóa đơn với ghi chú
+        // Đảm bảo format đúng cho backend
+        const finalUpdateData: any = {
+          ...updateData,
+          trangThai: 'HUY' as const,
+          tongTien: Number(updateData.tongTien),
+          thanhTien: Number(updateData.thanhTien),
+          tienGiamGia: updateData.tienGiamGia ? Number(updateData.tienGiamGia) : 0,
+          soLuongSanPham: updateData.soLuongSanPham || 0,
+          danhSachChiTiet: updateData.danhSachChiTiet || []
+        };
+
+        console.log('📤 Updating invoice with status HUY and note:', {
+          maHoaDon: finalUpdateData.maHoaDon,
+          trangThai: finalUpdateData.trangThai,
+          ghiChu: finalUpdateData.ghiChu,
+          danhSachChiTietCount: finalUpdateData.danhSachChiTiet.length
+        });
+
+        // Cập nhật hóa đơn với cả trạng thái và ghi chú trong một request
         if (!this.invoice || !this.invoice.id) {
           this.showToast('Không tìm thấy hóa đơn', 'error');
           this.savingStatus = false;
           return;
         }
         
-        this.hoaDonService.updateHoaDonNew(this.invoice.id, updateData).subscribe({
+        this.hoaDonService.updateHoaDonNew(this.invoice.id, finalUpdateData).subscribe({
           next: (updatedInvoice) => {
             console.log('✅ Invoice cancelled successfully with note:', updatedInvoice);
             this.savingStatus = false;
@@ -3407,6 +3490,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('❌ Error cancelling invoice:', error);
+            console.error('   - Status: ' + error.status);
+            console.error('   - StatusText: ' + error.statusText);
+            console.error('   - Error body: ', error.error);
+            console.error('   - Error message: ', error.message);
             this.savingStatus = false;
             const errorMessage = error.error?.message || error.error || error.message || 'Vui lòng thử lại';
             this.showToast('Lỗi khi hủy hóa đơn: ' + errorMessage, 'error');
