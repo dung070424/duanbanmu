@@ -11,6 +11,7 @@ import {
 import { KhachHangService } from '../../services/khach-hang.service';
 import { HoaDonService } from '../../services/hoa-don.service';
 import { PhieuGiamGiaService } from '../../services/phieu-giam-gia.service';
+import { HoaDonChoService, HoaDonCho, GioHangChoItem } from '../../services/hoa-don-cho.service';
 import {
   CounterSale,
   CounterSaleItem,
@@ -18,7 +19,7 @@ import {
   CounterSaleFilter,
 } from '../../interfaces/counter-sale.interface';
 
-type UICartItem = CartItem & { imageUrl?: string };
+type UICartItem = CartItem & { imageUrl?: string; gioHangChoId?: number };
 
 @Component({
   selector: 'app-counter-sales',
@@ -47,7 +48,9 @@ export class CounterSalesComponent implements OnInit {
 
   // POS state
   invoiceSearch: string = '';
-  pendingInvoices: { code: string; items: CartItem[] }[] = [];
+  pendingInvoices: HoaDonCho[] = [];
+  currentHoaDonChoId: number | null = null; // Current pending invoice ID
+  isInvoiceCreated: boolean = false; // Track if invoice has been created
   customerSearch: string = '';
   customerResults: { id: number; name: string; phone: string }[] = [];
   private customerSearchTimer: any;
@@ -148,6 +151,8 @@ export class CounterSalesComponent implements OnInit {
   productSearchTerm: string = '';
   availableProducts: any[] = [];
   productIdToImageUrl: { [productId: number]: string } = {};
+  chiTietSanPhamIdToProductId: { [chiTietSanPhamId: number]: number } = {};
+  productOrderMap: Map<number, number> = new Map(); // Map to preserve product order: productId -> originalIndex
 
   private parsePrice(value: any): number {
     if (typeof value === 'number' && isFinite(value)) return value;
@@ -156,6 +161,37 @@ export class CounterSalesComponent implements OnInit {
       return digits ? Number(digits) : 0;
     }
     return 0;
+  }
+
+  // Helper method to get image URL from chiTietSanPhamId
+  private getImageUrlFromChiTietSanPhamId(chiTietSanPhamId: number): string | undefined {
+    // First, try to get productId from mapping
+    const productId = this.chiTietSanPhamIdToProductId[chiTietSanPhamId];
+    if (productId && this.productIdToImageUrl[productId]) {
+      return this.productIdToImageUrl[productId];
+    }
+
+    // If not found in mapping, try to find in availableProducts
+    const product = this.availableProducts.find((p) => p.id === chiTietSanPhamId);
+    if (product && product.productId && this.productIdToImageUrl[product.productId]) {
+      return this.productIdToImageUrl[product.productId];
+    }
+
+    // If still not found, try to load from API
+    if (product && product.productId && !this.productIdToImageUrl[product.productId]) {
+      this.productApi.getById(product.productId, true).subscribe((p) => {
+        if (p?.anhSanPham) {
+          this.productIdToImageUrl[product.productId] = p.anhSanPham as string;
+          // Update cart item imageUrl if it's in the cart
+          const cartItem = this.cart.find((item) => item.productId === chiTietSanPhamId);
+          if (cartItem) {
+            cartItem.imageUrl = p.anhSanPham as string;
+          }
+        }
+      });
+    }
+
+    return undefined;
   }
 
   // Status options
@@ -196,6 +232,7 @@ export class CounterSalesComponent implements OnInit {
     private khachHangService: KhachHangService,
     private phieuGiamGiaService: PhieuGiamGiaService,
     private hoaDonService: HoaDonService,
+    private hoaDonChoService: HoaDonChoService,
     private router: Router
   ) {}
 
@@ -205,6 +242,7 @@ export class CounterSalesComponent implements OnInit {
     this.filterSales();
     this.filterProducts();
     this.refreshVoucherSuggestions();
+    this.loadPendingInvoices();
   }
 
   loadSampleData(): void {
@@ -298,9 +336,17 @@ export class CounterSalesComponent implements OnInit {
         const variants = (raw || []).map((r: any) => {
           // Lấy trongLuongTen từ DB - không dùng trongLuongId
           const trongLuongTen = r.trongLuongTen || r.trong_luong_ten || '';
+          const chiTietId = r.id;
+          const productId = r.sanPhamId || r.san_pham_id;
+
+          // Map chiTietSanPhamId to productId
+          if (chiTietId && productId) {
+            this.chiTietSanPhamIdToProductId[chiTietId] = productId;
+          }
+
           return {
-            id: r.id,
-            code: `${r.sanPhamId || r.san_pham_id}-${r.kichThuocId || r.kich_thuoc_id}-${
+            id: chiTietId,
+            code: `${productId}-${r.kichThuocId || r.kich_thuoc_id}-${
               r.mauSacId || r.mau_sac_id
             }-${trongLuongTen}`,
             name: r.sanPhamTen || r.san_pham_ten || '',
@@ -312,10 +358,28 @@ export class CounterSalesComponent implements OnInit {
             colorCode: r.mauSacMa || r.mau_sac_ma || '',
             ram: r.kichThuocTen || r.kich_thuoc_ten || '',
             storage: trongLuongTen, // Dùng trongLuongTen từ DB
-            productId: r.sanPhamId || r.san_pham_id,
+            productId: productId,
             imageUrl: undefined as string | undefined,
           };
         });
+
+        // Giữ nguyên thứ tự ban đầu nếu đã có
+        if (this.productOrderMap.size > 0) {
+          // Sắp xếp lại theo thứ tự ban đầu
+          variants.sort((a: any, b: any) => {
+            const orderA = this.productOrderMap.get(a.id) ?? Infinity;
+            const orderB = this.productOrderMap.get(b.id) ?? Infinity;
+            return orderA - orderB;
+          });
+        } else {
+          // Lần đầu tiên load, lưu thứ tự ban đầu
+          variants.forEach((product: any, index: number) => {
+            if (product.id) {
+              this.productOrderMap.set(product.id, index);
+            }
+          });
+        }
+
         this.availableProducts = variants;
         // Build options động từ dữ liệu
         const colors = new Set<string>();
@@ -410,23 +474,137 @@ export class CounterSalesComponent implements OnInit {
 
   // POS helpers
   createNewInvoice(): void {
-    // Luôn tạo 1 hóa đơn chờ mới (kể cả khi giỏ hàng trống)
+    // Kiểm tra số lượng hóa đơn chờ hiện tại (tối đa 5)
+    const MAX_PENDING_INVOICES = 5;
+    if (this.pendingInvoices.length >= MAX_PENDING_INVOICES) {
+      this.showToast(
+        `Bạn chỉ có thể tạo tối đa ${MAX_PENDING_INVOICES} hóa đơn chờ. Vui lòng xóa hoặc thanh toán hóa đơn chờ hiện tại trước khi tạo mới.`,
+        'warning'
+      );
+      return;
+    }
+
+    // Tạo hóa đơn chờ mới trong database
     const code = this.generateSaleNumber();
-    const snapshot = JSON.parse(JSON.stringify(this.cart));
-    this.pendingInvoices.unshift({ code, items: snapshot });
-    // Reset giỏ hiện tại cho hóa đơn mới
-    this.cart = [];
-    this.calculateCartTotal();
+    const hoaDonChoData: Partial<HoaDonCho> = {
+      maHoaDonCho: code,
+      khachHangId: this.newSale.customerId,
+      tenKhachHang: this.newSale.customerName,
+      soDienThoaiKhachHang: this.newSale.customerPhone,
+      nhanVienId: this.newSale.staffId,
+      tenNhanVien: this.newSale.staffName,
+      trangThai: 'DANG_CHO',
+      ghiChu: this.newSale.notes,
+    };
+
+    this.hoaDonChoService.createHoaDonCho(hoaDonChoData).subscribe({
+      next: (created: HoaDonCho) => {
+        this.currentHoaDonChoId = created.id || null;
+        this.loadPendingInvoices();
+        // Reset giỏ hiện tại cho hóa đơn mới
+        this.cart = [];
+        this.calculateCartTotal();
+        // Enable adding products to cart after creating invoice
+        this.isInvoiceCreated = true;
+        this.showToast('Đã tạo hóa đơn mới. Bạn có thể thêm sản phẩm vào giỏ hàng.', 'success');
+      },
+      error: (err) => {
+        this.showToast(
+          'Lỗi khi tạo hóa đơn chờ: ' + (err.error?.error || err.message || 'Không xác định'),
+          'error'
+        );
+      },
+    });
   }
 
-  loadPending(inv: { code: string; items: CartItem[] }): void {
-    this.cart = JSON.parse(JSON.stringify(inv.items));
-    this.calculateCartTotal();
+  loadPendingInvoices(): void {
+    this.hoaDonChoService.getHoaDonChoByTrangThai('DANG_CHO').subscribe({
+      next: (invoices: HoaDonCho[]) => {
+        this.pendingInvoices = invoices;
+      },
+      error: (err) => {
+        console.error('Lỗi khi tải hóa đơn chờ:', err);
+        this.pendingInvoices = [];
+      },
+    });
   }
 
-  deletePending(inv: { code: string; items: CartItem[] }, event?: Event): void {
+  loadPending(inv: HoaDonCho): void {
+    if (!inv.id) return;
+
+    this.hoaDonChoService.getHoaDonChoById(inv.id).subscribe({
+      next: (hoaDonCho: HoaDonCho) => {
+        this.currentHoaDonChoId = hoaDonCho.id || null;
+        // Convert GioHangChoItem[] to CartItem[]
+        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
+          const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
+          return {
+            productId: item.chiTietSanPhamId,
+            productCode: '',
+            productName: item.tenSanPham || '',
+            category: '',
+            quantity: item.soLuong,
+            unitPrice: item.donGia,
+            totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
+            discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
+            discountAmount: item.giamGia || 0,
+            stockQuantity: 0,
+            imageUrl: imageUrl,
+            gioHangChoId: item.id, // Store gioHangChoId for deletion
+          };
+        });
+        this.calculateCartTotal();
+        // Enable adding products to cart when loading pending invoice
+        this.isInvoiceCreated = true;
+
+        // Update customer info if available
+        if (hoaDonCho.khachHangId) {
+          this.newSale.customerId = hoaDonCho.khachHangId;
+        }
+        if (hoaDonCho.tenKhachHang) {
+          this.newSale.customerName = hoaDonCho.tenKhachHang;
+        }
+        if (hoaDonCho.soDienThoaiKhachHang) {
+          this.newSale.customerPhone = hoaDonCho.soDienThoaiKhachHang;
+        }
+      },
+      error: (err) => {
+        this.showToast(
+          'Lỗi khi tải hóa đơn chờ: ' + (err.error?.error || err.message || 'Không xác định'),
+          'error'
+        );
+      },
+    });
+  }
+
+  deletePending(inv: HoaDonCho, event?: Event): void {
     if (event) event.stopPropagation();
-    this.pendingInvoices = this.pendingInvoices.filter((p) => p !== inv);
+
+    if (!inv.id) {
+      this.pendingInvoices = this.pendingInvoices.filter((p) => p !== inv);
+      return;
+    }
+
+    if (confirm('Bạn có chắc chắn muốn xóa hóa đơn chờ này?')) {
+      this.hoaDonChoService.deleteHoaDonCho(inv.id).subscribe({
+        next: () => {
+          this.loadPendingInvoices();
+          if (this.currentHoaDonChoId === inv.id) {
+            this.currentHoaDonChoId = null;
+            this.cart = [];
+            this.calculateCartTotal();
+            this.isInvoiceCreated = false;
+          }
+          this.showToast('Đã xóa hóa đơn chờ', 'success');
+        },
+        error: (err) => {
+          this.showToast(
+            'Lỗi khi xóa hóa đơn chờ: ' + (err.error?.error || err.message || 'Không xác định'),
+            'error'
+          );
+        },
+      });
+    }
   }
 
   scanQr(): void {
@@ -831,43 +1009,220 @@ export class CounterSalesComponent implements OnInit {
 
   // Cart methods
   addToCart(product: any): void {
-    const existingItem = this.cart.find((item) => item.productId === product.id);
-
-    if (existingItem) {
-      existingItem.quantity += 1;
-      existingItem.totalPrice = existingItem.unitPrice * existingItem.quantity;
-    } else {
-      this.cart.push({
-        productId: product.id,
-        productCode: product.code,
-        productName: product.name,
-        category: product.category,
-        imageUrl: product.imageUrl,
-        quantity: 1,
-        unitPrice: product.price,
-        totalPrice: product.price,
-        discount: 0,
-        discountAmount: 0,
-        stockQuantity: product.stock,
-      });
+    // Check if invoice has been created before allowing to add products
+    if (!this.isInvoiceCreated || !this.currentHoaDonChoId) {
+      this.showToast('Vui lòng tạo hóa đơn trước khi thêm sản phẩm vào giỏ hàng.', 'warning');
+      return;
     }
 
-    this.calculateCartTotal();
+    const itemRequest: GioHangChoItem = {
+      chiTietSanPhamId: product.id,
+      tenSanPham: product.name,
+      soLuong: 1,
+      donGia: product.price,
+      giamGia: 0,
+      thanhTien: product.price,
+    };
+
+    this.hoaDonChoService.addItemToCart(this.currentHoaDonChoId, itemRequest).subscribe({
+      next: (hoaDonCho: HoaDonCho) => {
+        // Update local cart from response
+        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
+          const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
+          return {
+            productId: item.chiTietSanPhamId,
+            productCode: '',
+            productName: item.tenSanPham || '',
+            category: '',
+            quantity: item.soLuong,
+            unitPrice: item.donGia,
+            totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
+            discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
+            discountAmount: item.giamGia || 0,
+            stockQuantity: 0,
+            imageUrl: imageUrl,
+            gioHangChoId: item.id, // Store gioHangChoId for deletion
+          };
+        });
+        this.calculateCartTotal();
+        this.loadPendingInvoices();
+        // Reload product list to update stock quantity
+        this.loadAvailableProducts();
+        this.showToast('Đã thêm sản phẩm vào giỏ hàng', 'success');
+      },
+      error: (err) => {
+        this.showToast(
+          'Lỗi khi thêm sản phẩm: ' + (err.error?.error || err.message || 'Không xác định'),
+          'error'
+        );
+      },
+    });
   }
 
   removeFromCart(productId: number): void {
-    this.cart = this.cart.filter((item) => item.productId !== productId);
-    this.calculateCartTotal();
+    if (!this.currentHoaDonChoId) {
+      this.cart = this.cart.filter((item) => item.productId !== productId);
+      this.calculateCartTotal();
+      return;
+    }
+
+    // Find the cart item
+    const cartItem = this.cart.find((item) => item.productId === productId);
+    if (!cartItem) {
+      this.showToast('Không tìm thấy sản phẩm trong giỏ hàng', 'warning');
+      return;
+    }
+
+    // Get gioHangChoId from cart item (stored when loading/adding)
+    const gioHangChoId = cartItem.gioHangChoId;
+    if (!gioHangChoId) {
+      // Fallback: try to reload pending invoice to get fresh data
+      this.hoaDonChoService.getHoaDonChoById(this.currentHoaDonChoId).subscribe({
+        next: (hoaDonCho: HoaDonCho) => {
+          const gioHangItem = hoaDonCho.danhSachGioHang?.find(
+            (item) => item.chiTietSanPhamId === productId
+          );
+          if (gioHangItem && gioHangItem.id) {
+            this.removeCartItem(gioHangItem.id);
+          } else {
+            this.showToast('Không tìm thấy ID giỏ hàng để xóa', 'error');
+          }
+        },
+        error: () => {
+          this.showToast('Lỗi khi tải dữ liệu giỏ hàng', 'error');
+        },
+      });
+      return;
+    }
+
+    this.removeCartItem(gioHangChoId);
+  }
+
+  private removeCartItem(gioHangChoId: number): void {
+    if (!this.currentHoaDonChoId) return;
+
+    this.hoaDonChoService.removeItemFromCart(this.currentHoaDonChoId, gioHangChoId).subscribe({
+      next: (hoaDonCho: HoaDonCho) => {
+        console.log('Response after delete:', hoaDonCho);
+        console.log('danhSachGioHang length:', hoaDonCho.danhSachGioHang?.length || 0);
+
+        // Update local cart from response
+        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
+          const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
+          return {
+            productId: item.chiTietSanPhamId,
+            productCode: '',
+            productName: item.tenSanPham || '',
+            category: '',
+            quantity: item.soLuong,
+            unitPrice: item.donGia,
+            totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
+            discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
+            discountAmount: item.giamGia || 0,
+            stockQuantity: 0,
+            imageUrl: imageUrl,
+            gioHangChoId: item.id, // Store gioHangChoId for deletion
+          };
+        });
+
+        console.log('Updated cart length:', this.cart.length);
+        this.calculateCartTotal();
+        this.loadPendingInvoices();
+        // Reload product list to update stock quantity
+        this.loadAvailableProducts();
+        this.showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'success');
+      },
+      error: (err) => {
+        console.error('Error deleting cart item:', err);
+        this.showToast(
+          'Lỗi khi xóa sản phẩm: ' + (err.error?.error || err.message || 'Không xác định'),
+          'error'
+        );
+      },
+    });
   }
 
   updateCartQuantity(productId: number, quantity: string | number): void {
-    const item = this.cart.find((item) => item.productId === productId);
-    if (item) {
-      const qty = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
-      item.quantity = Math.max(1, qty);
-      item.totalPrice = item.unitPrice * item.quantity;
-      this.calculateCartTotal();
+    if (!this.currentHoaDonChoId) {
+      const item = this.cart.find((item) => item.productId === productId);
+      if (item) {
+        const qty = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
+        item.quantity = Math.max(1, qty);
+        item.totalPrice = item.unitPrice * item.quantity;
+        this.calculateCartTotal();
+      }
+      return;
     }
+
+    const qty = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
+    const finalQty = Math.max(1, qty);
+
+    // Get gioHangChoId from cart item
+    const cartItem = this.cart.find((item) => item.productId === productId);
+    if (!cartItem) return;
+
+    const gioHangChoId = cartItem.gioHangChoId;
+    if (!gioHangChoId) {
+      // Fallback: try to reload pending invoice to get fresh data
+      this.hoaDonChoService.getHoaDonChoById(this.currentHoaDonChoId).subscribe({
+        next: (hoaDonCho: HoaDonCho) => {
+          const gioHangItem = hoaDonCho.danhSachGioHang?.find(
+            (item) => item.chiTietSanPhamId === productId
+          );
+          if (gioHangItem && gioHangItem.id) {
+            this.updateCartItemQuantity(gioHangItem.id, finalQty);
+          } else {
+            this.showToast('Không tìm thấy ID giỏ hàng để cập nhật', 'error');
+          }
+        },
+        error: () => {
+          this.showToast('Lỗi khi tải dữ liệu giỏ hàng', 'error');
+        },
+      });
+      return;
+    }
+
+    this.updateCartItemQuantity(gioHangChoId, finalQty);
+  }
+
+  private updateCartItemQuantity(gioHangChoId: number, quantity: number): void {
+    if (!this.currentHoaDonChoId) return;
+
+    this.hoaDonChoService
+      .updateCartItemQuantity(this.currentHoaDonChoId, gioHangChoId, quantity)
+      .subscribe({
+        next: (hoaDonCho: HoaDonCho) => {
+          // Update local cart from response
+          this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
+            const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
+            return {
+              productId: item.chiTietSanPhamId,
+              productCode: '',
+              productName: item.tenSanPham || '',
+              category: '',
+              quantity: item.soLuong,
+              unitPrice: item.donGia,
+              totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
+              discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
+              discountAmount: item.giamGia || 0,
+              stockQuantity: 0,
+              imageUrl: imageUrl,
+              gioHangChoId: item.id, // Store gioHangChoId for future operations
+            };
+          });
+          this.calculateCartTotal();
+          this.loadPendingInvoices();
+          // Reload product list to update stock quantity
+          this.loadAvailableProducts();
+          this.showToast('Đã cập nhật số lượng sản phẩm', 'success');
+        },
+        error: (err) => {
+          this.showToast(
+            'Lỗi khi cập nhật số lượng: ' + (err.error?.error || err.message || 'Không xác định'),
+            'error'
+          );
+        },
+      });
   }
 
   updateCartDiscount(productId: number, discount: string | number): void {
@@ -1000,6 +1355,7 @@ export class CounterSalesComponent implements OnInit {
     };
 
     // Gọi BE tạo hóa đơn rồi điều hướng sang trang chi tiết
+    // Khi thanh toán tại quầy, hóa đơn tự động hoàn thành (DA_GIAO_HANG) và không cần xác nhận
     const payload: any = {
       maHoaDon: this.generateSaleNumber().replace('CS', 'HD'),
       khachHangId: this.newSale.customerId,
@@ -1010,7 +1366,7 @@ export class CounterSalesComponent implements OnInit {
       thanhTien: Math.round(this.cartTotal),
       tienGiamGia: Math.round(this.cartDiscount + this.couponDiscount),
       phuongThucThanhToan: this.newSale.paymentMethod,
-      trangThai: 'CHO_XAC_NHAN',
+      trangThai: 'DA_GIAO_HANG',
       danhSachChiTiet: this.cart.map((item) => ({
         chiTietSanPhamId: item.productId,
         tenSanPham: item.productName,
@@ -1024,12 +1380,30 @@ export class CounterSalesComponent implements OnInit {
     this.hoaDonService.createHoaDon(payload).subscribe({
       next: (created: any) => {
         const createdId = created?.id;
+
+        // Xóa hóa đơn chờ nếu có
+        if (this.currentHoaDonChoId) {
+          this.hoaDonChoService.deleteHoaDonCho(this.currentHoaDonChoId).subscribe({
+            next: () => {
+              console.log('Hóa đơn chờ đã được xóa sau khi thanh toán');
+            },
+            error: (err) => {
+              console.error('Lỗi khi xóa hóa đơn chờ:', err);
+            },
+          });
+        }
+
         // reset POS state trước khi điều hướng
         this.counterSales.unshift(newSale);
         this.cart = [];
         this.calculateCartTotal();
         this.closeModals();
         this.filterSales();
+        // Reset flag và currentHoaDonChoId để chuẩn bị cho hóa đơn mới
+        this.isInvoiceCreated = false;
+        this.currentHoaDonChoId = null;
+        // Reload danh sách hóa đơn chờ
+        this.loadPendingInvoices();
         if (createdId) {
           this.router.navigate(['/invoices', createdId]);
         }
@@ -1041,6 +1415,8 @@ export class CounterSalesComponent implements OnInit {
         this.calculateCartTotal();
         this.closeModals();
         this.filterSales();
+        // Reset flag để chuẩn bị cho hóa đơn mới
+        this.isInvoiceCreated = false;
       },
     });
   }

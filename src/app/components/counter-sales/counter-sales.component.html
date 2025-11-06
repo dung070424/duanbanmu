@@ -25,7 +25,7 @@
         <div class="d-flex flex-wrap gap-2" *ngIf="pendingInvoices.length > 0">
           <div class="pending-item" *ngFor="let inv of pendingInvoices">
             <button class="btn btn-outline-secondary btn-sm" (click)="loadPending(inv)">
-              {{ inv.code }} - {{ inv.items.length }} sp
+              {{ inv.maHoaDonCho }} - {{ (inv.danhSachGioHang?.length || 0) }} sp
             </button>
             <button
               class="btn btn-light btn-sm pending-delete"
@@ -186,7 +186,13 @@
                 <td>{{ p.stock }}</td>
                 <td class="text-success fw-semibold">{{ formatCurrency(p.price) }}</td>
                 <td>
-                  <button class="btn-edit" (click)="addToCart(p)" title="Thêm vào giỏ">
+                  <button 
+                    class="btn-edit" 
+                    (click)="addToCart(p)" 
+                    [disabled]="!isInvoiceCreated"
+                    [title]="isInvoiceCreated ? 'Thêm vào giỏ' : 'Vui lòng tạo hóa đơn trước'"
+                    [class.disabled]="!isInvoiceCreated"
+                  >
                     <i class="bi bi-cart-plus"></i>
                   </button>
                 </td>
@@ -232,47 +238,55 @@
       <!-- Customer -->
       <div class="card p-3 mb-3 section-card">
         <h6 class="mb-3 section-title">Khách Hàng</h6>
-        <div class="input-group mb-1 position-relative">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input
-            class="form-control"
-            placeholder="Tìm kiếm khách hàng, sđt..."
-            [(ngModel)]="customerSearch"
-            (input)="onCustomerSearchChange()"
-            autocomplete="off"
-          />
-          <!-- dropdown results -->
-          <div
-            class="list-group position-absolute w-100"
-            style="top: 100%; z-index: 1051; max-height: 240px; overflow: auto"
-            *ngIf="customerResults.length > 0"
-          >
-            <button
-              type="button"
-              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-              *ngFor="let c of customerResults"
-              (click)="selectCustomer(c)"
+        <!-- Show customer form only when cart has products -->
+        <div *ngIf="cart.length > 0">
+          <div class="input-group mb-1 position-relative">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input
+              class="form-control"
+              placeholder="Tìm kiếm khách hàng, sđt..."
+              [(ngModel)]="customerSearch"
+              (input)="onCustomerSearchChange()"
+              autocomplete="off"
+            />
+            <!-- dropdown results -->
+            <div
+              class="list-group position-absolute w-100"
+              style="top: 100%; z-index: 1051; max-height: 240px; overflow: auto"
+              *ngIf="customerResults.length > 0"
             >
-              <span>{{ c.name }}</span>
-              <span class="text-muted small">{{ c.phone }}</span>
-            </button>
+              <button
+                type="button"
+                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                *ngFor="let c of customerResults"
+                (click)="selectCustomer(c)"
+              >
+                <span>{{ c.name }}</span>
+                <span class="text-muted small">{{ c.phone }}</span>
+              </button>
+            </div>
           </div>
+          <div class="mb-2">
+            <label class="form-label">Tên khách hàng *</label>
+            <input class="form-control" [(ngModel)]="newSale.customerName" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Số điện thoại *</label>
+            <input class="form-control" [(ngModel)]="newSale.customerPhone" />
+          </div>
+          <button
+            class="btn btn-primary w-100"
+            (click)="quickAddCustomer()"
+            [disabled]="!newSale.customerName || !newSale.customerPhone || customerCreating"
+          >
+            Thêm khách hàng
+          </button>
         </div>
-        <div class="mb-2">
-          <label class="form-label">Tên khách hàng *</label>
-          <input class="form-control" [(ngModel)]="newSale.customerName" />
+        <!-- Show empty state when cart is empty -->
+        <div *ngIf="cart.length === 0" class="text-center text-muted py-4">
+          <i class="bi bi-info-circle fs-1"></i>
+          <div>Chưa có sản phẩm trong giỏ hàng</div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Số điện thoại *</label>
-          <input class="form-control" [(ngModel)]="newSale.customerPhone" />
-        </div>
-        <button
-          class="btn btn-primary w-100"
-          (click)="quickAddCustomer()"
-          [disabled]="!newSale.customerName || !newSale.customerPhone || customerCreating"
-        >
-          Thêm khách hàng
-        </button>
       </div>
 
       <!-- Order info -->
@@ -383,7 +397,7 @@
             </div>
           </div>
           <div class="d-flex justify-content-between mb-1" *ngIf="appliedCoupon">
-            <span>Phiếu giảm giá ({{ appliedCoupon?.code }})</span>
+            <span>Phiếu giảm giá ({{ appliedCoupon.code }})</span>
             <span class="text-danger">-{{ formatCurrency(couponDiscount) }}</span>
           </div>
           <div class="d-flex justify-content-between fw-bold fs-5 pt-2 border-top">

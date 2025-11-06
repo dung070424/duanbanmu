@@ -788,9 +788,16 @@
   align-items: center;
   justify-content: center;
 
-  &:hover {
+  &:hover:not(:disabled):not(.disabled) {
     background-color: rgba(254, 188, 73, 0.1);
     transform: scale(1.05);
+  }
+
+  &:disabled,
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    color: #6c757d;
   }
 }
 
