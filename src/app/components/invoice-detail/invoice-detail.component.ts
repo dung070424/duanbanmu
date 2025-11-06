@@ -3336,7 +3336,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate ghi chú (không bắt buộc nhưng nên có)
+    // Validate ghi chú (bắt buộc)
     if (!this.cancelInvoiceNote || this.cancelInvoiceNote.trim().length === 0) {
       this.showToast('Vui lòng nhập lý do hủy hóa đơn', 'warning');
       return;
@@ -3345,9 +3345,20 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.savingStatus = true;
 
     // Load hóa đơn hiện tại để lấy đầy đủ thông tin
+    console.log('🔄 Loading current invoice data...');
     this.hoaDonService.getHoaDonById(this.invoice.id).subscribe({
       next: (currentInvoice) => {
-        // Cập nhật ghi chú và trạng thái
+        console.log('✅ Current invoice loaded:', {
+          id: currentInvoice.id,
+          maHoaDon: currentInvoice.maHoaDon,
+          danhSachSanPham: currentInvoice.danhSachSanPham?.length || 0,
+          danhSachChiTiet: (currentInvoice as any).danhSachChiTiet?.length || 0
+        });
+
+        // Chuẩn bị dữ liệu cập nhật: cả trạng thái và ghi chú
+        const cancelNote = this.cancelInvoiceNote ? this.cancelInvoiceNote.trim() : '';
+        console.log('📝 Cancel note to save:', cancelNote, '(length:', cancelNote.length, ')');
+        
         const updateData: any = {
           maHoaDon: currentInvoice.maHoaDon.trim(),
           khachHangId: currentInvoice.khachHangId,
@@ -3356,10 +3367,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           tienGiamGia: currentInvoice.tienGiamGia ? Number(currentInvoice.tienGiamGia) : 0,
           soLuongSanPham: currentInvoice.soLuongSanPham || 0,
           nhanVienId: currentInvoice.nhanVienId || null,
-          ghiChu: this.cancelInvoiceNote.trim(), // Lưu ghi chú hủy
+          ghiChu: cancelNote, // Lưu ghi chú hủy (đảm bảo không null)
           trangThai: 'HUY', // Sẽ được backend map thành DA_HUY
           danhSachChiTiet: (currentInvoice as any).danhSachChiTiet || currentInvoice.danhSachSanPham || []
         };
+        
+        console.log('📦 Update data prepared:', {
+          maHoaDon: updateData.maHoaDon,
+          trangThai: updateData.trangThai,
+          ghiChu: updateData.ghiChu,
+          ghiChuLength: updateData.ghiChu ? updateData.ghiChu.length : 0,
+          danhSachChiTietCount: updateData.danhSachChiTiet?.length || 0
+        });
 
         // Map danhSachChiTiet nếu cần
         if (updateData.danhSachChiTiet && updateData.danhSachChiTiet.length > 0) {
@@ -3379,14 +3398,39 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           })).filter((item: any) => item.chiTietSanPhamId != null);
         }
 
-        // Cập nhật hóa đơn với ghi chú
+        // Validate: Đảm bảo có ít nhất một sản phẩm hợp lệ (nhưng không chặn nếu không có, vì có thể hóa đơn đã bị xóa sản phẩm)
+        if (!updateData.danhSachChiTiet || updateData.danhSachChiTiet.length === 0) {
+          console.warn('⚠️ No valid products found in invoice. Proceeding with cancellation anyway...');
+          // Không chặn, vì có thể hóa đơn đã bị xóa sản phẩm nhưng vẫn cần hủy
+          updateData.danhSachChiTiet = [];
+        }
+
+        // Đảm bảo format đúng cho backend
+        const finalUpdateData: any = {
+          ...updateData,
+          trangThai: 'HUY' as const,
+          tongTien: Number(updateData.tongTien),
+          thanhTien: Number(updateData.thanhTien),
+          tienGiamGia: updateData.tienGiamGia ? Number(updateData.tienGiamGia) : 0,
+          soLuongSanPham: updateData.soLuongSanPham || 0,
+          danhSachChiTiet: updateData.danhSachChiTiet || []
+        };
+
+        console.log('📤 Updating invoice with status HUY and note:', {
+          maHoaDon: finalUpdateData.maHoaDon,
+          trangThai: finalUpdateData.trangThai,
+          ghiChu: finalUpdateData.ghiChu,
+          danhSachChiTietCount: finalUpdateData.danhSachChiTiet.length
+        });
+
+        // Cập nhật hóa đơn với cả trạng thái và ghi chú trong một request
         if (!this.invoice || !this.invoice.id) {
           this.showToast('Không tìm thấy hóa đơn', 'error');
           this.savingStatus = false;
           return;
         }
         
-        this.hoaDonService.updateHoaDonNew(this.invoice.id, updateData).subscribe({
+        this.hoaDonService.updateHoaDonNew(this.invoice.id, finalUpdateData).subscribe({
           next: (updatedInvoice) => {
             console.log('✅ Invoice cancelled successfully with note:', updatedInvoice);
             this.savingStatus = false;
@@ -3407,6 +3451,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('❌ Error cancelling invoice:', error);
+            console.error('   - Status: ' + error.status);
+            console.error('   - StatusText: ' + error.statusText);
+            console.error('   - Error body: ', error.error);
+            console.error('   - Error message: ', error.message);
             this.savingStatus = false;
             const errorMessage = error.error?.message || error.error || error.message || 'Vui lòng thử lại';
             this.showToast('Lỗi khi hủy hóa đơn: ' + errorMessage, 'error');
