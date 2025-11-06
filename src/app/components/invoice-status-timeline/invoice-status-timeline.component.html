@@ -1,25 +1,26 @@
 <div class="invoice-status-timeline">
   <div class="timeline-header">
-    <i class="fas fa-clock timeline-icon"></i>
-    <h6 class="timeline-title">Trạng Thái Hóa Đơn</h6>
+    <h6 class="timeline-title">Trạng Thái Đơn Hàng</h6>
   </div>
   
   <div class="timeline-container">
-    @if (currentStep) {
-      <div class="current-status-display">
-        <div class="status-icon-wrapper">
-          <div class="step-circle" [ngClass]="getStepClass(currentStep)">
-            <i [ngClass]="getStepIconClass(currentStep)"></i>
+    <div class="timeline-steps">
+      @for (step of statusSteps; track step.id) {
+        <div class="timeline-step" [ngClass]="getStepClass(step)" (click)="onStepClick(step, $event)">
+          <div class="step-label">{{ step.label }}</div>
+          <div class="step-icon-wrapper">
+            <div class="step-icon" [ngClass]="'icon-' + step.iconColor">
+              <i [ngClass]="step.icon"></i>
+            </div>
           </div>
+          @if (step.actualTime) {
+            <div class="step-time actual">{{ step.actualTime }}</div>
+          }
+          @if (step.estimatedTime && !step.actualTime) {
+            <div class="step-time estimated">Dự kiến: {{ step.estimatedTime }}</div>
+          }
         </div>
-        <div class="step-content">
-          <div class="step-label">{{ currentStep.label }}</div>
-        </div>
-      </div>
-    } @else {
-      <div class="no-status-message">
-        <p>Chưa có trạng thái</p>
-      </div>
-    }
+      }
+    </div>
   </div>
 </div>

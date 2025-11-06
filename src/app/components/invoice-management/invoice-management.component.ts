@@ -139,7 +139,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   formErrors: string[] = [];
   isFormValid: boolean = true;
   showValidationErrors: boolean = false;
-  
+
   // Customer validation properties
   customerValidationMessage: string = '';
   customerValidationValid: boolean = true;
@@ -163,7 +163,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     { value: 'pending', label: 'Chờ thanh toán' },
     { value: 'paid', label: 'Đã thanh toán' },
     { value: 'cancelled', label: 'Đã hủy' },
-    
+
   ];
 
   paymentMethodOptions = [
@@ -223,8 +223,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (this.searchTerm && this.searchTerm.trim()) {
       const trimmedSearchTerm = this.searchTerm.trim();
       // Kiểm tra nếu là số hóa đơn (bắt đầu bằng HD, INV, hoặc MA)
-      if (trimmedSearchTerm.toUpperCase().startsWith('HD') || 
-          trimmedSearchTerm.toUpperCase().startsWith('INV') || 
+      if (trimmedSearchTerm.toUpperCase().startsWith('HD') ||
+          trimmedSearchTerm.toUpperCase().startsWith('INV') ||
           trimmedSearchTerm.toUpperCase().startsWith('MA')) {
         filterParams.maHoaDon = trimmedSearchTerm;
       } else {
@@ -370,7 +370,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         this.employees = employees;
         this.loadingEmployees = false;
         this.cdr.detectChanges();
-        
+
         if (employees.length === 0) {
           console.log('⚠️ No employees found');
           this.showToast('Không có nhân viên nào trong hệ thống', 'warning');
@@ -394,7 +394,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       this.selectedEmployee = employee;
       this.newInvoice.nhanVienId = employee.id;
       this.newInvoice.tenNhanVien = employee.tenNhanVien;
-      
+
       // Clear validation error for employee field
       this.clearFieldValidation('nhanVienId');
       this.updateFormValidity();
@@ -619,7 +619,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.editingInvoice = { ...invoice };
     this.showEditModal = true;
     this.clearAllValidations();
-    
+
     // Đồng bộ selectedProducts từ editingInvoice.danhSachSanPham
     if (this.editingInvoice && this.editingInvoice.danhSachSanPham) {
       this.selectedProducts = this.editingInvoice.danhSachSanPham.map((product: any) => ({
@@ -665,7 +665,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     console.log('🔍 [openViewModal] Parsed invoiceId:', invoiceId);
     console.log('🔍 [openViewModal] Current route:', this.router.url);
     console.log('🔍 [openViewModal] Navigating to:', `/invoices/${invoiceId}`);
-    
+
     // Navigate to detail view instead of opening modal
     // Sử dụng navigateByUrl để đảm bảo route chính xác
     this.router.navigateByUrl(`/invoices/${invoiceId}`).then(
@@ -687,11 +687,11 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.showProductModal = false;
     this.showCustomerAddressModal = false;
     this.showAddAddressModal = false;
-    
+
     // Reset form data
     this.resetNewInvoiceForm();
     this.clearAllValidations();
-    
+
     // Reset selected items
     this.selectedInvoice = null;
     this.editingInvoice = null;
@@ -699,16 +699,16 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.isEditMode = false;
     this.editingInvoiceDetail = null;
     this.selectedCustomerAddress = null;
-    
+
     // Force change detection
     this.cdr.detectChanges();
-    
+
     // Remove any backdrop
     const backdrop = document.querySelector('.modal-backdrop');
     if (backdrop) {
       backdrop.remove();
     }
-    
+
     // Remove modal-open class from body
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
@@ -790,16 +790,16 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   getPaymentMethodLabel(method?: string | null): string {
     if (!method) return 'Tiền mặt';
-    
+
     // Map từ backend format về hiển thị
     const methodLower = method.toLowerCase().trim();
-    
+
     if (methodLower === 'cash' || methodLower === 'tiền mặt' || methodLower === 'tiền mặt') {
       return 'Tiền mặt';
     } else if (methodLower === 'transfer' || methodLower === 'chuyển khoản' || methodLower === 'chuyen khoan') {
       return 'Chuyển khoản';
     }
-    
+
     // Trả về giá trị gốc nếu không match
     return method;
   }
@@ -836,9 +836,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       // Tự động tạo hoặc tìm khách hàng
       console.log('🔄 Starting customer creation/finding process...');
       const customer = await this.createOrFindCustomer().toPromise();
-      
+
       console.log('📋 Customer result from service:', customer);
-      
+
       if (customer) {
         console.log('✅ Customer found/created successfully:', customer);
         this.newInvoice.khachHangId = customer.id;
@@ -920,22 +920,22 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         this.hoaDonService.createHoaDon(invoiceData).subscribe({
           next: (result) => {
             console.log('✅ Invoice created successfully:', result);
-            
+
             // Reload danh sách từ server
             this.loadHoaDon();
-            
+
             // Reset form
             this.resetNewInvoiceForm();
-            
+
             // Đóng modal
             this.closeModals();
 
             // Show success message
             this.showToast('Tạo hóa đơn thành công!', 'success');
-            
+
             // Kết thúc loading state
             this.loadingInvoices = false;
-            
+
             // Refresh danh sách để đảm bảo đồng bộ với database
             this.loadHoaDon();
           },
@@ -962,7 +962,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
 
     this.loadingInvoices = true;
-    
+
       // Chuẩn hóa dữ liệu trước khi gửi
       const invoiceData: any = {
         ...this.editingInvoice,
@@ -985,7 +985,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         // Remove danhSachSanPham nếu có (frontend format)
         danhSachSanPham: undefined
       };
-      
+
       // Map danhSachSanPham (frontend) sang danhSachChiTiet (backend) cho update
       if (this.editingInvoice.danhSachSanPham && Array.isArray(this.editingInvoice.danhSachSanPham)) {
         invoiceData.danhSachChiTiet = this.editingInvoice.danhSachSanPham.map((product: any) => ({
@@ -1011,10 +1011,10 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       this.hoaDonService.updateHoaDonNew(this.editingInvoice.id, invoiceData).subscribe({
         next: (result: any) => {
           this.closeModals();
-        
+
         // Cập nhật hóa đơn trong danh sách và di chuyển lên đầu
         this.updateInvoiceInList(result);
-        
+
         this.clearAllValidations();
           this.showToast('Cập nhật hóa đơn thành công!', 'success');
         this.cdr.detectChanges();
@@ -1073,7 +1073,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   openProductModal(): void {
     this.showProductModal = true;
     this.loadProducts();
-    
+
     // Đồng bộ selectedProductIds với selectedProducts hiện tại
     // Kiểm tra xem có đang ở edit mode không để đồng bộ đúng
     this.selectedProductIds.clear();
@@ -1093,7 +1093,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         }
       });
     }
-    
+
     this.cdr.detectChanges(); // Force change detection
   }
 
@@ -1182,10 +1182,10 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (selectedProduct) {
       // Sử dụng validation nghiêm ngặt
       const quantityValidation = this.validationService.validateProductQuantityStrict(quantity, selectedProduct.soLuongTon);
-      
+
       // Store validation result for this specific product
       const fieldKey = `soLuong_${selectedProduct.id}`;
-      
+
       if (!quantityValidation.isValid) {
         this.fieldValidations[fieldKey] = {
           field: fieldKey,
@@ -1197,16 +1197,16 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
         return;
       }
-      
+
       // Đảm bảo số lượng là số nguyên dương và không vượt quá tồn kho
       const validQuantity = Math.max(1, Math.floor(quantity || 1));
       const adjustedQuantity = this.validationService.adjustQuantityToMaxStock(validQuantity, selectedProduct.soLuongTon);
-      
+
       selectedProduct.soLuong = adjustedQuantity;
 
       // Tính lại tổng tiền
       this.calculateTotal();
-      
+
       // Clear validation error for this product
       delete this.fieldValidations[fieldKey];
       this.updateFormValidity();
@@ -1216,17 +1216,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   onQuantityInputChange(product: any, event: any): void {
     const quantity = parseInt(event.target.value) || 1;
-    
+
     // Kiểm tra và điều chỉnh số lượng ngay lập tức
     const adjustedQuantity = this.validationService.adjustQuantityToMaxStock(quantity, product.soLuongTon);
-    
+
     // Nếu số lượng bị điều chỉnh, cập nhật lại input
     if (adjustedQuantity !== quantity) {
       event.target.value = adjustedQuantity;
       // Hiển thị thông báo cảnh báo
       this.showQuantityAdjustmentWarning(product, quantity, adjustedQuantity);
     }
-    
+
     this.updateProductQuantity(product, adjustedQuantity);
   }
 
@@ -1237,13 +1237,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const currentValue = parseInt(input.value) || 0;
     const stockQuantity = product.soLuongTon;
-    
+
     // Ngăn chặn nhập số âm hoặc 0
     if (event.key === '-' || event.key === '0') {
       event.preventDefault();
       return;
     }
-    
+
     // Ngăn chặn nhập số vượt quá tồn kho
     if (event.key >= '0' && event.key <= '9') {
       const newValue = parseInt(input.value + event.key);
@@ -1254,7 +1254,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         return;
       }
     }
-    
+
     // Ngăn chặn paste nội dung vượt quá tồn kho
     if (event.key === 'v' && (event.ctrlKey || event.metaKey)) {
       setTimeout(() => {
@@ -1278,7 +1278,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       toast.setAttribute('role', 'alert');
       toast.setAttribute('aria-live', 'assertive');
       toast.setAttribute('aria-atomic', 'true');
-      
+
       toast.innerHTML = `
         <div class="d-flex">
           <div class="toast-body">
@@ -1288,7 +1288,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
         </div>
       `;
-      
+
       // Thêm vào container toast
       let toastContainer = document.getElementById('toast-container');
       if (!toastContainer) {
@@ -1298,19 +1298,19 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         toastContainer.style.zIndex = '9999';
         document.body.appendChild(toastContainer);
       }
-      
+
       toastContainer.appendChild(toast);
-      
+
       // Hiển thị toast với animation đơn giản
       toast.style.opacity = '0';
       toast.style.transform = 'translateX(100%)';
       toast.style.transition = 'all 0.3s ease';
-      
+
       setTimeout(() => {
         toast.style.opacity = '1';
         toast.style.transform = 'translateX(0)';
       }, 100);
-      
+
       // Tự động ẩn sau 3 giây
       setTimeout(() => {
         toast.style.opacity = '0';
@@ -1321,7 +1321,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           }
         }, 300);
       }, 3000);
-      
+
     } catch (error) {
       console.error('Error showing toast:', error);
       // Fallback: sử dụng alert nếu toast không hoạt động
@@ -1493,17 +1493,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         mauSac: product.mauSac || '',
         anhSanPham: product.anhSanPham || '',
       }));
-      
+
       // Tính lại tổng tiền cho editingInvoice
       const tongTien = this.selectedProducts.reduce((sum, p) => {
         return sum + ((p.donGia || p.giaBan || 0) * (p.soLuong || 1));
       }, 0);
       this.editingInvoice.tongTien = tongTien;
       this.editingInvoice.thanhTien = tongTien - (this.editingInvoice.tienGiamGia || 0);
-      
+
       console.log('✅ Updated editingInvoice.danhSachSanPham:', this.editingInvoice.danhSachSanPham);
     }
-    
+
     // Đóng modal và cập nhật UI
     this.closeProductModal();
   }
@@ -1613,7 +1613,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (event.target.checked) {
       // Thêm sản phẩm vào danh sách đã chọn với số lượng mặc định là 1
       this.selectedProductIds.add(product.id);
-      
+
       // Thêm sản phẩm vào selectedProducts ngay lập tức
       const existingProduct = this.selectedProducts.find((p) => p.id === product.id);
       if (!existingProduct) {
@@ -1627,7 +1627,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     } else {
       // Xóa sản phẩm khỏi danh sách
       this.selectedProductIds.delete(product.id);
-      
+
       // Xóa sản phẩm khỏi selectedProducts
       const index = this.selectedProducts.findIndex((p) => p.id === product.id);
       if (index !== -1) {
@@ -1659,7 +1659,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       // Chọn tất cả sản phẩm
       availableProducts.forEach((product) => {
         this.selectedProductIds.add(product.id);
-        
+
         // Thêm sản phẩm vào selectedProducts nếu chưa có
         const existingProduct = this.selectedProducts.find((p) => p.id === product.id);
         if (!existingProduct) {
@@ -1673,7 +1673,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       // Bỏ chọn tất cả sản phẩm
       availableProducts.forEach((product) => {
         this.selectedProductIds.delete(product.id);
-        
+
         // Xóa sản phẩm khỏi selectedProducts
         const index = this.selectedProducts.findIndex((p) => p.id === product.id);
         if (index !== -1) {
@@ -1681,7 +1681,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         }
       });
     }
-    
+
     // Tính lại tổng tiền
     this.calculateTotal();
   }
@@ -1698,11 +1698,11 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   validateField(fieldName: string, value: any, additionalData?: any): void {
     const validation = this.validationService.getFieldValidation(fieldName, value, additionalData);
     this.fieldValidations[fieldName] = validation;
-    
+
     if (!validation.isValid) {
       this.showValidationErrors = true;
     }
-    
+
     this.updateFormValidity();
     this.cdr.detectChanges();
   }
@@ -1711,13 +1711,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     console.log('🔄 validateForm() called');
     this.showValidationErrors = true;
     this.formErrors = []; // Clear general form errors - now only show field-specific errors
-    
+
     // Validate new invoice form
     if (false) { // showAddModal removed
       console.log('📝 Validating new invoice form');
       console.log('newInvoice:', this.newInvoice);
       console.log('selectedProducts:', this.selectedProducts);
-      
+
       // Tạo một copy của newInvoice với danhSachSanPham từ selectedProducts
       const invoiceToValidate = {
         ...this.newInvoice,
@@ -1729,31 +1729,31 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           thanhTien: product.giaBan * product.soLuong,
         }))
       };
-      
+
       console.log('invoiceToValidate:', invoiceToValidate);
-      
+
       const validation = this.validationService.validateInvoiceFormStrict(invoiceToValidate);
       console.log('validation result:', validation);
       this.isFormValid = validation.isValid;
-      
+
       if (!validation.isValid) {
         console.log('❌ New invoice validation failed:', validation.errors);
         return false;
       }
     }
-    
+
     // Validate edit invoice form
     if (this.showEditModal && this.editingInvoice) {
       console.log('📝 Validating edit invoice form');
       const validation = this.validationService.validateInvoiceFormStrict(this.editingInvoice);
       this.isFormValid = validation.isValid;
-      
+
       if (!validation.isValid) {
         console.log('❌ Edit invoice validation failed:', validation.errors);
         return false;
       }
     }
-    
+
     console.log('✅ Form validation passed, isFormValid:', this.isFormValid);
     return this.isFormValid;
   }
@@ -1763,7 +1763,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const hasErrors = Object.values(this.fieldValidations).some(validation => !validation.isValid);
     console.log('fieldValidations:', this.fieldValidations);
     console.log('hasErrors:', hasErrors);
-    
+
     // Chỉ kiểm tra fieldValidations để tránh infinite loop
     this.isFormValid = !hasErrors;
     console.log('isFormValid:', this.isFormValid);
@@ -1821,7 +1821,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
    */
   async onPhoneNumberBlur(): Promise<void> {
     const phoneNumber = (this.newInvoice.soDienThoaiKhachHang || '').trim();
-    
+
     // Bỏ qua nếu số điện thoại rỗng hoặc đã có khachHangId (đã tạo rồi)
     if (!phoneNumber || this.newInvoice.khachHangId) {
       return;
@@ -1848,7 +1848,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
     // Nếu chưa có tên khách hàng, tạo tên mặc định
     const finalCustomerName = customerName || `Khách hàng ${phoneNumber}`;
-    
+
     // Nếu chưa có email, tạo email mặc định dựa trên số điện thoại
     const finalEmail = email || `kh${phoneNumber}@example.com`;
 
@@ -1870,12 +1870,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     };
 
     console.log('📝 Creating NEW customer (not searching in DB):', customerToCreate);
-    
+
     // Gọi trực tiếp createCustomer thay vì createOrFindCustomer để LUÔN TẠO MỚI
     this.customerService.createCustomer(customerToCreate).subscribe({
       next: (newCustomer) => {
         console.log('✅ Đã tạo khách hàng mới thành công:', newCustomer);
-        
+
         // Cập nhật thông tin vào form
         this.newInvoice.khachHangId = newCustomer.id;
         this.newInvoice.tenKhachHang = newCustomer.tenKhachHang;
@@ -1911,21 +1911,21 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Chỉ lưu địa chỉ nếu có đủ thông tin bắt buộc
     if (diaChiChiTiet && tinhThanh && quanHuyen && phuongXa) {
       console.log('📍 Tự động lưu địa chỉ khách hàng...');
-      
+
       this.createCustomerAddressFromForm(khachHangId).subscribe({
         next: (newAddress) => {
           console.log('✅ Đã lưu địa chỉ khách hàng thành công:', newAddress);
-          
+
           // Thêm địa chỉ vào danh sách
           if (!this.customerAddresses.find(addr => addr.id === newAddress.id)) {
             this.customerAddresses.push(newAddress);
           }
-          
+
           // Tự động chọn địa chỉ mới nếu là mặc định
           if (newAddress.macDinh) {
             this.selectedCustomerAddress = newAddress;
           }
-          
+
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -1946,13 +1946,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       next: (addresses) => {
         console.log('✅ Đã load địa chỉ khách hàng:', addresses);
         this.customerAddresses = addresses;
-        
+
         // Tự động chọn địa chỉ mặc định nếu có
         const defaultAddress = addresses.find(addr => addr.macDinh);
         if (defaultAddress) {
           this.selectedCustomerAddress = defaultAddress;
         }
-        
+
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -2001,7 +2001,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // showAddModal removed - không tạo hóa đơn mới nữa
     console.log('showEditModal:', this.showEditModal);
     console.log('isFormValid:', this.isFormValid);
-    
+
     if (!this.validateForm()) {
       console.log('❌ Form validation failed');
       // Scroll to first error
@@ -2030,18 +2030,18 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   updateInvoiceInList(updatedInvoice: HoaDonDTO): void {
     // Tìm và cập nhật hóa đơn trong danh sách
     const index = this.paginatedInvoices.findIndex(invoice => invoice.id === updatedInvoice.id);
-    
+
     if (index !== -1) {
       // Xóa hóa đơn cũ
       this.paginatedInvoices.splice(index, 1);
     }
-    
+
     // Thêm hóa đơn đã cập nhật vào đầu danh sách
     this.paginatedInvoices.unshift(updatedInvoice);
-    
+
     // Đảm bảo pagination vẫn hoạt động đúng
     this.updatePagination();
-    
+
     console.log('✅ Updated invoice and moved to top:', updatedInvoice.maHoaDon);
   }
 
@@ -2054,25 +2054,25 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (paginatedIndex !== -1) {
       this.paginatedInvoices.splice(paginatedIndex, 1);
     }
-    
+
     // Xóa khỏi filteredInvoices
     const filteredIndex = this.filteredInvoices.findIndex(invoice => invoice.id === invoiceId);
     if (filteredIndex !== -1) {
       this.filteredInvoices.splice(filteredIndex, 1);
     }
-    
+
     // Xóa khỏi invoices
     const invoicesIndex = this.invoices.findIndex(invoice => invoice.id === invoiceId);
     if (invoicesIndex !== -1) {
       this.invoices.splice(invoicesIndex, 1);
     }
-    
+
     // Cập nhật totalItems
       this.totalItems--;
-    
+
     // Cập nhật pagination
       this.updatePagination();
-    
+
     console.log('✅ Removed invoice from all lists:', invoiceId);
   }
 
@@ -2085,7 +2085,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (this.currentPage > maxPage && maxPage > 0) {
       this.currentPage = maxPage;
     }
-    
+
     // Trigger change detection
     this.cdr.detectChanges();
   }
@@ -2170,7 +2170,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (this.selectedCustomerAddress) {
       // Cập nhật thông tin địa chỉ vào hóa đơn
       this.newInvoice.diaChiGiaoHang = `${this.selectedCustomerAddress.diaChi}, ${this.selectedCustomerAddress.phuongXa}, ${this.selectedCustomerAddress.quanHuyen}, ${this.selectedCustomerAddress.tinhThanh}`;
-      
+
       this.closeCustomerAddressModal();
       this.showToast('Đã chọn địa chỉ khách hàng', 'success');
       console.log('✅ Confirmed customer address selection:', this.selectedCustomerAddress);
@@ -2205,7 +2205,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.wards = [];
     this.selectedDistrict = null;
     this.selectedWard = null;
-    
+
     this.vietnamAddressService.getDistrictsByProvince(provinceCode).subscribe({
       next: (districts) => {
         this.districts = districts;
@@ -2227,7 +2227,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.loadingWards = true;
     this.wards = [];
     this.selectedWard = null;
-    
+
     this.vietnamAddressService.getWardsByDistrict(districtCode).subscribe({
       next: (wards) => {
         this.wards = wards;
@@ -2251,7 +2251,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       this.selectedProvince = province;
       this.newCustomerAddress.tinhThanh = province.name;
       this.newCustomerAddress.maTinh = province.code;
-      
+
       // Reset quận và xã
       this.districts = [];
       this.wards = [];
@@ -2261,7 +2261,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       this.newCustomerAddress.phuongXa = '';
       this.newCustomerAddress.maQuan = '';
       this.newCustomerAddress.maXa = '';
-      
+
       // Load quận/huyện
       this.loadDistrictsByProvince(provinceCode);
     }
@@ -2276,13 +2276,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       this.selectedDistrict = district;
       this.newCustomerAddress.quanHuyen = district.name;
       this.newCustomerAddress.maQuan = district.code;
-      
+
       // Reset xã/phường
       this.wards = [];
       this.selectedWard = null;
       this.newCustomerAddress.phuongXa = '';
       this.newCustomerAddress.maXa = '';
-      
+
       // Load xã/phường
       this.loadWardsByDistrict(districtCode);
     }
@@ -2318,14 +2318,14 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       macDinh: false,
       trangThai: true
     };
-    
+
     // Reset dropdown selections
     this.selectedProvince = null;
     this.selectedDistrict = null;
     this.selectedWard = null;
     this.districts = [];
     this.wards = [];
-    
+
     // Load provinces if not loaded
     if (this.provinces.length === 0) {
       this.loadProvinces();
@@ -2356,19 +2356,19 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
 
     this.newCustomerAddress.khachHangId = this.newInvoice.khachHangId || 0;
-    
+
     this.customerAddressService.createAddress(this.newCustomerAddress).subscribe({
       next: (newAddress: any) => {
         console.log('✅ Created new customer address:', newAddress);
-        
+
         // Thêm địa chỉ mới vào danh sách
         this.customerAddresses.push(newAddress);
-        
+
         // Tự động chọn địa chỉ mới nếu được đặt làm mặc định
         if (newAddress.macDinh) {
           this.selectedCustomerAddress = newAddress;
         }
-        
+
         this.closeAddAddressModal();
         this.showToast('Thêm địa chỉ thành công', 'success');
       },
@@ -2388,7 +2388,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const tinhThanh = (this.newInvoice.tinhThanh || '').trim();
     const quanHuyen = (this.newInvoice.quanHuyen || '').trim();
     const phuongXa = (this.newInvoice.phuongXa || '').trim();
-    
+
     // Nếu thiếu thông tin bắt buộc, không tạo địa chỉ
     if (!diaChiChiTiet || !tinhThanh || !quanHuyen || !phuongXa) {
       console.warn('⚠️ Thiếu thông tin địa chỉ, bỏ qua việc tạo địa chỉ');
@@ -2397,7 +2397,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         observer.complete();
       });
     }
-    
+
     const addressData = {
       khachHangId: khachHangId,
       tenNguoiNhan: (this.newInvoice.tenKhachHang || '').trim(),
@@ -2411,7 +2411,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     };
 
     console.log('📍 Creating customer address with data:', addressData);
-    
+
     // Map data sang format của backend DTO
     const diaChiDTO = {
       khachHangId: khachHangId,
@@ -2424,12 +2424,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       macDinh: addressData.macDinh,
       trangThai: addressData.trangThai
     };
-    
+
     // Sử dụng endpoint đúng từ backend: /api/dia-chi-khach-hang
     return this.http.post<any>(`${environment.apiBaseUrl}/api/dia-chi-khach-hang`, diaChiDTO).pipe(
       map(response => {
         console.log('✅ Address creation response:', response);
-        
+
         return {
           id: response.id,
           khachHangId: response.khachHangId || khachHangId,
@@ -2457,25 +2457,25 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   onCustomerInfoChange(): void {
     const email = this.newInvoice.emailKhachHang;
     const phone = this.newInvoice.soDienThoaiKhachHang;
-    
+
     // Clear validation message nếu không có thông tin
     if (!email && !phone) {
       this.customerValidationMessage = '';
       this.customerValidationValid = true;
       return;
     }
-    
+
     // Chỉ validate nếu có ít nhất email hoặc số điện thoại
     if (email || phone) {
       console.log('🔍 Real-time validation for:', { email, phone });
-      
+
       // Debounce để tránh gọi API quá nhiều
       setTimeout(() => {
         this.validateCustomerInfo().subscribe({
           next: (result) => {
             this.customerValidationMessage = result.message;
             this.customerValidationValid = result.isValid;
-            
+
             if (!result.isValid) {
               console.log('⚠️ Real-time validation warning:', result.message);
             } else {
@@ -2499,16 +2499,16 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   private validateCustomerInfo(): Observable<{isValid: boolean, message: string}> {
     const email = this.newInvoice.emailKhachHang;
     const phone = this.newInvoice.soDienThoaiKhachHang;
-    
+
     console.log('🔍 Validating customer info:', { email, phone });
-    
+
     return new Observable(observer => {
       if (!email && !phone) {
         observer.next({ isValid: false, message: 'Vui lòng nhập email hoặc số điện thoại' });
         observer.complete();
         return;
       }
-      
+
       // Chỉ validate format, không kiểm tra trong DB
       // Luôn cho phép tạo khách hàng mới
       if (email && !this.isValidEmail(email)) {
@@ -2516,13 +2516,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         observer.complete();
         return;
       }
-      
+
       if (phone && !this.isValidPhone(phone)) {
         observer.next({ isValid: false, message: 'Số điện thoại không hợp lệ' });
                   observer.complete();
         return;
       }
-      
+
       // Thông tin hợp lệ, cho phép tạo khách hàng mới
       console.log('✅ Thông tin khách hàng hợp lệ, sẽ tạo khách hàng mới');
               observer.next({ isValid: true, message: 'Thông tin khách hàng hợp lệ' });
@@ -2554,12 +2554,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (!this.newInvoice.tenKhachHang || this.newInvoice.tenKhachHang.trim() === '') {
       throw new Error('Tên khách hàng không được để trống');
     }
-    
+
     // Đảm bảo có ít nhất số điện thoại hoặc email
     if (!this.newInvoice.soDienThoaiKhachHang && !this.newInvoice.emailKhachHang) {
       throw new Error('Vui lòng nhập ít nhất số điện thoại hoặc email');
     }
-    
+
     const customerInfo = {
       tenKhachHang: this.newInvoice.tenKhachHang.trim(), // Đảm bảo trim và lưu tên đúng
       soDienThoai: this.newInvoice.soDienThoaiKhachHang?.trim() || undefined,
@@ -2576,7 +2576,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           console.log('✅ Customer result:', customer);
           console.log('🆔 Customer ID:', customer?.id);
           console.log('👤 Customer name:', customer?.tenKhachHang);
-          
+
           // Đảm bảo tên khách hàng được cập nhật từ DB vào invoice
           if (customer && customer.tenKhachHang) {
             this.newInvoice.tenKhachHang = customer.tenKhachHang;
@@ -2606,7 +2606,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       border-radius: 8px;
     `;
-    
+
     toast.innerHTML = `
       <div class="d-flex align-items-center">
         <div class="toast-body d-flex align-items-start">
@@ -2616,9 +2616,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         <button type="button" class="btn-close btn-close-white me-2" data-bs-dismiss="toast" style="margin-left: auto;"></button>
       </div>
     `;
-    
+
     document.body.appendChild(toast);
-    
+
     // Bootstrap toast initialization với error handling
     try {
       if ((window as any).bootstrap && (window as any).bootstrap.Toast) {
@@ -2638,7 +2638,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       toast.style.opacity = '1';
       toast.style.transform = 'translateX(0)';
     }
-    
+
     // Auto remove sau 5 giây để đảm bảo
     setTimeout(() => {
       if (toast.parentNode) {
@@ -2664,7 +2664,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       border-radius: 8px;
     `;
-    
+
     toast.innerHTML = `
       <div class="d-flex align-items-center">
         <div class="toast-body d-flex align-items-center">
@@ -2674,9 +2674,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         <button type="button" class="btn-close btn-close-white me-2" data-bs-dismiss="toast" style="margin-left: auto;"></button>
       </div>
     `;
-    
+
     document.body.appendChild(toast);
-    
+
     // Bootstrap toast initialization với error handling
     try {
       if ((window as any).bootstrap && (window as any).bootstrap.Toast) {
@@ -2696,7 +2696,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       toast.style.opacity = '1';
       toast.style.transform = 'translateX(0)';
     }
-    
+
     // Auto remove sau 6 giây để đảm bảo
     setTimeout(() => {
       if (toast.parentNode) {
@@ -2712,7 +2712,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (!this.selectedInvoice || !this.selectedInvoice.id) {
       return false;
     }
-    
+
     // Cho phép xóa tất cả hóa đơn không bị hạn chế bởi trạng thái
     return true;
   }
@@ -2724,7 +2724,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (!this.selectedInvoice || !this.selectedInvoice.id) {
       return 'Không thể xóa hóa đơn. Vui lòng chọn hóa đơn hợp lệ.';
     }
-    
+
     return 'Có thể xóa hóa đơn này.';
   }
 
@@ -2737,6 +2737,103 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     } else {
       return this.getDeleteRestrictionMessage();
     }
+  }
+
+  /**
+   * Kiểm tra xem có nên hiển thị button "Xác nhận" không
+   * Hiển thị cho tất cả hóa đơn chưa hoàn thành và chưa bị hủy
+   */
+  shouldShowConfirmButton(invoice: HoaDonDTO): boolean {
+    if (!invoice) {
+      return false;
+    }
+
+    // Kiểm tra nếu chưa hoàn thành
+    const isNotCompleted = invoice.trangThai !== 'DA_GIAO_HANG';
+
+    // Kiểm tra nếu chưa bị hủy
+    const isNotCancelled = invoice.trangThai !== 'HUY';
+
+    // Hiển thị button "Xác nhận" cho tất cả hóa đơn chưa hoàn thành và chưa bị hủy
+    return isNotCompleted && isNotCancelled;
+  }
+
+  /**
+   * Xác nhận hóa đơn - chuyển sang trạng thái "Đã hoàn thành"
+   */
+  confirmInvoice(invoice: HoaDonDTO): void {
+    if (!invoice || !invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Xác nhận với người dùng
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn xác nhận hoàn thành hóa đơn "${invoice.maHoaDon}"?\n\n` +
+      `Hóa đơn sẽ được chuyển sang trạng thái "Đã giao hàng".`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Cập nhật trạng thái sang "Đã giao hàng"
+    this.hoaDonService.updateTrangThaiHoaDon(invoice.id, 'DA_GIAO_HANG').subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Invoice confirmed successfully:', updatedInvoice);
+        this.showToast('Xác nhận hóa đơn thành công!', 'success');
+
+        // Reload danh sách để cập nhật UI
+        this.loadHoaDon();
+      },
+      error: (error) => {
+        console.error('❌ Error confirming invoice:', error);
+        const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+        this.showToast('Lỗi khi xác nhận hóa đơn: ' + errorMessage, 'error');
+      }
+    });
+  }
+
+  /**
+   * Hủy hóa đơn - chuyển sang trạng thái "Hủy"
+   */
+  cancelInvoice(invoice: HoaDonDTO): void {
+    if (!invoice || !invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Kiểm tra nếu đã bị hủy
+    if (invoice.trangThai === 'HUY') {
+      this.showToast('Hóa đơn này đã bị hủy', 'warning');
+      return;
+    }
+
+    // Xác nhận với người dùng
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn hủy hóa đơn "${invoice.maHoaDon}"?\n\n` +
+      `Hành động này không thể hoàn tác.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Cập nhật trạng thái sang "Hủy"
+    this.hoaDonService.updateTrangThaiHoaDon(invoice.id, 'HUY').subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Invoice cancelled successfully:', updatedInvoice);
+        this.showToast('Hủy hóa đơn thành công!', 'success');
+
+        // Reload danh sách để cập nhật UI
+        this.loadHoaDon();
+      },
+      error: (error) => {
+        console.error('❌ Error cancelling invoice:', error);
+        const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+        this.showToast('Lỗi khi hủy hóa đơn: ' + errorMessage, 'error');
+      }
+    });
   }
 
 }

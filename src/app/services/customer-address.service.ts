@@ -15,26 +15,29 @@ export class CustomerAddressService {
 
   /**
    * Lấy danh sách địa chỉ của khách hàng theo ID
+   * Sử dụng endpoint đúng: /api/dia-chi-khach-hang/khach-hang/{khachHangId}
    */
   getAddressesByCustomerId(customerId: number): Observable<CustomerAddress[]> {
-    return this.http.get<any>(`${this.apiUrl}/addresses`).pipe(
+    // Sử dụng endpoint đúng từ backend
+    const correctApiUrl = `${environment.apiUrl}/dia-chi-khach-hang/khach-hang/${customerId}`;
+    
+    return this.http.get<any[]>(correctApiUrl).pipe(
       map(response => {
         if (response && Array.isArray(response)) {
-          // Filter by customer ID on frontend since backend doesn't have this endpoint
-          return response
-            .filter((address: any) => address.khachHangId === customerId)
-            .map((address: any) => ({
-              id: address.id,
-              khachHangId: address.khachHangId,
-              tenNguoiNhan: address.tenNguoiNhan,
-              soDienThoai: address.soDienThoai,
-              diaChi: address.diaChi,
-              tinhThanh: address.tinhThanh,
-              quanHuyen: address.quanHuyen,
-              phuongXa: address.phuongXa,
-              macDinh: address.macDinh,
-              trangThai: address.trangThai
-            }));
+          // Map response từ backend sang format CustomerAddress
+          // Backend DTO có: id, tenNguoiNhan, soDienThoai, diaChiChiTiet, tinhThanh, quanHuyen, phuongXa, macDinh, trangThai, khachHangId
+          return response.map((address: any) => ({
+            id: address.id,
+            khachHangId: address.khachHangId || customerId,
+            tenNguoiNhan: address.tenNguoiNhan || '',
+            soDienThoai: address.soDienThoai || '',
+            diaChi: address.diaChiChiTiet || address.diaChi || '', // Backend dùng diaChiChiTiet
+            tinhThanh: address.tinhThanh || '',
+            quanHuyen: address.quanHuyen || '',
+            phuongXa: address.phuongXa || '',
+            macDinh: address.macDinh || false,
+            trangThai: address.trangThai !== undefined ? address.trangThai : true
+          }));
         }
         return [];
       })

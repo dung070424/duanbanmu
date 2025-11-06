@@ -48,6 +48,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   originalStatus: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'DANG_GIAO_HANG' | 'DA_GIAO_HANG' | 'HUY' | '' = '';
   selectedStatus: string = '';
 
+  // Confirm invoice properties (khi trạng thái là CHO_XAC_NHAN)
+  confirmInvoiceData = {
+    ngayDuKienGiao: '',
+    khoiLuong: null as number | null,
+    chieuDai: null as number | null,
+    chieuRong: null as number | null,
+    chieuCao: null as number | null,
+    phiGiaoHang: 30000,
+    nguoiChiuPhi: 'nguoi_gui' as 'nguoi_gui' | 'nguoi_nhan',
+  };
+
   // Auto-refreshhhh
   private destroy$ = new Subject<void>();
   private refreshInterval = interval(5000); // 5 seconds
@@ -359,13 +370,153 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.hoaDonService.getHoaDonDetail(this.invoiceId).subscribe({
       next: (invoice) => {
         console.log('✅ Invoice loaded from server:', invoice);
+        
+        // Map danhSachChiTiet sang danhSachSanPham nếu chưa có
+        if (invoice.danhSachChiTiet && invoice.danhSachChiTiet.length > 0 && (!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0)) {
+          console.log('📦 Mapping danhSachChiTiet to danhSachSanPham...');
+          invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => {
+            const donGia = parseFloat(item.donGia) || 0;
+            const soLuong = parseInt(item.soLuong) || 1;
+            const giamGia = parseFloat(item.giamGia) || 0;
+            const thanhTien = item.thanhTien 
+              ? parseFloat(item.thanhTien) 
+              : (donGia * soLuong - giamGia);
+
+            return {
+              id: item.id || null,
+              chiTietSanPhamId: item.chiTietSanPhamId || null,
+              tenSanPham: item.tenSanPham || 'Chưa có tên',
+              maSanPham: item.maSanPham || '',
+              soLuong: soLuong,
+              donGia: donGia,
+              thanhTien: thanhTien,
+              giamGia: giamGia,
+              mauSac: item.mauSac || '',
+              kichThuoc: item.kichThuoc || '',
+              nhaSanXuat: item.nhaSanXuat || '',
+              anhSanPham: item.anhSanPham || '',
+              ghiChu: item.ghiChu || '',
+              sanPhamId: item.sanPhamId || null,
+              danhMuc: item.danhMuc || '',
+              thuongHieu: item.thuongHieu || ''
+            };
+          });
+        }
+        
+        // Đảm bảo danhSachSanPham được map đầy đủ nếu đã có
+        if (invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0) {
+          invoice.danhSachSanPham = invoice.danhSachSanPham.map((item: any) => {
+            // Đảm bảo tất cả các trường đều có giá trị
+            const donGia = parseFloat(item.donGia) || 0;
+            const soLuong = parseInt(item.soLuong) || 1;
+            const giamGia = parseFloat(item.giamGia) || 0;
+            const thanhTien = item.thanhTien 
+              ? parseFloat(item.thanhTien) 
+              : (donGia * soLuong - giamGia);
+
+            return {
+              id: item.id || null,
+              chiTietSanPhamId: item.chiTietSanPhamId || null,
+              tenSanPham: item.tenSanPham || 'Chưa có tên',
+              maSanPham: item.maSanPham || '',
+              soLuong: soLuong,
+              donGia: donGia,
+              thanhTien: thanhTien,
+              giamGia: giamGia,
+              mauSac: item.mauSac || '',
+              kichThuoc: item.kichThuoc || '',
+              nhaSanXuat: item.nhaSanXuat || '',
+              anhSanPham: item.anhSanPham || '',
+              ghiChu: item.ghiChu || '',
+              sanPhamId: item.sanPhamId || null,
+              danhMuc: item.danhMuc || '',
+              thuongHieu: item.thuongHieu || ''
+            };
+          });
+        }
+        
+        // Đảm bảo các giá trị số được parse đúng từ backend
+        // Backend trả về BigDecimal/Number, cần đảm bảo convert sang number
+        if (invoice.tongTien !== undefined && invoice.tongTien !== null) {
+          invoice.tongTien = typeof invoice.tongTien === 'string' ? parseFloat(invoice.tongTien) : Number(invoice.tongTien);
+        }
+        if (invoice.tienGiamGia !== undefined && invoice.tienGiamGia !== null) {
+          invoice.tienGiamGia = typeof invoice.tienGiamGia === 'string' ? parseFloat(invoice.tienGiamGia) : Number(invoice.tienGiamGia);
+        }
+        if (invoice.thanhTien !== undefined && invoice.thanhTien !== null) {
+          invoice.thanhTien = typeof invoice.thanhTien === 'string' ? parseFloat(invoice.thanhTien) : Number(invoice.thanhTien);
+        }
+        if (invoice.phiGiaoHang !== undefined && invoice.phiGiaoHang !== null) {
+          invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string' ? parseFloat(invoice.phiGiaoHang) : Number(invoice.phiGiaoHang);
+        }
+        
+        // Đảm bảo danhSachSanPham luôn được map từ danhSachChiTiet
+        // Priority: 1. danhSachChiTiet (từ backend) -> map sang danhSachSanPham
+        //           2. danhSachSanPham (đã được map trong service)
+        //           3. Mảng rỗng nếu không có gì
+        
+        if (invoice.danhSachChiTiet && invoice.danhSachChiTiet.length > 0) {
+          // Nếu có danhSachChiTiet, map lại để đảm bảo đầy đủ
+          invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => {
+            const donGia = parseFloat(item.donGia) || 0;
+            const soLuong = parseInt(item.soLuong) || 1;
+            const giamGia = parseFloat(item.giamGia) || 0;
+            const thanhTien = item.thanhTien 
+              ? parseFloat(item.thanhTien) 
+              : (donGia * soLuong - giamGia);
+
+            return {
+              id: item.id || null,
+              chiTietSanPhamId: item.chiTietSanPhamId || null,
+              tenSanPham: item.tenSanPham || 'Chưa có tên',
+              maSanPham: item.maSanPham || '',
+              soLuong: soLuong,
+              donGia: donGia,
+              thanhTien: thanhTien,
+              giamGia: giamGia,
+              mauSac: item.mauSac || '',
+              kichThuoc: item.kichThuoc || '',
+              nhaSanXuat: item.nhaSanXuat || '',
+              anhSanPham: item.anhSanPham || '',
+              ghiChu: item.ghiChu || '',
+              sanPhamId: item.chiTietSanPhamId || null,
+              danhMuc: item.danhMuc || '',
+              thuongHieu: item.thuongHieu || ''
+            };
+          });
+        } else if (!invoice.danhSachSanPham) {
+          // Nếu không có danhSachChiTiet và không có danhSachSanPham, set mảng rỗng
+          invoice.danhSachSanPham = [];
+        }
+        
+        // Đảm bảo danhSachSanPham là array hợp lệ
+        if (!Array.isArray(invoice.danhSachSanPham)) {
+          invoice.danhSachSanPham = [];
+        }
+        
+        console.log('💰 Invoice financial data:', {
+          tongTien: invoice.tongTien,
+          tienGiamGia: invoice.tienGiamGia,
+          thanhTien: invoice.thanhTien,
+          phiGiaoHang: invoice.phiGiaoHang,
+          nguoiChiuPhi: invoice.nguoiChiuPhi
+        });
+        
         this.invoice = invoice;
         this.originalStatus = invoice.trangThai; // Lưu trạng thái ban đầu
         this.statusChanged = false; // Reset flag
         this.selectedStatus = ''; // Reset selected status
 
-        // getHoaDonDetail() đã load sản phẩm rồi, không cần gọi loadProductDetails()
-        console.log('✅ Invoice with products loaded:', invoice.danhSachSanPham);
+        console.log('✅ Invoice loaded:', {
+          id: this.invoice?.id,
+          maHoaDon: this.invoice?.maHoaDon,
+          danhSachChiTiet: invoice.danhSachChiTiet?.length || 0,
+          danhSachSanPham: this.invoice?.danhSachSanPham?.length || 0,
+          products: this.invoice?.danhSachSanPham || []
+        });
+
+        // Force UI update để đảm bảo danh sách sản phẩm được hiển thị
+        this.cdr.detectChanges();
 
         // Load customer information if khachHangId exists
         if (invoice.khachHangId) {
@@ -440,37 +591,59 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           ? detailData.danhSachChiTiet 
           : (Array.isArray(detailData?.danhSachSanPham) ? detailData.danhSachSanPham : []);
         
-        // Map danhSachChiTiet sang danhSachSanPham format
-        const danhSachSanPham = danhSachChiTiet.map((item: any) => ({
-          id: item.id,
-          chiTietSanPhamId: item.chiTietSanPhamId,
-          tenSanPham: item.tenSanPham || 'Chưa có tên',
-          maSanPham: item.maSanPham || '',
-          soLuong: item.soLuong || 1,
-          donGia: item.donGia || 0,
-          thanhTien: item.thanhTien || (item.donGia || 0) * (item.soLuong || 1),
-          giamGia: item.giamGia || 0,
-          mauSac: item.mauSac || '',
-          kichThuoc: item.kichThuoc || '',
-          anhSanPham: item.anhSanPham || ''
-        }));
+        // Map danhSachChiTiet sang danhSachSanPham format - mapping đầy đủ tất cả các trường
+        const danhSachSanPham = danhSachChiTiet.map((item: any) => {
+          // Tính toán thanhTien nếu chưa có
+          const donGia = parseFloat(item.donGia) || 0;
+          const soLuong = parseInt(item.soLuong) || 1;
+          const giamGia = parseFloat(item.giamGia) || 0;
+          const thanhTien = item.thanhTien 
+            ? parseFloat(item.thanhTien) 
+            : (donGia * soLuong - giamGia);
+
+          return {
+            id: item.id || null,
+            chiTietSanPhamId: item.chiTietSanPhamId || null,
+            tenSanPham: item.tenSanPham || 'Chưa có tên',
+            maSanPham: item.maSanPham || '',
+            soLuong: soLuong,
+            donGia: donGia,
+            thanhTien: thanhTien,
+            giamGia: giamGia,
+            mauSac: item.mauSac || '',
+            kichThuoc: item.kichThuoc || '',
+            nhaSanXuat: item.nhaSanXuat || '',
+            anhSanPham: item.anhSanPham || '',
+            // Thêm các trường bổ sung nếu cần
+            ghiChu: item.ghiChu || '',
+            sanPhamId: item.sanPhamId || null,
+            danhMuc: item.danhMuc || '',
+            thuongHieu: item.thuongHieu || ''
+          };
+        });
         
         console.log('📦 Mapped danhSachSanPham from danhSachChiTiet:', danhSachSanPham);
         
         // Cập nhật invoice với dữ liệu mới nhất từ server
-        this.invoice = {
-          ...(this.invoice || {} as any),
-          danhSachSanPham: danhSachSanPham,
-          soLuongSanPham: danhSachSanPham.length,
-          tongTien: detailData?.tongTien ?? 0,
-          thanhTien: detailData?.thanhTien ?? detailData?.tongTien ?? 0,
-          tienGiamGia: detailData?.tienGiamGia ?? 0,
-          giamGiaPhanTram: detailData?.giamGiaPhanTram ?? 0,
-          trangThai: detailData?.trangThai,
-          phuongThucThanhToan: detailData?.phuongThucThanhToan,
-          ngayThanhToan: detailData?.ngayThanhToan,
-          ghiChu: detailData?.ghiChu
-        } as any;
+        if (this.invoice) {
+          this.invoice.danhSachSanPham = danhSachSanPham;
+          this.invoice.soLuongSanPham = danhSachSanPham.length;
+          this.invoice.tongTien = detailData?.tongTien ?? this.invoice.tongTien ?? 0;
+          this.invoice.thanhTien = detailData?.thanhTien ?? detailData?.tongTien ?? this.invoice.thanhTien ?? 0;
+          this.invoice.tienGiamGia = detailData?.tienGiamGia ?? this.invoice.tienGiamGia ?? 0;
+          this.invoice.giamGiaPhanTram = detailData?.giamGiaPhanTram ?? this.invoice.giamGiaPhanTram ?? 0;
+          if (detailData?.trangThai) this.invoice.trangThai = detailData.trangThai;
+          if (detailData?.phuongThucThanhToan) this.invoice.phuongThucThanhToan = detailData.phuongThucThanhToan;
+          if (detailData?.ngayThanhToan) this.invoice.ngayThanhToan = detailData.ngayThanhToan;
+          if (detailData?.ghiChu !== undefined) this.invoice.ghiChu = detailData.ghiChu;
+        } else {
+          // Nếu invoice chưa có, tạo mới
+          this.invoice = {
+            ...detailData,
+            danhSachSanPham: danhSachSanPham,
+            soLuongSanPham: danhSachSanPham.length
+          } as any;
+        }
 
         if (danhSachSanPham.length === 0) {
           console.log('📦 No products found for this invoice');
@@ -2584,11 +2757,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         const statusLabel = this.getStatusLabel(updatedInvoice.trangThai);
         this.showToast(`Đã cập nhật trạng thái thành: ${statusLabel}`, 'success');
         
-        // Force UI update - timeline sẽ tự động update nhờ ngOnChanges khi currentStatus thay đổi
-        this.cdr.detectChanges();
+        // Reload lại invoice detail để đảm bảo view được cập nhật đúng theo trạng thái mới
+        // Điều này đảm bảo khi chuyển từ DANG_GIAO_HANG sang trạng thái khác, 
+        // view sẽ tự động chuyển từ timeline sang icon display
+        console.log('🔄 Reloading invoice detail to update view...');
+        this.loadInvoiceDetail();
         
-        console.log('🔄 UI updated with new status:', updatedInvoice.trangThai);
-        console.log('✅ Timeline should auto-update via ngOnChanges');
+        console.log('✅ Invoice reloaded, view should update based on new status:', updatedInvoice.trangThai);
       },
       error: (error) => {
         console.error('❌ Error updating status:', error);
@@ -2666,6 +2841,32 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   /**
    * Lấy label của trạng thái
    */
+  /**
+   * Lấy icon class cho single status display (không phải timeline)
+   */
+  getSingleStatusIcon(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'CHO_XAC_NHAN': 'fa-solid fa-hourglass-half',
+      'DA_XAC_NHAN': 'fa-solid fa-circle-check',
+      'DA_GIAO_HANG': 'fa-solid fa-box-open',
+      'HUY': 'fa-solid fa-times-circle'
+    };
+    return statusMap[status] || 'fa-solid fa-question-circle';
+  }
+
+  /**
+   * Lấy CSS class cho status icon wrapper
+   */
+  getSingleStatusIconClass(status: string): string {
+    const statusClassMap: { [key: string]: string } = {
+      'CHO_XAC_NHAN': 'status-icon-pending',
+      'DA_XAC_NHAN': 'status-icon-confirmed',
+      'DA_GIAO_HANG': 'status-icon-delivered',
+      'HUY': 'status-icon-cancelled'
+    };
+    return statusClassMap[status] || 'status-icon-unknown';
+  }
+
   getStatusLabel(status: string): string {
     const statusMap: { [key: string]: string } = {
       'CHO_XAC_NHAN': 'Chờ xác nhận',
@@ -2713,7 +2914,9 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         // Hiển thị thông báo thành công
         this.showToast('Cập nhật trạng thái thành công!', 'success');
         
-        // Reload invoice để cập nhật timeline
+        // Reload invoice để cập nhật UI và view theo trạng thái mới
+        // Điều này đảm bảo view tự động chuyển đổi giữa timeline và icon display
+        console.log('🔄 Reloading invoice detail to update view based on new status:', updatedInvoice.trangThai);
         this.loadInvoiceDetail();
       },
       error: (error) => {
@@ -2728,6 +2931,407 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         
         // Hiển thị thông báo lỗi
         this.showToast('Lỗi khi cập nhật trạng thái: ' + (error.message || 'Vui lòng thử lại'), 'error');
+      }
+    });
+  }
+
+  /**
+   * Tính tổng tiền bao gồm phí vận chuyển
+   * Nếu người nhận chịu phí thì cộng phí vận chuyển vào tổng tiền
+   * Nếu người gửi chịu phí thì không cộng phí vận chuyển
+   */
+  getTotalAmountWithShipping(): number {
+    if (!this.invoice) return 0;
+    const tongTien = this.invoice.tongTien || 0;
+    const phiVanChuyen = this.invoice.phiGiaoHang || 0;
+    const tienGiamGia = this.invoice.tienGiamGia || 0;
+    
+    // Tính tổng: tổng tiền - tiền giảm
+    let total = tongTien - tienGiamGia;
+    
+    // Nếu người nhận chịu phí, cộng phí vận chuyển vào tổng tiền
+    if (this.invoice.nguoiChiuPhi === 'nguoi_nhan') {
+      total += phiVanChuyen;
+    }
+    
+    return total;
+  }
+
+  /**
+   * Hoàn thành hóa đơn - cập nhật trạng thái theo logic:
+   * - Nếu trạng thái là "Đã xác nhận" (DA_XAC_NHAN) => chuyển sang "Đang vận chuyển" (DANG_GIAO_HANG)
+   * - Nếu trạng thái là "Đang vận chuyển" (DANG_GIAO_HANG) => chuyển sang "Đã hoàn thành" (DA_GIAO_HANG)
+   */
+  completeInvoice(): void {
+    if (!this.invoice || !this.invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Xác định trạng thái mới dựa trên trạng thái hiện tại
+    let newStatus: string;
+    let statusMessage: string;
+    
+    if (this.invoice.trangThai === 'DA_XAC_NHAN') {
+      // Đã xác nhận => Đang vận chuyển
+      newStatus = 'DANG_GIAO_HANG';
+      statusMessage = 'Đang vận chuyển';
+    } else if (this.invoice.trangThai === 'DANG_GIAO_HANG') {
+      // Đang vận chuyển => Đã hoàn thành
+      newStatus = 'DA_GIAO_HANG';
+      statusMessage = 'Đã hoàn thành';
+    } else {
+      this.showToast('Trạng thái hiện tại không thể chuyển sang trạng thái tiếp theo', 'warning');
+      return;
+    }
+
+    // Xác nhận với người dùng
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"?\n\n` +
+      `Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.savingStatus = true;
+
+    // Cập nhật trạng thái
+    this.hoaDonService.updateTrangThaiHoaDon(this.invoiceId, newStatus as any).subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Invoice status updated successfully:', updatedInvoice);
+        this.savingStatus = false;
+        
+        // Hiển thị thông báo thành công
+        this.showToast(`Cập nhật hóa đơn thành công! Trạng thái đã được cập nhật thành "${statusMessage}".`, 'success');
+        
+        // Reload invoice để cập nhật UI và view theo trạng thái mới
+        // Điều này đảm bảo khi chuyển từ DANG_GIAO_HANG sang DA_GIAO_HANG,
+        // view sẽ tự động chuyển từ timeline sang icon display
+        console.log('🔄 Reloading invoice detail to update view based on new status:', updatedInvoice.trangThai);
+        this.loadInvoiceDetail();
+      },
+      error: (error) => {
+        console.error('❌ Error updating invoice status:', error);
+        this.savingStatus = false;
+        const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+        this.showToast('Lỗi khi cập nhật trạng thái: ' + errorMessage, 'error');
+      }
+    });
+  }
+
+  /**
+   * Reset form xác nhận hóa đơn
+   */
+  resetConfirmInvoiceForm(): void {
+    this.confirmInvoiceData = {
+      ngayDuKienGiao: '',
+      khoiLuong: null,
+      chieuDai: null,
+      chieuRong: null,
+      chieuCao: null,
+      phiGiaoHang: 30000,
+      nguoiChiuPhi: 'nguoi_gui',
+    };
+  }
+
+  /**
+   * Lấy ngày hôm nay để set min cho date picker
+   */
+  getTodayDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  }
+
+  /**
+   * Xác nhận hóa đơn với thông tin vận chuyển
+   */
+  submitConfirmInvoice(): void {
+    if (!this.invoice || !this.invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Validate form
+    if (!this.confirmInvoiceData.ngayDuKienGiao) {
+      this.showToast('Vui lòng nhập ngày dự kiến giao', 'warning');
+      return;
+    }
+
+    if (!this.confirmInvoiceData.khoiLuong || this.confirmInvoiceData.khoiLuong <= 0) {
+      this.showToast('Vui lòng nhập khối lượng hợp lệ', 'warning');
+      return;
+    }
+
+    if (!this.confirmInvoiceData.chieuDai || !this.confirmInvoiceData.chieuRong || !this.confirmInvoiceData.chieuCao) {
+      this.showToast('Vui lòng nhập đầy đủ kích thước (dài, rộng, cao)', 'warning');
+      return;
+    }
+
+    this.savingStatus = true;
+
+    // Load hóa đơn hiện tại để lấy đầy đủ thông tin bắt buộc
+    this.hoaDonService.getHoaDonById(this.invoice.id).subscribe({
+      next: (currentInvoice) => {
+        console.log('📦 Current invoice before update:', {
+          id: currentInvoice.id,
+          maHoaDon: currentInvoice.maHoaDon,
+          danhSachSanPham: currentInvoice.danhSachSanPham?.length || 0,
+          danhSachChiTiet: (currentInvoice as any).danhSachChiTiet?.length || 0
+        });
+
+        // Merge dữ liệu mới vào hóa đơn hiện tại
+        // LƯU Ý: Backend HoaDonDTO không có các field vận chuyển (ngayDuKienGiao, khoiLuong, etc.)
+        // Các field này có thể được lưu trong entity riêng hoặc không được hỗ trợ
+        // Chỉ gửi các field mà backend HoaDonDTO hỗ trợ
+        
+        // Validate các field bắt buộc trước khi tạo updateData
+        if (!currentInvoice.maHoaDon || !currentInvoice.maHoaDon.trim()) {
+          console.error('❌ maHoaDon is required but missing or empty');
+          this.showToast('Lỗi: Mã hóa đơn không hợp lệ!', 'error');
+          this.savingStatus = false;
+          return;
+        }
+        
+        if (!currentInvoice.khachHangId) {
+          console.error('❌ khachHangId is required but missing');
+          this.showToast('Lỗi: Khách hàng ID không hợp lệ!', 'error');
+          this.savingStatus = false;
+          return;
+        }
+        
+        if (!currentInvoice.tongTien || Number(currentInvoice.tongTien) <= 0) {
+          console.error('❌ tongTien is required and must be > 0:', currentInvoice.tongTien);
+          this.showToast('Lỗi: Tổng tiền không hợp lệ!', 'error');
+          this.savingStatus = false;
+          return;
+        }
+        
+        const updateData: any = {
+          // Các trường bắt buộc từ hóa đơn hiện tại (đã validate ở trên)
+          maHoaDon: currentInvoice.maHoaDon.trim(),
+          khachHangId: currentInvoice.khachHangId,
+          tongTien: Number(currentInvoice.tongTien), // Đảm bảo là number
+          thanhTien: currentInvoice.thanhTien ? Number(currentInvoice.thanhTien) : Number(currentInvoice.tongTien),
+          tienGiamGia: currentInvoice.tienGiamGia ? Number(currentInvoice.tienGiamGia) : 0,
+          soLuongSanPham: currentInvoice.soLuongSanPham || 0,
+          nhanVienId: currentInvoice.nhanVienId || null,
+          ghiChu: currentInvoice.ghiChu || '',
+          
+          // Cập nhật trạng thái mới (phải là enum value từ backend)
+          trangThai: 'DA_XAC_NHAN',
+          
+          // LƯU Ý: Các field vận chuyển (ngayDuKienGiao, khoiLuong, chieuDai, chieuRong, chieuCao, phiGiaoHang, nguoiChiuPhi)
+          // không có trong HoaDonDTO backend, nên không gửi lên để tránh lỗi 400
+          // Có thể cần tạo endpoint riêng hoặc lưu vào entity ThongTinDonHang nếu cần
+        };
+        
+        // QUAN TRỌNG: Giữ lại danh sách sản phẩm từ hóa đơn hiện tại
+        // Backend yêu cầu danhSachChiTiet với chiTietSanPhamId bắt buộc (không được null)
+        // Ưu tiên: 1. danhSachChiTiet gốc từ backend, 2. danhSachSanPham đã map, 3. invoice.danhSachSanPham hiện tại
+        let danhSachChiTietToUse: any[] = [];
+        
+        // Option 1: Sử dụng danhSachChiTiet gốc từ backend (tốt nhất)
+        if ((currentInvoice as any).danhSachChiTiet && Array.isArray((currentInvoice as any).danhSachChiTiet) && (currentInvoice as any).danhSachChiTiet.length > 0) {
+          danhSachChiTietToUse = (currentInvoice as any).danhSachChiTiet;
+          console.log('✅ Using danhSachChiTiet from backend:', danhSachChiTietToUse.length, 'items');
+        } 
+        // Option 2: Sử dụng danhSachSanPham từ currentInvoice
+        else if (currentInvoice.danhSachSanPham && Array.isArray(currentInvoice.danhSachSanPham) && currentInvoice.danhSachSanPham.length > 0) {
+          console.log('✅ Using danhSachSanPham from currentInvoice:', currentInvoice.danhSachSanPham.length, 'items');
+          danhSachChiTietToUse = currentInvoice.danhSachSanPham;
+        }
+        // Option 3: Sử dụng danhSachSanPham từ this.invoice (fallback)
+        else if (this.invoice?.danhSachSanPham && Array.isArray(this.invoice.danhSachSanPham) && this.invoice.danhSachSanPham.length > 0) {
+          console.log('✅ Using danhSachSanPham from this.invoice (fallback):', this.invoice.danhSachSanPham.length, 'items');
+          danhSachChiTietToUse = this.invoice.danhSachSanPham;
+        }
+        
+        // Map danhSachChiTietToUse sang format backend yêu cầu
+        if (danhSachChiTietToUse.length > 0) {
+          updateData.danhSachChiTiet = danhSachChiTietToUse
+            .map((item: any) => {
+              // Lấy chiTietSanPhamId - có thể từ item.chiTietSanPhamId hoặc item.sanPhamId
+              let chiTietSanPhamId: number | null = null;
+              
+              if (item.chiTietSanPhamId != null && item.chiTietSanPhamId !== undefined) {
+                chiTietSanPhamId = Number(item.chiTietSanPhamId);
+              } else if (item.sanPhamId != null && item.sanPhamId !== undefined) {
+                // Fallback: nếu không có chiTietSanPhamId, dùng sanPhamId (nhưng đây có thể không đúng)
+                console.warn('⚠️ Using sanPhamId as chiTietSanPhamId fallback:', item.sanPhamId);
+                chiTietSanPhamId = Number(item.sanPhamId);
+              }
+              
+              if (!chiTietSanPhamId || isNaN(chiTietSanPhamId)) {
+                console.warn('⚠️ Invalid chiTietSanPhamId in item:', item);
+                return null;
+              }
+              
+              return {
+                id: item.id || null,
+                chiTietSanPhamId: chiTietSanPhamId, // Bắt buộc phải có và là số hợp lệ
+                tenSanPham: item.tenSanPham || '',
+                maSanPham: item.maSanPham || '',
+                soLuong: item.soLuong ? Number(item.soLuong) : 0,
+                donGia: item.donGia != null ? Number(item.donGia) : 0,
+                thanhTien: item.thanhTien != null ? Number(item.thanhTien) : 0,
+                giamGia: item.giamGia != null ? Number(item.giamGia) : 0,
+                mauSac: item.mauSac || '',
+                kichThuoc: item.kichThuoc || '',
+                nhaSanXuat: item.nhaSanXuat || '',
+                anhSanPham: item.anhSanPham || ''
+              };
+            })
+            .filter((item: any) => item != null && item.chiTietSanPhamId != null && !isNaN(item.chiTietSanPhamId));
+          
+          console.log('✅ Processed danhSachChiTiet:', updateData.danhSachChiTiet.length, 'valid items');
+          console.log('📦 danhSachChiTiet details:', updateData.danhSachChiTiet.map((item: any) => ({
+            chiTietSanPhamId: item.chiTietSanPhamId,
+            tenSanPham: item.tenSanPham,
+            soLuong: item.soLuong,
+            donGia: item.donGia
+          })));
+        } else {
+          updateData.danhSachChiTiet = [];
+          console.warn('⚠️ No products found in any source');
+        }
+        
+        // Validate: Đảm bảo có ít nhất một sản phẩm hợp lệ
+        if (!updateData.danhSachChiTiet || updateData.danhSachChiTiet.length === 0) {
+          console.error('❌ No valid products found! Cannot update invoice without products.');
+          console.error('🔍 Debug info:', {
+            currentInvoiceDanhSachChiTiet: (currentInvoice as any).danhSachChiTiet?.length || 0,
+            currentInvoiceDanhSachSanPham: currentInvoice.danhSachSanPham?.length || 0,
+            thisInvoiceDanhSachSanPham: this.invoice?.danhSachSanPham?.length || 0
+          });
+          this.showToast('Không thể xác nhận hóa đơn: Hóa đơn không có sản phẩm hợp lệ!', 'error');
+          this.savingStatus = false;
+          return;
+        }
+
+        // Cập nhật hóa đơn
+        if (!this.invoice || !this.invoice.id) {
+          this.showToast('Không tìm thấy hóa đơn', 'error');
+          this.savingStatus = false;
+          return;
+        }
+
+        // Log dữ liệu trước khi gửi - ĐẢM BẢO danhSachChiTiet đã được thêm vào updateData
+        console.log('📦 Update data prepared:', {
+          maHoaDon: updateData.maHoaDon,
+          khachHangId: updateData.khachHangId,
+          tongTien: updateData.tongTien,
+          trangThai: updateData.trangThai,
+          danhSachChiTietCount: updateData.danhSachChiTiet?.length || 0,
+          danhSachChiTiet: updateData.danhSachChiTiet?.map((item: any) => ({
+            id: item.id,
+            chiTietSanPhamId: item.chiTietSanPhamId,
+            soLuong: item.soLuong,
+            donGia: item.donGia,
+            thanhTien: item.thanhTien
+          })) || []
+        });
+        
+        // Đảm bảo danhSachChiTiet được gửi lên backend (không được null)
+        if (!updateData.danhSachChiTiet) {
+          updateData.danhSachChiTiet = [];
+        }
+        
+        // Đảm bảo format đúng cho backend:
+        // - trangThai phải là string enum value (DA_XAC_NHAN)
+        // - tongTien, thanhTien phải là number (BigDecimal trong backend)
+        // - danhSachChiTiet phải là array (không null)
+        const finalUpdateData: any = {
+          ...updateData,
+          // Đảm bảo trangThai là string enum value
+          trangThai: 'DA_XAC_NHAN' as const,
+          // Đảm bảo các số là number (BigDecimal sẽ được convert từ number)
+          tongTien: Number(updateData.tongTien),
+          thanhTien: Number(updateData.thanhTien),
+          tienGiamGia: updateData.tienGiamGia ? Number(updateData.tienGiamGia) : 0,
+          soLuongSanPham: updateData.soLuongSanPham || 0,
+          // Đảm bảo danhSachChiTiet là array
+          danhSachChiTiet: updateData.danhSachChiTiet || []
+        };
+        
+        // Log final data trước khi gửi
+        console.log('📤 Final update data to send:', JSON.stringify(finalUpdateData, null, 2));
+
+        this.hoaDonService.updateHoaDonNew(this.invoice.id, finalUpdateData).subscribe({
+          next: (updatedInvoice) => {
+            console.log('✅ Invoice confirmed successfully:', updatedInvoice);
+            this.savingStatus = false;
+            
+            // Hiển thị thông báo thành công
+            this.showToast('Xác nhận hóa đơn thành công! Trạng thái đã được cập nhật thành "Đã xác nhận".', 'success');
+            
+            // Reset form
+            this.resetConfirmInvoiceForm();
+            
+            // Reload invoice để cập nhật UI và hiển thị sản phẩm
+            console.log('🔄 Reloading invoice detail to show products...');
+            this.loadInvoiceDetail();
+          },
+          error: (error) => {
+            console.error('❌ Error confirming invoice:', error);
+            this.savingStatus = false;
+            const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+            this.showToast('Lỗi khi xác nhận hóa đơn: ' + errorMessage, 'error');
+          }
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error loading invoice:', error);
+        this.savingStatus = false;
+        this.showToast('Lỗi khi tải thông tin hóa đơn', 'error');
+      }
+    });
+  }
+
+  /**
+   * Đánh dấu hóa đơn là thất bại - cập nhật trạng thái thành "Hủy"
+   */
+  markAsFailed(): void {
+    if (!this.invoice || !this.invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
+    }
+
+    // Xác nhận với người dùng
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn đánh dấu hóa đơn "${this.invoice.maHoaDon}" là thất bại?\n\n` +
+      `Hóa đơn sẽ được chuyển sang trạng thái "Hủy".`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.savingStatus = true;
+
+    // Cập nhật trạng thái sang "Hủy"
+    this.hoaDonService.updateTrangThaiHoaDon(this.invoiceId, 'HUY').subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Invoice marked as failed:', updatedInvoice);
+        this.savingStatus = false;
+        
+        // Hiển thị thông báo thành công
+        this.showToast('Đã đánh dấu hóa đơn là thất bại.', 'success');
+        
+        // Reload invoice để cập nhật UI
+        this.loadInvoiceDetail();
+        
+        // Quay lại trang quản lý hóa đơn sau 2 giây
+        setTimeout(() => {
+          this.router.navigate(['/invoices']);
+        }, 2000);
+      },
+      error: (error) => {
+        console.error('❌ Error marking invoice as failed:', error);
+        this.savingStatus = false;
+        const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+        this.showToast('Lỗi khi đánh dấu hóa đơn: ' + errorMessage, 'error');
       }
     });
   }
