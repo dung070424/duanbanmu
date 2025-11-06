@@ -1461,7 +1461,7 @@ export class CounterSalesComponent implements OnInit {
       thanhTien: Math.round(this.cartTotal),
       tienGiamGia: Math.round(this.cartDiscount + this.couponDiscount),
       phuongThucThanhToan: this.newSale.paymentMethod,
-      trangThai: this.isDelivery ? 'DANG_GIAO_HANG' : 'DA_GIAO_HANG',
+      trangThai: this.isDelivery ? 'DA_XAC_NHAN' : 'DA_XAC_NHAN',
       danhSachChiTiet: this.cart.map((item) => ({
         chiTietSanPhamId: item.productId,
         tenSanPham: item.productName,
