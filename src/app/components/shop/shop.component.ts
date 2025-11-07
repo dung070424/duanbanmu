@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -38,6 +38,8 @@ export class ShopComponent implements OnInit {
   selectedPriceRange = 'all';
   isLoading = false;
   showSearch = false;
+  showDropdown = false;
+  showMiniCart = false;
   cart: CartItem[] = [];
   cartCount = 0;
 
@@ -54,7 +56,8 @@ export class ShopComponent implements OnInit {
     private statisticsService: StatisticsService,
     private loaiMuBaoHiemService: LoaiMuBaoHiemApiService,
     public authService: AuthService,
-    private router: Router
+    private router: Router,
+    private elementRef: ElementRef
   ) {
     this.loadCart();
   }
@@ -167,6 +170,65 @@ export class ShopComponent implements OnInit {
     this.showSearch = !this.showSearch;
   }
 
+  toggleDropdown(): void {
+    this.showDropdown = !this.showDropdown;
+  }
+
+  closeDropdown(): void {
+    this.showDropdown = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const clickedInside = this.elementRef.nativeElement.querySelector('.has-dropdown')?.contains(event.target as Node);
+    if (!clickedInside && this.showDropdown) {
+      this.closeDropdown();
+    }
+    
+    const clickedCartIcon = this.elementRef.nativeElement.querySelector('.cart-wrapper')?.contains(event.target as Node);
+    const clickedMiniCart = this.elementRef.nativeElement.querySelector('.mini-cart-popup')?.contains(event.target as Node);
+    if (!clickedCartIcon && !clickedMiniCart && this.showMiniCart) {
+      this.closeMiniCart();
+    }
+  }
+
+  toggleMiniCart(): void {
+    this.showMiniCart = !this.showMiniCart;
+    if (this.showMiniCart) {
+      this.loadCart();
+    }
+  }
+
+  closeMiniCart(): void {
+    this.showMiniCart = false;
+  }
+
+  removeFromCart(index: number): void {
+    this.cart.splice(index, 1);
+    this.saveCart();
+    this.updateCartCount();
+  }
+
+  getCartSubtotal(): number {
+    return this.cart.reduce((sum, item) => {
+      return sum + (Number(item.product.giaBan) || 0) * item.quantity;
+    }, 0);
+  }
+
+  goToCart(): void {
+    this.closeMiniCart();
+    this.router.navigate(['/shop/cart']);
+  }
+
+  goToCheckout(): void {
+    this.closeMiniCart();
+    if (!this.authService.isCustomer()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.router.navigate(['/shop/checkout']);
+  }
+
   filterProducts(): void {
     let filtered = [...this.products];
 
@@ -221,8 +283,8 @@ export class ShopComponent implements OnInit {
     this.saveCart();
     this.updateCartCount();
     
-    // Hiển thị thông báo
-    alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+    // Tự động mở mini-cart popup
+    this.showMiniCart = true;
   }
 
   loadCart(): void {

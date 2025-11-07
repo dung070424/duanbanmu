@@ -1,0 +1,371 @@
+<div class="checkout-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-content">
+        <div class="top-bar-left">
+          <span class="top-bar-item">
+            <i class="fas fa-envelope"></i>
+            contact@tdkstore.com
+          </span>
+          <span class="top-bar-item">
+            <i class="fas fa-phone"></i>
+            1900 636 648
+          </span>
+        </div>
+        <div class="top-bar-right">
+          <a routerLink="/login" class="top-bar-link" *ngIf="!authService.isCustomer()">Đăng nhập</a>
+          <a routerLink="/customer/profile" class="top-bar-link" *ngIf="authService.isCustomer()">Tài khoản</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <header class="shop-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo-section">
+          <a routerLink="/shop" class="logo-link">
+            <div class="logo-circle">
+              <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+              <span class="logo-shop-text">TDK Helmet Shop</span>
+            </div>
+            <span class="logo-text">TDK Store</span>
+          </a>
+        </div>
+        <nav class="nav-menu">
+          <a routerLink="/shop" routerLinkActive="active">Trang chủ</a>
+          <a routerLink="/shop" routerLinkActive="active">Giới thiệu</a>
+          <div class="has-dropdown" [class.dropdown-open]="showDropdown">
+            <a routerLink="/shop/products" routerLinkActive="active" (click)="toggleDropdown(); $event.preventDefault()">
+              Sản phẩm
+              <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-menu" *ngIf="showDropdown">
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}" (click)="closeDropdown()">Nón 3/4</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}" (click)="closeDropdown()">Nón Full Face</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}" (click)="closeDropdown()">Nón lật cằm</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}" (click)="closeDropdown()">Nón trẻ em</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}" (click)="closeDropdown()">Nón Carbon</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}" (click)="closeDropdown()">Phụ kiện</a>
+            </div>
+          </div>
+          <a routerLink="/shop" routerLinkActive="active">Tin tức</a>
+          <a routerLink="/shop" routerLinkActive="active">Liên hệ</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-btn search-btn">
+            <i class="fas fa-search"></i>
+          </button>
+          <a routerLink="/shop/cart" class="icon-btn cart-link">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <div class="checkout-wrapper">
+        <!-- Left Column - Checkout Form -->
+        <div class="checkout-form-section">
+          <!-- Login/Discount Prompts -->
+          <div class="checkout-prompts">
+            <p *ngIf="!authService.isCustomer()">
+              Bạn đã có tài khoản? 
+              <a href="#" (click)="toggleLoginPrompt(); $event.preventDefault()">Ấn vào đây để đăng nhập</a>
+            </p>
+            <p>
+              Bạn có mã ưu đãi? 
+              <a href="#" (click)="toggleDiscountInput(); $event.preventDefault()">Ấn vào đây để nhập mã</a>
+            </p>
+          </div>
+
+          <!-- Discount Code Input -->
+          <div class="discount-input-section" *ngIf="showDiscountInput">
+            <input 
+              type="text" 
+              [(ngModel)]="discountCode" 
+              placeholder="Nhập mã giảm giá"
+              class="discount-input"
+            />
+            <button class="apply-discount-btn" (click)="applyDiscountCode()">Áp dụng</button>
+          </div>
+
+          <!-- Payment Information Form -->
+          <div class="form-section">
+            <h2 class="section-title">THÔNG TIN THANH TOÁN</h2>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">Tên *</label>
+                <input 
+                  type="text" 
+                  id="firstName" 
+                  [(ngModel)]="firstName" 
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="lastName">Tên *</label>
+                <input 
+                  type="text" 
+                  id="lastName" 
+                  [(ngModel)]="lastName" 
+                  class="form-control"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="country">Quốc gia *</label>
+              <select id="country" [(ngModel)]="country" class="form-control" required>
+                <option value="Việt Nam">Việt Nam</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="address">Địa chỉ *</label>
+              <input 
+                type="text" 
+                id="address" 
+                [(ngModel)]="address" 
+                placeholder="Địa chỉ"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="city">Tỉnh / Thành phố *</label>
+              <input 
+                type="text" 
+                id="city" 
+                [(ngModel)]="city" 
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Số điện thoại *</label>
+              <input 
+                type="tel" 
+                id="phone" 
+                [(ngModel)]="phone" 
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="email">Địa chỉ email *</label>
+              <input 
+                type="email" 
+                id="email" 
+                [(ngModel)]="email" 
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="form-checkbox">
+              <label>
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="createAccount"
+                />
+                <span>Tạo tài khoản mới?</span>
+              </label>
+            </div>
+
+            <div class="form-checkbox">
+              <label>
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="shipToDifferentAddress"
+                />
+                <span>Giao hàng tới địa chỉ khác?</span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label for="orderNotes">Ghi chú đơn hàng (tuỳ chọn)</label>
+              <textarea 
+                id="orderNotes" 
+                [(ngModel)]="orderNotes" 
+                placeholder="Ghi chú về đơn hàng, ví dụ: thời gian hay chỉ dẫn địa điểm giao hàng chi tiết hơn."
+                class="form-control textarea-control"
+                rows="4"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column - Order Summary -->
+        <div class="order-summary-section">
+          <div class="order-summary-box">
+            <h3 class="order-title">ĐƠN HÀNG CỦA BẠN</h3>
+            
+            <table class="order-table">
+              <thead>
+                <tr>
+                  <th>SẢN PHẨM</th>
+                  <th>TỔNG</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of cart">
+                  <td class="product-cell">
+                    {{ item.product.tenSanPham }} x {{ item.quantity }}
+                  </td>
+                  <td class="price-cell">
+                    {{ formatCurrency(item.product.giaBan * item.quantity) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="order-totals">
+              <div class="totals-row">
+                <span>Tổng phụ</span>
+                <span class="totals-value">{{ formatCurrency(getSubtotal()) }}</span>
+              </div>
+              <div class="totals-row">
+                <span>Giao hàng</span>
+                <span class="totals-value">Giao hàng miễn phí</span>
+              </div>
+              <div class="totals-row total-row">
+                <span>Tổng</span>
+                <span class="totals-value">{{ formatCurrency(getTotal()) }}</span>
+              </div>
+            </div>
+
+            <div class="payment-methods">
+              <label class="payment-option">
+                <input 
+                  type="radio" 
+                  name="payment" 
+                  value="cod" 
+                  [(ngModel)]="paymentMethod"
+                />
+                <span class="payment-label">Trả tiền mặt khi nhận hàng</span>
+                <p class="payment-description" *ngIf="paymentMethod === 'cod'">
+                  Trả tiền mặt khi giao hàng.
+                </p>
+              </label>
+              
+              <label class="payment-option">
+                <input 
+                  type="radio" 
+                  name="payment" 
+                  value="bank" 
+                  [(ngModel)]="paymentMethod"
+                />
+                <span class="payment-label">Chuyển khoản ngân hàng</span>
+                <p class="payment-description" *ngIf="paymentMethod === 'bank'">
+                  Chuyển khoản trực tiếp vào tài khoản ngân hàng của chúng tôi. Vui lòng sử dụng ID đơn hàng làm mã tham chiếu thanh toán.
+                </p>
+              </label>
+            </div>
+
+            <button class="place-order-btn" (click)="placeOrder()">
+              ĐẶT HÀNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Newsletter & Social Section -->
+  <section class="newsletter-social-section">
+    <div class="container">
+      <div class="newsletter-social-content">
+        <div class="newsletter-left">
+          <div class="newsletter-text">
+            <h3 class="newsletter-title">ĐĂNG KÝ NHẬN TIN</h3>
+            <p class="newsletter-description">Đăng ký để nhận được được thông tin mới nhất từ chúng tôi.</p>
+          </div>
+          <div class="newsletter-form-wrapper">
+            <input 
+              type="email" 
+              [(ngModel)]="newsletterEmail"
+              placeholder="Email ..." 
+              class="newsletter-input-large"
+            />
+            <button class="newsletter-btn-large" (click)="subscribeNewsletter()">ĐĂNG KÝ</button>
+          </div>
+        </div>
+        <div class="social-icons">
+          <a href="#" class="social-icon" title="Facebook">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="#" class="social-icon" title="Instagram">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="#" class="social-icon" title="Twitter">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="social-icon" title="YouTube">
+            <i class="fab fa-youtube"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="shop-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Liên hệ</h4>
+          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Phường 15, Quận 11, Tp.HCM</p>
+          <p><i class="fas fa-phone"></i> 076 922 0162</p>
+          <p><i class="fas fa-envelope"></i> demonhunterg@gmail.com</p>
+          <p><i class="fas fa-envelope"></i> mon@mona.media</p>
+          <p><i class="fas fa-shopping-bag"></i> demonhunterp</p>
+        </div>
+        <div class="footer-section">
+          <h4>Menu</h4>
+          <ul>
+            <li><a routerLink="/shop">Giới thiệu</a></li>
+            <li><a routerLink="/shop/products">Cửa hàng</a></li>
+            <li><a routerLink="/shop">Tin tức</a></li>
+            <li><a routerLink="/shop">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Tài khoản</h4>
+          <ul>
+            <li><a routerLink="/customer/profile">My account</a></li>
+            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
+            <li><a routerLink="/shop/checkout">Thanh toán</a></li>
+            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Dịch vụ</h4>
+          <ul>
+            <li><a routerLink="/shop">Giới thiệu</a></li>
+            <li><a routerLink="/shop/products">Cửa hàng</a></li>
+            <li><a routerLink="/shop">Tin tức</a></li>
+            <li><a routerLink="/shop">Liên hệ</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 <strong>TDK Store</strong>. Tất cả quyền được bảo lưu.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+

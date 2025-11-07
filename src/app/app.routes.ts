@@ -23,6 +23,9 @@ import { LoginComponent } from './components/login/login';
 import { RegisterComponent } from './components/register/register';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password';
 import { ShopComponent } from './components/shop/shop.component';
+import { ProductCategoryComponent } from './components/product-category/product-category.component';
+import { CartComponent } from './components/cart/cart.component';
+import { CheckoutComponent } from './components/checkout/checkout.component';
 import { CustomerOrdersComponent } from './components/customer-orders/customer-orders.component';
 import { roleGuard } from './guards/role-guard';
 import { AuthGuard } from './guards/auth-guard';
@@ -43,7 +46,9 @@ export const routes: Routes = [
   
   // Customer shop routes - public access
   { path: 'shop', component: ShopComponent },
-  { path: 'shop/products', component: ShopComponent },
+  { path: 'shop/products', component: ProductCategoryComponent },
+  { path: 'shop/cart', component: CartComponent },
+  { path: 'shop/checkout', component: CheckoutComponent },
   
   // Customer orders routes
   {

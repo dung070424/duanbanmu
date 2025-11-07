@@ -14,8 +14,7 @@
           </span>
         </div>
         <div class="top-bar-right">
-          <a routerLink="/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
-          <a routerLink="/customer/profile" class="top-bar-link" *ngIf="authService.isLoggedIn()">Tài khoản</a>
+          <a routerLink="/customer/profile" class="top-bar-link">Tài khoản</a>
         </div>
       </div>
     </div>
@@ -27,25 +26,30 @@
       <div class="header-content">
         <div class="logo-section">
           <a routerLink="/shop" class="logo-link">
-            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+            <div class="logo-circle">
+              <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+              <span class="logo-shop-text">TDK Helmet Shop</span>
+            </div>
             <span class="logo-text">TDK Store</span>
           </a>
         </div>
         <nav class="nav-menu">
           <a routerLink="/shop" routerLinkActive="active">Trang chủ</a>
           <a routerLink="/shop" routerLinkActive="active">Giới thiệu</a>
-          <a routerLink="/shop/products" routerLinkActive="active" class="has-dropdown">
-            Sản phẩm
-            <i class="fas fa-chevron-down"></i>
-            <div class="dropdown-menu">
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}">Nón 3/4</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}">Nón Full Face</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}">Nón lật cằm</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}">Nón trẻ em</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}">Nón Carbon</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}">Phụ kiện</a>
+          <div class="has-dropdown" [class.dropdown-open]="showDropdown">
+            <a routerLink="/shop/products" routerLinkActive="active" (click)="toggleDropdown(); $event.preventDefault()">
+              Sản phẩm
+              <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-menu" *ngIf="showDropdown">
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}" (click)="closeDropdown()">Nón 3/4</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}" (click)="closeDropdown()">Nón Full Face</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}" (click)="closeDropdown()">Nón lật cằm</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}" (click)="closeDropdown()">Nón trẻ em</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}" (click)="closeDropdown()">Nón Carbon</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}" (click)="closeDropdown()">Phụ kiện</a>
             </div>
-          </a>
+          </div>
           <a routerLink="/shop" routerLinkActive="active">Tin tức</a>
           <a routerLink="/shop" routerLinkActive="active">Liên hệ</a>
         </nav>
@@ -53,10 +57,51 @@
           <button class="icon-btn search-btn" (click)="toggleSearch()">
             <i class="fas fa-search"></i>
           </button>
-          <a routerLink="/shop/cart" class="icon-btn cart-link">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
-          </a>
+          <div class="cart-wrapper" (click)="toggleMiniCart(); $event.stopPropagation()">
+            <a class="icon-btn cart-link">
+              <i class="fas fa-shopping-cart"></i>
+              <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+            </a>
+            
+            <!-- Mini Cart Popup -->
+            <div class="mini-cart-popup" *ngIf="showMiniCart" (click)="$event.stopPropagation()">
+              <div class="mini-cart-header">
+                <h4>GIỎ HÀNG</h4>
+              </div>
+              
+              <div class="mini-cart-items" *ngIf="cart.length > 0">
+                <div class="mini-cart-item" *ngFor="let item of cart; let i = index">
+                  <div class="mini-cart-thumbnail-wrapper">
+                    <img [src]="getProductImageUrl(item.product)" [alt]="item.product.tenSanPham" class="mini-cart-thumbnail">
+                  </div>
+                  <div class="mini-cart-item-info">
+                    <div class="mini-cart-item-name">{{ item.product.tenSanPham }}</div>
+                    <div class="mini-cart-item-details">
+                      {{ item.quantity }} × {{ formatCurrency(item.product.giaBan) }}
+                    </div>
+                  </div>
+                  <button class="remove-item-btn" (click)="removeFromCart(i)">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="mini-cart-empty" *ngIf="cart.length === 0">
+                <p>Giỏ hàng của bạn đang trống</p>
+              </div>
+              
+              <div class="mini-cart-footer" *ngIf="cart.length > 0">
+                <div class="mini-cart-subtotal">
+                  <span>Tổng phụ:</span>
+                  <span class="subtotal-amount">{{ formatCurrency(getCartSubtotal()) }}</span>
+                </div>
+                <div class="mini-cart-actions">
+                  <button class="btn-view-cart" (click)="goToCart()">XEM GIỎ HÀNG</button>
+                  <button class="btn-checkout" (click)="goToCheckout()">THANH TOÁN</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

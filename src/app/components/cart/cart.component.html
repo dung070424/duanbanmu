@@ -1,0 +1,316 @@
+<div class="cart-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-content">
+        <div class="top-bar-left">
+          <span class="top-bar-item">
+            <i class="fas fa-envelope"></i>
+            contact@tdkstore.com
+          </span>
+          <span class="top-bar-item">
+            <i class="fas fa-phone"></i>
+            1900 636 648
+          </span>
+        </div>
+        <div class="top-bar-right">
+          <a routerLink="/customer/profile" class="top-bar-link">Tài khoản</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <header class="shop-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo-section">
+          <a routerLink="/shop" class="logo-link">
+            <div class="logo-circle">
+              <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+              <span class="logo-shop-text">TDK Helmet Shop</span>
+            </div>
+            <span class="logo-text">TDK Store</span>
+          </a>
+        </div>
+        <nav class="nav-menu">
+          <a routerLink="/shop" routerLinkActive="active">Trang chủ</a>
+          <a routerLink="/shop" routerLinkActive="active">Giới thiệu</a>
+          <div class="has-dropdown" [class.dropdown-open]="showDropdown">
+            <a routerLink="/shop/products" routerLinkActive="active" (click)="toggleDropdown(); $event.preventDefault()">
+              Sản phẩm
+              <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-menu" *ngIf="showDropdown">
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}" (click)="closeDropdown()">Nón 3/4</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}" (click)="closeDropdown()">Nón Full Face</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}" (click)="closeDropdown()">Nón lật cằm</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}" (click)="closeDropdown()">Nón trẻ em</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}" (click)="closeDropdown()">Nón Carbon</a>
+              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}" (click)="closeDropdown()">Phụ kiện</a>
+            </div>
+          </div>
+          <a routerLink="/shop" routerLinkActive="active">Tin tức</a>
+          <a routerLink="/shop" routerLinkActive="active">Liên hệ</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-btn search-btn">
+            <i class="fas fa-search"></i>
+          </button>
+          <a routerLink="/shop/cart" class="icon-btn cart-link">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Breadcrumbs -->
+  <div class="breadcrumbs-section">
+    <div class="container">
+      <div class="breadcrumbs-wrapper">
+        <div class="breadcrumbs-left">
+          <a routerLink="/shop" class="breadcrumb-link">TRANG CHỦ</a>
+          <span class="separator">/</span>
+          <span class="current-category">Giỏ hàng</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <div class="cart-wrapper">
+        <!-- Left Section - Cart Items -->
+        <div class="cart-items-section">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th class="product-col">SẢN PHẨM</th>
+                <th class="price-col">GIÁ</th>
+                <th class="quantity-col">SỐ LƯỢNG</th>
+                <th class="total-col">TỔNG CỘNG</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of cart; let i = index" class="cart-item-row">
+                <td class="product-cell">
+                  <button class="remove-btn" (click)="removeItem(i)" title="Xóa sản phẩm">
+                    <i class="fas fa-times"></i>
+                  </button>
+                  <div class="product-info">
+                    <img [src]="getProductImageUrl(item.product)" [alt]="item.product.tenSanPham" class="product-thumbnail">
+                    <span class="product-name">{{ item.product.tenSanPham }}</span>
+                  </div>
+                </td>
+                <td class="price-cell">
+                  <span class="product-price">{{ formatCurrency(item.product.giaBan) }}</span>
+                </td>
+                <td class="quantity-cell">
+                  <div class="quantity-controls">
+                    <button class="qty-btn minus" (click)="updateQuantity(i, item.quantity - 1)">-</button>
+                    <input 
+                      type="number" 
+                      [(ngModel)]="item.quantity"
+                      (blur)="updateQuantity(i, item.quantity)"
+                      (keyup.enter)="updateQuantity(i, item.quantity)"
+                      min="1"
+                      class="qty-input"
+                    />
+                    <button class="qty-btn plus" (click)="updateQuantity(i, item.quantity + 1)">+</button>
+                  </div>
+                </td>
+                <td class="total-cell">
+                  <span class="item-total">{{ formatCurrency(item.product.giaBan * item.quantity) }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="cart.length === 0" class="empty-cart">
+            <i class="fas fa-shopping-cart"></i>
+            <p>Giỏ hàng của bạn đang trống</p>
+            <a routerLink="/shop/products" class="continue-shopping-btn">Tiếp tục mua sắm</a>
+          </div>
+
+          <div *ngIf="cart.length > 0" class="cart-actions">
+            <div class="cart-actions-left">
+              <input 
+                type="text" 
+                [(ngModel)]="discountCode"
+                placeholder="Mã ưu đãi" 
+                class="discount-input"
+              />
+              <button class="apply-discount-btn" (click)="applyDiscountCode()">ÁP DỤNG</button>
+            </div>
+            <div class="cart-actions-right">
+              <button class="update-cart-btn" (click)="updateCart()">CẬP NHẬT GIỎ HÀNG</button>
+            </div>
+          </div>
+
+          <div *ngIf="cart.length > 0" class="cart-bottom-actions">
+            <button class="continue-shopping-btn" (click)="continueShopping()">
+              <i class="fas fa-arrow-left"></i> TIẾP TỤC XEM SẢN PHẨM
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Section - Cart Totals -->
+        <div class="cart-totals-section">
+          <div class="totals-box">
+            <h3 class="totals-title">TỔNG SỐ GIỎ HÀNG</h3>
+            
+            <div class="totals-row">
+              <span class="totals-label">Tổng phụ</span>
+              <span class="totals-value">{{ formatCurrency(getSubtotal()) }}</span>
+            </div>
+
+            <div class="shipping-section">
+              <div class="shipping-label">Giao hàng</div>
+              <div class="shipping-options">
+                <label class="shipping-option">
+                  <input 
+                    type="radio" 
+                    name="shipping" 
+                    value="free"
+                    [(ngModel)]="selectedShipping"
+                    (change)="onShippingChange()"
+                  />
+                  <span>Giao hàng miễn phí</span>
+                </label>
+                <label class="shipping-option">
+                  <input 
+                    type="radio" 
+                    name="shipping" 
+                    value="standard"
+                    [(ngModel)]="selectedShipping"
+                    (change)="onShippingChange()"
+                  />
+                  <span>Giao hàng tiêu chuẩn</span>
+                  <span class="shipping-fee" *ngIf="selectedShipping === 'standard'">{{ formatCurrency(shippingFee) }}</span>
+                </label>
+              </div>
+              <a href="#" class="change-address-link">Thay đổi địa chỉ</a>
+            </div>
+
+            <div class="totals-row total-row">
+              <span class="totals-label">Tổng cộng</span>
+              <span class="totals-value">{{ formatCurrency(getTotal()) }}</span>
+            </div>
+
+            <button class="checkout-btn" (click)="proceedToCheckout()">
+              TIẾN HÀNH THANH TOÁN
+            </button>
+          </div>
+
+          <div class="discount-section">
+            <div class="discount-icon">
+              <i class="fas fa-tag"></i>
+            </div>
+            <div class="discount-content">
+              <div class="discount-label">Phiếu ưu đãi</div>
+              <div class="discount-input-group">
+                <input 
+                  type="text" 
+                  [(ngModel)]="discountCode"
+                  placeholder="Mã ưu đãi" 
+                  class="discount-input-small"
+                />
+                <button class="apply-btn-small" (click)="applyDiscountCode()">Áp dụng</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Newsletter & Social Section -->
+  <section class="newsletter-social-section">
+    <div class="container">
+      <div class="newsletter-social-content">
+        <div class="newsletter-left">
+          <input 
+            type="email" 
+            placeholder="Email ..." 
+            class="newsletter-input-large"
+          />
+          <button class="newsletter-btn-large">ĐĂNG KÝ</button>
+        </div>
+        <div class="social-icons">
+          <a href="#" class="social-icon" title="Facebook">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="#" class="social-icon" title="Instagram">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="#" class="social-icon" title="Twitter">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="social-icon" title="YouTube">
+            <i class="fab fa-youtube"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="shop-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Liên hệ</h4>
+          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Phường 15, Quận 11, Tp.HCM</p>
+          <p><i class="fas fa-phone"></i> 076 922 0162</p>
+          <p><i class="fas fa-envelope"></i> demonhunterg@gmail.com</p>
+          <p><i class="fas fa-envelope"></i> mon@mona.media</p>
+          <p><i class="fab fa-skype"></i> demonhunterp</p>
+        </div>
+        <div class="footer-section">
+          <h4>Menu</h4>
+          <ul>
+            <li><a routerLink="/shop">Giới thiệu</a></li>
+            <li><a routerLink="/shop/products">Cửa hàng</a></li>
+            <li><a routerLink="/shop">Tin tức</a></li>
+            <li><a routerLink="/shop">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Tài khoản</h4>
+          <ul>
+            <li><a routerLink="/customer/profile">My account</a></li>
+            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
+            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
+            <li><a routerLink="/shop">Thanh toán</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Chính sách</h4>
+          <ul>
+            <li><a routerLink="/shop">Chính sách bảo mật</a></li>
+            <li><a routerLink="/shop">Điều khoản sử dụng</a></li>
+            <li><a routerLink="/shop">Chính sách đổi trả</a></li>
+            <li><a routerLink="/shop">Chính sách vận chuyển</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Đăng ký nhận tin</h4>
+          <p>Đăng ký để nhận được thông tin mới nhất từ chúng tôi.</p>
+          <div class="newsletter-form">
+            <input type="email" placeholder="Email..." class="newsletter-input">
+            <button class="newsletter-btn-icon">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2023 Mona Media. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+
