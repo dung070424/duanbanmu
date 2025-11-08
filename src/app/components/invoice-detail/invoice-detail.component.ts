@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HoaDonService } from '../../services/hoa-don.service';
 import { ProductApiService, PageResponse, SanPhamResponse } from '../../services/product-api.service';
 import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../services/chi-tiet-san-pham-api.service';
@@ -16,7 +16,7 @@ import { InvoiceStatusTimelineComponent } from '../invoice-status-timeline/invoi
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, InvoiceStatusTimelineComponent],
+  imports: [CommonModule, FormsModule, RouterModule, InvoiceStatusTimelineComponent],
   templateUrl: './invoice-detail.component.html',
   styleUrls: ['./invoice-detail.component.scss']
 })
@@ -459,37 +459,64 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         //           2. danhSachSanPham (đã được map trong service)
         //           3. Mảng rỗng nếu không có gì
         
+        // QUAN TRỌNG: Ưu tiên map từ danhSachChiTiet (backend) để đảm bảo dữ liệu mới nhất
         if (invoice.danhSachChiTiet && invoice.danhSachChiTiet.length > 0) {
-          // Nếu có danhSachChiTiet, map lại để đảm bảo đầy đủ
+          console.log('📦 Mapping danhSachChiTiet to danhSachSanPham, count:', invoice.danhSachChiTiet.length);
           invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => {
-            const donGia = parseFloat(item.donGia) || 0;
-            const soLuong = parseInt(item.soLuong) || 1;
-            const giamGia = parseFloat(item.giamGia) || 0;
+            // Đảm bảo parse đúng các giá trị số (có thể là string hoặc number từ backend)
+            const donGia = item.donGia 
+              ? (typeof item.donGia === 'string' ? parseFloat(item.donGia) : Number(item.donGia))
+              : 0;
+            const soLuong = item.soLuong 
+              ? (typeof item.soLuong === 'string' ? parseInt(item.soLuong, 10) : Number(item.soLuong))
+              : 0;
+            const giamGia = item.giamGia 
+              ? (typeof item.giamGia === 'string' ? parseFloat(item.giamGia) : Number(item.giamGia))
+              : 0;
             const thanhTien = item.thanhTien 
-              ? parseFloat(item.thanhTien) 
+              ? (typeof item.thanhTien === 'string' ? parseFloat(item.thanhTien) : Number(item.thanhTien))
               : (donGia * soLuong - giamGia);
 
+            // Map đầy đủ tất cả các trường từ backend
             return {
               id: item.id || null,
               chiTietSanPhamId: item.chiTietSanPhamId || null,
+              sanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
               tenSanPham: item.tenSanPham || 'Chưa có tên',
               maSanPham: item.maSanPham || '',
               soLuong: soLuong,
               donGia: donGia,
               thanhTien: thanhTien,
               giamGia: giamGia,
-              mauSac: item.mauSac || '',
-              kichThuoc: item.kichThuoc || '',
-              nhaSanXuat: item.nhaSanXuat || '',
-              anhSanPham: item.anhSanPham || '',
-              ghiChu: item.ghiChu || '',
-              sanPhamId: item.chiTietSanPhamId || null,
-              danhMuc: item.danhMuc || '',
-              thuongHieu: item.thuongHieu || ''
+              // Thông tin sản phẩm chi tiết
+              mauSac: item.mauSac || item.mauSacTen || '',
+              kichThuoc: item.kichThuoc || item.kichThuocTen || '',
+              nhaSanXuat: item.nhaSanXuat || item.nhaSanXuatTen || '',
+              anhSanPham: item.anhSanPham || item.anhSanPhamUrl || '',
+              // Các trường bổ sung
+              danhMuc: item.danhMuc || item.loaiMuBaoHiemTen || item.loaiMuBaoHiem || '',
+              thuongHieu: item.thuongHieu || '',
+              ghiChu: item.ghiChu || ''
             };
           });
-        } else if (!invoice.danhSachSanPham) {
-          // Nếu không có danhSachChiTiet và không có danhSachSanPham, set mảng rỗng
+          console.log('✅ Mapped danhSachSanPham from danhSachChiTiet, count:', invoice.danhSachSanPham.length);
+          if (invoice.danhSachSanPham.length > 0) {
+            console.log('📦 Sample mapped product:', invoice.danhSachSanPham[0]);
+          }
+        } else if (invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0) {
+          // Nếu không có danhSachChiTiet nhưng đã có danhSachSanPham (đã được map trong service)
+          console.log('📦 Using existing danhSachSanPham, count:', invoice.danhSachSanPham.length);
+          // Đảm bảo các giá trị số được parse đúng
+          invoice.danhSachSanPham = invoice.danhSachSanPham.map((item: any) => ({
+            ...item,
+            donGia: typeof item.donGia === 'string' ? parseFloat(item.donGia) : Number(item.donGia || 0),
+            soLuong: typeof item.soLuong === 'string' ? parseInt(item.soLuong, 10) : Number(item.soLuong || 0),
+            giamGia: typeof item.giamGia === 'string' ? parseFloat(item.giamGia) : Number(item.giamGia || 0),
+            thanhTien: typeof item.thanhTien === 'string' ? parseFloat(item.thanhTien) : Number(item.thanhTien || 0)
+          }));
+        } else {
+          // Nếu không có cả hai, set mảng rỗng
+          console.warn('⚠️ No danhSachChiTiet or danhSachSanPham found, setting empty array');
           invoice.danhSachSanPham = [];
         }
         
@@ -597,32 +624,40 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         
         // Map danhSachChiTiet sang danhSachSanPham format - mapping đầy đủ tất cả các trường
         const danhSachSanPham = danhSachChiTiet.map((item: any) => {
-          // Tính toán thanhTien nếu chưa có
-          const donGia = parseFloat(item.donGia) || 0;
-          const soLuong = parseInt(item.soLuong) || 1;
-          const giamGia = parseFloat(item.giamGia) || 0;
+          // Đảm bảo parse đúng các giá trị số (backend có thể trả về string hoặc number)
+          const donGia = item.donGia 
+            ? (typeof item.donGia === 'string' ? parseFloat(item.donGia) : Number(item.donGia))
+            : 0;
+          const soLuong = item.soLuong 
+            ? (typeof item.soLuong === 'string' ? parseInt(item.soLuong, 10) : Number(item.soLuong))
+            : 0;
+          const giamGia = item.giamGia 
+            ? (typeof item.giamGia === 'string' ? parseFloat(item.giamGia) : Number(item.giamGia))
+            : 0;
           const thanhTien = item.thanhTien 
-            ? parseFloat(item.thanhTien) 
+            ? (typeof item.thanhTien === 'string' ? parseFloat(item.thanhTien) : Number(item.thanhTien))
             : (donGia * soLuong - giamGia);
 
+          // Map đầy đủ tất cả các trường từ backend, hỗ trợ nhiều tên trường khác nhau
           return {
             id: item.id || null,
             chiTietSanPhamId: item.chiTietSanPhamId || null,
+            sanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
             tenSanPham: item.tenSanPham || 'Chưa có tên',
             maSanPham: item.maSanPham || '',
             soLuong: soLuong,
             donGia: donGia,
             thanhTien: thanhTien,
             giamGia: giamGia,
-            mauSac: item.mauSac || '',
-            kichThuoc: item.kichThuoc || '',
-            nhaSanXuat: item.nhaSanXuat || '',
-            anhSanPham: item.anhSanPham || '',
-            // Thêm các trường bổ sung nếu cần
-            ghiChu: item.ghiChu || '',
-            sanPhamId: item.sanPhamId || null,
-            danhMuc: item.danhMuc || '',
-            thuongHieu: item.thuongHieu || ''
+            // Thông tin sản phẩm chi tiết - hỗ trợ nhiều tên trường
+            mauSac: item.mauSac || item.mauSacTen || '',
+            kichThuoc: item.kichThuoc || item.kichThuocTen || '',
+            nhaSanXuat: item.nhaSanXuat || item.nhaSanXuatTen || '',
+            anhSanPham: item.anhSanPham || item.anhSanPhamUrl || item.anhSanPhamUrl || '',
+            // Các trường bổ sung
+            danhMuc: item.danhMuc || item.loaiMuBaoHiemTen || item.loaiMuBaoHiem || '',
+            thuongHieu: item.thuongHieu || '',
+            ghiChu: item.ghiChu || ''
           };
         });
         

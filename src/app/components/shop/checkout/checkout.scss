@@ -1,0 +1,796 @@
+.checkout-container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 40px 0;
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  // Breadcrumb Navigation
+  .breadcrumb-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid #e0e0e0;
+
+    .breadcrumb {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-wrap: wrap;
+      align-items: center;
+
+      .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        color: #666;
+
+        + .breadcrumb-item {
+          padding-left: 8px;
+
+          &::before {
+            content: "/";
+            padding-right: 8px;
+            color: #999;
+          }
+        }
+
+        a {
+          color: #007bff;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          transition: color 0.2s;
+
+          &:hover {
+            color: #0056b3;
+            text-decoration: underline;
+          }
+
+          i {
+            font-size: 12px;
+          }
+        }
+
+        &.active {
+          color: #333;
+          font-weight: 500;
+
+          i {
+            margin-right: 5px;
+          }
+        }
+      }
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      color: #333;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f8f9fa;
+        border-color: #007bff;
+        color: #007bff;
+      }
+
+      i {
+        font-size: 12px;
+      }
+    }
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 40px;
+
+    h1 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 10px;
+
+      i {
+        margin-right: 10px;
+        color: #febc49;
+      }
+    }
+  }
+
+  .error-message {
+    background: #fee;
+    color: #c33;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cart-empty-warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 4px solid #ffc107;
+    grid-column: 1 / -1; // Span cả 2 cột
+
+    i {
+      color: #ffc107;
+      font-size: 1.2rem;
+    }
+
+    a {
+      color: #856404;
+      text-decoration: underline;
+      font-weight: 600;
+
+      &:hover {
+        color: #533f03;
+      }
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(254, 188, 73, 0.2);
+      border-top: 4px solid #febc49;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    p {
+      color: #666;
+    }
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .checkout-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 40px;
+
+    @media (max-width: 968px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .checkout-main {
+    .info-links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 30px;
+
+      .info-link {
+        color: #666;
+        text-decoration: none;
+        padding: 10px;
+        background: white;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #f0f0f0;
+          color: #febc49;
+        }
+
+        i {
+          color: #febc49;
+        }
+      }
+    }
+
+    .billing-section {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      h2 {
+        font-size: 1.5rem;
+        color: #333;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+
+        label {
+          display: block;
+          margin-bottom: 8px;
+          color: #333;
+          font-weight: 600;
+        }
+
+        .form-control {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #febc49;
+          }
+        }
+
+        textarea.form-control {
+          resize: vertical;
+          min-height: 100px;
+        }
+      }
+
+      .form-check {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .form-check-input {
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+        }
+
+        .form-check-label {
+          margin: 0;
+          cursor: pointer;
+          color: #333;
+        }
+      }
+    }
+  }
+
+  .checkout-sidebar {
+    .order-summary {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 20px;
+
+      h2 {
+        font-size: 1.5rem;
+        color: #333;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+      }
+
+      .order-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+
+        thead {
+          border-bottom: 2px solid #eee;
+
+          th {
+            padding: 12px 0;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+          }
+        }
+
+        tbody {
+          tr {
+            border-bottom: 1px solid #eee;
+
+            td {
+              padding: 12px 0;
+              color: #666;
+            }
+
+            &.empty-cart-row {
+              td {
+                text-align: center;
+                padding: 30px 0;
+                color: #999;
+                font-style: italic;
+
+                i {
+                  font-size: 2rem;
+                  display: block;
+                  margin-bottom: 10px;
+                  color: #ccc;
+                }
+
+                span {
+                  display: block;
+                }
+              }
+            }
+          }
+        }
+
+        tfoot {
+          tr {
+            border-top: 1px solid #eee;
+
+            td {
+              padding: 12px 0;
+              color: #666;
+            }
+
+            &.total-row {
+              border-top: 2px solid #333;
+              margin-top: 10px;
+
+              td {
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: #333;
+                padding-top: 20px;
+              }
+            }
+          }
+        }
+      }
+
+      .payment-methods {
+        margin-bottom: 25px;
+
+        h3 {
+          font-size: 1.2rem;
+          color: #333;
+          margin-bottom: 20px;
+        }
+
+        .payment-option {
+          margin-bottom: 20px;
+          padding: 15px;
+          border: 2px solid #eee;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+
+          input[type="radio"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+          }
+
+          label {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            margin: 0;
+
+            strong {
+              color: #333;
+              margin-bottom: 5px;
+            }
+
+            p {
+              color: #666;
+              font-size: 0.9rem;
+              margin: 0;
+            }
+          }
+
+          &:has(input:checked) {
+            border-color: #febc49;
+            background: #fffbf0;
+          }
+        }
+
+        .bank-info {
+          margin-top: 20px;
+          padding: 20px;
+          background: #f9f9f9;
+          border-radius: 8px;
+
+          .bank-details {
+            margin-bottom: 20px;
+
+            p {
+              margin: 8px 0;
+              color: #333;
+
+              strong {
+                color: #333;
+              }
+            }
+          }
+
+          .transaction-code {
+            .code-display {
+              display: flex;
+              gap: 10px;
+              margin-bottom: 10px;
+
+              .code-input {
+                flex: 1;
+                padding: 12px;
+                border: 2px solid #febc49;
+                border-radius: 4px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #febc49;
+                background: #fffbf0;
+                text-align: center;
+              }
+
+              .btn-copy {
+                padding: 12px 20px;
+                background: #febc49;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+
+                &:hover {
+                  background: #e6a942;
+                }
+              }
+            }
+
+            .code-note {
+              font-size: 0.9rem;
+              color: #666;
+              margin: 0;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              i {
+                color: #febc49;
+              }
+            }
+          }
+        }
+      }
+
+      .btn-place-order {
+        width: 100%;
+        padding: 18px;
+        background: #febc49;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        &:hover:not(:disabled) {
+          background: #e6a942;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(254, 188, 73, 0.3);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+
+  // Invoice Details Modal
+  .invoice-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .invoice-modal {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+
+    .invoice-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 25px 30px;
+      border-bottom: 2px solid #eee;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+
+      h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .success-icon {
+          color: #4ade80;
+          font-size: 1.8rem;
+        }
+      }
+
+      .btn-close {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background 0.3s;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      }
+    }
+
+    .invoice-modal-body {
+      padding: 30px;
+
+      .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border-left: 4px solid #28a745;
+
+        p {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 500;
+        }
+      }
+
+      .invoice-details {
+        h3 {
+          font-size: 1.3rem;
+          color: #333;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #eee;
+        }
+
+        h4 {
+          font-size: 1.1rem;
+          color: #555;
+          margin: 20px 0 15px 0;
+        }
+
+        .invoice-info-section {
+          margin-bottom: 25px;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+
+          .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            .label {
+              font-weight: 600;
+              color: #666;
+              min-width: 150px;
+            }
+
+            .value {
+              color: #333;
+              text-align: right;
+              flex: 1;
+
+              code.transaction-code {
+                background: #fff3cd;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-weight: 700;
+                color: #856404;
+                font-size: 1.1rem;
+              }
+            }
+
+            .status-badge {
+              padding: 5px 12px;
+              border-radius: 20px;
+              font-size: 0.9rem;
+              font-weight: 600;
+
+              &.status-cho-xac-nhan {
+                background: #fff3cd;
+                color: #856404;
+              }
+            }
+          }
+        }
+
+        .invoice-items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 15px;
+
+          thead {
+            background: #667eea;
+            color: white;
+
+            th {
+              padding: 12px;
+              text-align: left;
+              font-weight: 600;
+            }
+          }
+
+          tbody {
+            tr {
+              border-bottom: 1px solid #e0e0e0;
+
+              &:hover {
+                background: #f8f9fa;
+              }
+
+              td {
+                padding: 12px;
+                color: #666;
+              }
+            }
+          }
+
+          tfoot {
+            tr {
+              border-top: 2px solid #333;
+
+              &.total-row {
+                background: #f8f9fa;
+                font-size: 1.1rem;
+
+                td {
+                  padding: 15px 12px;
+                  font-weight: 700;
+                  color: #333;
+                }
+              }
+
+              td {
+                padding: 10px 12px;
+
+                &.text-right {
+                  text-align: right;
+                }
+              }
+            }
+          }
+        }
+
+        .payment-info {
+          background: #fff3cd;
+          border: 2px solid #ffc107;
+
+          .payment-note {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+
+            i {
+              color: #ffc107;
+              font-size: 1.2rem;
+              margin-top: 2px;
+            }
+
+            p {
+              margin: 0;
+              color: #856404;
+              font-size: 0.95rem;
+              line-height: 1.5;
+            }
+          }
+        }
+
+        .notes-text {
+          color: #666;
+          line-height: 1.6;
+          white-space: pre-wrap;
+        }
+      }
+    }
+
+    .invoice-modal-footer {
+      padding: 20px 30px;
+      border-top: 2px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+
+      .btn-primary {
+        padding: 12px 30px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+
+        &:hover {
+          background: #5568d3;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+      }
+    }
+  }
+}
+

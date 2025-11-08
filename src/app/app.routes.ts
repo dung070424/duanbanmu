@@ -24,6 +24,10 @@ import { RegisterComponent } from './components/register/register';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password';
 import { ShopComponent } from './components/shop/shop.component';
 import { CustomerOrdersComponent } from './components/customer-orders/customer-orders.component';
+import { CustomerProfileComponent } from './components/customer-profile/customer-profile.component';
+import { CartComponent } from './components/shop/cart/cart';
+import { CheckoutComponent } from './components/shop/checkout/checkout';
+import { ProductDetailComponent } from './components/shop/product-detail/product-detail';
 import { roleGuard } from './guards/role-guard';
 import { AuthGuard } from './guards/auth-guard';
 import { ColorsComponent } from './components/colors/colors.component';
@@ -42,20 +46,30 @@ export const routes: Routes = [
   { path: 'forgot-password', component: ForgotPasswordComponent },
   
   // Customer shop routes - public access
-  { path: 'shop', component: ShopComponent },
+  // QUAN TRỌNG: Đặt routes cụ thể trước route chung để tránh conflict
+  { path: 'shop/cart', component: CartComponent },
+  { path: 'shop/checkout', component: CheckoutComponent, canActivate: [AuthGuard] },
+  { path: 'shop/product/:id', component: ProductDetailComponent },
   { path: 'shop/products', component: ShopComponent },
+  { path: 'shop', component: ShopComponent },
   
-  // Customer orders routes
+  // Customer routes
+  {
+    path: 'customer/profile',
+    component: CustomerProfileComponent,
+    canActivate: [AuthGuard], // Tạm thời bỏ roleGuard để test, có thể thêm lại sau
+    // data: { roles: ['CUSTOMER'] } // Tạm thời comment để test
+  },
   {
     path: 'customer/orders',
     component: CustomerOrdersComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
     data: { roles: ['CUSTOMER'] }
   },
   {
     path: 'customer/orders/:id',
     component: InvoiceDetailComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
     data: { roles: ['CUSTOMER'] }
   },
   

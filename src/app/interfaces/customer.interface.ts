@@ -4,8 +4,11 @@ export interface Customer {
   soDienThoai?: string;
   email?: string;
   diaChi?: string;
+  ngaySinh?: string;
+  gioiTinh?: boolean;
+  diemTichLuy?: number;
   ngayTao?: string;
-  trangThai?: string;
+  trangThai?: boolean | string;
 }
 
 export interface CustomerCreateRequest {

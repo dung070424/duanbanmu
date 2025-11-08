@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
 interface LoginData {
@@ -17,7 +17,7 @@ interface LoginData {
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginData: LoginData = {
     username: '',
     password: '',
@@ -26,8 +26,20 @@ export class LoginComponent {
 
   isLoading = false;
   errorMessage = '';
+  returnUrl: string | null = null;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    // Lấy returnUrl từ query params
+    this.route.queryParams.subscribe(params => {
+      this.returnUrl = params['returnUrl'] || null;
+    });
+  }
 
   onLogin() {
     if (this.isLoading) return;
@@ -44,6 +56,13 @@ export class LoginComponent {
           if (success) {
             const user = this.authService.getCurrentUser();
             console.log('Login successful, user:', user);
+            
+            // Nếu có returnUrl, quay lại trang đó (ví dụ: checkout)
+            if (this.returnUrl) {
+              console.log('Redirecting to returnUrl:', this.returnUrl);
+              this.router.navigateByUrl(this.returnUrl);
+              return;
+            }
             
             // Redirect dựa trên role
             if (user?.roles?.includes('ADMIN') || user?.roles?.includes('STAFF')) {

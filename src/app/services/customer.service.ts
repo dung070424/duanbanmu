@@ -179,6 +179,13 @@ export class CustomerService {
   }
 
   /**
+   * Lấy thông tin khách hàng theo User ID
+   */
+  getCustomerByUserId(userId: number): Observable<Customer> {
+    return this.http.get<Customer>(`${this.apiUrl}/user/${userId}`);
+  }
+
+  /**
    * Xóa khách hàng
    */
   deleteCustomer(id: number): Observable<void> {

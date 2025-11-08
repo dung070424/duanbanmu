@@ -40,11 +40,14 @@ export class AppComponent implements OnInit, OnDestroy {
     // Trang login, register, forgot-password - không có sidebar/header
     this.isLoginPage = url === '/login' || url === '/register' || url === '/forgot-password';
     
-    // Trang shop - không có sidebar/header (customer website)
-    this.isShopPage = url.startsWith('/shop');
+    // Trang shop và customer pages - không có sidebar/header (customer website)
+    // Bao gồm cả /shop/cart, /shop/checkout, /customer/profile, /customer/orders
+    this.isShopPage = url.startsWith('/shop') || url.startsWith('/customer');
     
-    // Hiển thị admin layout nếu không phải login/shop pages
+    // Hiển thị admin layout nếu không phải login/shop/customer pages
     this.showAdminLayout = !this.isLoginPage && !this.isShopPage;
+    
+    console.log('updateLayoutFlags:', { url, isLoginPage: this.isLoginPage, isShopPage: this.isShopPage, showAdminLayout: this.showAdminLayout });
   }
 
   ngOnDestroy() {

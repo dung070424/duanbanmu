@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { RegisterRequest } from '../../interfaces/auth.interface';
 
@@ -12,7 +12,7 @@ import { RegisterRequest } from '../../interfaces/auth.interface';
   templateUrl: './register.html',
   styleUrls: ['./register.scss'],
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   registerData: RegisterRequest = {
     username: '',
     password: '',
@@ -24,8 +24,20 @@ export class RegisterComponent {
   isLoading = false;
   errorMessage = '';
   successMessage = '';
+  returnUrl: string | null = null;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    // Lấy returnUrl từ query params
+    this.route.queryParams.subscribe(params => {
+      this.returnUrl = params['returnUrl'] || null;
+    });
+  }
 
   onRegister() {
     if (this.isLoading) return;
@@ -50,10 +62,19 @@ export class RegisterComponent {
         this.successMessage = response.message || 'Đăng ký thành công!';
         const username = this.registerData.username;
         this.isLoading = false;
-        this.router.navigate(['/login'], {
-          queryParams: { registered: 'true', username },
-          replaceUrl: true
-        });
+        
+        // Nếu có returnUrl, chuyển đến login với returnUrl để sau khi login sẽ quay lại checkout
+        if (this.returnUrl) {
+          this.router.navigate(['/login'], {
+            queryParams: { registered: 'true', username, returnUrl: this.returnUrl },
+            replaceUrl: true
+          });
+        } else {
+          this.router.navigate(['/login'], {
+            queryParams: { registered: 'true', username },
+            replaceUrl: true
+          });
+        }
       },
       error: (error: Error) => {
         this.errorMessage = error.message || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại!';

@@ -1,0 +1,316 @@
+<div class="customer-profile-container">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-nav">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a routerLink="/shop"><i class="fas fa-home"></i> Trang chủ</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+          <i class="fas fa-user"></i> Thông tin tài khoản
+        </li>
+      </ol>
+      <button class="btn-back" (click)="goBack()" type="button">
+        <i class="fas fa-arrow-left"></i> Quay lại
+      </button>
+    </nav>
+
+    <div class="page-header">
+      <h1><i class="fas fa-user-circle"></i> Thông tin tài khoản</h1>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Đang tải thông tin...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="error-message">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ error }}
+    </div>
+
+    <!-- Success Message -->
+    <div *ngIf="successMessage" class="success-message">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+
+    <!-- Customer Info -->
+    <div *ngIf="!isLoading && customer" class="profile-content">
+      <!-- Customer Information Card -->
+      <div class="info-card">
+        <div class="card-header">
+          <h2><i class="fas fa-user"></i> Thông tin cá nhân</h2>
+          <button 
+            *ngIf="!isEditing" 
+            class="btn-edit" 
+            (click)="toggleEdit()"
+            type="button"
+          >
+            <i class="fas fa-edit"></i> Chỉnh sửa
+          </button>
+          <div *ngIf="isEditing" class="edit-actions">
+            <button 
+              class="btn-save" 
+              (click)="saveCustomerInfo()"
+              [disabled]="isSaving"
+              type="button"
+            >
+              <i class="fas fa-save"></i> {{ isSaving ? 'Đang lưu...' : 'Lưu' }}
+            </button>
+            <button 
+              class="btn-cancel" 
+              (click)="cancelEdit()"
+              [disabled]="isSaving"
+              type="button"
+            >
+              <i class="fas fa-times"></i> Hủy
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="form-group">
+            <label>Họ và tên <span class="required">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="formData.tenKhachHang"
+              [readonly]="!isEditing"
+              [class.readonly]="!isEditing"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Email <span class="required">*</span></label>
+            <input 
+              type="email" 
+              class="form-control" 
+              [(ngModel)]="formData.email"
+              [readonly]="!isEditing"
+              [class.readonly]="!isEditing"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Số điện thoại <span class="required">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="formData.soDienThoai"
+              [readonly]="!isEditing"
+              [class.readonly]="!isEditing"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Ngày sinh</label>
+              <input 
+                type="date" 
+                class="form-control" 
+                [(ngModel)]="formData.ngaySinh"
+                [readonly]="!isEditing"
+                [class.readonly]="!isEditing"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Giới tính</label>
+              <select 
+                class="form-control" 
+                [(ngModel)]="formData.gioiTinh"
+                [disabled]="!isEditing"
+                [class.readonly]="!isEditing"
+              >
+                <option [value]="true">Nam</option>
+                <option [value]="false">Nữ</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Điểm tích lũy</label>
+            <input 
+              type="number" 
+              class="form-control" 
+              [(ngModel)]="formData.diemTichLuy"
+              readonly
+              class="readonly"
+            />
+            <small class="form-text">Điểm tích lũy không thể chỉnh sửa</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address Management Card -->
+      <div class="info-card">
+        <div class="card-header">
+          <h2><i class="fas fa-map-marker-alt"></i> Địa chỉ giao hàng</h2>
+          <button 
+            *ngIf="!showAddAddressForm" 
+            class="btn-add" 
+            (click)="showAddAddress()"
+            type="button"
+          >
+            <i class="fas fa-plus"></i> Thêm địa chỉ
+          </button>
+        </div>
+
+        <div class="card-body">
+          <!-- Add/Edit Address Form -->
+          <div *ngIf="showAddAddressForm" class="address-form">
+            <h3>{{ editingAddressId ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới' }}</h3>
+            
+            <div class="form-group">
+              <label>Tên người nhận <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="newAddress.tenNguoiNhan"
+                placeholder="Nhập tên người nhận"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Số điện thoại <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="newAddress.soDienThoai"
+                placeholder="Nhập số điện thoại"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Địa chỉ chi tiết <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="newAddress.diaChi"
+                placeholder="Số nhà, tên đường"
+              />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Phường/Xã</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="newAddress.phuongXa"
+                  placeholder="Phường/Xã"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Quận/Huyện</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="newAddress.quanHuyen"
+                  placeholder="Quận/Huyện"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Tỉnh/Thành phố <span class="required">*</span></label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="newAddress.tinhThanh"
+                  placeholder="Tỉnh/Thành phố"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newAddress.macDinh"
+                />
+                Đặt làm địa chỉ mặc định
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button 
+                class="btn-save" 
+                (click)="saveAddress()"
+                [disabled]="isSaving"
+                type="button"
+              >
+                <i class="fas fa-save"></i> {{ isSaving ? 'Đang lưu...' : 'Lưu' }}
+              </button>
+              <button 
+                class="btn-cancel" 
+                (click)="cancelAddressForm()"
+                [disabled]="isSaving"
+                type="button"
+              >
+                <i class="fas fa-times"></i> Hủy
+              </button>
+            </div>
+          </div>
+
+          <!-- Address List -->
+          <div *ngIf="!showAddAddressForm" class="address-list">
+            <div *ngIf="addresses.length === 0" class="empty-addresses">
+              <i class="fas fa-map-marker-alt"></i>
+              <p>Chưa có địa chỉ nào. Hãy thêm địa chỉ mới!</p>
+            </div>
+
+            <div *ngFor="let address of addresses" class="address-item">
+              <div class="address-header">
+                <div class="address-info">
+                  <h4>
+                    {{ address.tenNguoiNhan }}
+                    <span *ngIf="address.macDinh" class="badge-default">Mặc định</span>
+                  </h4>
+                  <p class="address-phone">
+                    <i class="fas fa-phone"></i> {{ address.soDienThoai }}
+                  </p>
+                  <p class="address-detail">
+                    <i class="fas fa-map-marker-alt"></i>
+                    {{ address.diaChi }}, {{ address.phuongXa }}, {{ address.quanHuyen }}, {{ address.tinhThanh }}
+                  </p>
+                </div>
+                <div class="address-actions">
+                  <button 
+                    *ngIf="!address.macDinh" 
+                    class="btn-action btn-default" 
+                    (click)="setDefaultAddress(address.id!)"
+                    type="button"
+                    title="Đặt làm mặc định"
+                  >
+                    <i class="fas fa-star"></i>
+                  </button>
+                  <button 
+                    class="btn-action btn-edit" 
+                    (click)="editAddress(address)"
+                    type="button"
+                    title="Chỉnh sửa"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    class="btn-action btn-delete" 
+                    (click)="deleteAddress(address.id!)"
+                    type="button"
+                    title="Xóa"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
