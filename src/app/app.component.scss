@@ -3,6 +3,8 @@
   width: 100vw;
   overflow-x: hidden;
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .app-container {
@@ -10,6 +12,8 @@
   height: 100vh;
   background-color: #f8f9fa;
   min-height: 100vh;
+  position: relative;
+  z-index: 0;
 }
 
 .main-content {

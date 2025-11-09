@@ -70,31 +70,37 @@ export class CustomerAddressService {
   createAddress(address: CustomerAddressCreateRequest): Observable<CustomerAddress> {
     console.log('📍 Creating address with data:', address);
     
-    // Sử dụng endpoint thực tế với responseType text
-    return this.http.post(`${environment.apiUrl}/address/save`, address, { 
-      responseType: 'text' 
-    }).pipe(
-      map(responseText => {
-        console.log('✅ Address creation response (text):', responseText);
-        
-        // Parse response text để lấy ID thực tế
-        const idMatch = responseText.match(/ID địa chỉ: (\d+)/);
-        const actualId = idMatch ? parseInt(idMatch[1]) : Date.now();
-        
-        console.log('📍 Extracted address ID:', actualId);
-        
-        // Tạo response từ request và ID thực tế
+    // Map frontend format to backend format (diaChi -> diaChiChiTiet)
+    const backendAddress = {
+      khachHangId: address.khachHangId,
+      tenNguoiNhan: address.tenNguoiNhan,
+      soDienThoai: address.soDienThoai,
+      diaChiChiTiet: address.diaChi, // Backend uses diaChiChiTiet
+      tinhThanh: address.tinhThanh,
+      quanHuyen: address.quanHuyen,
+      phuongXa: address.phuongXa,
+      macDinh: address.macDinh || false,
+      trangThai: address.trangThai !== undefined ? address.trangThai : true
+    };
+    
+    const apiUrl = `${environment.apiUrl}/dia-chi-khach-hang`;
+    console.log('📡 POST to:', apiUrl);
+    
+    return this.http.post<any>(apiUrl, backendAddress).pipe(
+      map(response => {
+        console.log('✅ Address created:', response);
+        // Map backend response to frontend format
         return {
-          id: actualId,
-          khachHangId: address.khachHangId,
-          tenNguoiNhan: address.tenNguoiNhan,
-          soDienThoai: address.soDienThoai,
-          diaChi: address.diaChi,
-          tinhThanh: address.tinhThanh,
-          quanHuyen: address.quanHuyen,
-          phuongXa: address.phuongXa,
-          macDinh: address.macDinh || false,
-          trangThai: address.trangThai || true
+          id: response.id,
+          khachHangId: response.khachHangId,
+          tenNguoiNhan: response.tenNguoiNhan,
+          soDienThoai: response.soDienThoai,
+          diaChi: response.diaChiChiTiet || response.diaChi || '',
+          tinhThanh: response.tinhThanh,
+          quanHuyen: response.quanHuyen,
+          phuongXa: response.phuongXa,
+          macDinh: response.macDinh || false,
+          trangThai: response.trangThai !== undefined ? response.trangThai : true
         };
       }),
       tap({
@@ -108,34 +114,91 @@ export class CustomerAddressService {
   /**
    * Cập nhật địa chỉ
    */
-  updateAddress(addressId: number, address: CustomerAddressUpdateRequest): Observable<CustomerAddress> {
-    return this.http.put<any>(`${this.apiUrl}/${addressId}`, address).pipe(
-      map(response => ({
-        id: response.id,
-        khachHangId: response.khachHangId,
-        tenNguoiNhan: response.tenNguoiNhan,
-        soDienThoai: response.soDienThoai,
-        diaChi: response.diaChi,
-        tinhThanh: response.tinhThanh,
-        quanHuyen: response.quanHuyen,
-        phuongXa: response.phuongXa,
-        macDinh: response.macDinh,
-        trangThai: response.trangThai
-      }))
+  updateAddress(addressId: number, address: CustomerAddressUpdateRequest | CustomerAddressCreateRequest): Observable<CustomerAddress> {
+    console.log('📍 Updating address ID:', addressId, 'with data:', address);
+    
+    // Map frontend format to backend format (diaChi -> diaChiChiTiet)
+    const backendAddress: any = {
+      khachHangId: (address as CustomerAddressCreateRequest).khachHangId || 0,
+      tenNguoiNhan: address.tenNguoiNhan || (address as any).tenNguoiNhan,
+      soDienThoai: address.soDienThoai || (address as any).soDienThoai,
+      diaChiChiTiet: address.diaChi || (address as any).diaChi, // Backend uses diaChiChiTiet
+      tinhThanh: address.tinhThanh || (address as any).tinhThanh,
+      quanHuyen: address.quanHuyen || (address as any).quanHuyen,
+      phuongXa: address.phuongXa || (address as any).phuongXa,
+      macDinh: address.macDinh !== undefined ? address.macDinh : ((address as any).macDinh || false),
+      trangThai: address.trangThai !== undefined ? address.trangThai : ((address as any).trangThai !== undefined ? (address as any).trangThai : true)
+    };
+    
+    const apiUrl = `${environment.apiUrl}/dia-chi-khach-hang/${addressId}`;
+    console.log('📡 PUT to:', apiUrl);
+    
+    return this.http.put<any>(apiUrl, backendAddress).pipe(
+      map(response => {
+        console.log('✅ Address updated:', response);
+        // Map backend response to frontend format
+        return {
+          id: response.id,
+          khachHangId: response.khachHangId,
+          tenNguoiNhan: response.tenNguoiNhan,
+          soDienThoai: response.soDienThoai,
+          diaChi: response.diaChiChiTiet || response.diaChi || '',
+          tinhThanh: response.tinhThanh,
+          quanHuyen: response.quanHuyen,
+          phuongXa: response.phuongXa,
+          macDinh: response.macDinh || false,
+          trangThai: response.trangThai !== undefined ? response.trangThai : true
+        };
+      }),
+      tap({
+        error: (error) => {
+          console.error('❌ Error updating address:', error);
+        }
+      })
     );
   }
 
   /**
    * Xóa địa chỉ
    */
-  deleteAddress(addressId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${addressId}`);
+  deleteAddress(addressId: number, customerId?: number): Observable<void> {
+    // Backend endpoint: DELETE /api/dia-chi-khach-hang/{id}/khach-hang/{khachHangId}
+    // If customerId is not provided, we need to get it from the address first
+    if (customerId) {
+      const apiUrl = `${environment.apiUrl}/dia-chi-khach-hang/${addressId}/khach-hang/${customerId}`;
+      console.log('📡 DELETE to:', apiUrl);
+      return this.http.delete<void>(apiUrl);
+    } else {
+      // If customerId is not provided, try to delete without it (may not work)
+      const apiUrl = `${environment.apiUrl}/dia-chi-khach-hang/${addressId}`;
+      console.log('📡 DELETE to:', apiUrl);
+      return this.http.delete<void>(apiUrl);
+    }
   }
 
   /**
    * Đặt địa chỉ làm mặc định
    */
-  setDefaultAddress(customerId: number, addressId: number): Observable<void> {
-    return this.http.put<void>(`${this.apiUrl}/set-default/${customerId}/${addressId}`, {});
+  setDefaultAddress(customerId: number, addressId: number): Observable<CustomerAddress> {
+    // Backend endpoint: PUT /api/dia-chi-khach-hang/{id}/khach-hang/{khachHangId}/mac-dinh
+    const apiUrl = `${environment.apiUrl}/dia-chi-khach-hang/${addressId}/khach-hang/${customerId}/mac-dinh`;
+    console.log('📡 PUT to:', apiUrl);
+    return this.http.put<any>(apiUrl, {}).pipe(
+      map(response => {
+        console.log('✅ Default address set:', response);
+        return {
+          id: response.id,
+          khachHangId: response.khachHangId,
+          tenNguoiNhan: response.tenNguoiNhan,
+          soDienThoai: response.soDienThoai,
+          diaChi: response.diaChiChiTiet || response.diaChi || '',
+          tinhThanh: response.tinhThanh,
+          quanHuyen: response.quanHuyen,
+          phuongXa: response.phuongXa,
+          macDinh: response.macDinh || false,
+          trangThai: response.trangThai !== undefined ? response.trangThai : true
+        };
+      })
+    );
   }
 }

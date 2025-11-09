@@ -1,0 +1,71 @@
+<div class="customer-login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo-container">
+        <img
+          src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg"
+          alt="TDK Store Logo"
+          class="logo-img"
+        />
+      </div>
+      <h2>Đăng nhập</h2>
+      <p>TDK Store - Bán mũ bảo hiểm</p>
+    </div>
+
+
+    <!-- Thông báo đăng ký thành công -->
+    <div *ngIf="successMessage" class="success-message" style="margin-bottom: 20px;">
+      {{ successMessage }}
+    </div>
+
+    <form class="login-form" (ngSubmit)="onLogin()" #loginForm="ngForm">
+      <div class="form-group">
+        <label for="username">Tên đăng nhập:</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          [(ngModel)]="loginData.username"
+          required
+          class="form-control"
+          placeholder="Nhập tên đăng nhập"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mật khẩu:</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          [(ngModel)]="loginData.password"
+          required
+          class="form-control"
+          placeholder="Nhập mật khẩu"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="loginData.rememberMe" name="rememberMe" />
+          Ghi nhớ đăng nhập
+        </label>
+      </div>
+
+      <button type="submit" class="btn-login" [disabled]="!loginForm.valid || isLoading">
+        <span *ngIf="isLoading" class="spinner"></span>
+        {{ isLoading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
+      </button>
+
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+    </form>
+
+    <div class="login-footer">
+      <p>Chưa có tài khoản? <a routerLink="/shop/register" class="link">Đăng ký ngay</a></p>
+      <p><a routerLink="/shop/forgot-password" class="link">Quên mật khẩu?</a></p>
+      <p><a routerLink="/shop" class="link">← Quay lại cửa hàng</a></p>
+    </div>
+  </div>
+</div>

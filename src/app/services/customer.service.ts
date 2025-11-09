@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Customer, CustomerCreateRequest } from '../interfaces/customer.interface';
@@ -176,6 +176,31 @@ export class CustomerService {
    */
   getCustomerById(id: number): Observable<Customer> {
     return this.http.get<Customer>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Lấy thông tin khách hàng theo User ID
+   */
+  getCustomerByUserId(userId: number): Observable<Customer> {
+    return this.http.get<Customer>(`${this.apiUrl}/user/${userId}`);
+  }
+
+  /**
+   * Lấy thông tin khách hàng hiện tại từ JWT token (username)
+   * Backend sẽ tự động lấy username từ JWT token và tìm khach_hang tương ứng
+   */
+  getCurrentCustomer(): Observable<Customer> {
+    return this.http.get<Customer>(`${this.apiUrl}/me`).pipe(
+      catchError((error: any) => {
+        console.error('❌ Error getting current customer:', error);
+        // Nếu lỗi 400, có thể là do khách hàng chưa có record
+        // Backend sẽ tự động tạo, nhưng nếu vẫn lỗi thì throw error
+        if (error.status === 400 || error.status === 404) {
+          console.error('❌ Customer not found or error creating customer:', error.error);
+        }
+        throw error;
+      })
+    );
   }
 
   /**

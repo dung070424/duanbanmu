@@ -30,6 +30,10 @@
               <i class="fas fa-calendar"></i>
               Ngày đặt: {{ formatDate(order.ngayTao) }}
             </p>
+            <p class="order-type" *ngIf="order.viTriBanHang">
+              <i class="fas fa-store"></i>
+              Loại đơn: {{ order.viTriBanHang === 'Online' ? 'Online' : 'Tại quầy' }}
+            </p>
           </div>
           <div class="order-status">
             <span [class]="'status-badge ' + getStatusClass(order.trangThai)">

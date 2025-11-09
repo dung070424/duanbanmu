@@ -14,8 +14,25 @@
           </span>
         </div>
         <div class="top-bar-right">
-          <a routerLink="/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
-          <a routerLink="/customer/profile" class="top-bar-link" *ngIf="authService.isLoggedIn()">Tài khoản</a>
+          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="navigateToProfile($event)"
+            [title]="customerName || 'Tài khoản'"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
+          </a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="logout()"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+          </a>
         </div>
       </div>
     </div>
@@ -53,10 +70,10 @@
           <button class="icon-btn search-btn" (click)="toggleSearch()">
             <i class="fas fa-search"></i>
           </button>
-          <a routerLink="/shop/cart" class="icon-btn cart-link">
+          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
             <i class="fas fa-shopping-cart"></i>
             <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -136,17 +153,17 @@
       </div>
 
       <div class="tab-content">
-        <div *ngIf="isLoading" class="loading">
+        <!-- <div *ngIf="isLoading" class="loading">
           <div class="spinner"></div>
           <p>Đang tải sản phẩm...</p>
-        </div>
+        </div> -->
 
-        <div *ngIf="!isLoading && getActiveProducts().length === 0" class="no-products">
+        <div *ngIf="getActiveProducts().length === 0" class="no-products">
           <i class="fas fa-box-open"></i>
           <p>Không tìm thấy sản phẩm nào</p>
         </div>
 
-        <div class="products-grid" *ngIf="!isLoading && getActiveProducts().length > 0">
+        <div class="products-grid" *ngIf="getActiveProducts().length > 0">
           <div 
             *ngFor="let product of getActiveProducts()" 
             class="product-card"

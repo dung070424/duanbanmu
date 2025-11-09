@@ -56,6 +56,10 @@ export class AuthService {
           this.saveAuthData(response.token, user, rememberMe);
           this.isAuthenticatedSubject.next(true);
           this.currentUserSubject.next(user);
+          
+          // Merge giỏ hàng tạm với giỏ hàng trong DB sau khi đăng nhập
+          this.mergeTempCartWithDBCart(user.id);
+          
           return true;
         }
         throw new Error(response.message || 'Đăng nhập thất bại');
@@ -65,6 +69,38 @@ export class AuthService {
         return throwError(() => new Error(error.error?.message || 'Tên đăng nhập hoặc mật khẩu không đúng'));
       })
     );
+  }
+
+  /**
+   * Gộp giỏ hàng tạm (localStorage) với giỏ hàng trong DB
+   */
+  private mergeTempCartWithDBCart(userId: number): void {
+    try {
+      const tempCartData = localStorage.getItem('temp_cart');
+      if (!tempCartData) {
+        return; // Không có giỏ hàng tạm
+      }
+
+      const tempCart = JSON.parse(tempCartData);
+      if (!Array.isArray(tempCart) || tempCart.length === 0) {
+        return; // Giỏ hàng tạm rỗng
+      }
+
+      console.log('🛒 Merging temp cart with DB cart for user:', userId);
+      console.log('📦 Temp cart items:', tempCart.length);
+
+      // Import HoaDonChoService để merge
+      // Tạm thời emit event để component xử lý
+      // Hoặc có thể inject service ở đây
+      // Để đơn giản, ta sẽ emit event và để shop component xử lý
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('mergeTempCart', { 
+          detail: { userId, tempCart } 
+        }));
+      }
+    } catch (error) {
+      console.error('Error merging temp cart:', error);
+    }
   }
 
   register(request: RegisterRequest): Observable<AuthResponse> {
@@ -188,7 +224,15 @@ export class AuthService {
 
   hasAnyRole(...roles: string[]): boolean {
     const user = this.getCurrentUser();
-    console.log('hasAnyRole', roles.some(role => user?.roles?.includes(role)) || false);
-    return roles.some(role => user?.roles?.includes(role)) || false;
+    const hasRole = roles.some(role => user?.roles?.includes(role)) || false;
+    // Chỉ log khi không có role để debug, không log mỗi lần gọi
+    if (!hasRole && roles.length > 0) {
+      console.log('hasAnyRole false:', { 
+        requiredRoles: roles, 
+        userRoles: user?.roles || [],
+        currentUrl: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+      });
+    }
+    return hasRole;
   }
 }

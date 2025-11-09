@@ -19,6 +19,97 @@ $text-light: #6c757d;
   min-height: 100vh;
   padding: 20px;
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+
+  // Breadcrumb Navigation
+  .breadcrumb-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #e0e0e0;
+
+    .breadcrumb {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-wrap: wrap;
+      align-items: center;
+
+      .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        color: #666;
+
+        + .breadcrumb-item {
+          padding-left: 8px;
+
+          &::before {
+            content: "/";
+            padding-right: 8px;
+            color: #999;
+          }
+        }
+
+        a {
+          color: #007bff;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          transition: color 0.2s;
+
+          &:hover {
+            color: #0056b3;
+            text-decoration: underline;
+          }
+
+          i {
+            font-size: 12px;
+          }
+        }
+
+        &.active {
+          color: #333;
+          font-weight: 500;
+
+          i {
+            margin-right: 5px;
+          }
+        }
+      }
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      color: #333;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      font-weight: 500;
+
+      &:hover {
+        background: #f8f9fa;
+        border-color: #007bff;
+        color: #007bff;
+      }
+
+      i {
+        font-size: 12px;
+      }
+    }
+  }
   
   // Ensure all text elements inherit the same font
   *, *::before, *::after {

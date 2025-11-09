@@ -33,6 +33,11 @@ export class CustomerOrdersComponent implements OnInit {
       return;
     }
     this.loadOrders();
+    
+    // Auto refresh orders every 30 seconds to update status
+    setInterval(() => {
+      this.loadOrders();
+    }, 30000);
   }
 
   loadOrders(): void {
@@ -88,10 +93,13 @@ export class CustomerOrdersComponent implements OnInit {
   getStatusLabel(status: string): string {
     const statusMap: { [key: string]: string } = {
       'CHO_XAC_NHAN': 'Chờ xác nhận',
-      'DA_XAC_NHAN': 'Đã xác nhận',
+      'DA_XAC_NHAN': 'Đã xác nhận (Chờ vận chuyển)',
       'DANG_GIAO_HANG': 'Đang giao hàng',
+      'DANG_VAN_CHUYEN': 'Đang vận chuyển',
       'DA_GIAO_HANG': 'Đã giao hàng',
-      'HUY': 'Đã hủy'
+      'DA_HOAN_THANH': 'Đã hoàn thành',
+      'HUY': 'Đã hủy',
+      'DA_HUY': 'Đã hủy'
     };
     return statusMap[status] || status;
   }
@@ -101,8 +109,11 @@ export class CustomerOrdersComponent implements OnInit {
       'CHO_XAC_NHAN': 'status-waiting',
       'DA_XAC_NHAN': 'status-confirmed',
       'DANG_GIAO_HANG': 'status-shipping',
+      'DANG_VAN_CHUYEN': 'status-shipping',
       'DA_GIAO_HANG': 'status-delivered',
-      'HUY': 'status-cancelled'
+      'DA_HOAN_THANH': 'status-delivered',
+      'HUY': 'status-cancelled',
+      'DA_HUY': 'status-cancelled'
     };
     return classMap[status] || '';
   }

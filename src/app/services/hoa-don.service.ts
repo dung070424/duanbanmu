@@ -363,22 +363,37 @@ export class HoaDonService {
         // Map danhSachChiTiet từ backend sang danhSachSanPham cho frontend
         if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet) && response.danhSachChiTiet.length > 0) {
           console.log('📦 Mapping danhSachChiTiet to danhSachSanPham, count:', response.danhSachChiTiet.length);
-          response.danhSachSanPham = response.danhSachChiTiet.map((item: any) => ({
-            id: item.id,
-            chiTietSanPhamId: item.chiTietSanPhamId,
-            tenSanPham: item.tenSanPham,
-            maSanPham: item.maSanPham,
-            mauSac: item.mauSac,
-            kichThuoc: item.kichThuoc,
-            nhaSanXuat: item.nhaSanXuat,
-            soLuong: item.soLuong,
-            donGia: item.donGia ? Number(item.donGia) : 0,
-            giamGia: item.giamGia ? Number(item.giamGia) : 0,
-            thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
-            anhSanPham: item.anhSanPham,
-            sanPhamId: item.chiTietSanPhamId // Map chiTietSanPhamId to sanPhamId for compatibility
-          }));
+          response.danhSachSanPham = response.danhSachChiTiet.map((item: any) => {
+            // Đảm bảo parse đúng các giá trị số
+            const donGia = item.donGia ? (typeof item.donGia === 'string' ? parseFloat(item.donGia) : Number(item.donGia)) : 0;
+            const soLuong = item.soLuong ? (typeof item.soLuong === 'string' ? parseInt(item.soLuong, 10) : Number(item.soLuong)) : 0;
+            const giamGia = item.giamGia ? (typeof item.giamGia === 'string' ? parseFloat(item.giamGia) : Number(item.giamGia)) : 0;
+            const thanhTien = item.thanhTien 
+              ? (typeof item.thanhTien === 'string' ? parseFloat(item.thanhTien) : Number(item.thanhTien))
+              : (donGia * soLuong - giamGia);
+            
+            return {
+              id: item.id || null,
+              chiTietSanPhamId: item.chiTietSanPhamId || null,
+              sanPhamId: item.chiTietSanPhamId || item.sanPhamId || null, // Map chiTietSanPhamId to sanPhamId for compatibility
+              tenSanPham: item.tenSanPham || 'Chưa có tên',
+              maSanPham: item.maSanPham || '',
+              mauSac: item.mauSac || item.mauSacTen || '',
+              kichThuoc: item.kichThuoc || item.kichThuocTen || '',
+              nhaSanXuat: item.nhaSanXuat || item.nhaSanXuatTen || '',
+              soLuong: soLuong,
+              donGia: donGia,
+              giamGia: giamGia,
+              thanhTien: thanhTien,
+              anhSanPham: item.anhSanPham || item.anhSanPhamUrl || '',
+              // Các trường bổ sung nếu có
+              danhMuc: item.danhMuc || item.loaiMuBaoHiemTen || '',
+              thuongHieu: item.thuongHieu || '',
+              ghiChu: item.ghiChu || ''
+            };
+          });
           console.log('✅ Mapped danhSachSanPham, count:', response.danhSachSanPham.length);
+          console.log('📦 Sample mapped product:', response.danhSachSanPham[0]);
         } else {
           console.warn('⚠️ No danhSachChiTiet found in response or empty array');
           response.danhSachSanPham = [];
