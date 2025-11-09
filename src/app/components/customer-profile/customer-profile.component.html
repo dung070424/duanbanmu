@@ -42,14 +42,20 @@
       <!-- Customer Information Card -->
       <div class="info-card">
         <div class="card-header">
-          <h2><i class="fas fa-user"></i> Thông tin cá nhân</h2>
+          <div class="header-title">
+            <h2><i class="fas fa-user"></i> Thông tin cá nhân</h2>
+            <div *ngIf="!isEditing && hasMissingFields()" class="missing-fields-alert">
+              <i class="fas fa-exclamation-circle"></i> 
+              <span>Có {{ getMissingFieldsCount() }} thông tin chưa được cập nhật</span>
+            </div>
+          </div>
           <button 
             *ngIf="!isEditing" 
             class="btn-edit" 
             (click)="toggleEdit()"
             type="button"
           >
-            <i class="fas fa-edit"></i> Chỉnh sửa
+            <i class="fas fa-edit"></i> {{ hasMissingFields() ? 'Cập nhật thông tin' : 'Chỉnh sửa' }}
           </button>
           <div *ngIf="isEditing" class="edit-actions">
             <button 
@@ -72,6 +78,30 @@
         </div>
 
         <div class="card-body">
+          <!-- Mã khách hàng và Username (readonly) -->
+          <div class="form-row" *ngIf="customer?.maKhachHang || customer?.username">
+            <div class="form-group" *ngIf="customer?.maKhachHang">
+              <label>Mã khách hàng</label>
+              <input 
+                type="text" 
+                class="form-control readonly" 
+                [value]="customer.maKhachHang"
+                readonly
+              />
+              <small class="form-text text-muted">Mã khách hàng không thể thay đổi</small>
+            </div>
+            <div class="form-group" *ngIf="customer?.username">
+              <label>Tên đăng nhập</label>
+              <input 
+                type="text" 
+                class="form-control readonly" 
+                [value]="customer.username"
+                readonly
+              />
+              <small class="form-text text-muted">Tên đăng nhập không thể thay đổi</small>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Họ và tên <span class="required">*</span></label>
             <input 
@@ -95,52 +125,99 @@
           </div>
 
           <div class="form-group">
-            <label>Số điện thoại <span class="required">*</span></label>
+            <label>
+              Số điện thoại 
+              <span *ngIf="!formData.soDienThoai" class="badge-missing">(Chưa có)</span>
+              <span class="required">*</span>
+            </label>
             <input 
               type="text" 
               class="form-control" 
               [(ngModel)]="formData.soDienThoai"
               [readonly]="!isEditing"
               [class.readonly]="!isEditing"
+              [class.missing-field]="!formData.soDienThoai && !isEditing"
+              placeholder="Nhập số điện thoại"
             />
+            <small *ngIf="!formData.soDienThoai && !isEditing" class="form-text text-warning">
+              <i class="fas fa-exclamation-triangle"></i> Vui lòng cập nhật số điện thoại
+            </small>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label>Ngày sinh</label>
+              <label>
+                Ngày sinh
+                <span *ngIf="!formData.ngaySinh" class="badge-missing">(Chưa có)</span>
+              </label>
               <input 
                 type="date" 
                 class="form-control" 
                 [(ngModel)]="formData.ngaySinh"
                 [readonly]="!isEditing"
                 [class.readonly]="!isEditing"
+                [class.missing-field]="!formData.ngaySinh && !isEditing"
+                [max]="getMaxDate()"
               />
+              <small *ngIf="!formData.ngaySinh && !isEditing" class="form-text text-info">
+                <i class="fas fa-info-circle"></i> Thêm ngày sinh để nhận ưu đãi sinh nhật
+              </small>
             </div>
 
             <div class="form-group">
-              <label>Giới tính</label>
+              <label>
+                Giới tính
+                <span *ngIf="formData.gioiTinh === undefined || formData.gioiTinh === null" class="badge-missing">(Chưa có)</span>
+              </label>
               <select 
                 class="form-control" 
                 [(ngModel)]="formData.gioiTinh"
                 [disabled]="!isEditing"
                 [class.readonly]="!isEditing"
+                [class.missing-field]="(formData.gioiTinh === undefined || formData.gioiTinh === null) && !isEditing"
               >
+                <option [ngValue]="undefined">-- Chọn giới tính --</option>
                 <option [value]="true">Nam</option>
                 <option [value]="false">Nữ</option>
               </select>
             </div>
           </div>
 
-          <div class="form-group">
-            <label>Điểm tích lũy</label>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Điểm tích lũy</label>
+              <input 
+                type="number" 
+                class="form-control readonly" 
+                [value]="formData.diemTichLuy"
+                readonly
+              />
+              <small class="form-text text-info">
+                <i class="fas fa-info-circle"></i> Điểm tích lũy: {{ formData.diemTichLuy || 0 }} điểm
+              </small>
+            </div>
+            <div class="form-group">
+              <label>Số lần mua</label>
+              <input 
+                type="number" 
+                class="form-control readonly" 
+                [value]="formData.soLanMua"
+                readonly
+              />
+              <small class="form-text text-info">
+                <i class="fas fa-shopping-bag"></i> Đã mua: {{ formData.soLanMua || 0 }} lần
+              </small>
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="formData.lanMuaGanNhat">
+            <label>Lần mua gần nhất</label>
             <input 
-              type="number" 
-              class="form-control" 
-              [(ngModel)]="formData.diemTichLuy"
+              type="text" 
+              class="form-control readonly" 
+              [value]="formatDate(formData.lanMuaGanNhat)"
               readonly
-              class="readonly"
             />
-            <small class="form-text">Điểm tích lũy không thể chỉnh sửa</small>
           </div>
         </div>
       </div>

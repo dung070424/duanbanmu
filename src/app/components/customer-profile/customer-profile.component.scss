@@ -186,16 +186,33 @@
       background: #f8f9fa;
       border-bottom: 1px solid #e0e0e0;
 
-      h2 {
-        margin: 0;
-        font-size: 1.5rem;
-        color: #333;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+      .header-title {
+        flex: 1;
 
-        i {
-          color: #febc49;
+        h2 {
+          margin: 0 0 8px 0;
+          font-size: 1.5rem;
+          color: #333;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          i {
+            color: #febc49;
+          }
+        }
+
+        .missing-fields-alert {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #ff9800;
+          font-size: 14px;
+          font-weight: 500;
+
+          i {
+            font-size: 16px;
+          }
         }
       }
 
@@ -222,6 +239,18 @@
 
       .required {
         color: #dc3545;
+        margin-left: 2px;
+      }
+
+      .badge-missing {
+        display: inline-block;
+        background: #fff3cd;
+        color: #856404;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        margin-left: 5px;
       }
     }
 
@@ -248,6 +277,11 @@
         background: #f8f9fa;
         cursor: not-allowed;
       }
+
+      &.missing-field {
+        border-color: #ff9800;
+        background: #fff8e1;
+      }
     }
 
     .form-text {
@@ -255,6 +289,28 @@
       margin-top: 5px;
       font-size: 12px;
       color: #666;
+
+      &.text-warning {
+        color: #ff9800;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        i {
+          font-size: 14px;
+        }
+      }
+
+      &.text-info {
+        color: #17a2b8;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        i {
+          font-size: 14px;
+        }
+      }
     }
 
     .checkbox-label {

@@ -31,7 +31,11 @@ export class CustomerProfileComponent implements OnInit {
     soDienThoai: '',
     ngaySinh: '',
     gioiTinh: true,
-    diemTichLuy: 0
+    diemTichLuy: 0,
+    soLanMua: 0,
+    lanMuaGanNhat: '',
+    maKhachHang: '',
+    username: ''
   };
 
   // Address management
@@ -78,37 +82,70 @@ export class CustomerProfileComponent implements OnInit {
       // Không redirect, cho phép truy cập để test
     }
 
-    // QUAN TRỌNG: Sử dụng User ID để tìm KhachHang, không phải dùng User ID như KhachHang ID
-    const userId = currentUser.id;
-    console.log('👤 User ID:', userId);
-    this.loadCustomerInfoByUserId(userId);
-    // Note: customerId sẽ được set sau khi load thành công
+    // QUAN TRỌNG: Sử dụng endpoint /me để lấy thông tin từ JWT token
+    // Backend sẽ tự động lấy username từ JWT → tìm user → tìm khach_hang
+    this.loadCurrentCustomerInfo();
   }
 
   /**
-   * Load thông tin khách hàng theo User ID
+   * Load thông tin khách hàng hiện tại từ JWT token
+   * Backend sẽ tự động lấy username từ JWT token và tìm khach_hang tương ứng
    */
-  loadCustomerInfoByUserId(userId: number): void {
+  loadCurrentCustomerInfo(): void {
     this.isLoading = true;
     this.error = '';
     
-    console.log('📡 Loading customer by User ID:', userId);
-    this.customerService.getCustomerByUserId(userId).subscribe({
+    console.log('📡 Loading current customer info from JWT token...');
+    this.customerService.getCurrentCustomer().subscribe({
       next: (customer) => {
-        console.log('✅ Customer info loaded by User ID:', customer);
+        console.log('✅ Customer info loaded from JWT token:', customer);
         this.customer = customer;
         this.customerId = customer.id || null;
         console.log('👤 Customer ID set to:', this.customerId);
         
-        // Map dữ liệu vào form
+        // Map dữ liệu vào form - đảm bảo mapping đầy đủ từ API response
+        // Format ngaySinh từ ISO string sang format YYYY-MM-DD cho input date
+        let ngaySinhFormatted = '';
+        if (customer.ngaySinh) {
+          try {
+            const date = new Date(customer.ngaySinh);
+            if (!isNaN(date.getTime())) {
+              ngaySinhFormatted = date.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.warn('⚠️ Cannot parse ngaySinh:', customer.ngaySinh);
+          }
+        }
+        
+        // Format lanMuaGanNhat từ ISO string
+        let lanMuaGanNhatFormatted = '';
+        if (customer.lanMuaGanNhat) {
+          try {
+            const date = new Date(customer.lanMuaGanNhat);
+            if (!isNaN(date.getTime())) {
+              lanMuaGanNhatFormatted = date.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.warn('⚠️ Cannot parse lanMuaGanNhat:', customer.lanMuaGanNhat);
+          }
+        }
+        
         this.formData = {
           tenKhachHang: customer.tenKhachHang || '',
           email: customer.email || '',
           soDienThoai: customer.soDienThoai || '',
-          ngaySinh: (customer as any).ngaySinh || '',
-          gioiTinh: (customer as any).gioiTinh !== undefined ? (customer as any).gioiTinh : true,
-          diemTichLuy: (customer as any).diemTichLuy || 0
+          ngaySinh: ngaySinhFormatted,
+          gioiTinh: customer.gioiTinh !== undefined && customer.gioiTinh !== null ? customer.gioiTinh : true,
+          diemTichLuy: customer.diemTichLuy || 0,
+          soLanMua: customer.soLanMua || 0,
+          lanMuaGanNhat: lanMuaGanNhatFormatted,
+          maKhachHang: customer.maKhachHang || '',
+          username: customer.username || ''
         };
+        
+        // Log để debug
+        console.log('📋 Mapped form data:', this.formData);
+        console.log('📋 Customer object from API:', customer);
         
         this.isLoading = false;
         // Load addresses sau khi đã có customerId
@@ -118,11 +155,25 @@ export class CustomerProfileComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('❌ Error loading customer info by User ID:', error);
-        if (error.status === 404) {
+        console.error('❌ Error loading customer info from JWT token:', error);
+        console.error('   - Error status:', error.status);
+        console.error('   - Error message:', error.error?.message || error.message);
+        console.error('   - Error body:', error.error);
+        
+        if (error.status === 401) {
+          this.error = 'Bạn cần đăng nhập để xem thông tin cá nhân.';
+          // Redirect to login
+          setTimeout(() => {
+            this.router.navigate(['/shop/login'], { queryParams: { returnUrl: '/customer/profile' } });
+          }, 2000);
+        } else if (error.status === 404) {
           this.error = 'Không tìm thấy thông tin khách hàng. Vui lòng liên hệ quản trị viên.';
+        } else if (error.status === 400) {
+          const errorMessage = error.error?.message || error.message || 'Lỗi khi tải thông tin khách hàng';
+          this.error = `Lỗi: ${errorMessage}. Vui lòng thử lại hoặc liên hệ quản trị viên.`;
         } else {
-          this.error = 'Không thể tải thông tin khách hàng. Vui lòng thử lại!';
+          const errorMessage = error.error?.message || error.message || 'Không thể tải thông tin khách hàng';
+          this.error = `${errorMessage}. Vui lòng thử lại!`;
         }
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -144,14 +195,42 @@ export class CustomerProfileComponent implements OnInit {
         console.log('✅ Customer info loaded:', customer);
         this.customer = customer;
         
-        // Map dữ liệu vào form
+        // Map dữ liệu vào form - đảm bảo mapping đầy đủ
+        let ngaySinhFormatted = '';
+        if (customer.ngaySinh) {
+          try {
+            const date = new Date(customer.ngaySinh);
+            if (!isNaN(date.getTime())) {
+              ngaySinhFormatted = date.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.warn('⚠️ Cannot parse ngaySinh:', customer.ngaySinh);
+          }
+        }
+        
+        let lanMuaGanNhatFormatted = '';
+        if (customer.lanMuaGanNhat) {
+          try {
+            const date = new Date(customer.lanMuaGanNhat);
+            if (!isNaN(date.getTime())) {
+              lanMuaGanNhatFormatted = date.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.warn('⚠️ Cannot parse lanMuaGanNhat:', customer.lanMuaGanNhat);
+          }
+        }
+        
         this.formData = {
           tenKhachHang: customer.tenKhachHang || '',
           email: customer.email || '',
           soDienThoai: customer.soDienThoai || '',
-          ngaySinh: (customer as any).ngaySinh || '',
-          gioiTinh: (customer as any).gioiTinh !== undefined ? (customer as any).gioiTinh : true,
-          diemTichLuy: (customer as any).diemTichLuy || 0
+          ngaySinh: ngaySinhFormatted,
+          gioiTinh: customer.gioiTinh !== undefined && customer.gioiTinh !== null ? customer.gioiTinh : true,
+          diemTichLuy: customer.diemTichLuy || 0,
+          soLanMua: customer.soLanMua || 0,
+          lanMuaGanNhat: lanMuaGanNhatFormatted,
+          maKhachHang: customer.maKhachHang || '',
+          username: customer.username || ''
         };
         
         this.isLoading = false;
@@ -195,18 +274,76 @@ export class CustomerProfileComponent implements OnInit {
     
     // Nếu đang tắt edit, reset form về giá trị ban đầu
     if (!this.isEditing && this.customer) {
+      let ngaySinhFormatted = '';
+      if (this.customer.ngaySinh) {
+        try {
+          const date = new Date(this.customer.ngaySinh);
+          if (!isNaN(date.getTime())) {
+            ngaySinhFormatted = date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.warn('⚠️ Cannot parse ngaySinh:', this.customer.ngaySinh);
+        }
+      }
+      
+      let lanMuaGanNhatFormatted = '';
+      if (this.customer.lanMuaGanNhat) {
+        try {
+          const date = new Date(this.customer.lanMuaGanNhat);
+          if (!isNaN(date.getTime())) {
+            lanMuaGanNhatFormatted = date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.warn('⚠️ Cannot parse lanMuaGanNhat:', this.customer.lanMuaGanNhat);
+        }
+      }
+      
       this.formData = {
         tenKhachHang: this.customer.tenKhachHang || '',
         email: this.customer.email || '',
         soDienThoai: this.customer.soDienThoai || '',
-        ngaySinh: (this.customer as any).ngaySinh || '',
-        gioiTinh: (this.customer as any).gioiTinh !== undefined ? (this.customer as any).gioiTinh : true,
-        diemTichLuy: (this.customer as any).diemTichLuy || 0
+        ngaySinh: ngaySinhFormatted,
+        gioiTinh: this.customer.gioiTinh !== undefined && this.customer.gioiTinh !== null ? this.customer.gioiTinh : true,
+        diemTichLuy: this.customer.diemTichLuy || 0,
+        soLanMua: this.customer.soLanMua || 0,
+        lanMuaGanNhat: lanMuaGanNhatFormatted,
+        maKhachHang: this.customer.maKhachHang || '',
+        username: this.customer.username || ''
       };
     }
     
     this.cdr.detectChanges();
   }
+
+  /**
+   * Kiểm tra có trường nào chưa được điền không
+   */
+  hasMissingFields(): boolean {
+    return !this.formData.soDienThoai || 
+           !this.formData.ngaySinh || 
+           this.formData.gioiTinh === undefined || 
+           this.formData.gioiTinh === null;
+  }
+
+  /**
+   * Đếm số trường chưa được điền
+   */
+  getMissingFieldsCount(): number {
+    let count = 0;
+    if (!this.formData.soDienThoai) count++;
+    if (!this.formData.ngaySinh) count++;
+    if (this.formData.gioiTinh === undefined || this.formData.gioiTinh === null) count++;
+    return count;
+  }
+
+  /**
+   * Lấy ngày tối đa cho date picker (ngày hiện tại)
+   */
+  getMaxDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  }
+
 
   /**
    * Lưu thông tin khách hàng
@@ -217,11 +354,13 @@ export class CustomerProfileComponent implements OnInit {
     // Validate form
     if (!this.formData.tenKhachHang || this.formData.tenKhachHang.trim() === '') {
       this.error = 'Vui lòng nhập họ và tên!';
+      this.cdr.detectChanges();
       return;
     }
 
     if (!this.formData.email || this.formData.email.trim() === '') {
       this.error = 'Vui lòng nhập email!';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -229,19 +368,40 @@ export class CustomerProfileComponent implements OnInit {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.formData.email)) {
       this.error = 'Email không hợp lệ!';
+      this.cdr.detectChanges();
       return;
     }
 
     if (!this.formData.soDienThoai || this.formData.soDienThoai.trim() === '') {
       this.error = 'Vui lòng nhập số điện thoại!';
+      this.cdr.detectChanges();
       return;
     }
 
     // Validate phone format (10-11 số)
     const phoneRegex = /^[0-9]{10,11}$/;
-    if (!phoneRegex.test(this.formData.soDienThoai.replace(/\s+/g, ''))) {
+    const phoneNumber = this.formData.soDienThoai.replace(/\s+/g, '').replace(/[-\/]/g, '');
+    if (!phoneRegex.test(phoneNumber)) {
       this.error = 'Số điện thoại không hợp lệ! Vui lòng nhập 10-11 chữ số.';
+      this.cdr.detectChanges();
       return;
+    }
+
+    // Validate ngày sinh nếu có
+    if (this.formData.ngaySinh) {
+      const birthDate = new Date(this.formData.ngaySinh);
+      const today = new Date();
+      if (birthDate > today) {
+        this.error = 'Ngày sinh không thể lớn hơn ngày hiện tại!';
+        this.cdr.detectChanges();
+        return;
+      }
+      const age = today.getFullYear() - birthDate.getFullYear();
+      if (age < 0 || age > 150) {
+        this.error = 'Ngày sinh không hợp lệ!';
+        this.cdr.detectChanges();
+        return;
+      }
     }
 
     this.isSaving = true;
@@ -252,20 +412,18 @@ export class CustomerProfileComponent implements OnInit {
     const updateData: any = {
       tenKhachHang: this.formData.tenKhachHang.trim(),
       email: this.formData.email.trim(),
-      soDienThoai: this.formData.soDienThoai.trim()
+      soDienThoai: phoneNumber // Đã được chuẩn hóa
     };
 
-    // Add optional fields if they exist
+    // Add optional fields - luôn gửi nếu có giá trị
     if (this.formData.ngaySinh && this.formData.ngaySinh.trim() !== '') {
       updateData.ngaySinh = this.formData.ngaySinh;
     }
     
-    if (this.formData.gioiTinh !== undefined) {
+    // Gửi giới tính nếu đã chọn
+    if (this.formData.gioiTinh !== undefined && this.formData.gioiTinh !== null) {
       updateData.gioiTinh = this.formData.gioiTinh;
     }
-    
-    // Note: diemTichLuy không nên cho phép update từ frontend (chỉ hệ thống mới được cập nhật)
-    // Nếu cần, có thể giữ lại nhưng không khuyến khích
 
     console.log('💾 Saving customer info:', updateData);
 
@@ -281,20 +439,25 @@ export class CustomerProfileComponent implements OnInit {
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
           currentUser.fullName = updatedCustomer.tenKhachHang;
-          currentUser.email = updatedCustomer.email;
+          if (updatedCustomer.email) {
+            currentUser.email = updatedCustomer.email;
+          }
         }
         
-        this.cdr.detectChanges();
-        
-        // Clear success message after 3 seconds
+        // Clear success message after 5 seconds
         setTimeout(() => {
           this.successMessage = '';
           this.cdr.detectChanges();
-        }, 3000);
+        }, 5000);
+        
+        this.cdr.detectChanges();
+        
+        // Reload customer info to get latest data
+        this.loadCurrentCustomerInfo();
       },
       error: (error) => {
         console.error('❌ Error updating customer info:', error);
-        this.error = error.error?.message || 'Không thể cập nhật thông tin. Vui lòng thử lại!';
+        this.error = error.error?.message || error.message || 'Không thể cập nhật thông tin. Vui lòng thử lại!';
         this.isSaving = false;
         this.cdr.detectChanges();
       }
@@ -433,7 +596,7 @@ export class CustomerProfileComponent implements OnInit {
    * Chỉnh sửa địa chỉ
    */
   editAddress(address: CustomerAddress): void {
-    this.editingAddressId = address.id;
+    this.editingAddressId = address.id ?? null;
     this.newAddress = {
       khachHangId: address.khachHangId || this.customerId || 0,
       tenNguoiNhan: address.tenNguoiNhan || '',
@@ -520,13 +683,17 @@ export class CustomerProfileComponent implements OnInit {
   }
 
   /**
-   * Format ngày
+   * Format date từ ISO string sang dd/MM/yyyy
    */
   formatDate(date: string | undefined): string {
     if (!date) return '';
     try {
       const d = new Date(date);
-      return d.toLocaleDateString('vi-VN');
+      if (isNaN(d.getTime())) return date;
+      const day = d.getDate().toString().padStart(2, '0');
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
     } catch {
       return date;
     }

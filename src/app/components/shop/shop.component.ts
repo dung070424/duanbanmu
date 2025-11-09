@@ -805,4 +805,18 @@ export class ShopComponent implements OnInit, OnDestroy {
       }
     );
   }
+
+  logout(): void {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+      this.authService.logout();
+      this.customerName = '';
+      this.cartCount = 0;
+      // Clear cart data
+      localStorage.removeItem('temp_cart');
+      localStorage.removeItem('current_cart_id');
+      // Redirect to shop
+      this.router.navigate(['/shop']);
+      this.cdr.detectChanges();
+    }
+  }
 }

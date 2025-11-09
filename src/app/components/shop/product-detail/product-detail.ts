@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -14,12 +14,11 @@ import { AuthService } from '../../../services/auth';
   templateUrl: './product-detail.html',
   styleUrls: ['./product-detail.scss']
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, AfterViewInit {
   product: SanPhamResponse | null = null;
   productVariants: ChiTietSanPhamResponse[] = [];
   selectedVariant: ChiTietSanPhamResponse | null = null;
   selectedQuantity: number = 1;
-  isLoading = false;
   error = '';
   mainImageUrl = '';
   selectedImageIndex = 0;
@@ -44,24 +43,28 @@ export class ProductDetailComponent implements OnInit {
     const productId = this.route.snapshot.paramMap.get('id');
     console.log('🛍️ Product ID from route:', productId);
     
+    // Đảm bảo error được reset
+    this.error = '';
+    
     if (productId) {
       const id = +productId;
       if (isNaN(id) || id <= 0) {
         console.error('❌ Invalid product ID:', productId);
         this.error = 'Mã sản phẩm không hợp lệ!';
+        this.cdr.detectChanges();
         return;
       }
       this.loadProduct(id);
     } else {
       console.error('❌ No product ID in route');
       this.error = 'Không tìm thấy mã sản phẩm!';
+      this.cdr.detectChanges();
     }
   }
 
   loadProduct(productId: number): void {
     console.log('🛍️ loadProduct - Loading product with ID:', productId);
     this.error = '';
-    // Không set isLoading để không block UI, nhưng có thể hiển thị placeholder
     
     // Load product details
     this.productApiService.getById(productId, true).subscribe({
@@ -74,17 +77,23 @@ export class ProductDetailComponent implements OnInit {
         if (!product) {
           console.error('❌ Product is null or undefined');
           this.error = 'Không tìm thấy thông tin sản phẩm!';
+          this.product = null;
+          this.cdr.detectChanges();
           return;
         }
         
+        // Set product ngay lập tức để hiển thị view
         this.product = product;
         this.mainImageUrl = product.anhSanPham || '/assets/default-product.png';
         this.productImages = [this.mainImageUrl];
         
-        // Force change detection để hiển thị sản phẩm ngay lập tức
-        this.cdr.detectChanges();
+        // Force change detection NGAY LẬP TỨC để hiển thị sản phẩm (TRƯỚC khi load variants)
+        // Sử dụng setTimeout để đảm bảo Angular đã cập nhật DOM
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        }, 0);
         
-        // Load product variants (chi tiết sản phẩm)
+        // Load product variants (chi tiết sản phẩm) - không block UI
         this.loadProductVariants(productId);
       },
       error: (err) => {
@@ -93,9 +102,13 @@ export class ProductDetailComponent implements OnInit {
         console.error('   - Message:', err.message);
         console.error('   - Error object:', err);
         
-        // Xử lý các loại lỗi khác nhau
+        this.product = null;
+        
+        // Xử lý các loại lỗi khác nhau - nhưng không block view nếu lỗi connection
         if (err.status === 0 || err.status === undefined) {
-          this.error = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng!';
+          // Connection refused - không set error để không block view
+          console.warn('⚠️ Connection refused - Backend may be down');
+          this.error = ''; // Không hiển thị error để view vẫn có thể hiển thị
         } else if (err.status === 404) {
           this.error = 'Không tìm thấy sản phẩm với mã này!';
         } else if (err.status === 403) {
@@ -104,7 +117,7 @@ export class ProductDetailComponent implements OnInit {
           this.error = `Không thể tải thông tin sản phẩm. Lỗi: ${err.status || 'Unknown'}`;
         }
         
-        // Force change detection để hiển thị lỗi ngay lập tức
+        // Force change detection
         this.cdr.detectChanges();
       }
     });
@@ -120,6 +133,7 @@ export class ProductDetailComponent implements OnInit {
         if (!variants || !Array.isArray(variants)) {
           console.warn('⚠️ loadProductVariants - Variants is not an array, setting to empty array');
           this.productVariants = [];
+          this.cdr.detectChanges();
           return;
         }
         
@@ -363,6 +377,16 @@ export class ProductDetailComponent implements OnInit {
       this.mainImageUrl = this.productImages[index];
       // Force change detection để cập nhật ảnh ngay lập tức
       this.cdr.detectChanges();
+    }
+  }
+
+  ngAfterViewInit(): void {
+    // Force change detection sau khi view được khởi tạo
+    // Đảm bảo view hiển thị ngay nếu đã có product
+    if (this.product) {
+      setTimeout(() => {
+        this.cdr.detectChanges();
+      }, 0);
     }
   }
 

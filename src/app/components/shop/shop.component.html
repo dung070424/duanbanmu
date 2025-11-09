@@ -14,7 +14,8 @@
           </span>
         </div>
         <div class="top-bar-right">
-          <a routerLink="/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
           <a 
             class="top-bar-link" 
             *ngIf="authService.isLoggedIn()"
@@ -23,6 +24,14 @@
             style="cursor: pointer;"
           >
             <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
+          </a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="logout()"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
           </a>
         </div>
       </div>

@@ -19,8 +19,8 @@
     </nav>
 
 
-    <!-- Product Detail -->
-    <div *ngIf="!error && product" class="product-detail">
+    <!-- Product Detail - Hiển thị ngay khi có product, không cần chờ loading -->
+    <div *ngIf="product" class="product-detail">
       <div class="product-main">
         <!-- Product Images -->
         <div class="product-images">

@@ -159,11 +159,10 @@ export class CheckoutComponent implements OnInit {
     });
 
     // Load customer info nếu đã đăng nhập
-    if (currentUser && currentUser.id) {
-      // Load thông tin khách hàng đầy đủ từ DB
-      this.loadCustomerInfo(currentUser.id);
-      // Load customer addresses
-      this.loadCustomerAddresses();
+    if (isLoggedIn) {
+      // Load thông tin khách hàng đầy đủ từ JWT token (sử dụng /api/khach-hang/me)
+      // loadCustomerInfo() sẽ tự động load customer addresses
+      this.loadCustomerInfo();
     }
 
     // Generate transaction code
@@ -326,38 +325,82 @@ export class CheckoutComponent implements OnInit {
   }
 
   /**
-   * Load thông tin khách hàng từ DB
+   * Load thông tin khách hàng từ JWT token (sử dụng /api/khach-hang/me)
    */
-  loadCustomerInfo(customerId: number): void {
-    console.log('👤 Loading customer info for ID:', customerId);
-    this.customerService.getCustomerById(customerId).subscribe({
+  loadCustomerInfo(): void {
+    console.log('👤 Loading current customer info from JWT token...');
+    this.customerService.getCurrentCustomer().subscribe({
       next: (customer: any) => {
-        console.log('✅ Customer info loaded:', customer);
-        // Auto-fill form với thông tin từ DB
+        console.log('✅ Customer info loaded from /me endpoint:', customer);
+        
+        // Map thông tin cá nhân vào billingInfo
         this.billingInfo.email = customer.email || '';
         this.billingInfo.phone = customer.soDienThoai || '';
         
-        // Xử lý tên khách hàng
+        // Xử lý tên khách hàng - split thành firstName và lastName
         const tenKhachHang = customer.tenKhachHang || '';
         if (tenKhachHang) {
-          const nameParts = tenKhachHang.split(' ');
-          this.billingInfo.firstName = nameParts[0] || '';
-          this.billingInfo.lastName = nameParts.slice(1).join(' ') || '';
+          const nameParts = tenKhachHang.trim().split(/\s+/);
+          if (nameParts.length > 1) {
+            // Tách thành họ (phần cuối) và tên (phần đầu)
+            this.billingInfo.lastName = nameParts[nameParts.length - 1] || '';
+            this.billingInfo.firstName = nameParts.slice(0, -1).join(' ') || '';
+          } else {
+            // Nếu chỉ có một từ, đặt vào firstName
+            this.billingInfo.firstName = nameParts[0] || '';
+            this.billingInfo.lastName = '';
+          }
+        }
+        
+        // Map địa chỉ mặc định nếu có
+        if (customer.coDiaChiMacDinh && customer.diaChiMacDinh) {
+          // Địa chỉ chi tiết
+          this.billingInfo.address = customer.diaChiMacDinh || '';
+          
+          // Tỉnh/Thành phố - format: Phường/Xã, Quận/Huyện, Tỉnh/Thành phố
+          const addressParts: string[] = [];
+          if (customer.phuongXaMacDinh) addressParts.push(customer.phuongXaMacDinh);
+          if (customer.quanHuyenMacDinh) addressParts.push(customer.quanHuyenMacDinh);
+          if (customer.tinhThanhMacDinh) addressParts.push(customer.tinhThanhMacDinh);
+          this.billingInfo.city = addressParts.join(', ') || '';
+          
+          console.log('✅ Mapped default address to form:', {
+            address: this.billingInfo.address,
+            city: this.billingInfo.city
+          });
+        } else if (customer.diaChi) {
+          // Fallback: sử dụng diaChi cũ nếu không có địa chỉ mặc định
+          this.billingInfo.address = customer.diaChi || '';
+        }
+        
+        // Load danh sách địa chỉ của khách hàng
+        if (customer.id) {
+          this.loadCustomerAddresses(customer.id);
         }
         
         // Force change detection để cập nhật form ngay lập tức
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('❌ Error loading customer info:', error);
+        console.error('❌ Error loading customer info from /me:', error);
+        console.warn('⚠️ Fallback to auth service data');
+        
         // Fallback to auth service data
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
           this.billingInfo.email = currentUser.email || '';
           this.billingInfo.phone = (currentUser as any).phone || (currentUser as any).soDienThoai || '';
           const userName = currentUser.fullName || (currentUser as any).name || (currentUser as any).tenKhachHang || '';
-          this.billingInfo.firstName = userName.split(' ')[0] || '';
-          this.billingInfo.lastName = userName.split(' ').slice(1).join(' ') || '';
+          if (userName) {
+            const nameParts = userName.trim().split(/\s+/);
+            if (nameParts.length > 1) {
+              this.billingInfo.lastName = nameParts[nameParts.length - 1] || '';
+              this.billingInfo.firstName = nameParts.slice(0, -1).join(' ') || '';
+            } else {
+              this.billingInfo.firstName = nameParts[0] || '';
+              this.billingInfo.lastName = '';
+            }
+          }
         }
         
         // Force change detection
@@ -366,23 +409,38 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  loadCustomerAddresses(): void {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser?.id) return;
+  loadCustomerAddresses(customerId?: number): void {
+    // Nếu không có customerId, thử lấy từ currentUser
+    if (!customerId) {
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser?.id) {
+        customerId = currentUser.id;
+      } else {
+        console.warn('⚠️ Cannot load customer addresses: no customerId');
+        return;
+      }
+    }
 
-    this.customerAddressService.getAddressesByCustomerId(currentUser.id).subscribe({
+    console.log('📍 Loading customer addresses for customerId:', customerId);
+    this.customerAddressService.getAddressesByCustomerId(customerId).subscribe({
       next: (addresses) => {
         console.log('✅ Customer addresses loaded:', addresses);
         this.customerAddresses = addresses;
-        // Chọn địa chỉ mặc định
-        const defaultAddress = addresses.find(a => a.macDinh);
-        if (defaultAddress && defaultAddress.id) {
-          this.selectedAddressId = defaultAddress.id;
-          this.loadAddressInfo(defaultAddress);
-        } else if (addresses.length > 0) {
-          // Nếu không có địa chỉ mặc định, chọn địa chỉ đầu tiên
-          this.selectedAddressId = addresses[0].id || null;
-          this.loadAddressInfo(addresses[0]);
+        
+        // Tự động chọn địa chỉ mặc định nếu có
+        // Chỉ chọn nếu chưa có địa chỉ nào được chọn trong form
+        if (!this.selectedAddressId && addresses.length > 0) {
+          const defaultAddress = addresses.find(a => a.macDinh === true);
+          if (defaultAddress && defaultAddress.id) {
+            console.log('📍 Auto-selecting default address:', defaultAddress.id);
+            this.selectedAddressId = defaultAddress.id;
+            this.loadAddressInfo(defaultAddress);
+          } else if (addresses.length > 0) {
+            // Nếu không có địa chỉ mặc định, chọn địa chỉ đầu tiên
+            console.log('📍 Auto-selecting first address:', addresses[0].id);
+            this.selectedAddressId = addresses[0].id || null;
+            this.loadAddressInfo(addresses[0]);
+          }
         }
         
         // Force change detection để cập nhật địa chỉ ngay lập tức
@@ -398,12 +456,42 @@ export class CheckoutComponent implements OnInit {
   }
 
   loadAddressInfo(address: any): void {
+    console.log('📍 Loading address info into form:', address);
+    
     // Backend trả về diaChiChiTiet, frontend interface dùng diaChi
     this.billingInfo.address = address.diaChi || address.diaChiChiTiet || '';
-    this.billingInfo.city = `${address.phuongXa || ''}, ${address.quanHuyen || ''}, ${address.tinhThanh || ''}`.trim();
-    this.billingInfo.phone = address.soDienThoai || '';
-    this.billingInfo.firstName = address.tenNguoiNhan?.split(' ')[0] || '';
-    this.billingInfo.lastName = address.tenNguoiNhan?.split(' ').slice(1).join(' ') || '';
+    
+    // Format địa chỉ: Phường/Xã, Quận/Huyện, Tỉnh/Thành phố
+    const addressParts: string[] = [];
+    if (address.phuongXa) addressParts.push(address.phuongXa);
+    if (address.quanHuyen) addressParts.push(address.quanHuyen);
+    if (address.tinhThanh) addressParts.push(address.tinhThanh);
+    this.billingInfo.city = addressParts.join(', ') || '';
+    
+    // Số điện thoại từ địa chỉ (nếu có) hoặc giữ nguyên từ customer info
+    if (address.soDienThoai) {
+      this.billingInfo.phone = address.soDienThoai;
+    }
+    
+    // Tên người nhận từ địa chỉ - split thành firstName và lastName
+    if (address.tenNguoiNhan) {
+      const nameParts = address.tenNguoiNhan.trim().split(/\s+/);
+      if (nameParts.length > 1) {
+        this.billingInfo.lastName = nameParts[nameParts.length - 1] || '';
+        this.billingInfo.firstName = nameParts.slice(0, -1).join(' ') || '';
+      } else {
+        this.billingInfo.firstName = nameParts[0] || '';
+        this.billingInfo.lastName = '';
+      }
+    }
+    
+    console.log('✅ Address info loaded into form:', {
+      address: this.billingInfo.address,
+      city: this.billingInfo.city,
+      phone: this.billingInfo.phone,
+      firstName: this.billingInfo.firstName,
+      lastName: this.billingInfo.lastName
+    });
     
     // Force change detection để cập nhật form ngay lập tức
     this.cdr.detectChanges();

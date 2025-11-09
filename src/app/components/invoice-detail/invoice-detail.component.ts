@@ -83,7 +83,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     private hoaDonService: HoaDonService,
     private customerAddressService: CustomerAddressService,
     private employeeService: EmployeeService,
-    private authService: AuthService,
+    public authService: AuthService,
     private cdr: ChangeDetectorRef,
     private productApi: ProductApiService,
     private chiTietSanPhamService: ChiTietSanPhamApiService

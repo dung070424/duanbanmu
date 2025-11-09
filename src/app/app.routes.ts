@@ -22,6 +22,9 @@ import { ManufacturersComponent } from './components/manufacturers/manufacturers
 import { LoginComponent } from './components/login/login';
 import { RegisterComponent } from './components/register/register';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password';
+import { CustomerLoginComponent } from './components/shop/customer-login/customer-login';
+import { CustomerRegisterComponent } from './components/shop/customer-register/customer-register';
+import { CustomerForgotPasswordComponent } from './components/shop/customer-forgot-password/customer-forgot-password';
 import { ShopComponent } from './components/shop/shop.component';
 import { CustomerOrdersComponent } from './components/customer-orders/customer-orders.component';
 import { CustomerProfileComponent } from './components/customer-profile/customer-profile.component';
@@ -40,13 +43,16 @@ import { LoaiMuBaoHiemComponent } from './components/loai-mu-bao-hiem/loai-mu-ba
 import { CongNgheAnToanComponent } from './components/cong-nghe-an-toan/cong-nghe-an-toan.component';
 
 export const routes: Routes = [
-  // Public routes
+  // Public routes (Admin/Staff)
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   
   // Customer shop routes - public access
   // QUAN TRỌNG: Đặt routes cụ thể trước route chung để tránh conflict
+  { path: 'shop/login', component: CustomerLoginComponent },
+  { path: 'shop/register', component: CustomerRegisterComponent },
+  { path: 'shop/forgot-password', component: CustomerForgotPasswordComponent },
   { path: 'shop/cart', component: CartComponent },
   { path: 'shop/checkout', component: CheckoutComponent, canActivate: [AuthGuard] },
   { path: 'shop/product/:id', component: ProductDetailComponent },

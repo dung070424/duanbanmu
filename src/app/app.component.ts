@@ -37,11 +37,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   updateLayoutFlags(url: string): void {
-    // Trang login, register, forgot-password - không có sidebar/header
+    // Trang login, register, forgot-password (Admin/Staff) - không có sidebar/header
     this.isLoginPage = url === '/login' || url === '/register' || url === '/forgot-password';
     
     // Trang shop và customer pages - không có sidebar/header (customer website)
-    // Bao gồm cả /shop/cart, /shop/checkout, /customer/profile, /customer/orders
+    // Bao gồm cả /shop/login, /shop/register, /shop/forgot-password, /shop/cart, /shop/checkout, /customer/profile, /customer/orders
     this.isShopPage = url.startsWith('/shop') || url.startsWith('/customer');
     
     // Hiển thị admin layout nếu không phải login/shop/customer pages
