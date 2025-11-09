@@ -5,6 +5,7 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../services/auth';
 import { RegisterRequest } from '../../../interfaces/auth.interface';
 
+
 @Component({
   selector: 'app-customer-register',
   standalone: true,
@@ -27,7 +28,7 @@ export class CustomerRegisterComponent implements OnInit {
   returnUrl: string | null = null;
 
   constructor(
-    private authService: AuthService, 
+    private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -64,7 +65,7 @@ export class CustomerRegisterComponent implements OnInit {
         this.successMessage = response.message || 'Đăng ký thành công!';
         const username = this.registerData.username;
         this.isLoading = false;
-        
+
         // Nếu có returnUrl, chuyển đến login với returnUrl để sau khi login sẽ quay lại checkout
         if (this.returnUrl) {
           this.router.navigate(['/shop/login'], {

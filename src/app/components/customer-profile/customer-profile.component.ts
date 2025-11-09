@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth';
 import { Customer } from '../../interfaces/customer.interface';
 import { CustomerAddress, CustomerAddressCreateRequest } from '../../interfaces/customer-address.interface';
 
+
 @Component({
   selector: 'app-customer-profile',
   standalone: true,
@@ -68,7 +69,7 @@ export class CustomerProfileComponent implements OnInit {
     console.log('👤 Current user:', currentUser);
     console.log('👤 Is logged in:', this.authService.isLoggedIn());
     console.log('👤 User roles:', currentUser?.roles);
-    
+
     if (!currentUser || !currentUser.id) {
       console.warn('⚠️ No current user found, redirecting to login');
       this.router.navigate(['/login']);
@@ -94,7 +95,7 @@ export class CustomerProfileComponent implements OnInit {
   loadCurrentCustomerInfo(): void {
     this.isLoading = true;
     this.error = '';
-    
+
     console.log('📡 Loading current customer info from JWT token...');
     this.customerService.getCurrentCustomer().subscribe({
       next: (customer) => {
@@ -102,7 +103,7 @@ export class CustomerProfileComponent implements OnInit {
         this.customer = customer;
         this.customerId = customer.id || null;
         console.log('👤 Customer ID set to:', this.customerId);
-        
+
         // Map dữ liệu vào form - đảm bảo mapping đầy đủ từ API response
         // Format ngaySinh từ ISO string sang format YYYY-MM-DD cho input date
         let ngaySinhFormatted = '';
@@ -116,7 +117,7 @@ export class CustomerProfileComponent implements OnInit {
             console.warn('⚠️ Cannot parse ngaySinh:', customer.ngaySinh);
           }
         }
-        
+
         // Format lanMuaGanNhat từ ISO string
         let lanMuaGanNhatFormatted = '';
         if (customer.lanMuaGanNhat) {
@@ -129,7 +130,7 @@ export class CustomerProfileComponent implements OnInit {
             console.warn('⚠️ Cannot parse lanMuaGanNhat:', customer.lanMuaGanNhat);
           }
         }
-        
+
         this.formData = {
           tenKhachHang: customer.tenKhachHang || '',
           email: customer.email || '',
@@ -142,11 +143,11 @@ export class CustomerProfileComponent implements OnInit {
           maKhachHang: customer.maKhachHang || '',
           username: customer.username || ''
         };
-        
+
         // Log để debug
         console.log('📋 Mapped form data:', this.formData);
         console.log('📋 Customer object from API:', customer);
-        
+
         this.isLoading = false;
         // Load addresses sau khi đã có customerId
         if (this.customerId) {
@@ -159,7 +160,7 @@ export class CustomerProfileComponent implements OnInit {
         console.error('   - Error status:', error.status);
         console.error('   - Error message:', error.error?.message || error.message);
         console.error('   - Error body:', error.error);
-        
+
         if (error.status === 401) {
           this.error = 'Bạn cần đăng nhập để xem thông tin cá nhân.';
           // Redirect to login
@@ -189,12 +190,12 @@ export class CustomerProfileComponent implements OnInit {
 
     this.isLoading = true;
     this.error = '';
-    
+
     this.customerService.getCustomerById(this.customerId).subscribe({
       next: (customer) => {
         console.log('✅ Customer info loaded:', customer);
         this.customer = customer;
-        
+
         // Map dữ liệu vào form - đảm bảo mapping đầy đủ
         let ngaySinhFormatted = '';
         if (customer.ngaySinh) {
@@ -207,7 +208,7 @@ export class CustomerProfileComponent implements OnInit {
             console.warn('⚠️ Cannot parse ngaySinh:', customer.ngaySinh);
           }
         }
-        
+
         let lanMuaGanNhatFormatted = '';
         if (customer.lanMuaGanNhat) {
           try {
@@ -219,7 +220,7 @@ export class CustomerProfileComponent implements OnInit {
             console.warn('⚠️ Cannot parse lanMuaGanNhat:', customer.lanMuaGanNhat);
           }
         }
-        
+
         this.formData = {
           tenKhachHang: customer.tenKhachHang || '',
           email: customer.email || '',
@@ -232,7 +233,7 @@ export class CustomerProfileComponent implements OnInit {
           maKhachHang: customer.maKhachHang || '',
           username: customer.username || ''
         };
-        
+
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -271,7 +272,7 @@ export class CustomerProfileComponent implements OnInit {
     this.isEditing = !this.isEditing;
     this.error = '';
     this.successMessage = '';
-    
+
     // Nếu đang tắt edit, reset form về giá trị ban đầu
     if (!this.isEditing && this.customer) {
       let ngaySinhFormatted = '';
@@ -285,7 +286,7 @@ export class CustomerProfileComponent implements OnInit {
           console.warn('⚠️ Cannot parse ngaySinh:', this.customer.ngaySinh);
         }
       }
-      
+
       let lanMuaGanNhatFormatted = '';
       if (this.customer.lanMuaGanNhat) {
         try {
@@ -297,7 +298,7 @@ export class CustomerProfileComponent implements OnInit {
           console.warn('⚠️ Cannot parse lanMuaGanNhat:', this.customer.lanMuaGanNhat);
         }
       }
-      
+
       this.formData = {
         tenKhachHang: this.customer.tenKhachHang || '',
         email: this.customer.email || '',
@@ -311,7 +312,7 @@ export class CustomerProfileComponent implements OnInit {
         username: this.customer.username || ''
       };
     }
-    
+
     this.cdr.detectChanges();
   }
 
@@ -319,9 +320,9 @@ export class CustomerProfileComponent implements OnInit {
    * Kiểm tra có trường nào chưa được điền không
    */
   hasMissingFields(): boolean {
-    return !this.formData.soDienThoai || 
-           !this.formData.ngaySinh || 
-           this.formData.gioiTinh === undefined || 
+    return !this.formData.soDienThoai ||
+           !this.formData.ngaySinh ||
+           this.formData.gioiTinh === undefined ||
            this.formData.gioiTinh === null;
   }
 
@@ -419,7 +420,7 @@ export class CustomerProfileComponent implements OnInit {
     if (this.formData.ngaySinh && this.formData.ngaySinh.trim() !== '') {
       updateData.ngaySinh = this.formData.ngaySinh;
     }
-    
+
     // Gửi giới tính nếu đã chọn
     if (this.formData.gioiTinh !== undefined && this.formData.gioiTinh !== null) {
       updateData.gioiTinh = this.formData.gioiTinh;
@@ -434,7 +435,7 @@ export class CustomerProfileComponent implements OnInit {
         this.isEditing = false;
         this.isSaving = false;
         this.successMessage = 'Cập nhật thông tin thành công!';
-        
+
         // Update current user in auth service if needed
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
@@ -443,15 +444,15 @@ export class CustomerProfileComponent implements OnInit {
             currentUser.email = updatedCustomer.email;
           }
         }
-        
+
         // Clear success message after 5 seconds
         setTimeout(() => {
           this.successMessage = '';
           this.cdr.detectChanges();
         }, 5000);
-        
+
         this.cdr.detectChanges();
-        
+
         // Reload customer info to get latest data
         this.loadCurrentCustomerInfo();
       },
@@ -553,7 +554,7 @@ export class CustomerProfileComponent implements OnInit {
           this.isSaving = false;
           this.successMessage = 'Cập nhật địa chỉ thành công!';
           this.cdr.detectChanges();
-          
+
           setTimeout(() => {
             this.successMessage = '';
             this.cdr.detectChanges();
@@ -576,7 +577,7 @@ export class CustomerProfileComponent implements OnInit {
           this.isSaving = false;
           this.successMessage = 'Thêm địa chỉ thành công!';
           this.cdr.detectChanges();
-          
+
           setTimeout(() => {
             this.successMessage = '';
             this.cdr.detectChanges();
@@ -631,7 +632,7 @@ export class CustomerProfileComponent implements OnInit {
         this.loadAddresses();
         this.successMessage = 'Xóa địa chỉ thành công!';
         this.cdr.detectChanges();
-        
+
         setTimeout(() => {
           this.successMessage = '';
           this.cdr.detectChanges();
@@ -657,7 +658,7 @@ export class CustomerProfileComponent implements OnInit {
         this.loadAddresses();
         this.successMessage = 'Đặt địa chỉ mặc định thành công!';
         this.cdr.detectChanges();
-        
+
         setTimeout(() => {
           this.successMessage = '';
           this.cdr.detectChanges();

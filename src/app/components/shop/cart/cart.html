@@ -15,9 +15,10 @@
       </button>
     </nav>
 
+
     <div class="page-header">
       <h1><i class="fas fa-shopping-cart"></i> Giỏ hàng của bạn</h1>
-      
+
     </div>
 
     <!-- Loading State - Đã tắt để hiển thị dữ liệu ngay -->
@@ -91,22 +92,22 @@
               </td>
               <td class="product-quantity">
                 <div class="quantity-controls">
-                  <button 
-                    class="btn-quantity" 
+                  <button
+                    class="btn-quantity"
                     (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) - 1)"
                     [disabled]="(item.quantity || item.soLuong || 1) <= 1"
                   >
                     <i class="fas fa-minus"></i>
                   </button>
-                  <input 
-                    type="number" 
-                    [value]="item.quantity || item.soLuong || 1" 
+                  <input
+                    type="number"
+                    [value]="item.quantity || item.soLuong || 1"
                     min="1"
                     (change)="updateQuantity(item, +$any($event.target).value)"
                     class="quantity-input"
                   />
-                  <button 
-                    class="btn-quantity" 
+                  <button
+                    class="btn-quantity"
                     (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) + 1)"
                   >
                     <i class="fas fa-plus"></i>
@@ -117,8 +118,8 @@
                 {{ formatCurrency(item.totalItemPrice || item.thanhTien) }}
               </td>
               <td class="product-actions">
-                <button 
-                  class="btn-remove" 
+                <button
+                  class="btn-remove"
                   (click)="removeItem(item)"
                   title="Xóa sản phẩm"
                 >
@@ -145,8 +146,8 @@
             <span class="label">Tổng cộng:</span>
             <span class="value">{{ formatCurrency(getTotal()) }}</span>
           </div>
-          <button 
-            class="btn-checkout" 
+          <button
+            class="btn-checkout"
             (click)="proceedToCheckout()"
           >
             <i class="fas fa-credit-card"></i> Tiến hành thanh toán

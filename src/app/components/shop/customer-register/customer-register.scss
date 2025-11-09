@@ -7,6 +7,7 @@
   padding: 20px;
 }
 
+
 .register-card {
   background: white;
   border-radius: 12px;
@@ -182,18 +183,18 @@
 .register-footer {
   margin-top: 20px;
   text-align: center;
-  
+
   p {
     margin: 8px 0;
     font-size: 14px;
     color: #6b7280;
-    
+
     .link {
       color: #111827;
       text-decoration: none;
       font-weight: 500;
       cursor: pointer;
-      
+
       &:hover {
         text-decoration: underline;
       }

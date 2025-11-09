@@ -28,8 +28,8 @@
     </div>
     <div class="header-right">
       <!-- Chỉ hiển thị button In hóa đơn khi trạng thái là Đã Giao Hàng (Đã Hoàn Thành) -->
-      <button 
-        class="btn btn-outline-primary" 
+      <button
+        class="btn btn-outline-primary"
         (click)="printInvoice()"
         *ngIf="invoice && (invoice.trangThai === 'DA_GIAO_HANG')"
       >
@@ -37,6 +37,7 @@
       </button>
     </div>
   </div>
+
 
 
   <!-- Loading State -->
@@ -52,7 +53,7 @@
   <!-- Error State -->
   <div *ngIf="error" class="error-container">
     <div class="alert alert-danger">
-      
+
       {{ error }}
       <br>
       <button class="btn btn-sm btn-outline-danger mt-2" (click)="loadInvoiceDetail()">
@@ -165,11 +166,11 @@
 
 
 
-    
+
     <!-- Invoice Status Timeline (chỉ hiển thị khi trạng thái là Đang Giao Hàng) -->
-    <app-invoice-status-timeline 
+    <app-invoice-status-timeline
       *ngIf="invoice && invoice.trangThai === 'DANG_GIAO_HANG'"
-      [currentStatus]="invoice ? invoice.trangThai : undefined" 
+      [currentStatus]="invoice ? invoice.trangThai : undefined"
       [invoiceCreatedAt]="invoice ? invoice.ngayTao : undefined"
       [invoicePaymentDate]="invoice ? invoice.ngayThanhToan : undefined"
       [invoiceEstimatedDelivery]="invoice ? invoice.ngayDuKienGiao : undefined"
@@ -362,23 +363,23 @@
     <div class="status-update-control" *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'">
       <div class="status-update-card">
         <div class="status-update-header">
-          
+
           <h5 class="mb-0">Cập nhật trạng thái hóa đơn</h5>
         </div>
         <div class="status-update-body">
           <div class="form-group">
             <label for="statusSelect" class="form-label">Trạng thái:</label>
-            <select 
+            <select
               id="statusSelect"
-              class="form-select" 
+              class="form-select"
               [(ngModel)]="selectedStatus"
               [disabled]="savingStatus"
               (change)="onStatusSelectChange($event)">
               <option value="" disabled selected>
                 -- Chọn trạng thái mới --
               </option>
-              <option 
-                *ngFor="let status of statusSteps" 
+              <option
+                *ngFor="let status of statusSteps"
                 [value]="status.key"
                 [disabled]="status.key === invoice.trangThai && status.key !== 'HUY'">
                 {{ status.label }}{{ status.key === invoice.trangThai ? ' (Hiện tại)' : '' }}
@@ -389,11 +390,11 @@
             </small>
           </div>
           <div class="status-update-actions">
-            <button 
-              class="btn btn-primary" 
+            <button
+              class="btn btn-primary"
               (click)="updateInvoiceStatus()"
               [disabled]="savingStatus || !selectedStatus || selectedStatus === invoice.trangThai">
-             
+
               <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
               {{ savingStatus ? 'Đang lưu...' : 'Cập nhật trạng thái' }}
             </button>
@@ -434,8 +435,8 @@
             <tr *ngFor="let product of invoice.danhSachSanPham; let i = index">
               <td class="text-center">{{ i + 1 }}</td>
               <td class="text-center">
-                <img 
-                  [src]="product.anhSanPham || 'assets/images/no-image.png'" 
+                <img
+                  [src]="product.anhSanPham || 'assets/images/no-image.png'"
                   [alt]="product.tenSanPham"
                   class="product-thumbnail"
                   (error)="$event.target.src='assets/images/no-image.png'"
@@ -681,8 +682,8 @@
               <td class="text-center">{{ i + 1 }}</td>
               <td class="product-image-cell">
                 <div class="product-image-wrapper">
-                  <img 
-                    [src]="product.anhSanPham || 'assets/images/no-image.png'" 
+                  <img
+                    [src]="product.anhSanPham || 'assets/images/no-image.png'"
                     [alt]="product.tenSanPham"
                     class="product-image"
                     (error)="$event.target.src='assets/images/no-image.png'"
@@ -818,13 +819,13 @@
 </div>
 
 <!-- Modal chọn sản phẩm -->
- 
+
 <div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="productSelectionModalLabel">
-          
+
           Chọn sản phẩm
         </h5>
         <button type="button" class="btn-close" (click)="closeProductModal()" aria-label="Close"></button>
@@ -901,8 +902,8 @@
 </div>
 
 <!-- Modal Hủy Hóa Đơn -->
-<div class="modal fade" [class.show]="showCancelInvoiceModal" [style.display]="showCancelInvoiceModal ? 'block' : 'none'" 
-     id="cancelInvoiceModal" tabindex="-1" role="dialog" 
+<div class="modal fade" [class.show]="showCancelInvoiceModal" [style.display]="showCancelInvoiceModal ? 'block' : 'none'"
+     id="cancelInvoiceModal" tabindex="-1" role="dialog"
      [attr.aria-hidden]="!showCancelInvoiceModal">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -919,7 +920,7 @@
           <br>
           Hóa đơn sẽ được chuyển sang trạng thái <strong>"Đã Hủy"</strong>.
         </div>
-        
+
         <div class="mb-3">
           <label for="cancelInvoiceNote" class="form-label required">
             <i class="bi bi-pencil-square me-2"></i>Lý do hủy hóa đơn <span class="text-danger">*</span>
@@ -950,6 +951,6 @@
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade" [class.show]="showCancelInvoiceModal" 
-     [style.display]="showCancelInvoiceModal ? 'block' : 'none'" 
+<div class="modal-backdrop fade" [class.show]="showCancelInvoiceModal"
+     [style.display]="showCancelInvoiceModal ? 'block' : 'none'"
      (click)="closeCancelInvoiceModal()"></div>

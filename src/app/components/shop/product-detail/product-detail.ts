@@ -7,6 +7,7 @@ import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../../servi
 import { HoaDonChoService, GioHangChoItem } from '../../../services/hoa-don-cho.service';
 import { AuthService } from '../../../services/auth';
 
+
 @Component({
   selector: 'app-product-detail',
   standalone: true,
@@ -23,7 +24,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   mainImageUrl = '';
   selectedImageIndex = 0;
   activeTab: 'description' | 'specifications' | 'reviews' = 'description';
-  
+
   // Image gallery (nếu có nhiều ảnh)
   productImages: string[] = [];
 
@@ -42,10 +43,10 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     console.log('🛍️ ProductDetailComponent ngOnInit - Starting...');
     const productId = this.route.snapshot.paramMap.get('id');
     console.log('🛍️ Product ID from route:', productId);
-    
+
     // Đảm bảo error được reset
     this.error = '';
-    
+
     if (productId) {
       const id = +productId;
       if (isNaN(id) || id <= 0) {
@@ -65,7 +66,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   loadProduct(productId: number): void {
     console.log('🛍️ loadProduct - Loading product with ID:', productId);
     this.error = '';
-    
+
     // Load product details
     this.productApiService.getById(productId, true).subscribe({
       next: (product) => {
@@ -73,7 +74,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         console.log('   - Product name:', product.tenSanPham);
         console.log('   - Product status:', product.trangThai);
         console.log('   - Product image:', product.anhSanPham);
-        
+
         if (!product) {
           console.error('❌ Product is null or undefined');
           this.error = 'Không tìm thấy thông tin sản phẩm!';
@@ -81,18 +82,18 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
           this.cdr.detectChanges();
           return;
         }
-        
+
         // Set product ngay lập tức để hiển thị view
         this.product = product;
         this.mainImageUrl = product.anhSanPham || '/assets/default-product.png';
         this.productImages = [this.mainImageUrl];
-        
+
         // Force change detection NGAY LẬP TỨC để hiển thị sản phẩm (TRƯỚC khi load variants)
         // Sử dụng setTimeout để đảm bảo Angular đã cập nhật DOM
         setTimeout(() => {
           this.cdr.detectChanges();
         }, 0);
-        
+
         // Load product variants (chi tiết sản phẩm) - không block UI
         this.loadProductVariants(productId);
       },
@@ -101,9 +102,9 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         console.error('   - Status:', err.status);
         console.error('   - Message:', err.message);
         console.error('   - Error object:', err);
-        
+
         this.product = null;
-        
+
         // Xử lý các loại lỗi khác nhau - nhưng không block view nếu lỗi connection
         if (err.status === 0 || err.status === undefined) {
           // Connection refused - không set error để không block view
@@ -116,7 +117,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         } else {
           this.error = `Không thể tải thông tin sản phẩm. Lỗi: ${err.status || 'Unknown'}`;
         }
-        
+
         // Force change detection
         this.cdr.detectChanges();
       }
@@ -129,17 +130,17 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       next: (variants) => {
         console.log('✅ loadProductVariants - Variants received:', variants);
         console.log('   - Total variants:', variants?.length || 0);
-        
+
         if (!variants || !Array.isArray(variants)) {
           console.warn('⚠️ loadProductVariants - Variants is not an array, setting to empty array');
           this.productVariants = [];
           this.cdr.detectChanges();
           return;
         }
-        
+
         this.productVariants = variants.filter(v => v && v.trangThai !== false);
         console.log('   - Active variants after filter:', this.productVariants.length);
-        
+
         // Auto-select first available variant
         if (this.productVariants.length > 0) {
           this.selectedVariant = this.productVariants[0];
@@ -148,7 +149,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
           console.warn('⚠️ loadProductVariants - No active variants found');
           this.selectedVariant = null;
         }
-        
+
         // Force change detection để hiển thị variants ngay lập tức
         this.cdr.detectChanges();
       },
@@ -156,12 +157,12 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         console.error('❌ loadProductVariants - Error loading variants:', err);
         console.error('   - Status:', err.status);
         console.error('   - Message:', err.message);
-        
+
         // Không set error vì có thể sản phẩm chưa có variants
         // Nhưng vẫn log để debug
         this.productVariants = [];
         this.selectedVariant = null;
-        
+
         // Force change detection
         this.cdr.detectChanges();
       }
@@ -231,7 +232,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
     if (!this.authService.isLoggedIn()) {
       console.log('🛒 ProductDetail addToCart - User not logged in, saving to temp_cart');
-      
+
       const cartItem = {
         chiTietSanPhamId: this.selectedVariant.id,
         productId: this.product.id,
@@ -246,14 +247,14 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
       const tempCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
       const existingIndex = tempCart.findIndex((item: any) => item.chiTietSanPhamId === cartItem.chiTietSanPhamId);
-      
+
       if (existingIndex >= 0) {
         tempCart[existingIndex].quantity += cartItem.quantity;
         tempCart[existingIndex].totalItemPrice = tempCart[existingIndex].quantity * tempCart[existingIndex].price;
       } else {
         tempCart.push(cartItem);
       }
-      
+
       localStorage.setItem('temp_cart', JSON.stringify(tempCart));
       // Force change detection sau khi cập nhật localStorage
       this.cdr.detectChanges();
@@ -328,7 +329,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   createNewCart(resolve: (value: number | null) => void): void {
     const customerId = this.authService.getCurrentUser()?.id;
     const maHoaDonCho = `HDC${Date.now()}`;
-    
+
     const newCart: Partial<any> = {
       maHoaDonCho: maHoaDonCho,
       khachHangId: customerId || undefined,
@@ -433,7 +434,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
   isSizeAvailable(size: string): boolean {
     const variant = this.productVariants.find(
-      v => v.kichThuocTen === size && 
+      v => v.kichThuocTen === size &&
       (this.selectedVariant?.mauSacTen ? v.mauSacTen === this.selectedVariant.mauSacTen : true)
     );
     return variant ? this.isVariantAvailable(variant) : false;
@@ -445,12 +446,12 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     let variant = this.productVariants.find(
       v => v.mauSacTen === color && (!currentSize || v.kichThuocTen === currentSize)
     );
-    
+
     // Nếu không tìm thấy với size hiện tại, lấy variant đầu tiên với màu này
     if (!variant) {
       variant = this.productVariants.find(v => v.mauSacTen === color);
     }
-    
+
     if (variant) {
       this.selectVariant(variant);
       // Force change detection để cập nhật UI ngay lập tức
@@ -464,12 +465,12 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     let variant = this.productVariants.find(
       v => v.kichThuocTen === size && (!currentColor || v.mauSacTen === currentColor)
     );
-    
+
     // Nếu không tìm thấy với màu hiện tại, lấy variant đầu tiên với size này
     if (!variant) {
       variant = this.productVariants.find(v => v.kichThuocTen === size);
     }
-    
+
     if (variant && this.isVariantAvailable(variant)) {
       this.selectVariant(variant);
       // Force change detection để cập nhật UI ngay lập tức

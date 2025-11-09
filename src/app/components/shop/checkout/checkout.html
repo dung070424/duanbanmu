@@ -13,6 +13,7 @@
           <i class="fas fa-credit-card"></i> Thanh toán
         </li>
       </ol>
+
       <button class="btn-back" (click)="goBack()" type="button">
         <i class="fas fa-arrow-left"></i> Quay lại
       </button>
@@ -56,8 +57,8 @@
           <div *ngIf="customerAddresses.length > 0" class="form-group">
             <label>Chọn địa chỉ đã lưu:</label>
             <div class="address-select-row">
-              <select 
-                class="form-control" 
+              <select
+                class="form-control"
                 [(ngModel)]="selectedAddressId"
                 (change)="onAddressChange()"
               >
@@ -66,9 +67,9 @@
                   {{ addr.tenNguoiNhan }} - {{ addr.diaChi }}, {{ addr.tinhThanh }}
                 </option>
               </select>
-              <button 
+              <button
                 type="button"
-                class="btn-add-address" 
+                class="btn-add-address"
                 (click)="toggleAddAddressForm()"
               >
                 <i class="fas fa-plus"></i> {{ showAddAddressForm ? 'Hủy' : 'Thêm địa chỉ mới' }}
@@ -82,18 +83,18 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Tên người nhận *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
+                <input
+                  type="text"
+                  class="form-control"
                   [(ngModel)]="newAddress.tenNguoiNhan"
                   placeholder="Tên người nhận"
                 />
               </div>
               <div class="form-group">
                 <label>Số điện thoại *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
+                <input
+                  type="text"
+                  class="form-control"
                   [(ngModel)]="newAddress.soDienThoai"
                   placeholder="Số điện thoại"
                 />
@@ -101,9 +102,9 @@
             </div>
             <div class="form-group">
               <label>Địa chỉ chi tiết *</label>
-              <input 
-                type="text" 
-                class="form-control" 
+              <input
+                type="text"
+                class="form-control"
                 [(ngModel)]="newAddress.diaChiChiTiet"
                 placeholder="Số nhà, tên đường"
               />
@@ -111,27 +112,27 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Phường/Xã *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
+                <input
+                  type="text"
+                  class="form-control"
                   [(ngModel)]="newAddress.phuongXa"
                   placeholder="Phường/Xã"
                 />
               </div>
               <div class="form-group">
                 <label>Quận/Huyện *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
+                <input
+                  type="text"
+                  class="form-control"
                   [(ngModel)]="newAddress.quanHuyen"
                   placeholder="Quận/Huyện"
                 />
               </div>
               <div class="form-group">
                 <label>Tỉnh/Thành phố *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
+                <input
+                  type="text"
+                  class="form-control"
                   [(ngModel)]="newAddress.tinhThanh"
                   placeholder="Tỉnh/Thành phố"
                 />
@@ -139,16 +140,16 @@
             </div>
             <div class="form-group">
               <label>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   [(ngModel)]="newAddress.macDinh"
                 />
                 Đặt làm địa chỉ mặc định
               </label>
             </div>
-            <button 
+            <button
               type="button"
-              class="btn-save-address" 
+              class="btn-save-address"
               (click)="saveNewAddress()"
             >
               <i class="fas fa-save"></i> Lưu địa chỉ
@@ -158,9 +159,9 @@
           <div class="form-row">
             <div class="form-group">
               <label>Tên *</label>
-              <input 
-                type="text" 
-                class="form-control" 
+              <input
+                type="text"
+                class="form-control"
                 [(ngModel)]="billingInfo.firstName"
                 placeholder="Tên"
                 required
@@ -168,9 +169,9 @@
             </div>
             <div class="form-group">
               <label>Họ *</label>
-              <input 
-                type="text" 
-                class="form-control" 
+              <input
+                type="text"
+                class="form-control"
                 [(ngModel)]="billingInfo.lastName"
                 placeholder="Họ"
                 required
@@ -187,9 +188,9 @@
 
           <div class="form-group">
             <label>Địa chỉ *</label>
-            <input 
-              type="text" 
-              class="form-control" 
+            <input
+              type="text"
+              class="form-control"
               [(ngModel)]="billingInfo.address"
               placeholder="Địa chỉ"
               required
@@ -198,9 +199,9 @@
 
           <div class="form-group">
             <label>Tỉnh / Thành phố *</label>
-            <input 
-              type="text" 
-              class="form-control" 
+            <input
+              type="text"
+              class="form-control"
               [(ngModel)]="billingInfo.city"
               placeholder="Tỉnh / Thành phố"
               required
@@ -209,9 +210,9 @@
 
           <div class="form-group">
             <label>Số điện thoại *</label>
-            <input 
-              type="tel" 
-              class="form-control" 
+            <input
+              type="tel"
+              class="form-control"
               [(ngModel)]="billingInfo.phone"
               placeholder="Số điện thoại"
               required
@@ -220,9 +221,9 @@
 
           <div class="form-group">
             <label>Địa chỉ email *</label>
-            <input 
-              type="email" 
-              class="form-control" 
+            <input
+              type="email"
+              class="form-control"
               [(ngModel)]="billingInfo.email"
               placeholder="Email"
               required
@@ -232,8 +233,8 @@
 
           <div class="form-group">
             <label>Ghi chú đơn hàng (tuỳ chọn)</label>
-            <textarea 
-              class="form-control" 
+            <textarea
+              class="form-control"
               rows="4"
               [(ngModel)]="orderNotes"
               placeholder="Ghi chú về đơn hàng, ví dụ: thời gian hay chỉ dẫn địa điểm giao hàng chi tiết hơn."
@@ -293,10 +294,10 @@
             <h3>Phương thức thanh toán</h3>
 
             <div class="payment-option">
-              <input 
-                type="radio" 
-                id="paymentCash" 
-                name="paymentMethod" 
+              <input
+                type="radio"
+                id="paymentCash"
+                name="paymentMethod"
                 value="cash"
                 [(ngModel)]="paymentMethod"
               />
@@ -307,10 +308,10 @@
             </div>
 
             <div class="payment-option">
-              <input 
-                type="radio" 
-                id="paymentTransfer" 
-                name="paymentMethod" 
+              <input
+                type="radio"
+                id="paymentTransfer"
+                name="paymentMethod"
                 value="transfer"
                 [(ngModel)]="paymentMethod"
               />
@@ -332,14 +333,14 @@
               <div class="transaction-code">
                 <label>Mã giao dịch (tự động sinh):</label>
                 <div class="code-display">
-                  <input 
-                    type="text" 
-                    [value]="transactionCode" 
+                  <input
+                    type="text"
+                    [value]="transactionCode"
                     readonly
                     class="code-input"
                   />
-                  <button 
-                    class="btn-copy" 
+                  <button
+                    class="btn-copy"
                     (click)="copyTransactionCode()"
                     title="Sao chép mã"
                   >
@@ -354,8 +355,8 @@
             </div>
           </div>
 
-          <button 
-            class="btn-place-order" 
+          <button
+            class="btn-place-order"
             (click)="placeOrder()"
             [disabled]="isSubmitting || !hasCartItems()"
           >
@@ -377,7 +378,7 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <!-- Order Summary -->
         <div class="order-summary-section">
@@ -417,7 +418,7 @@
         <div class="order-summary-section">
           <h3>Phương thức thanh toán</h3>
           <div class="info-block">
-            <p><strong>Phương thức:</strong> 
+            <p><strong>Phương thức:</strong>
               {{ orderSummary.paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt khi nhận hàng' }}
             </p>
             <div *ngIf="orderSummary.paymentMethod === 'transfer'">
@@ -453,14 +454,14 @@
       </div>
 
       <div class="modal-footer">
-        <button 
-          class="btn-cancel" 
+        <button
+          class="btn-cancel"
           (click)="cancelOrderConfirmation()"
         >
           <i class="fas fa-times"></i> Hủy
         </button>
-        <button 
-          class="btn-confirm" 
+        <button
+          class="btn-confirm"
           (click)="confirmAndPlaceOrder()"
           [disabled]="isSubmitting"
         >
@@ -489,7 +490,7 @@
         <!-- Invoice Details -->
         <div class="invoice-details">
           <h3>Chi tiết đơn hàng</h3>
-          
+
           <!-- Invoice Info -->
           <div class="invoice-info-section">
             <div class="info-row">
@@ -530,7 +531,7 @@
             <div class="info-row">
               <span class="label">Địa chỉ giao hàng:</span>
               <span class="value">
-                {{ createdInvoice.diaChiChiTiet || billingInfo.address }}, 
+                {{ createdInvoice.diaChiChiTiet || billingInfo.address }},
                 {{ createdInvoice.phuongXa }}{{ createdInvoice.quanHuyen ? ', ' + createdInvoice.quanHuyen : '' }}{{ createdInvoice.tinhThanh ? ', ' + createdInvoice.tinhThanh : '' }}
               </span>
             </div>

@@ -47,7 +47,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
-  
+
   // Customer shop routes - public access
   // QUAN TRỌNG: Đặt routes cụ thể trước route chung để tránh conflict
   { path: 'shop/login', component: CustomerLoginComponent },
@@ -58,7 +58,7 @@ export const routes: Routes = [
   { path: 'shop/product/:id', component: ProductDetailComponent },
   { path: 'shop/products', component: ShopComponent },
   { path: 'shop', component: ShopComponent },
-  
+
   // Customer routes
   {
     path: 'customer/profile',
@@ -78,7 +78,8 @@ export const routes: Routes = [
     canActivate: [AuthGuard, roleGuard],
     data: { roles: ['CUSTOMER'] }
   },
-  
+
+
   {
     path: '',
     redirectTo: '/shop',
