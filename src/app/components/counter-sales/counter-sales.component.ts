@@ -1467,7 +1467,7 @@ export class CounterSalesComponent implements OnInit {
       thanhTien: Math.round(this.cartTotal),
       tienGiamGia: Math.round(this.cartDiscount + this.couponDiscount),
       phuongThucThanhToan: this.newSale.paymentMethod,
-      trangThai: this.isDelivery ? 'DA_XAC_NHAN' : 'DA_XAC_NHAN',
+      trangThai: this.isDelivery ? 'DA_XAC_NHAN' : 'DA_GIAO_HANG',
       danhSachChiTiet: this.cart.map((item) => ({
         chiTietSanPhamId: item.productId,
         tenSanPham: item.productName,
@@ -1819,10 +1819,11 @@ export class CounterSalesComponent implements OnInit {
       return this.allVouchers;
     }
     const searchTerm = this.voucherModalSearchTerm.toLowerCase().trim();
-    return this.allVouchers.filter(v => 
-      v.code.toLowerCase().includes(searchTerm) ||
-      (v.minOrder && v.minOrder.toString().includes(searchTerm)) ||
-      (v.discount && v.discount.toString().includes(searchTerm))
+    return this.allVouchers.filter(
+      (v) =>
+        v.code.toLowerCase().includes(searchTerm) ||
+        (v.minOrder && v.minOrder.toString().includes(searchTerm)) ||
+        (v.discount && v.discount.toString().includes(searchTerm))
     );
   }
 
