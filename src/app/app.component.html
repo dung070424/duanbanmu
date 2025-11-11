@@ -1,20 +1,23 @@
-<!-- Trang đăng nhập, đăng ký, quên mật khẩu - không có sidebar/header -->
-<div *ngIf="isLoginPage" class="auth-layout">
-  <router-outlet></router-outlet>
-</div>
+<!-- Sử dụng ngSwitch để đảm bảo chỉ một layout được hiển thị tại một thời điểm -->
+<div [ngSwitch]="getLayoutType()">
+  <!-- Trang đăng nhập, đăng ký, quên mật khẩu - không có sidebar/header -->
+  <div *ngSwitchCase="'auth'" class="auth-layout">
+    <router-outlet></router-outlet>
+  </div>
 
-<!-- Customer Shop Website - không có sidebar/header -->
-<div *ngIf="isShopPage" class="shop-layout">
-  <router-outlet></router-outlet>
-</div>
+  <!-- Customer Shop Website - không có sidebar/header -->
+  <div *ngSwitchCase="'shop'" class="shop-layout">
+    <router-outlet></router-outlet>
+  </div>
 
-<!-- Admin/Staff Layout - có sidebar và header -->
-<div *ngIf="showAdminLayout" class="app-container" [class.sidebar-hidden]="sidebarHidden">
-  <app-sidebar [isCollapsed]="sidebarHidden"></app-sidebar>
-  <div class="main-content">
-    <app-header (menuToggle)="toggleSidebar()"></app-header>
-    <div class="content-wrapper">
-      <router-outlet></router-outlet>
+  <!-- Admin/Staff Layout - có sidebar và header -->
+  <div *ngSwitchDefault class="app-container" [class.sidebar-hidden]="sidebarHidden">
+    <app-sidebar [isCollapsed]="sidebarHidden"></app-sidebar>
+    <div class="main-content">
+      <app-header (menuToggle)="toggleSidebar()"></app-header>
+      <div class="content-wrapper">
+        <router-outlet></router-outlet>
+      </div>
     </div>
   </div>
 </div>

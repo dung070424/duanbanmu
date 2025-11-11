@@ -561,7 +561,7 @@ $hover-color: #f0f0f0;
         transition: all 0.3s ease;
 
         &:hover:not(:disabled) {
-          background: darken($primary-color, 10%);
+          background: $primary-dark; // Sử dụng biến màu đã định nghĩa thay vì darken()
         }
 
         &:disabled {

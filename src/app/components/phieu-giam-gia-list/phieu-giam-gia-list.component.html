@@ -495,12 +495,12 @@
                 </thead>
                 <tbody>
                   <tr 
-                    *ngFor="let customer of availableCustomersForEdit; let i = index"
+                    *ngFor="let customer of paginatedAvailableCustomers; let i = index"
                     (click)="selectCustomerForEdit(customer)"
                     class="customer-row-edit"
                     title="Click để chọn khách hàng"
                   >
-                    <td>{{ i + 1 }}</td>
+                    <td>{{ (currentPageAvailableCustomers - 1) * itemsPerPageAvailableCustomers + i + 1 }}</td>
                     <td>{{ customer.maKhachHang }}</td>
                     <td>{{ customer.tenKhachHang }}</td>
                     <td>{{ customer.gioiTinh === true ? 'Nam' : (customer.gioiTinh === false ? 'Nữ' : 'N/A') }}</td>
@@ -516,6 +516,47 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+            <!-- Pagination for available customers table -->
+            <div class="pagination-container" *ngIf="availableCustomersForEdit.length > 0 && totalPagesAvailableCustomers > 1">
+              <div class="pagination-info">
+                Hiển thị {{ getStartIndexAvailableCustomers() }} - 
+                {{ getEndIndexAvailableCustomers() }} 
+                / {{ availableCustomersForEdit.length }} khách hàng
+              </div>
+              <div class="pagination-controls">
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="currentPageAvailableCustomers === 1"
+                  (click)="goToPageAvailableCustomers(1)"
+                  title="Trang đầu">
+                  <i class="bi bi-chevron-double-left"></i>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="currentPageAvailableCustomers === 1"
+                  (click)="prevPageAvailableCustomers()"
+                  title="Trang trước">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="pagination-page-info">
+                  Trang {{ currentPageAvailableCustomers }} / {{ totalPagesAvailableCustomers }}
+                </span>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="currentPageAvailableCustomers >= totalPagesAvailableCustomers"
+                  (click)="nextPageAvailableCustomers()"
+                  title="Trang sau">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="currentPageAvailableCustomers >= totalPagesAvailableCustomers"
+                  (click)="goToPageAvailableCustomers(totalPagesAvailableCustomers)"
+                  title="Trang cuối">
+                  <i class="bi bi-chevron-double-right"></i>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -577,8 +618,9 @@
           type="button"
           class="btn btn-warning"
           (click)="saveEditCustomer()"
+          title="Lưu tạm thời. Nhấn 'Cập nhật' ở modal chỉnh sửa phiếu giảm giá để lưu vào database."
         >
-          Cập Nhật
+          Lưu Tạm Thời
         </button>
       </div>
     </div>

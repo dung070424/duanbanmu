@@ -246,32 +246,125 @@
 
 .table-container {
   overflow-x: auto;
+  overflow-y: visible;
   border-radius: 8px;
   border: 1px solid #e9ecef;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Hide scrollbar but keep functionality */
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .data-table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   background-color: white;
+  table-layout: fixed;
+  box-sizing: border-box;
 }
 
 .data-table th {
-  background-color: #fafbfc;
+  background-color: #f8f9fa;
   color: #495057;
   font-weight: 600;
-  padding: 16px 12px;
+  padding: 14px 8px;
   text-align: left;
   border-bottom: 2px solid #dee2e6;
   font-size: 0.9rem;
   white-space: nowrap;
+  line-height: 1.5;
+  letter-spacing: 0.3px;
+  overflow: hidden;
 }
 
 .data-table td {
-  padding: 16px 12px;
-  border-bottom: 1px solid #dee2e6;
+  padding: 14px 8px;
+  border-bottom: 1px solid #e9ecef;
   vertical-align: middle;
   font-size: 0.9rem;
+  line-height: 1.6;
+  color: #495057;
+  word-wrap: break-word;
+  overflow: hidden;
+}
+
+/* Column width and alignment - optimized for full viewport display */
+/* Total width: 5% + 12% + 14% + 11% + 15% + 16% + 11% + 16% = 100% */
+.data-table th.col-stt,
+.data-table td.col-stt {
+  width: 5%;
+  text-align: center !important;
+  padding: 14px 6px;
+}
+
+.data-table th.col-code,
+.data-table td.col-code {
+  width: 12%;
+  text-align: left;
+  padding: 14px 8px;
+}
+
+.data-table th.col-name,
+.data-table td.col-name {
+  width: 14%;
+  text-align: left;
+  padding: 14px 8px;
+}
+
+.data-table th.col-phone,
+.data-table td.col-phone {
+  width: 11%;
+  text-align: left;
+  padding: 14px 8px;
+}
+
+.data-table th.col-email,
+.data-table td.col-email {
+  width: 15%;
+  text-align: left;
+  padding: 14px 8px;
+  overflow: hidden;
+}
+
+.data-table th.col-address,
+.data-table td.col-address {
+  width: 16%;
+  text-align: left;
+  padding: 14px 8px;
+  overflow: hidden;
+}
+
+.data-table th.col-status,
+.data-table td.col-status {
+  width: 11%;
+  text-align: center !important;
+  padding: 14px 6px;
+}
+
+.data-table th.col-action,
+.data-table td.col-action {
+  width: 16%;
+  text-align: center !important;
+  padding: 14px 6px;
 }
 
 /* Alternating row colors - like voucher table */
@@ -294,13 +387,61 @@
 /* Customer code in table - normal font weight */
 .data-table .customer-code {
   color: #007bff;
-  font-weight: 400;
+  font-weight: 500;
   font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.data-table .customer-name-text {
+  font-weight: 500;
+  color: #212529;
+  display: block;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  max-width: 100%;
+}
+
+.data-table td.col-email {
+  position: relative;
+}
+
+.data-table .email-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  color: #495057;
+  cursor: help;
+  box-sizing: border-box;
+}
+
+.data-table td.col-address {
+  position: relative;
+}
+
+.data-table .address-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  color: #495057;
+  line-height: 1.4;
+  word-break: break-word;
+  cursor: help;
+  max-height: 2.8em; /* 2 lines * 1.4 line-height */
+  box-sizing: border-box;
 }
 
 .no-data {
   color: #6c757d;
   font-style: italic;
+  font-size: 0.85rem;
 }
 
 /* Status badge in customer table */
@@ -308,15 +449,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 90px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 400;
+  min-width: 100px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
   white-space: nowrap;
-  line-height: 1.2;
+  line-height: 1.3;
   box-sizing: border-box;
 }
 
@@ -332,8 +473,10 @@
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
 }
 
 .btn-edit {
@@ -902,6 +1045,81 @@
   .data-table th,
   .data-table td {
     padding: 12px 8px;
+  }
+
+  /* Responsive column widths */
+  .data-table {
+    table-layout: auto;
+    font-size: 0.85rem;
+  }
+
+  .data-table th.col-stt,
+  .data-table td.col-stt {
+    width: 5%;
+    min-width: 40px;
+    padding: 10px 4px;
+  }
+
+  .data-table th.col-code,
+  .data-table td.col-code {
+    width: 10%;
+    min-width: 100px;
+    padding: 10px 6px;
+  }
+
+  .data-table th.col-name,
+  .data-table td.col-name {
+    width: 12%;
+    min-width: 120px;
+    padding: 10px 6px;
+  }
+
+  .data-table th.col-phone,
+  .data-table td.col-phone {
+    width: 10%;
+    min-width: 100px;
+    padding: 10px 6px;
+  }
+
+  .data-table th.col-email,
+  .data-table td.col-email {
+    width: 18%;
+    min-width: 140px;
+    max-width: 160px;
+    padding: 10px 6px;
+  }
+
+  .data-table th.col-address,
+  .data-table td.col-address {
+    width: 20%;
+    min-width: 150px;
+    max-width: 180px;
+    padding: 10px 6px;
+  }
+
+  .data-table th.col-status,
+  .data-table td.col-status {
+    width: 10%;
+    min-width: 100px;
+    padding: 10px 6px;
+  }
+
+  .data-table th.col-action,
+  .data-table td.col-action {
+    width: 15%;
+    min-width: 110px;
+    padding: 10px 6px;
+  }
+
+  .action-buttons {
+    gap: 4px;
+  }
+
+  .btn-edit,
+  .btn-view,
+  .btn-delete {
+    padding: 6px;
+    font-size: 1rem;
   }
 
   .customer-details-grid {

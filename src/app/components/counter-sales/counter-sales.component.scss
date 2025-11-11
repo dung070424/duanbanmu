@@ -833,10 +833,56 @@
   }
 }
 
+.voucher-list-container {
+  // Giới hạn chiều cao cố định để view không bị dài
+  // Chỉ scroll khi nội dung vượt quá chiều cao tối đa
+  max-height: 350px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  // Custom scrollbar style
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
 .voucher-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 10px;
+  margin-bottom: 10px;
+}
+
+.voucher-more-action {
+  text-align: center;
+  padding: 10px 0;
+  border-top: 1px solid #e6e6e6;
+  margin-top: 10px;
+  
+  button {
+    transition: all 0.2s ease;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+      transform: scale(1.05);
+    }
+    
+    i {
+      font-size: 16px;
+      margin-right: 4px;
+    }
+  }
 }
 
 .voucher-card {
@@ -894,4 +940,99 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 6px;
+}
+
+// Modal styles cho phiếu giảm giá
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+
+.voucher-modal-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 900px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.voucher-modal-content .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  flex-shrink: 0;
+
+  .modal-title {
+    margin: 0;
+    color: #495057;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .btn-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.15s ease-in-out;
+
+    &:hover {
+      background-color: #e9ecef;
+      color: #dc3545;
+      transform: rotate(90deg);
+    }
+
+    i {
+      font-size: 20px;
+    }
+  }
+}
+
+.voucher-modal-content .modal-body {
+  padding: 25px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.voucher-modal-content .modal-footer {
+  padding: 15px 25px;
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.voucher-modal-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 5px;
 }
