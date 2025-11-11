@@ -23,6 +23,7 @@ export interface HoaDonDTO {
   soDienThoai?: string;
   email?: string;
   diaChiGiaoHang?: string;
+  diaChiKhachHang?: string; // Địa chỉ khách hàng (từ ThongTinDonHang hoặc DiaChiKhachHang)
   phuongThucThanhToan?: string;
   // Địa chỉ khách hàng
   tinhThanh?: string;

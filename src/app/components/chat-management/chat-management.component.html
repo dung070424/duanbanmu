@@ -1,0 +1,214 @@
+<div class="chat-management-container">
+  <div class="chat-management-header">
+    <h2><i class="fas fa-comments"></i> Quản lý Chat</h2>
+    <div class="header-actions">
+      <button 
+        class="btn btn-refresh" 
+        (click)="loadConversations()"
+        [disabled]="isLoading"
+      >
+        <i class="fas fa-sync-alt" [class.spinning]="isLoading"></i>
+        Làm mới
+      </button>
+    </div>
+  </div>
+
+  <div class="chat-management-content">
+    <!-- Sidebar: Danh sách conversations -->
+    <div class="conversations-sidebar">
+      <div class="sidebar-header">
+        <h3>Cuộc trò chuyện</h3>
+        <div class="filter-tabs">
+          <button 
+            class="filter-tab" 
+            [class.active]="filterType === 'waiting'"
+            (click)="changeFilter('waiting')"
+          >
+            Chờ phản hồi
+            <span class="badge" *ngIf="getWaitingCount() > 0">{{ getWaitingCount() }}</span>
+          </button>
+          <button 
+            class="filter-tab" 
+            [class.active]="filterType === 'assigned'"
+            (click)="changeFilter('assigned')"
+            [disabled]="!nhanVienId"
+          >
+            Đã nhận
+          </button>
+        </div>
+      </div>
+
+      <div class="conversations-list">
+        <div *ngIf="isLoading && conversations.length === 0" class="loading-state">
+          <div class="spinner"></div>
+          <p>Đang tải...</p>
+        </div>
+
+        <div *ngIf="!isLoading && conversations.length === 0" class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>Không có cuộc trò chuyện nào</p>
+        </div>
+
+        <div 
+          *ngFor="let conversation of conversations" 
+          class="conversation-item"
+          [class.active]="selectedConversation?.id === conversation.id"
+          [class.has-unread]="getUnreadCount(conversation) > 0"
+          (click)="selectConversation(conversation)"
+        >
+          <div class="conversation-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="conversation-info">
+            <div class="conversation-header">
+              <h4>{{ conversation.khachHangTen || 'Khách hàng' }}</h4>
+              <span class="conversation-time" *ngIf="conversation.ngayCapNhat">
+                {{ formatTime(conversation.ngayCapNhat) }}
+              </span>
+            </div>
+            <div class="conversation-preview">
+              <p *ngIf="conversation.messages && conversation.messages.length > 0">
+                {{ conversation.messages[conversation.messages.length - 1].noiDung | slice:0:50 }}
+                {{ conversation.messages[conversation.messages.length - 1].noiDung.length > 50 ? '...' : '' }}
+              </p>
+              <p *ngIf="!conversation.messages || conversation.messages.length === 0">
+                Chưa có tin nhắn
+              </p>
+            </div>
+            <div class="conversation-meta">
+              <span class="conversation-status" [ngClass]="'status-' + conversation.trangThai.toLowerCase()">
+                {{ getStatusLabel(conversation.trangThai) }}
+              </span>
+              <span class="unread-badge" *ngIf="getUnreadCount(conversation) > 0">
+                {{ getUnreadCount(conversation) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main: Chat window -->
+    <div class="chat-window">
+      <div *ngIf="!selectedConversation" class="no-conversation-selected">
+        <i class="fas fa-comments"></i>
+        <h3>Chọn cuộc trò chuyện để bắt đầu</h3>
+        <p>Chọn một cuộc trò chuyện từ danh sách bên trái để xem và trả lời tin nhắn.</p>
+      </div>
+
+      <div *ngIf="selectedConversation" class="chat-window-content">
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="chat-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="chat-header-text">
+              <h3>{{ selectedConversation.khachHangTen || 'Khách hàng' }}</h3>
+              <p class="chat-meta">
+                <span *ngIf="selectedConversation.khachHangId" class="customer-id">
+                  <i class="fas fa-id-card"></i> ID: {{ selectedConversation.khachHangId }}
+                </span>
+                <span *ngIf="selectedConversation.khachHangEmail" class="customer-email">
+                  <i class="fas fa-envelope"></i> {{ selectedConversation.khachHangEmail }}
+                </span>
+                <span class="chat-status" [ngClass]="'status-' + selectedConversation.trangThai.toLowerCase()">
+                  {{ getStatusLabel(selectedConversation.trangThai) }}
+                </span>
+                <span *ngIf="selectedConversation.tuDongTraLoi === false" class="auto-reply-disabled">
+                  <i class="fas fa-robot"></i> Tự động trả lời: Tắt
+                </span>
+              </p>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <button 
+              class="btn btn-assign" 
+              *ngIf="!selectedConversation.nhanVienId && nhanVienId"
+              (click)="assignConversation(selectedConversation.id!)"
+            >
+              <i class="fas fa-user-check"></i>
+              Nhận cuộc trò chuyện
+            </button>
+            <button 
+              class="btn btn-close" 
+              *ngIf="selectedConversation.nhanVienId"
+              (click)="closeConversation(selectedConversation.id!)"
+            >
+              <i class="fas fa-times"></i>
+              Đóng cuộc trò chuyện
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-container" #messagesContainer>
+          <div *ngIf="isLoading && messages.length === 0" class="loading-message">
+            <div class="spinner"></div>
+            <p>Đang tải tin nhắn...</p>
+          </div>
+
+          <div 
+            *ngFor="let message of messages" 
+            class="message"
+            [class.message-customer]="isCustomerMessage(message)"
+            [class.message-staff]="isStaffMessage(message)"
+            [class.message-chatbot]="isChatbotMessage(message)"
+          >
+            <div class="message-content">
+              <div class="message-avatar" *ngIf="!isStaffMessage(message)">
+                <i class="fas fa-user" *ngIf="isCustomerMessage(message)"></i>
+                <i class="fas fa-robot" *ngIf="isChatbotMessage(message)"></i>
+              </div>
+              <div class="message-bubble">
+                <p class="message-text">{{ message.noiDung }}</p>
+                <span class="message-time">{{ formatTime(message.thoiGianGui) }}</span>
+                <span class="message-sender" *ngIf="message.nhanVienTen">
+                  - {{ message.nhanVienTen }}
+                </span>
+              </div>
+              <div class="message-avatar" *ngIf="isStaffMessage(message)">
+                <i class="fas fa-user-tie"></i>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="isLoading && messages.length > 0" class="typing-indicator">
+            <div class="typing-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-container">
+          <div class="chat-input-wrapper">
+            <input
+              type="text"
+              #messageInput
+              class="chat-input"
+              [(ngModel)]="newMessage"
+              (keypress)="onKeyPress($event)"
+              placeholder="Nhập tin nhắn của bạn..."
+              [disabled]="!selectedConversation.nhanVienId || isLoading"
+            />
+            <button 
+              class="chat-send-btn"
+              (click)="sendMessage()"
+              [disabled]="!newMessage.trim() || !selectedConversation.nhanVienId || isLoading"
+            >
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+          <p class="chat-hint" *ngIf="!selectedConversation.nhanVienId">
+            <i class="fas fa-info-circle"></i>
+            Vui lòng nhận cuộc trò chuyện trước khi trả lời
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

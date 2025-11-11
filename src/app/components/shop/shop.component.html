@@ -232,30 +232,30 @@
       </div>
 
       <div class="filter-section">
-        <div class="filter-content">
-          <div class="search-box">
-            <i class="fas fa-search search-icon"></i>
-            <input 
-              type="text" 
-              [(ngModel)]="searchKeyword"
-              (ngModelChange)="filterProducts()"
-              placeholder="Tìm kiếm sản phẩm..."
-              class="search-input"
-            />
-          </div>
-          
-          <div class="filter-controls">
-            <select 
-              [(ngModel)]="selectedPriceRange"
-              (ngModelChange)="filterProducts()"
-              class="filter-select"
-            >
-              <option *ngFor="let range of priceRanges" [value]="range.value">
-                {{ range.label }}
-              </option>
-            </select>
-          </div>
+      <div class="filter-content">
+        <div class="search-box">
+          <i class="fas fa-search search-icon"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="searchKeyword"
+            (ngModelChange)="filterProducts()"
+            placeholder="Tìm kiếm sản phẩm..."
+            class="search-input"
+          />
         </div>
+        
+        <div class="filter-controls">
+          <select 
+            [(ngModel)]="selectedPriceRange"
+            (ngModelChange)="filterProducts()"
+            class="filter-select"
+          >
+            <option *ngFor="let range of priceRanges" [value]="range.value">
+              {{ range.label }}
+            </option>
+          </select>
+        </div>
+      </div>
       </div>
 
       <div *ngIf="isLoading" class="loading">
@@ -362,4 +362,7 @@
       </div>
     </div>
   </footer>
+
+  <!-- Chatbot Widget -->
+  <app-chatbot></app-chatbot>
 </div>

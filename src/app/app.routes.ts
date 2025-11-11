@@ -41,6 +41,7 @@ import { OriginsComponent } from './components/origins/origins.component';
 import { TrongLuongComponent } from './components/trong-luong/trong-luong.component';
 import { LoaiMuBaoHiemComponent } from './components/loai-mu-bao-hiem/loai-mu-bao-hiem.component';
 import { CongNgheAnToanComponent } from './components/cong-nghe-an-toan/cong-nghe-an-toan.component';
+import { ChatManagementComponent } from './components/chat-management/chat-management.component';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -88,6 +89,12 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN', 'STAFF'] },
+  },
+  {
+    path: 'chat-management',
+    component: ChatManagementComponent,
     canActivate: [AuthGuard, roleGuard],
     data: { roles: ['ADMIN', 'STAFF'] },
   },
