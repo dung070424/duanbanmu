@@ -1,0 +1,438 @@
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { ChatService } from '../../../services/chat.service';
+import { AuthService } from '../../../services/auth';
+import { CustomerService } from '../../../services/customer.service';
+import { Conversation, ChatMessage, SendMessageRequest } from '../../../interfaces/chat.interface';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-chatbot',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './chatbot.component.html',
+  styleUrls: ['./chatbot.component.scss']
+})
+export class ChatbotComponent implements OnInit, OnDestroy {
+  @ViewChild('messagesContainer', { static: false }) messagesContainer!: ElementRef;
+  @ViewChild('messageInput', { static: false }) messageInput!: ElementRef;
+
+  isOpen = false;
+  isLoading = false;
+  isSendingMessage = false; // Tách riêng trạng thái đang gửi tin nhắn
+  currentConversation: Conversation | null = null;
+  messages: ChatMessage[] = [];
+  newMessage = '';
+  khachHangId: number | null = null;
+  customerName: string = '';
+  private pollingSubscription?: Subscription;
+  private conversationSubscription?: Subscription;
+
+  constructor(
+    private chatService: ChatService,
+    private authService: AuthService,
+    private customerService: CustomerService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    // Kiểm tra xem khách hàng đã đăng nhập chưa
+    if (this.authService.isLoggedIn()) {
+      this.loadCustomerInfo();
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollingSubscription) {
+      this.pollingSubscription.unsubscribe();
+    }
+    if (this.conversationSubscription) {
+      this.conversationSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * Load thông tin khách hàng
+   */
+  loadCustomerInfo(): void {
+    this.customerService.getCurrentCustomer().subscribe({
+      next: (customer) => {
+        if (customer && customer.id) {
+          this.khachHangId = customer.id;
+          this.customerName = customer.tenKhachHang || customer.username || 'Khách hàng';
+          // Tự động load conversation khi mở chatbot và đã có khachHangId
+          if (this.isOpen && this.khachHangId) {
+            this.loadConversation();
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error loading customer info:', error);
+        // Không block input nếu lỗi load customer info
+        // Vẫn cho phép người dùng thử gửi tin nhắn
+      }
+    });
+  }
+
+  /**
+   * Toggle chatbot (mở/đóng)
+   */
+  toggleChatbot(): void {
+    this.isOpen = !this.isOpen;
+    if (this.isOpen) {
+      // Nếu chưa có khách hàng ID, load lại
+      if (!this.khachHangId && this.authService.isLoggedIn()) {
+        this.loadCustomerInfo();
+      }
+      // Load conversation khi mở (nếu có khachHangId)
+      if (this.khachHangId) {
+        this.loadConversation();
+      } else if (this.authService.isLoggedIn()) {
+        // Nếu đã đăng nhập nhưng chưa có khachHangId, load customer info
+        this.loadCustomerInfo();
+      } else {
+        // Hiển thị thông báo yêu cầu đăng nhập
+        this.messages = [{
+          id: 0,
+          loaiNguoiGui: 'CHATBOT',
+          noiDung: 'Xin chào! Để sử dụng chatbot, vui lòng đăng nhập.',
+          thoiGianGui: new Date().toISOString(),
+          tuDongTraLoi: true
+        }];
+      }
+      // Focus vào input sau khi mở (đợi một chút để đảm bảo DOM đã render)
+      setTimeout(() => {
+        if (this.messageInput && this.messageInput.nativeElement) {
+          this.messageInput.nativeElement.focus();
+        }
+      }, 300);
+    } else {
+      // Dừng polling khi đóng
+      this.stopPolling();
+    }
+  }
+
+  /**
+   * Load conversation
+   */
+  loadConversation(): void {
+    if (!this.khachHangId) {
+      console.warn('⚠️ Cannot load conversation: khachHangId is null');
+      return;
+    }
+
+    console.log('🔄 Loading conversation for khachHangId:', this.khachHangId);
+
+    // Chỉ set loading khi chưa có conversation, không block input
+    if (!this.currentConversation) {
+      this.isLoading = true;
+    }
+    
+    this.chatService.getOrCreateConversation(this.khachHangId).subscribe({
+      next: (conversation) => {
+        console.log('✅ Conversation loaded successfully:', conversation);
+        this.currentConversation = conversation;
+        this.messages = conversation.messages || [];
+        this.isLoading = false;
+        this.scrollToBottom();
+        
+        // Bắt đầu polling để lấy tin nhắn mới
+        if (conversation.id) {
+          this.startPolling(conversation.id);
+        }
+
+        // Subscribe để nhận updates
+        if (this.conversationSubscription) {
+          this.conversationSubscription.unsubscribe();
+        }
+        this.conversationSubscription = this.chatService.currentConversation$.subscribe(
+          (updatedConversation) => {
+            if (updatedConversation && updatedConversation.id === conversation.id) {
+              this.currentConversation = updatedConversation;
+              this.messages = updatedConversation.messages || [];
+              this.scrollToBottom();
+            }
+          }
+        );
+      },
+      error: (error) => {
+        console.error('❌ Error loading conversation:', error);
+        console.error('Error details:', {
+          status: (error as any).status,
+          message: error.message,
+          error: (error as any).originalError?.error || error
+        });
+        this.isLoading = false;
+        
+        // Hiển thị thông báo lỗi chi tiết hơn
+        let errorMessage = error.message || 'Xin lỗi, có lỗi xảy ra khi tải cuộc trò chuyện.';
+        
+        // Parse error từ backend
+        const originalError = (error as any).originalError;
+        if (originalError) {
+          if (typeof originalError.error === 'string') {
+            errorMessage = originalError.error;
+          } else if (originalError.error?.message) {
+            errorMessage = originalError.error.message;
+          }
+        } else if ((error as any).error) {
+          if (typeof (error as any).error === 'string') {
+            errorMessage = (error as any).error;
+          } else if ((error as any).error?.message) {
+            errorMessage = (error as any).error.message;
+          }
+        }
+        
+        // Chỉ hiển thị lỗi warning, không block input
+        // Người dùng vẫn có thể gửi tin nhắn và conversation sẽ được tạo tự động
+        if (this.messages.length === 0) {
+          this.messages.push({
+            id: 0,
+            loaiNguoiGui: 'CHATBOT',
+            noiDung: 'Xin chào! Bạn có thể bắt đầu trò chuyện bằng cách gửi tin nhắn. Hãy thử hỏi về sản phẩm, giá cả, hoặc thời gian hoạt động của shop.',
+            thoiGianGui: new Date().toISOString(),
+            tuDongTraLoi: true
+          });
+        }
+        
+        // Vẫn cho phép người dùng nhập tin nhắn (conversation sẽ được tạo khi gửi)
+        this.scrollToBottom();
+      }
+    });
+  }
+
+  /**
+   * Gửi tin nhắn
+   */
+  sendMessage(): void {
+    if (!this.newMessage.trim() || !this.khachHangId || this.isSendingMessage) {
+      if (!this.khachHangId) {
+        console.warn('⚠️ Cannot send message: khachHangId is null');
+      }
+      return;
+    }
+
+    // Luôn gọi sendMessageInternal - nó sẽ tự động tạo conversation nếu cần
+    this.sendMessageInternal();
+  }
+
+  /**
+   * Internal method để gửi tin nhắn
+   */
+  private sendMessageInternal(): void {
+    if (!this.newMessage.trim() || !this.khachHangId) {
+      return;
+    }
+
+    const messageText = this.newMessage.trim();
+    this.newMessage = '';
+
+    // Thêm tin nhắn vào UI ngay lập tức (optimistic update)
+    const userMessage: ChatMessage = {
+      id: Date.now(), // Temporary ID
+      conversationId: this.currentConversation?.id,
+      loaiNguoiGui: 'KHACH_HANG',
+      khachHangId: this.khachHangId!,
+      noiDung: messageText,
+      thoiGianGui: new Date().toISOString(),
+      tuDongTraLoi: false,
+      daDoc: true
+    };
+    this.messages.push(userMessage);
+    this.scrollToBottom();
+
+    // Gửi tin nhắn đến server (backend sẽ tự động tạo conversation nếu chưa có)
+    const request: SendMessageRequest = {
+      conversationId: this.currentConversation?.id, // Có thể null, backend sẽ tự tạo
+      noiDung: messageText,
+      khachHangId: this.khachHangId!
+    };
+
+    this.isSendingMessage = true;
+    console.log('📤 Sending message to server:', request);
+    this.chatService.sendCustomerMessage(request).subscribe({
+      next: (sentMessage) => {
+        console.log('✅ Message sent successfully:', sentMessage);
+        
+        // Cập nhật conversation ID nếu đã được tạo
+        if (sentMessage.conversationId && !this.currentConversation) {
+          // Load conversation mới được tạo
+          this.chatService.getConversationById(sentMessage.conversationId).subscribe({
+            next: (conversation) => {
+              this.currentConversation = conversation;
+              this.messages = conversation.messages || [];
+              this.scrollToBottom();
+              
+              // Bắt đầu polling
+              if (conversation.id) {
+                this.startPolling(conversation.id);
+              }
+            }
+          });
+        } else {
+          // Cập nhật tin nhắn với ID từ server
+          const index = this.messages.findIndex(m => m.id === userMessage.id);
+          if (index !== -1) {
+            this.messages[index] = sentMessage;
+          } else {
+            this.messages.push(sentMessage);
+          }
+        }
+        
+        this.isSendingMessage = false;
+        this.scrollToBottom();
+
+        // Reload conversation để lấy phản hồi từ chatbot
+        const conversationId = sentMessage.conversationId || this.currentConversation?.id;
+        if (conversationId) {
+          setTimeout(() => {
+            this.chatService.getConversationById(conversationId).subscribe({
+              next: (updatedConversation) => {
+                console.log('✅ Conversation updated with chatbot response:', updatedConversation);
+                this.currentConversation = updatedConversation;
+                this.messages = updatedConversation.messages || [];
+                this.scrollToBottom();
+                
+                // Bắt đầu polling nếu chưa có
+                if (updatedConversation.id && !this.pollingSubscription) {
+                  this.startPolling(updatedConversation.id);
+                }
+              },
+              error: (err) => {
+                console.error('Error reloading conversation:', err);
+              }
+            });
+          }, 1500); // Tăng thời gian chờ để chatbot có thời gian xử lý
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error sending message:', error);
+        console.error('Error details:', {
+          status: (error as any).status,
+          message: error.message,
+          error: (error as any).originalError?.error || error
+        });
+        this.isSendingMessage = false;
+        // Xóa tin nhắn lỗi
+        this.messages = this.messages.filter(m => m.id !== userMessage.id);
+        
+        // Hiển thị thông báo lỗi chi tiết
+        let errorMessage = error.message || 'Xin lỗi, có lỗi xảy ra khi gửi tin nhắn.';
+        
+        // Parse error từ backend
+        const originalError = (error as any).originalError;
+        if (originalError) {
+          if (typeof originalError.error === 'string') {
+            errorMessage = originalError.error;
+          } else if (originalError.error?.message) {
+            errorMessage = originalError.error.message;
+          } else if (originalError.error?.error) {
+            errorMessage = originalError.error.error;
+          }
+        } else if ((error as any).error) {
+          if (typeof (error as any).error === 'string') {
+            errorMessage = (error as any).error;
+          } else if ((error as any).error?.message) {
+            errorMessage = (error as any).error.message;
+          } else if ((error as any).error?.error) {
+            errorMessage = (error as any).error.error;
+          }
+        }
+        
+        this.messages.push({
+          id: 0,
+          loaiNguoiGui: 'CHATBOT',
+          noiDung: errorMessage + ' Vui lòng thử lại.',
+          thoiGianGui: new Date().toISOString(),
+          tuDongTraLoi: true
+        });
+        this.scrollToBottom();
+      }
+    });
+  }
+
+  /**
+   * Xử lý phím Enter
+   */
+  onKeyPress(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.sendMessage();
+    }
+  }
+
+  /**
+   * Bắt đầu polling để lấy tin nhắn mới
+   */
+  startPolling(conversationId: number): void {
+    this.stopPolling();
+    this.pollingSubscription = this.chatService.startPollingMessages(conversationId, 3000)
+      .subscribe({
+        next: (conversation) => {
+          if (conversation && conversation.messages) {
+            // Chỉ cập nhật nếu có tin nhắn mới
+            if (conversation.messages.length > this.messages.length) {
+              this.messages = conversation.messages;
+              this.scrollToBottom();
+            }
+          }
+        },
+        error: (error) => {
+          console.error('Error polling messages:', error);
+        }
+      });
+  }
+
+  /**
+   * Dừng polling
+   */
+  stopPolling(): void {
+    if (this.pollingSubscription) {
+      this.pollingSubscription.unsubscribe();
+      this.pollingSubscription = undefined;
+    }
+  }
+
+  /**
+   * Scroll đến tin nhắn cuối cùng
+   */
+  scrollToBottom(): void {
+    setTimeout(() => {
+      if (this.messagesContainer) {
+        const element = this.messagesContainer.nativeElement;
+        element.scrollTop = element.scrollHeight;
+      }
+    }, 100);
+  }
+
+  /**
+   * Format thời gian hiển thị
+   */
+  formatTime(dateString: string): string {
+    return this.chatService.formatMessageTime(dateString);
+  }
+
+  /**
+   * Kiểm tra xem có phải tin nhắn từ chatbot không
+   */
+  isChatbotMessage(message: ChatMessage): boolean {
+    return message.loaiNguoiGui === 'CHATBOT';
+  }
+
+  /**
+   * Kiểm tra xem có phải tin nhắn từ khách hàng không
+   */
+  isCustomerMessage(message: ChatMessage): boolean {
+    return message.loaiNguoiGui === 'KHACH_HANG';
+  }
+
+  /**
+   * Kiểm tra xem có phải tin nhắn từ nhân viên không
+   */
+  isStaffMessage(message: ChatMessage): boolean {
+    return message.loaiNguoiGui === 'NHAN_VIEN';
+  }
+}
+

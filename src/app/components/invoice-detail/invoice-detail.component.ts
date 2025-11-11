@@ -111,20 +111,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       return 'Không có thông tin';
     }
 
-    // Kiểm tra địa chỉ từ database trước
-    if (this.customerAddresses && this.customerAddresses.length > 0) {
-      // Tìm địa chỉ mặc định
-      const defaultAddress = this.customerAddresses.find(addr => addr.macDinh === true);
-      if (defaultAddress) {
-        return this.formatAddress(defaultAddress);
-      }
-
-      // Nếu không có địa chỉ mặc định, lấy địa chỉ đầu tiên
-      const firstAddress = this.customerAddresses[0];
-      return this.formatAddress(firstAddress);
-    }
-
-    // Fallback: kiểm tra địa chỉ từ các field trong invoice
+    // QUAN TRỌNG: Ưu tiên lấy địa chỉ từ invoice (từ ThongTinDonHang - đơn hàng online)
+    // Đây là thông tin giao hàng chính xác từ checkout
     const addressParts = [];
 
     if (this.invoice.diaChiChiTiet) {
@@ -143,21 +131,53 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       addressParts.push(this.invoice.tinhThanh);
     }
 
-    // Nếu có địa chỉ từ các field trên
+    // Nếu có địa chỉ từ invoice (từ ThongTinDonHang - đơn hàng online)
     if (addressParts.length > 0) {
+      console.log('✅ Using address from invoice (ThongTinDonHang):', addressParts.join(', '));
       return addressParts.join(', ');
     }
 
-    // Fallback: kiểm tra địa chỉ từ customer object
-    if (this.customer?.diaChi) {
-      return this.customer.diaChi;
-    }
-
-    // Fallback: kiểm tra địa chỉ giao hàng trong invoice
+    // Fallback 1: kiểm tra địa chỉ giao hàng trong invoice (nếu có)
     if (this.invoice.diaChiGiaoHang) {
+      console.log('✅ Using address from invoice.diaChiGiaoHang:', this.invoice.diaChiGiaoHang);
       return this.invoice.diaChiGiaoHang;
     }
 
+    // Fallback 2: kiểm tra địa chỉ từ database (cho đơn hàng tại quầy)
+    if (this.customerAddresses && this.customerAddresses.length > 0) {
+      // Tìm địa chỉ mặc định
+      const defaultAddress = this.customerAddresses.find(addr => addr.macDinh === true);
+      if (defaultAddress) {
+        console.log('✅ Using default address from database:', this.formatAddress(defaultAddress));
+        return this.formatAddress(defaultAddress);
+      }
+
+      // Nếu không có địa chỉ mặc định, lấy địa chỉ đầu tiên
+      const firstAddress = this.customerAddresses[0];
+      console.log('✅ Using first address from database:', this.formatAddress(firstAddress));
+      return this.formatAddress(firstAddress);
+    }
+
+    // Fallback 3: kiểm tra địa chỉ từ customer object
+    if (this.customer?.diaChi) {
+      console.log('✅ Using address from customer.diaChi:', this.customer.diaChi);
+      return this.customer.diaChi;
+    }
+
+    // Fallback 4: kiểm tra địa chỉ từ diaChiKhachHang trong invoice (nếu có)
+    // Backend map diaChiKhachHang từ ThongTinDonHang (online) hoặc DiaChiKhachHang (counter)
+    if (this.invoice.diaChiKhachHang) {
+      console.log('✅ Using address from invoice.diaChiKhachHang:', this.invoice.diaChiKhachHang);
+      return this.invoice.diaChiKhachHang;
+    }
+
+    // Fallback 5: kiểm tra địa chỉ từ diaChiGiaoHang trong invoice (nếu có)
+    if (this.invoice.diaChiGiaoHang) {
+      console.log('✅ Using address from invoice.diaChiGiaoHang:', this.invoice.diaChiGiaoHang);
+      return this.invoice.diaChiGiaoHang;
+    }
+
+    console.warn('⚠️ No address found, returning default message');
     return 'Hãy cập nhật địa chỉ';
   }
 

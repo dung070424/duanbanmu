@@ -94,15 +94,15 @@
       <div class="customer-info">
         <div class="info-row">
           <span class="label">Khách hàng:</span>
-          <span class="value">{{ customer?.tenKhachHang || invoice.tenKhachHang || 'Khách lẻ' }}</span>
+          <span class="value">{{ invoice.tenKhachHang || customer?.tenKhachHang || 'Khách lẻ' }}</span>
         </div>
-        <div class="info-row" *ngIf="customer?.soDienThoai || invoice.soDienThoaiKhachHang">
+        <div class="info-row" *ngIf="invoice.soDienThoaiKhachHang || customer?.soDienThoai">
           <span class="label">SĐT:</span>
-          <span class="value">{{ customer?.soDienThoai || invoice.soDienThoaiKhachHang }}</span>
+          <span class="value">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai }}</span>
         </div>
-        <div class="info-row" *ngIf="customer?.email || invoice.emailKhachHang">
+        <div class="info-row" *ngIf="invoice.emailKhachHang || customer?.email">
           <span class="label">Email:</span>
-          <span class="value">{{ customer?.email || invoice.emailKhachHang }}</span>
+          <span class="value">{{ invoice.emailKhachHang || customer?.email }}</span>
         </div>
       </div>
 
@@ -473,6 +473,10 @@
               <span class="label">Sđt:</span>
               <span class="value">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai || 'Chưa có' }}</span>
             </div>
+            <div class="info-item mt-2" *ngIf="invoice.emailKhachHang || customer?.email">
+              <span class="label">Email:</span>
+              <span class="value">{{ invoice.emailKhachHang || customer?.email }}</span>
+            </div>
             <!-- Ghi chú khi trạng thái là Hủy -->
             <div class="info-item mt-3" *ngIf="(invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY') && invoice.ghiChu">
               <span class="label text-danger">
@@ -601,15 +605,15 @@
               <tbody>
             <tr>
               <td class="label-cell"><strong>Tên khách hàng:</strong></td>
-              <td class="value-cell">{{ customer?.tenKhachHang || invoice.tenKhachHang || 'Không có thông tin' }}</td>
+              <td class="value-cell">{{ invoice.tenKhachHang || customer?.tenKhachHang || 'Không có thông tin' }}</td>
             </tr>
             <tr>
               <td class="label-cell"><strong>Email:</strong></td>
-              <td class="value-cell">{{ customer?.email || invoice.emailKhachHang || 'Không có' }}</td>
+              <td class="value-cell">{{ invoice.emailKhachHang || customer?.email || 'Không có' }}</td>
             </tr>
             <tr>
               <td class="label-cell"><strong>Số điện thoại:</strong></td>
-              <td class="value-cell">{{ customer?.soDienThoai || invoice.soDienThoaiKhachHang || 'Không có' }}</td>
+              <td class="value-cell">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai || 'Không có' }}</td>
             </tr>
             <tr>
               <td class="label-cell"><strong>Địa chỉ:</strong></td>
