@@ -241,6 +241,23 @@ export class ChatbotComponent implements OnInit, OnDestroy {
       daDoc: true
     };
     this.messages.push(userMessage);
+
+    // Hiển thị phản hồi AI ngay lập tức (optimistic auto-reply) thay vì 3 dấu chấm
+    const autoReplyText = this.isProductRelated(messageText)
+      ? this.buildProductHighlightMessage()
+      : (this.isGreeting(messageText)
+          ? 'Xin chào bạn! Rất vui được hỗ trợ. Bạn cần tư vấn sản phẩm hay thông tin gì không?'
+          : 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.');
+    const optimisticBotMessage: ChatMessage = {
+      id: -Date.now(), // id tạm âm để phân biệt
+      conversationId: this.currentConversation?.id,
+      loaiNguoiGui: 'CHATBOT',
+      noiDung: autoReplyText,
+      thoiGianGui: new Date().toISOString(),
+      tuDongTraLoi: true,
+      daDoc: false
+    };
+    this.messages.push(optimisticBotMessage);
     this.scrollToBottom();
 
     // Gửi tin nhắn đến server (backend sẽ tự động tạo conversation nếu chưa có)
@@ -250,7 +267,8 @@ export class ChatbotComponent implements OnInit, OnDestroy {
       khachHangId: this.khachHangId!
     };
 
-    this.isSendingMessage = true;
+    // Không hiển thị "typing" vì đã có phản hồi optimistic
+    this.isSendingMessage = false;
     console.log('📤 Sending message to server:', request);
     this.chatService.sendCustomerMessage(request).subscribe({
       next: (sentMessage) => {
@@ -292,7 +310,8 @@ export class ChatbotComponent implements OnInit, OnDestroy {
               next: (updatedConversation) => {
                 console.log('✅ Conversation updated with chatbot response:', updatedConversation);
                 this.currentConversation = updatedConversation;
-                this.messages = updatedConversation.messages || [];
+                // Thay thế list messages bằng dữ liệu từ server (tự loại bỏ message optimistic id âm)
+                this.messages = (updatedConversation.messages || []);
                 this.scrollToBottom();
                 
                 // Bắt đầu polling nếu chưa có
@@ -433,6 +452,61 @@ export class ChatbotComponent implements OnInit, OnDestroy {
    */
   isStaffMessage(message: ChatMessage): boolean {
     return message.loaiNguoiGui === 'NHAN_VIEN';
+  }
+
+  /**
+   * Phát hiện câu hỏi liên quan sản phẩm (đồng bộ với BE)
+   */
+  private isProductRelated(message: string): boolean {
+    if (!message) return false;
+    const lower = message.toLowerCase().trim();
+    const sanitized = this.sanitizeText(lower);
+    const keywords = [
+      'sản phẩm', 'san pham', 'product',
+      'mũ', 'mu', 'helmet', 'nón',
+      'giá', 'gia', 'price', 'giá cả', 'gia ca',
+      'mua', 'buy', 'purchase', 'đặt hàng', 'dat hang', 'order',
+      'bán', 'ban', 'sell', 'có bán', 'co ban',
+      'hàng', 'hang', 'item', 'goods',
+      'kích thước', 'kich thuoc', 'size',
+      'màu', 'mau', 'color', 'colour',
+      'chất liệu', 'chat lieu', 'material',
+      'thương hiệu', 'thuong hieu', 'brand',
+      'model', 'mẫu', 'mau',
+      'tồn kho', 'ton kho', 'stock', 'còn hàng', 'con hang',
+      'giao hàng', 'giao hang', 'delivery', 'ship',
+      'thanh toán', 'thanh toan', 'payment',
+      'muốn mua', 'muon mua', 'want to buy', 'cần mua', 'can mua',
+      'trẻ em', 'tre em', 'children', 'kid',
+      'người lớn', 'nguoi lon', 'adult',
+      'bán chạy', 'ban chay', 'best seller', 'nổi bật', 'noi bat'
+    ];
+    return keywords.some(k => lower.includes(k) || sanitized.includes(this.sanitizeText(k)));
+  }
+
+  private isGreeting(message: string): boolean {
+    if (!message) return false;
+    const lower = message.toLowerCase().trim();
+    const sanitized = this.sanitizeText(lower);
+    const greetings = [
+      'xin chào', 'chào', 'chao', 'hello', 'hi', 'hey',
+      'alo', 'good morning', 'good afternoon', 'good evening'
+    ];
+    return greetings.some(g => lower.includes(g) || sanitized.includes(this.sanitizeText(g)));
+  }
+
+  private buildProductHighlightMessage(): string {
+    // FE hiển thị gợi ý tạm thời; backend sẽ trả gợi ý chính xác dựa dữ liệu
+    return 'Bạn đợi nhân viên trả lời.';
+  }
+
+  private sanitizeText(text: string): string {
+    if (!text) return '';
+    return text
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/\s+/g, '')
+      .toLowerCase();
   }
 }
 
