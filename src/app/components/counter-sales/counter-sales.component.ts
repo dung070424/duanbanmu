@@ -109,7 +109,11 @@ export class CounterSalesComponent implements OnInit {
   } | null = null;
   alternativeVouchers: any[] = [];
   allVouchers: any[] = [];
+  displayedVouchers: any[] = []; // Chỉ hiển thị một số phiếu giảm giá (ví dụ: 3-5 phiếu)
+  maxDisplayedVouchers: number = 3; // Số lượng phiếu giảm giá hiển thị tối đa
   showBestTab: boolean = true;
+  showVoucherModal: boolean = false; // Modal để xem tất cả phiếu giảm giá
+  voucherModalSearchTerm: string = ''; // Tìm kiếm trong modal
 
   // Product filter + pagination for POS list
   // Options cho bộ lọc – được build động từ dữ liệu sản phẩm chi tiết
@@ -1376,6 +1380,8 @@ export class CounterSalesComponent implements OnInit {
     this.bestVoucher = usable[0] || null;
     this.alternativeVouchers = usable.slice(1, 5);
     this.allVouchers = usable; // flat, sorted desc
+    // Chỉ hiển thị một số phiếu giảm giá đầu tiên (giới hạn để view không bị dài)
+    this.displayedVouchers = usable.slice(0, this.maxDisplayedVouchers);
   }
 
   private computeVoucherDiscount(v: any, base: number): number {
@@ -1793,5 +1799,36 @@ export class CounterSalesComponent implements OnInit {
       this.isDelivery &&
       (this.customerAddresses.length === 0 || this.selectedSavedAddressId === 'new')
     );
+  }
+
+  // Mở modal để xem tất cả phiếu giảm giá
+  openVoucherModal(): void {
+    this.showVoucherModal = true;
+    this.voucherModalSearchTerm = '';
+  }
+
+  // Đóng modal phiếu giảm giá
+  closeVoucherModal(): void {
+    this.showVoucherModal = false;
+    this.voucherModalSearchTerm = '';
+  }
+
+  // Lọc phiếu giảm giá trong modal dựa trên từ khóa tìm kiếm
+  get filteredVouchersForModal(): any[] {
+    if (!this.voucherModalSearchTerm || this.voucherModalSearchTerm.trim() === '') {
+      return this.allVouchers;
+    }
+    const searchTerm = this.voucherModalSearchTerm.toLowerCase().trim();
+    return this.allVouchers.filter(v => 
+      v.code.toLowerCase().includes(searchTerm) ||
+      (v.minOrder && v.minOrder.toString().includes(searchTerm)) ||
+      (v.discount && v.discount.toString().includes(searchTerm))
+    );
+  }
+
+  // Áp dụng phiếu giảm giá từ modal
+  applyCouponFromModal(v: any): void {
+    this.applyCouponFromSuggestion(v);
+    this.closeVoucherModal();
   }
 }

@@ -1513,6 +1513,69 @@
           }
         }
       }
+      
+      // Pagination for available customers table
+      .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        padding: 10px 12px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        
+        .pagination-info {
+          color: #6c757d;
+          font-size: 13px;
+          font-weight: 500;
+        }
+        
+        .pagination-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          
+          .pagination-btn {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            font-size: 12px;
+            
+            &:hover:not(:disabled) {
+              background-color: #e9ecef;
+              border-color: #adb5bd;
+            }
+            
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+              background-color: #f8f9fa;
+            }
+            
+            i {
+              font-size: 14px;
+            }
+          }
+          
+          .pagination-page-info {
+            color: #495057;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 0 8px;
+            white-space: nowrap;
+          }
+        }
+      }
     }
   }
   

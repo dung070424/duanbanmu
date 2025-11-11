@@ -345,44 +345,57 @@
                   </div>
                 </div>
               </div>
-              <div class="voucher-list">
-                <div
-                  class="voucher-card"
-                  *ngFor="let v of allVouchers; let i = index"
-                  [ngClass]="{ best: i < 3 }"
-                >
-                  <div class="voucher-header">
-                    <span class="code-chip">{{ v.code }}</span>
-                    <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
-                  </div>
-                  <div class="voucher-body">
-                    <div class="discount-row">
-                      <span class="tag">Giảm:</span>
-                      <span class="value">-{{ formatCurrency(v.discount) }}</span>
+              <div class="voucher-list-container">
+                <div class="voucher-list">
+                  <div
+                    class="voucher-card"
+                    *ngFor="let v of displayedVouchers; let i = index"
+                    [ngClass]="{ best: i < 3 }"
+                  >
+                    <div class="voucher-header">
+                      <span class="code-chip">{{ v.code }}</span>
+                      <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
                     </div>
-                    <div class="extra" *ngIf="v.expiry || v.expiredAt">
-                      Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
+                    <div class="voucher-body">
+                      <div class="discount-row">
+                        <span class="tag">Giảm:</span>
+                        <span class="value">-{{ formatCurrency(v.discount) }}</span>
+                      </div>
+                      <div class="extra" *ngIf="v.expiry || v.expiredAt">
+                        Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
+                      </div>
+                      <div class="extra" *ngIf="v.minOrder">
+                        Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
+                      </div>
                     </div>
-                    <div class="extra" *ngIf="v.minOrder">
-                      Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
+                    <div class="voucher-actions">
+                      <label class="form-check m-0">
+                        <input
+                          type="radio"
+                          class="form-check-input"
+                          name="voucherChoice"
+                          [checked]="appliedCoupon?.code === v.code"
+                          (change)="applyCouponFromSuggestion(v)"
+                        />
+                        <span>Chọn</span>
+                      </label>
                     </div>
-                  </div>
-                  <div class="voucher-actions">
-                    <label class="form-check m-0">
-                      <input
-                        type="radio"
-                        class="form-check-input"
-                        name="voucherChoice"
-                        [checked]="appliedCoupon?.code === v.code"
-                        (change)="applyCouponFromSuggestion(v)"
-                      />
-                      <span>Chọn</span>
-                    </label>
                   </div>
                 </div>
-              </div>
-              <div class="text-muted small" *ngIf="allVouchers.length === 0">
-                Không có mã giảm giá phù hợp
+                <!-- Nút xem thêm nếu có nhiều phiếu giảm giá -->
+                <div class="voucher-more-action" *ngIf="allVouchers.length > maxDisplayedVouchers && allVouchers.length > 0">
+                  <button 
+                    type="button" 
+                    class="btn btn-link btn-sm p-0 text-primary fw-bold"
+                    (click)="openVoucherModal()"
+                    title="Xem tất cả phiếu giảm giá"
+                  >
+                    <i class="bi bi-three-dots"></i> Xem thêm {{ allVouchers.length - maxDisplayedVouchers }} phiếu giảm giá khác...
+                  </button>
+                </div>
+                <div class="text-muted small text-center py-2" *ngIf="allVouchers.length === 0">
+                  Không có mã giảm giá phù hợp
+                </div>
               </div>
             </div>
           </div>
@@ -603,6 +616,75 @@
         class="btn-close btn-close-white ms-auto"
         (click)="toastVisible = false"
       ></button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal hiển thị tất cả phiếu giảm giá -->
+<div *ngIf="showVoucherModal" class="modal-overlay" (click)="closeVoucherModal()">
+  <div class="modal-content voucher-modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h4 class="modal-title">Danh sách phiếu giảm giá</h4>
+      <button type="button" class="btn-close" (click)="closeVoucherModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <!-- Tìm kiếm phiếu giảm giá -->
+      <div class="mb-3">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Tìm kiếm theo mã, giá trị giảm, đơn tối thiểu..."
+          [(ngModel)]="voucherModalSearchTerm"
+        />
+      </div>
+      
+      <!-- Danh sách phiếu giảm giá -->
+      <div class="voucher-modal-list">
+        <div
+          class="voucher-card"
+          *ngFor="let v of filteredVouchersForModal; let i = index"
+          [ngClass]="{ best: i === 0 }"
+        >
+          <div class="voucher-header">
+            <span class="code-chip">{{ v.code }}</span>
+            <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
+          </div>
+          <div class="voucher-body">
+            <div class="discount-row">
+              <span class="tag">Giảm:</span>
+              <span class="value">-{{ formatCurrency(v.discount) }}</span>
+            </div>
+            <div class="extra" *ngIf="v.expiry || v.expiredAt">
+              Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
+            </div>
+            <div class="extra" *ngIf="v.minOrder">
+              Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
+            </div>
+          </div>
+          <div class="voucher-actions">
+            <label class="form-check m-0">
+              <input
+                type="radio"
+                class="form-check-input"
+                name="voucherChoiceModal"
+                [checked]="appliedCoupon?.code === v.code"
+                (change)="applyCouponFromModal(v)"
+              />
+              <span>Chọn</span>
+            </label>
+          </div>
+        </div>
+        <div class="text-muted small text-center p-3" *ngIf="filteredVouchersForModal.length === 0">
+          Không tìm thấy phiếu giảm giá phù hợp
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeVoucherModal()">
+        Đóng
+      </button>
     </div>
   </div>
 </div>

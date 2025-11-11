@@ -85,36 +85,38 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th style="width: 60px">STT</th>
-            <th>Mã Khách Hàng</th>
-            <th>Tên Khách Hàng</th>
-            <th>Số Điện Thoại</th>
-            <th>Email</th>
-            <th>Địa Chỉ</th>
-            <th>Trạng Thái</th>
-            <th>Hành Động</th>
+            <th class="col-stt">STT</th>
+            <th class="col-code">Mã Khách Hàng</th>
+            <th class="col-name">Tên Khách Hàng</th>
+            <th class="col-phone">Số Điện Thoại</th>
+            <th class="col-email">Email</th>
+            <th class="col-address">Địa Chỉ</th>
+            <th class="col-status">Trạng Thái</th>
+            <th class="col-action">Hành Động</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let kh of paginatedList; let i = index">
-            <td class="text-center">{{ currentPage * pageSize + i + 1 }}</td>
-            <td>
+            <td class="text-center col-stt">{{ currentPage * pageSize + i + 1 }}</td>
+            <td class="col-code">
               <span class="customer-code" *ngIf="kh.maKhachHang">{{ kh.maKhachHang }}</span>
               <span class="no-data" *ngIf="!kh.maKhachHang">-</span>
             </td>
-            <td>{{ kh.tenKhachHang }}</td>
-            <td>
+            <td class="col-name">
+              <span class="customer-name-text">{{ kh.tenKhachHang }}</span>
+            </td>
+            <td class="col-phone">
               <span *ngIf="kh.soDienThoai">{{ kh.soDienThoai }}</span>
               <span class="no-data" *ngIf="!kh.soDienThoai">Không có số điện thoại</span>
             </td>
-            <td>
-              <span *ngIf="kh.email">{{ kh.email }}</span>
+            <td class="col-email">
+              <span class="email-text" *ngIf="kh.email" [title]="kh.email">{{ kh.email }}</span>
               <span class="no-data" *ngIf="!kh.email">Không có email</span>
             </td>
-            <td>
-              <span>{{ getCustomerAddress(kh) }}</span>
+            <td class="col-address">
+              <span class="address-text" [title]="getCustomerAddress(kh)">{{ getCustomerAddress(kh) }}</span>
             </td>
-            <td>
+            <td class="text-center col-status">
               <span
                 class="status-badge"
                 [class.active]="kh.trangThai"
@@ -123,7 +125,7 @@
                 {{ kh.trangThai ? 'Kích Hoạt' : 'Đã Hủy' }}
               </span>
             </td>
-            <td>
+            <td class="text-center col-action">
               <div class="action-buttons">
                 <button class="btn-edit" (click)="openEdit(kh)" title="Chỉnh sửa">
                   <i class="bi bi-pencil"></i>
