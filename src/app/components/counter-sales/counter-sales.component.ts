@@ -1417,6 +1417,10 @@ export class CounterSalesComponent implements OnInit {
 
     // Set payment method based on selection
     this.newSale.paymentMethod = this.checkoutPaymentMethod;
+    const isPayNow =
+      this.checkoutPaymentMethod === 'cash' || this.checkoutPaymentMethod === 'transfer';
+    this.newSale.paymentStatus = isPayNow ? 'paid' : 'pending';
+    const frontInvoiceStatus: 'completed' | 'processing' = isPayNow ? 'completed' : 'processing';
 
     const newSale: CounterSale = {
       id: this.counterSales.length + 1,
@@ -1447,7 +1451,7 @@ export class CounterSalesComponent implements OnInit {
       totalAmount: this.cartTotal,
       paymentMethod: this.newSale.paymentMethod!,
       paymentStatus: this.newSale.paymentStatus!,
-      status: 'completed',
+      status: frontInvoiceStatus,
       notes: this.newSale.notes,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -1468,6 +1472,8 @@ export class CounterSalesComponent implements OnInit {
       tienGiamGia: Math.round(this.cartDiscount + this.couponDiscount),
       phuongThucThanhToan: this.newSale.paymentMethod,
       trangThai: this.isDelivery ? 'DA_XAC_NHAN' : 'DA_GIAO_HANG',
+      nhanVienId: this.newSale.staffId,
+      tenNhanVien: this.newSale.staffName,
       danhSachChiTiet: this.cart.map((item) => ({
         chiTietSanPhamId: item.productId,
         tenSanPham: item.productName,
