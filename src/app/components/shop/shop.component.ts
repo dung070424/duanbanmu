@@ -9,6 +9,7 @@ import { HoaDonChoService, HoaDonCho, GioHangChoItem } from '../../services/hoa-
 import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.service';
 import { AuthService } from '../../services/auth';
 import { CustomerService } from '../../services/customer.service';
+import { ChatbotComponent } from './chatbot/chatbot.component';
 import { Subscription } from 'rxjs';
 import { distinctUntilChanged, skip } from 'rxjs/operators';
 
@@ -23,7 +24,7 @@ interface Category {
 @Component({
   selector: 'app-shop',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ChatbotComponent],
   templateUrl: './shop.component.html',
   styleUrls: ['./shop.component.scss']
 })

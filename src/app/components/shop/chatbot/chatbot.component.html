@@ -1,0 +1,118 @@
+<div class="chatbot-container">
+  <!-- Chatbot Toggle Button -->
+  <button 
+    class="chatbot-toggle-btn" 
+    (click)="toggleChatbot()"
+    [class.active]="isOpen"
+    aria-label="Mở chatbot"
+  >
+    <i class="fas fa-comments" *ngIf="!isOpen"></i>
+    <i class="fas fa-times" *ngIf="isOpen"></i>
+    <span class="chatbot-badge" *ngIf="!isOpen && currentConversation && currentConversation.soTinNhanChuaDoc && currentConversation.soTinNhanChuaDoc > 0">
+      {{ currentConversation.soTinNhanChuaDoc }}
+    </span>
+  </button>
+
+  <!-- Chatbot Window -->
+  <div class="chatbot-window" [class.open]="isOpen">
+    <!-- Chatbot Header -->
+    <div class="chatbot-header">
+      <div class="chatbot-header-info">
+        <div class="chatbot-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="chatbot-header-text">
+          <h3>TDK Store Chatbot</h3>
+          <p class="chatbot-status" *ngIf="currentConversation && currentConversation.dangChoPhanHoi">
+            <span class="status-dot waiting"></span>
+            Đang chờ nhân viên trả lời...
+          </p>
+          <p class="chatbot-status" *ngIf="!currentConversation || !currentConversation.dangChoPhanHoi">
+            <span class="status-dot online"></span>
+            Trực tuyến
+          </p>
+        </div>
+      </div>
+      <button class="chatbot-close-btn" (click)="toggleChatbot()" aria-label="Đóng chatbot">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Chatbot Messages -->
+    <div class="chatbot-messages" #messagesContainer>
+      <!-- Loading chỉ hiển thị khi đang load lần đầu và chưa có messages -->
+      <div *ngIf="isLoading && messages.length === 0 && !khachHangId" class="loading-message">
+        <div class="spinner"></div>
+        <p>Đang tải...</p>
+      </div>
+
+      <!-- Empty message chỉ hiển thị khi không loading và không có messages và đã có khachHangId -->
+      <div *ngIf="!isLoading && messages.length === 0 && khachHangId && currentConversation" class="empty-message">
+        <i class="fas fa-comments"></i>
+        <p>Chào mừng bạn đến với TDK Store!</p>
+        <p class="empty-message-hint">Bạn có thể hỏi về sản phẩm, giá cả, thời gian hoạt động của shop...</p>
+      </div>
+
+      <!-- Messages -->
+      <div 
+        *ngFor="let message of messages" 
+        class="message"
+        [class.message-customer]="isCustomerMessage(message)"
+        [class.message-staff]="isStaffMessage(message)"
+        [class.message-chatbot]="isChatbotMessage(message)"
+      >
+        <div class="message-content">
+          <div class="message-avatar" *ngIf="!isCustomerMessage(message)">
+            <i class="fas fa-robot" *ngIf="isChatbotMessage(message)"></i>
+            <i class="fas fa-user-tie" *ngIf="isStaffMessage(message)"></i>
+          </div>
+          <div class="message-bubble">
+            <p class="message-text">{{ message.noiDung }}</p>
+            <span class="message-time">{{ formatTime(message.thoiGianGui) }}</span>
+          </div>
+          <div class="message-avatar" *ngIf="isCustomerMessage(message)">
+            <i class="fas fa-user"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing indicator chỉ hiển thị khi đang gửi tin nhắn -->
+      <div *ngIf="isSendingMessage" class="typing-indicator">
+        <div class="typing-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chatbot Input -->
+    <div class="chatbot-input-container">
+      <div class="chatbot-input-wrapper">
+        <input
+          type="text"
+          #messageInput
+          class="chatbot-input"
+          [(ngModel)]="newMessage"
+          (keypress)="onKeyPress($event)"
+          placeholder="Nhập tin nhắn của bạn..."
+          [disabled]="!khachHangId || isSendingMessage"
+          [title]="!khachHangId ? 'Vui lòng đăng nhập để sử dụng chatbot' : ''"
+        />
+        <button 
+          class="chatbot-send-btn"
+          (click)="sendMessage()"
+          [disabled]="!newMessage.trim() || !khachHangId || isSendingMessage"
+          aria-label="Gửi tin nhắn"
+        >
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+      <p class="chatbot-hint" *ngIf="!khachHangId">
+        <i class="fas fa-info-circle"></i>
+        Vui lòng <a routerLink="/shop/login">đăng nhập</a> để sử dụng chatbot
+      </p>
+    </div>
+  </div>
+</div>
+

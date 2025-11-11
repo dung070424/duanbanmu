@@ -50,6 +50,16 @@ export class SidebarComponent implements OnInit {
       roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
     },
     {
+      icon: 'bi-chat-dots',
+      label: 'Quản lý Chat',
+      route: '/chat-management',
+      active: false,
+      hasSubmenu: false,
+      isExpanded: false,
+      submenu: [],
+      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
+    },
+    {
       icon: 'bi-box-seam',
       label: 'Quản lý sản phẩm',
       route: '/products',
