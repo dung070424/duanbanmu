@@ -1,4 +1,147 @@
 <div class="dashboard">
+  <!-- Modal thông tin báo cáo -->
+  <div class="modal-overlay" *ngIf="showReportModal" (click)="closeReportModal()">
+    <div class="modal-content report-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="bi bi-file-earmark-spreadsheet"></i> Thông Tin Báo Cáo Thống Kê</h3>
+        <button class="modal-close" (click)="closeReportModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body report-modal-body">
+        <!-- Bảng dữ liệu chi tiết -->
+        <div class="report-table-container">
+          <div class="report-table-header">
+            <div class="report-filter-info">
+              <label class="filter-label">Khoảng thời gian:</label>
+              <select class="report-time-filter" [(ngModel)]="reportTimeRange" (change)="onReportTimeRangeChange()">
+                <option value="day">Hôm nay</option>
+                <option value="week">Tuần này</option>
+                <option value="month" [selected]="true">Tháng này</option>
+                <option value="year">Năm nay</option>
+                <option value="custom">Tùy chọn</option>
+              </select>
+              
+              <!-- Date range picker - chỉ hiển thị khi chọn "Tùy chọn" -->
+              <div class="report-custom-date-range" *ngIf="reportTimeRange === 'custom'">
+                <input 
+                  type="date" 
+                  class="report-date-input" 
+                  [(ngModel)]="reportCustomStartDate"
+                  (change)="onReportCustomDateChange()"
+                  [max]="reportCustomEndDate || getTodayDate()">
+                <span class="date-separator">đến</span>
+                <input 
+                  type="date" 
+                  class="report-date-input" 
+                  [(ngModel)]="reportCustomEndDate"
+                  (change)="onReportCustomDateChange()"
+                  [min]="reportCustomStartDate"
+                  [max]="getTodayDate()">
+              </div>
+            </div>
+          </div>
+
+          <div class="report-table-wrapper">
+            <table class="report-detail-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Thời gian</th>
+                  <th>Đơn thành công</th>
+                  <th>Bán lẻ</th>
+                  <th>Bán sỉ</th>
+                  <th>Chiết khấu</th>
+                  <th>Doanh thu</th>
+                  <th>Thực tế</th>
+                  <th>Công nợ</th>
+                  <th>Lợi nhuận</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Hàng tổng -->
+                <tr class="summary-row total-row">
+                  <td colspan="2" class="summary-label">Tổng</td>
+                  <td class="highlight-value">{{ reportTotalOrders }}</td>
+                  <td class="highlight-value">{{ getRetailRevenue() | number }} ₫</td>
+                  <td class="highlight-value">{{ getWholesaleRevenue() | number }} ₫</td>
+                  <td class="highlight-value">{{ getTotalDiscount() | number }} ₫</td>
+                  <td class="highlight-value revenue">{{ reportTotalRevenue | number }} ₫</td>
+                  <td class="highlight-value actual-revenue">{{ reportTotalActualRevenue | number }} ₫</td>
+                  <td class="highlight-value debt-revenue">{{ reportTotalDebtRevenue | number }} ₫</td>
+                  <td class="highlight-value profit">{{ getTotalProfit() | number }} ₫</td>
+                </tr>
+                <!-- Hàng trung bình -->
+                <tr class="summary-row average-row">
+                  <td colspan="2" class="summary-label">Trung bình</td>
+                  <td>{{ getAverageOrders() }}</td>
+                  <td>{{ getAverageRetailRevenue() | number }} ₫</td>
+                  <td>{{ getAverageWholesaleRevenue() | number }} ₫</td>
+                  <td>{{ getAverageDiscount() | number }} ₫</td>
+                  <td>{{ getAverageRevenue() | number }} ₫</td>
+                  <td>{{ getAverageActualRevenue() | number }} ₫</td>
+                  <td>{{ getAverageDebtRevenue() | number }} ₫</td>
+                  <td>{{ getAverageProfit() | number }} ₫</td>
+                </tr>
+                <!-- Hàng tỷ lệ -->
+                <tr class="summary-row ratio-row">
+                  <td colspan="2" class="summary-label">Tỷ lệ / Tổng</td>
+                  <td>100%</td>
+                  <td>{{ getRetailPercentage() }}%</td>
+                  <td>{{ getWholesalePercentage() }}%</td>
+                  <td>{{ getDiscountPercentage() }}%</td>
+                  <td>100%</td>
+                  <td>{{ getActualRevenuePercentage() }}%</td>
+                  <td>{{ getDebtPercentage() }}%</td>
+                  <td>{{ getProfitPercentage() }}%</td>
+                </tr>
+                <!-- Dữ liệu chi tiết theo thời gian -->
+                <tr *ngFor="let data of getReportTableData(); let i = index" class="data-row">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ data.period }}</td>
+                  <td>{{ data.orders }}</td>
+                  <td class="highlight-value">{{ data.retail | number }} ₫</td>
+                  <td>{{ data.wholesale | number }} ₫</td>
+                  <td>{{ data.discount | number }} ₫</td>
+                  <td class="highlight-value revenue">{{ data.revenue | number }} ₫</td>
+                  <td class="highlight-value actual-revenue">{{ data.actualRevenue | number }} ₫</td>
+                  <td class="highlight-value debt-revenue">{{ data.debt | number }} ₫</td>
+                  <td class="highlight-value profit">{{ data.profit | number }} ₫</td>
+                </tr>
+                <!-- Nếu không có dữ liệu -->
+                <tr *ngIf="getReportTableData().length === 0" class="no-data-row">
+                  <td colspan="10" class="no-data-message">
+                    Chưa có dữ liệu cho khoảng thời gian này
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Thông tin bổ sung -->
+          <div class="report-footer-info">
+            <div class="footer-info-item">
+              <span class="footer-label">Ngày tạo báo cáo:</span>
+              <span class="footer-value">{{ getCurrentDate() }}</span>
+            </div>
+            <div class="footer-info-item">
+              <span class="footer-label">Số sản phẩm bán chạy:</span>
+              <span class="footer-value">{{ bestSellingProducts.length }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeReportModal()">
+          <i class="bi bi-x-circle"></i>
+          <span>Đóng</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal chỉnh sửa mẫu báo cáo -->
   <div class="modal-overlay" *ngIf="showTemplateModal" (click)="closeTemplateModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
@@ -204,7 +347,7 @@
       <div class="period-content">
         <div class="period-label">{{ period.periodLabel }}</div>
         <div class="period-revenue">
-          <span class="revenue-label">Doanh Số :</span>
+          <span class="revenue-label">Doanh Thu:</span>
           <span class="revenue-amount">{{ period.revenue | number }} ₫</span>
         </div>
         <div class="period-actual-revenue">
@@ -212,7 +355,7 @@
           <span class="revenue-amount">{{ period.actualRevenue | number }} ₫</span>
         </div>
         <div class="period-debt-revenue">
-          <span class="revenue-label">Công Nợ :</span>
+          <span class="revenue-label">Dư Nợ::</span>
           <span class="revenue-amount">{{ period.debtRevenue | number }} ₫</span>
         </div>
         <div class="period-change">
@@ -300,7 +443,7 @@
         <h3><i class="bi bi-trophy"></i> Sản Phẩm Bán Chạy</h3>
       </div>
       <div class="card-body">
-        <div class="best-selling-list">
+        <div class="best-selling-list" *ngIf="bestSellingProducts.length > 0; else noBestSellingData">
           <div class="product-item" *ngFor="let product of bestSellingProducts; let i = index" 
                [class.rank-1]="i === 0" 
                [class.rank-2]="i === 1" 
@@ -324,6 +467,11 @@
             </div>
           </div>
         </div>
+        <ng-template #noBestSellingData>
+          <div class="no-data-message">
+            {{ bestSellingMessage || 'Chưa có dữ liệu sản phẩm bán chạy cho bộ lọc hiện tại.' }}
+          </div>
+        </ng-template>
       </div>
     </div>
   </div>

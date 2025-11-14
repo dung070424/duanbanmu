@@ -105,6 +105,53 @@ export class StatisticsService {
     );
   }
 
+  getBestSellingProductsByPeriod(period: 'day' | 'week' | 'month' | 'year', limit: number = 5): Observable<{ data: BestSellingProductDTO[], total: number, period: string }> {
+    let params = new HttpParams()
+      .set('period', period)
+      .set('limit', limit.toString());
+
+    const fullUrl = `${this.apiUrl}/best-selling-products/period?period=${period}&limit=${limit}`;
+    console.log('📡 [StatisticsService] Calling Best Selling Products by Period API:', fullUrl);
+
+    return this.http.get<{ data: BestSellingProductDTO[], total: number, period: string }>(
+      `${this.apiUrl}/best-selling-products/period`,
+      { params }
+    ).pipe(
+      tap({
+        next: (response) => {
+          console.log(`📥 [StatisticsService] Best Selling Products (${period}) received:`, response);
+        },
+        error: (error) => {
+          console.error(`❌ [StatisticsService] Best Selling Products (${period}) Error:`, error);
+        }
+      })
+    );
+  }
+
+  getBestSellingProductsByDateRange(startDate: string, endDate: string, limit: number = 5): Observable<{ data: BestSellingProductDTO[], total: number, startDate: string, endDate: string }> {
+    let params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate)
+      .set('limit', limit.toString());
+
+    const fullUrl = `${this.apiUrl}/best-selling-products/date-range?startDate=${startDate}&endDate=${endDate}&limit=${limit}`;
+    console.log('📡 [StatisticsService] Calling Best Selling Products by Date Range API:', fullUrl);
+
+    return this.http.get<{ data: BestSellingProductDTO[], total: number, startDate: string, endDate: string }>(
+      `${this.apiUrl}/best-selling-products/date-range`,
+      { params }
+    ).pipe(
+      tap({
+        next: (response) => {
+          console.log(`📥 [StatisticsService] Best Selling Products (date range ${startDate} -> ${endDate}) received:`, response);
+        },
+        error: (error) => {
+          console.error('❌ [StatisticsService] Best Selling Products (date range) Error:', error);
+        }
+      })
+    );
+  }
+
   getPeriodStatistics(period: 'day' | 'week' | 'month' | 'year'): Observable<PeriodStatisticsDTO> {
     const fullUrl = `${this.apiUrl}/period?period=${period}`;
     console.log('📡 [StatisticsService] Calling Period Statistics API:', fullUrl);
