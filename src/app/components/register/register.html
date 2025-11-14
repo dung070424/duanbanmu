@@ -1,4 +1,20 @@
 <div class="register-container">
+  <video
+    #videoBackground
+    class="video-background"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+    [attr.playsinline]="true"
+  >
+    <source src="assets/videos/intro/207022_small.mp4" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+
+  <div class="video-overlay"></div>
+
   <div class="register-card">
     <div class="register-header">
       <div class="logo-container">
@@ -92,10 +108,10 @@
       <div *ngIf="successMessage" class="success-message">
         {{ successMessage }}
       </div>
-
-      <div class="register-footer">
-        <p>Đã có tài khoản? <a (click)="goToLogin()" class="link">Đăng nhập ngay</a></p>
-      </div>
     </form>
+
+    <div class="register-footer">
+      <p>Đã có tài khoản? <a (click)="goToLogin()" class="link">Đăng nhập ngay</a></p>
+    </div>
   </div>
 </div>

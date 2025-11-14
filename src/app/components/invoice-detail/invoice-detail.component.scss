@@ -3913,3 +3913,176 @@ $text-light: #6c757d;
     }
   }
 }
+
+/* ===== Unified Detail Grid ===== */
+.invoice-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.invoice-info-grid .info-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #f1f1f1;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.invoice-info-grid .info-card .card-header {
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 15px;
+  border-bottom: 1px solid #f1f1f1;
+  color: #1f2937;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.invoice-info-grid .info-card .card-body {
+  padding: 20px;
+}
+
+.invoice-info-grid .info-card .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+.invoice-info-grid .info-card .info-row .label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.invoice-info-grid .info-card .info-row .value {
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+  max-width: 60%;
+}
+
+.invoice-info-grid .info-card .info-row.total .value {
+  font-size: 16px;
+  color: #27ae60;
+}
+
+.invoice-info-grid .info-card .divider {
+  height: 1px;
+  background: #f3f4f6;
+  margin: 12px 0 18px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.invoice-products-card {
+  margin-top: 24px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #f1f1f1;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.invoice-products-card .card-header {
+  padding: 18px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.invoice-products-card .count-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.invoice-products-card table thead {
+  background: #fafafa;
+}
+
+.invoice-products-card table thead th {
+  font-size: 13px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.invoice-products-card .product-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.invoice-products-card .product-info .thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f9fafb;
+  border: 1px solid #f1f1f1;
+}
+
+.invoice-products-card .product-info .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.invoice-products-card .product-info .details .name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.invoice-products-card .product-info .details .meta {
+  font-size: 13px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.invoice-products-card .attributes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.invoice-products-card .products-summary {
+  border-top: 1px solid #f1f1f1;
+  padding: 18px 24px;
+}
+
+.invoice-products-card .products-summary .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: #4b5563;
+}
+
+.invoice-products-card .products-summary .summary-row.total {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}

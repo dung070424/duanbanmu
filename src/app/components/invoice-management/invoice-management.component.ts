@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { HoaDonDTO, HoaDonFilter, HoaDonChiTietDTO } from '../../interfaces/hoa-don.interface';
+import { HoaDonDTO, HoaDonFilter, HoaDonChiTietDTO, HoaDonActivity } from '../../interfaces/hoa-don.interface';
 import { HoaDonService } from '../../services/hoa-don.service';
 import { InvoiceValidationService, FieldValidation } from '../../services/invoice-validation.service';
 import { CustomerService } from '../../services/customer.service';
@@ -58,6 +58,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   showConfirmInvoiceModal: boolean = false;
   loadingProducts: boolean = false;
   loadingInvoices: boolean = false;
+  showActivityModal: boolean = false;
+  loadingActivityLogs: boolean = false;
 
   // Confirm invoice form data
   confirmInvoiceData = {
@@ -102,6 +104,13 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   loadingDetail: boolean = false;
   isEditMode: boolean = false;
   editingInvoiceDetail: any = null;
+
+  // Activity logs
+  activityLogs: HoaDonActivity[] = [];
+  activityTotalItems = 0;
+  activityPage = 1;
+  activityPageSize = 10;
+  activityFilterInvoice: HoaDonDTO | null = null;
 
   // Product selection properties
   availableProducts: any[] = [];
@@ -996,6 +1005,68 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Nếu không khớp với bất kỳ giá trị nào, trả về giá trị gốc hoặc mặc định
     console.warn('Unknown viTriBanHang value:', viTriBanHang);
     return 'Tại Cửa Hàng'; // Mặc định là "Tại Cửa Hàng"
+  }
+
+  openActivityModal(invoice?: HoaDonDTO): void {
+    this.activityFilterInvoice = invoice ?? null;
+    this.activityPage = 1;
+    this.showActivityModal = true;
+    this.loadActivityLogs();
+  }
+
+  closeActivityModal(): void {
+    this.showActivityModal = false;
+  }
+
+  loadActivityLogs(): void {
+    this.loadingActivityLogs = true;
+    this.hoaDonService
+      .getHoaDonActivities({
+        hoaDonId: this.activityFilterInvoice?.id,
+        page: this.activityPage - 1,
+        size: this.activityPageSize
+      })
+      .subscribe({
+        next: (response) => {
+          this.activityLogs = response.content || [];
+          this.activityTotalItems = response.totalElements || 0;
+          this.loadingActivityLogs = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error loading invoice activities:', error);
+          this.activityLogs = [];
+          this.activityTotalItems = 0;
+          this.loadingActivityLogs = false;
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  onActivityPageChange(page: number): void {
+    if (page < 1) {
+      return;
+    }
+    const maxPage = Math.max(1, Math.ceil(this.activityTotalItems / this.activityPageSize));
+    this.activityPage = Math.min(page, maxPage);
+    this.loadActivityLogs();
+  }
+
+  getActivityActionLabel(action: string): string {
+    const mapping: Record<string, string> = {
+      CREATE: 'Tạo hóa đơn',
+      UPDATE: 'Cập nhật hóa đơn',
+      STATUS_CHANGE: 'Đổi trạng thái',
+      DELETE: 'Xóa hóa đơn'
+    };
+    return mapping[action] || action;
+  }
+
+  formatActivityDescription(activity: HoaDonActivity): string {
+    if (activity.description) {
+      return activity.description;
+    }
+    return this.getActivityActionLabel(activity.action);
   }
 
   formatDateTimeForAPI(dateTime: string): string | undefined {

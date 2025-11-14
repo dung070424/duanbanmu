@@ -3,7 +3,7 @@ import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { HoaDonDTO, HoaDonPaginatedResponse, HoaDonFilter, HoaDonAdvancedFilter } from '../interfaces/hoa-don.interface';
+import { HoaDonDTO, HoaDonPaginatedResponse, HoaDonFilter, HoaDonAdvancedFilter, HoaDonActivity } from '../interfaces/hoa-don.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -312,6 +312,28 @@ export class HoaDonService {
     let params = new HttpParams();
     params = params.append('query', query);
     return this.http.get<string[]>(`${this.apiUrl}/search-suggestions`, { params });
+  }
+
+  getHoaDonActivities(params: { hoaDonId?: number; page?: number; size?: number }): Observable<{
+    content: HoaDonActivity[];
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+    size: number;
+  }> {
+    let httpParams = new HttpParams();
+    if (params.hoaDonId !== undefined && params.hoaDonId !== null) {
+      httpParams = httpParams.set('hoaDonId', params.hoaDonId);
+    }
+    httpParams = httpParams.set('page', String(params.page ?? 0));
+    httpParams = httpParams.set('size', String(params.size ?? 20));
+    return this.http.get<{
+      content: HoaDonActivity[];
+      totalElements: number;
+      totalPages: number;
+      currentPage: number;
+      size: number;
+    }>(`${this.apiUrl}/activities`, { params: httpParams });
   }
 
   // SanPham API methods

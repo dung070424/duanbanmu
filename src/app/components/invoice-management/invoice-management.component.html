@@ -105,6 +105,10 @@
             </div>
           </div>
           <div class="col-md-3">
+            <label class="d-block">&nbsp;</label>
+            <button type="button" class="btn btn-outline-dark w-100" (click)="openActivityModal()">
+              <i class="bi bi-clock-history me-1"></i> Lịch sử thay đổi
+            </button>
           </div>
         </div>
       </div>
@@ -325,6 +329,13 @@
                   >
                     <i class="bi bi-eye"></i>
                   </button>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="openActivityModal(invoice)"
+                    title="Xem lịch sử"
+                  >
+                    <i class="bi bi-clock-history"></i>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -397,6 +408,80 @@
         <p class="text-muted">Chưa có hóa đơn nào phù hợp với bộ lọc hiện tại</p>
         
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="invoice-activity-modal" *ngIf="showActivityModal">
+  <div class="modal-backdrop" (click)="closeActivityModal()"></div>
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div>
+        <h5>Lịch sử thay đổi</h5>
+        <p class="text-muted mb-0">
+          {{ activityFilterInvoice?.maHoaDon ? ('Hóa đơn ' + activityFilterInvoice?.maHoaDon) : 'Tất cả hóa đơn' }}
+        </p>
+      </div>
+      <button class="btn btn-sm btn-light" type="button" (click)="closeActivityModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="activity-table-wrapper" *ngIf="!loadingActivityLogs; else loadingActivitiesTpl">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Mã HĐ</th>
+              <th>Hành động</th>
+              <th>Mô tả</th>
+              <th>Người thực hiện</th>
+              <th>Thời gian</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of activityLogs">
+              <td>
+                <span class="fw-semibold">{{ log.maHoaDon || ('#' + log.hoaDonId) }}</span>
+              </td>
+              <td>
+                <span class="badge text-bg-light">{{ getActivityActionLabel(log.action) }}</span>
+              </td>
+              <td>
+                {{ formatActivityDescription(log) }}
+              </td>
+              <td>
+                {{ log.performedByName || log.performedBy || 'Hệ thống' }}
+              </td>
+              <td>
+                {{ formatDateTime(log.performedAt) }}
+              </td>
+            </tr>
+            <tr *ngIf="activityLogs.length === 0">
+              <td colspan="5" class="text-center text-muted py-4">
+                Chưa có thay đổi nào.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #loadingActivitiesTpl>
+        <div class="text-center py-4 text-muted">
+          <div class="spinner-border text-warning mb-3" role="status"></div>
+          <p>Đang tải lịch sử...</p>
+        </div>
+      </ng-template>
+    </div>
+    <div class="modal-footer" *ngIf="activityTotalItems > activityPageSize">
+      <nav aria-label="Activity pagination" class="ms-auto">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" [class.disabled]="activityPage === 1">
+            <button class="page-link" (click)="onActivityPageChange(activityPage - 1)">&lsaquo;</button>
+          </li>
+          <li class="page-item" [class.disabled]="activityPage >= Math.ceil(activityTotalItems / activityPageSize)">
+            <button class="page-link" (click)="onActivityPageChange(activityPage + 1)">&rsaquo;</button>
+          </li>
+        </ul>
+      </nav>
     </div>
   </div>
 </div>

@@ -104,3 +104,14 @@ export interface HoaDonAdvancedFilter extends HoaDonFilter {
   minAmount?: number;
   maxAmount?: number;
 }
+
+export interface HoaDonActivity {
+  id: number;
+  hoaDonId?: number;
+  maHoaDon?: string;
+  action: string;
+  description?: string;
+  performedBy?: string;
+  performedByName?: string;
+  performedAt: string;
+}

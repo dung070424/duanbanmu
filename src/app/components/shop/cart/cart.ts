@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HoaDonChoService, HoaDonCho, GioHangChoItem } from '../../../services/hoa-don-cho.service';
 import { AuthService } from '../../../services/auth';
+import { ColorApiService, ColorResponse } from '../../../services/color-api.service';
+import { SizeApiService, SizeResponse } from '../../../services/size-api.service';
 
 @Component({
   selector: 'app-cart',
@@ -20,13 +22,31 @@ export class CartComponent implements OnInit {
   currentHoaDonChoId: number | null = null;
   cartItems: any[] = []; // Cache danh sách sản phẩm để tránh gọi getCartItems() nhiều lần
   isLoading = false; // Flag để biết đang load cart hay chưa - Đặt false để hiển thị ngay
+  showItemDetail = false;
+  selectedItem: any = null;
+  detailQuantity = 1;
+  detailColor = '';
+  detailSize = '';
+  availableColors: ColorResponse[] = [];
+  availableSizes: SizeResponse[] = [];
+  bankTransferInfo = {
+    bankName: 'MB Bank - Ngân hàng Quân đội',
+    accountName: 'CÔNG TY TDK STUDIO',
+    accountNumber: '987654321',
+    branch: 'Chi nhánh Sài Gòn',
+    bankCode: 'MBbank',
+    template: 'compact2',
+    note: 'Nội dung chuyển khoản sẽ tự động chèn mã đơn để hệ thống khớp thanh toán.'
+  };
 
   constructor(
     private hoaDonChoService: HoaDonChoService,
     private authService: AuthService,
     private router: Router,
     private location: Location,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private colorApiService: ColorApiService,
+    private sizeApiService: SizeApiService
   ) {}
 
   ngOnInit(): void {
@@ -67,7 +87,9 @@ export class CartComponent implements OnInit {
       this.tempCart = [];
       this.cartItems = [];
     }
-    
+
+    this.loadReferenceData();
+
     // Sau đó load từ DB nếu đã đăng nhập (bất đồng bộ - update sau)
     if (this.authService.isLoggedIn()) {
       console.log('   - User logged in, loading cart from DB...');
@@ -171,6 +193,17 @@ export class CartComponent implements OnInit {
           this.loadTempCart();
         }
       }
+    });
+  }
+
+  private loadReferenceData(): void {
+    this.colorApiService.getAllActive().subscribe({
+      next: (colors) => (this.availableColors = colors),
+      error: (error) => console.warn('⚠️ Không thể tải danh sách màu sắc:', error)
+    });
+    this.sizeApiService.getAllActive().subscribe({
+      next: (sizes) => (this.availableSizes = sizes),
+      error: (error) => console.warn('⚠️ Không thể tải danh sách kích cỡ:', error)
     });
   }
 
@@ -280,6 +313,7 @@ export class CartComponent implements OnInit {
           this.tempCart[index].totalItemPrice = this.tempCart[index].quantity * this.tempCart[index].price;
           localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
           this.updateCartItemsCache();
+          this.refreshDetailQuantityIfNeeded(item);
         }
       }
       return;
@@ -296,6 +330,7 @@ export class CartComponent implements OnInit {
       next: (updatedCart) => {
         this.cart = updatedCart;
         this.updateCartItemsCache();
+        this.refreshDetailQuantityIfNeeded(item);
       },
       error: (error) => {
         console.error('Error updating quantity:', error);
@@ -552,20 +587,29 @@ export class CartComponent implements OnInit {
    */
   updateCartItemsCache(): void {
     if (this.isTempCart) {
-      this.cartItems = Array.isArray(this.tempCart) ? [...this.tempCart] : [];
+      this.cartItems = Array.isArray(this.tempCart)
+        ? this.tempCart.map(item => ({
+            ...item
+          }))
+        : [];
       console.log('🛒 updateCartItemsCache - Updated from tempCart, length:', this.cartItems.length);
     } else if (this.cart && this.cart.danhSachGioHang) {
       // Map từ GioHangChoItem sang format giống temp cart
-      this.cartItems = this.cart.danhSachGioHang.map(item => ({
-        productId: item.chiTietSanPhamId,
-        chiTietSanPhamId: item.chiTietSanPhamId,
-        productName: item.tenSanPham || '',
-        quantity: item.soLuong || 0,
-        price: item.donGia || 0,
-        totalItemPrice: item.thanhTien || 0,
-        imageUrl: '', // Cần lấy từ product
-        id: item.id
-      }));
+      this.cartItems = this.cart.danhSachGioHang.map(item => {
+        const gioHangItem = item as GioHangChoItem & { mauSac?: string; kichThuoc?: string };
+        return {
+          productId: gioHangItem.chiTietSanPhamId,
+          chiTietSanPhamId: gioHangItem.chiTietSanPhamId,
+          productName: gioHangItem.tenSanPham || '',
+          quantity: gioHangItem.soLuong || 0,
+          price: gioHangItem.donGia || 0,
+          totalItemPrice: gioHangItem.thanhTien || 0,
+          imageUrl: '', // Cần lấy từ product
+          id: gioHangItem.id,
+          mauSac: gioHangItem.mauSac || '',
+          kichThuoc: gioHangItem.kichThuoc || ''
+        };
+      });
       console.log('🛒 updateCartItemsCache - Updated from cart.danhSachGioHang, length:', this.cartItems.length);
     } else {
       this.cartItems = [];
@@ -646,6 +690,105 @@ export class CartComponent implements OnInit {
     } else {
       // Nếu không có lịch sử, chuyển về trang chủ
       this.router.navigate(['/shop']);
+    }
+  }
+
+  openItemDetail(item: any): void {
+    this.selectedItem = item;
+    this.detailQuantity = item.quantity || item.soLuong || 1;
+    this.detailColor = item.mauSac || '';
+    this.detailSize = item.kichThuoc || '';
+    this.showItemDetail = true;
+  }
+
+  closeItemDetail(): void {
+    this.showItemDetail = false;
+    this.selectedItem = null;
+  }
+
+  saveItemDetail(): void {
+    if (!this.selectedItem) {
+      return;
+    }
+    const currentQty = this.selectedItem.quantity || this.selectedItem.soLuong || 1;
+    if (this.detailQuantity !== currentQty) {
+      this.updateQuantity(this.selectedItem, this.detailQuantity);
+    }
+    this.applyDetailUpdates(this.selectedItem, {
+      soLuong: this.detailQuantity,
+      quantity: this.detailQuantity,
+      mauSac: this.detailColor,
+      kichThuoc: this.detailSize
+    });
+    this.updateCartItemsCache();
+    this.closeItemDetail();
+  }
+
+  removeItemFromDetail(): void {
+    if (!this.selectedItem) {
+      return;
+    }
+    this.removeItem(this.selectedItem);
+    this.closeItemDetail();
+  }
+
+  decreaseDetailQuantity(): void {
+    this.detailQuantity = Math.max(1, this.detailQuantity - 1);
+  }
+
+  increaseDetailQuantity(): void {
+    this.detailQuantity = this.detailQuantity + 1;
+  }
+
+  getTransferQrUrl(): string {
+    const amount = Math.round(this.getTotal() || 0);
+    const description = this.getTransferDescription();
+    const amountQuery = amount > 0 ? `&amount=${amount}` : '';
+    return `https://img.vietqr.io/image/${this.bankTransferInfo.bankCode}-${this.bankTransferInfo.accountNumber}-${this.bankTransferInfo.template || 'compact2'}.png?addInfo=${encodeURIComponent(description)}${amountQuery}`;
+  }
+
+  getTransferDescription(): string {
+    return `TDK ${this.cart?.maHoaDonCho || 'TEMP'} ${new Date().getFullYear()}`;
+  }
+
+  private refreshDetailQuantityIfNeeded(item: any): void {
+    if (this.selectedItem && this.getItemKey(this.selectedItem) === this.getItemKey(item)) {
+      this.detailQuantity = item.quantity || item.soLuong || 1;
+    }
+  }
+
+  private getItemKey(item: any): string {
+    if (!item) {
+      return '';
+    }
+    if (item.id) {
+      return `db_${item.id}`;
+    }
+    return `temp_${item.chiTietSanPhamId || item.productId || item.productName}`;
+  }
+
+  private applyDetailUpdates(item: any, updates: Record<string, any>): void {
+    const key = this.getItemKey(item);
+    const updater = (target: any) => {
+      Object.assign(target, updates);
+      if (target.quantity !== undefined) {
+        target.totalItemPrice = (target.quantity || 0) * (target.price || 0);
+      }
+      if (target.soLuong !== undefined) {
+        target.thanhTien = (target.soLuong || 0) * (target.donGia || 0);
+      }
+    };
+    if (this.isTempCart) {
+      const index = this.tempCart.findIndex(temp => this.getItemKey(temp) === key);
+      if (index >= 0) {
+        updater(this.tempCart[index]);
+        localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
+      }
+    } else if (this.cart?.danhSachGioHang) {
+      const index = this.cart.danhSachGioHang.findIndex(gi => this.getItemKey(gi) === key);
+      if (index >= 0) {
+        updater(this.cart.danhSachGioHang[index]);
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 // Import shared styles từ shop component
-@import '../shop.component.scss';
+@use '../shop.component.scss';
 
 .news-container {
   min-height: 100vh;
@@ -82,6 +82,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    &:hover img {
+      transform: scale(1.05);
+    }
 
     .news-placeholder {
       font-size: 4rem;
@@ -162,14 +174,16 @@
     }
 
     .news-read-more {
+      border: none;
+      background: transparent;
       color: #667eea;
-      text-decoration: none;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      transition: gap 0.3s ease;
+      transition: gap 0.3s ease, color 0.3s ease;
       margin-top: auto;
+      cursor: pointer;
 
       &:hover {
         gap: 12px;
@@ -180,6 +194,21 @@
         font-size: 0.9rem;
       }
     }
+  }
+}
+
+.news-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #475569;
+
+  i {
+    font-size: 2rem;
+    color: #667eea;
   }
 }
 

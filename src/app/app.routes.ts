@@ -42,6 +42,9 @@ import { TrongLuongComponent } from './components/trong-luong/trong-luong.compon
 import { LoaiMuBaoHiemComponent } from './components/loai-mu-bao-hiem/loai-mu-bao-hiem.component';
 import { CongNgheAnToanComponent } from './components/cong-nghe-an-toan/cong-nghe-an-toan.component';
 import { ChatManagementComponent } from './components/chat-management/chat-management.component';
+import { AboutComponent } from './components/shop/about/about.component';
+import { NewsComponent } from './components/shop/news/news.component';
+import { ContactComponent } from './components/shop/contact/contact.component';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -55,9 +58,12 @@ export const routes: Routes = [
   { path: 'shop/register', component: CustomerRegisterComponent },
   { path: 'shop/forgot-password', component: CustomerForgotPasswordComponent },
   { path: 'shop/cart', component: CartComponent },
-  { path: 'shop/checkout', component: CheckoutComponent, canActivate: [AuthGuard] },
+  { path: 'shop/checkout', component: CheckoutComponent },
   { path: 'shop/product/:id', component: ProductDetailComponent },
   { path: 'shop/products', component: ShopComponent },
+  { path: 'shop/about', component: AboutComponent },
+  { path: 'shop/news', component: NewsComponent },
+  { path: 'shop/contact', component: ContactComponent },
   { path: 'shop', component: ShopComponent },
 
   // Customer routes

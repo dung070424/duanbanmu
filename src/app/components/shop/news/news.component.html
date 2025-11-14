@@ -91,19 +91,19 @@
         <div class="news-grid">
           <article *ngFor="let news of newsItems" class="news-card">
             <div class="news-image">
-              <div class="news-placeholder">
-                <i class="fas fa-newspaper"></i>
-              </div>
+              <img [src]="news.imageUrl || '/assets/images/news-placeholder.jpg'" [alt]="news.title">
               <div class="news-category">{{ news.category }}</div>
             </div>
             <div class="news-content">
               <div class="news-meta">
-                <span class="news-date"><i class="fas fa-calendar"></i> {{ formatDate(news.date) }}</span>
+                <span class="news-date"><i class="fas fa-calendar"></i> {{ formatDate(news.publishedAt) }}</span>
                 <span class="news-category-badge">{{ news.category }}</span>
               </div>
               <h2 class="news-title">{{ news.title }}</h2>
               <p class="news-excerpt">{{ news.excerpt }}</p>
-              <a href="#" class="news-read-more">Đọc thêm <i class="fas fa-arrow-right"></i></a>
+              <button class="news-read-more" type="button">
+                Đọc thêm <i class="fas fa-arrow-right"></i>
+              </button>
             </div>
           </article>
         </div>

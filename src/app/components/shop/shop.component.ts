@@ -21,6 +21,15 @@ interface Category {
   trangThai: boolean;
 }
 
+interface HomepageNews {
+  id: number;
+  title: string;
+  excerpt: string;
+  imageUrl: string;
+  category: string;
+  publishedAt: string;
+}
+
 @Component({
   selector: 'app-shop',
   standalone: true,
@@ -43,6 +52,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   showSearch = false;
   cartCount = 0; // Cart count from backend
   customerName: string = ''; // Tên khách hàng để hiển thị
+  newsArticles: HomepageNews[] = this.createHomepageNews();
   
   private authSubscription?: Subscription;
 
@@ -707,6 +717,59 @@ export class ShopComponent implements OnInit, OnDestroy {
     });
   }
 
+  goToProducts(filter?: string): void {
+    const queryParams: Record<string, any> = {};
+    switch (filter) {
+      case 'featured':
+        queryParams['featured'] = true;
+        break;
+      case 'best-price':
+      case 'sale':
+        queryParams['sale'] = true;
+        break;
+      case 'best-selling':
+        queryParams['bestSeller'] = true;
+        break;
+      case 'royal':
+        queryParams['brand'] = 'Royal';
+        break;
+      case 'new':
+        queryParams['newArrival'] = true;
+        break;
+      case 'news':
+        queryParams['section'] = 'news';
+        break;
+      default:
+        if (filter) {
+          queryParams['category'] = filter;
+        }
+        break;
+    }
+
+    const extras = Object.keys(queryParams).length ? { queryParams } : undefined;
+    this.router.navigate(['/shop/products'], extras).catch((error) => {
+      console.error('Navigation to products failed:', error);
+    });
+  }
+
+  goToNews(articleId?: number): void {
+    const extras = articleId ? { queryParams: { highlight: articleId } } : undefined;
+    this.router.navigate(['/shop/news'], extras).catch((error) => {
+      console.error('Navigation to news failed:', error);
+    });
+  }
+
+  formatDate(dateString?: string): string {
+    if (!dateString) {
+      return '';
+    }
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  }
+
   goToCart(): void {
     console.log('goToCart() called - Navigating to /shop/cart');
     // Giỏ hàng là public, không cần kiểm tra quyền
@@ -749,6 +812,35 @@ export class ShopComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private createHomepageNews(): HomepageNews[] {
+    return [
+      {
+        id: 1,
+        title: 'TDK ra mắt bộ sưu tập Royal Carbon 2025',
+        excerpt: 'Phiên bản Royal Carbon sử dụng vật liệu T700 kết hợp phủ gốm giúp giảm 12% khối lượng nhưng tăng 18% khả năng hấp thụ lực.',
+        imageUrl: 'https://images.unsplash.com/photo-1529429617124-aee711a7041c?auto=format&fit=crop&w=900&q=80',
+        category: 'Sản phẩm mới',
+        publishedAt: '2024-02-15'
+      },
+      {
+        id: 2,
+        title: 'Hướng dẫn chọn mũ fullface đạt chuẩn track-day',
+        excerpt: 'Checklist kiểm tra lực nén, padding và góc nhìn trước khi xuống đường đua.',
+        imageUrl: 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80',
+        category: 'Kinh nghiệm',
+        publishedAt: '2024-02-09'
+      },
+      {
+        id: 3,
+        title: 'Workshop “Build Your Carbon Helmet” tại HCM',
+        excerpt: 'Trải nghiệm tự tay lắp ráp mũ carbon, khắc tên laser, tùy biến tem.',
+        imageUrl: 'https://images.unsplash.com/photo-1529429617124-aee711a7041c?auto=format&fit=crop&w=900&q=80',
+        category: 'Sự kiện',
+        publishedAt: '2024-02-04'
+      }
+    ];
   }
 
   /**
