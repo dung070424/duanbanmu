@@ -44,9 +44,11 @@ export class CheckoutComponent implements OnInit {
 
   // Bank transfer info
   bankInfo = {
-    bankName: 'MB Bank',
+    bankName: 'MB Bank - Ngân hàng Quân đội',
     accountNumber: '0932313815',
-    accountName: 'TDK Store'
+    accountName: 'TDK Store',
+    bankCode: 'MBbank',
+    template: 'compact2'
   };
 
   // Auto-generated transaction code
@@ -699,6 +701,30 @@ export class CheckoutComponent implements OnInit {
     return false;
   }
 
+  getOrderItems(): { code?: string; name: string; quantity: number; unitPrice: number; total: number }[] {
+    const sourceItems = this.isTempCart
+      ? (Array.isArray(this.tempCart) ? this.tempCart : [])
+      : (this.cart?.danhSachGioHang ?? []);
+
+    return sourceItems.map((item: any) => {
+      const name = this.isTempCart ? (item.productName || 'Sản phẩm') : (item.tenSanPham || 'Sản phẩm');
+      const quantity = this.isTempCart ? (item.quantity || 0) : (item.soLuong || 0);
+      const unitPrice = this.isTempCart ? (item.price || 0) : (item.donGia || 0);
+      const total = this.isTempCart
+        ? (item.totalItemPrice || unitPrice * quantity)
+        : (item.thanhTien ?? (unitPrice * quantity - (item.giamGia || 0)));
+      const code = item.maSanPham || item.maChiTiet || item.chiTietSanPhamId;
+
+      return {
+        code,
+        name,
+        quantity,
+        unitPrice,
+        total
+      };
+    });
+  }
+
   validateForm(): boolean {
     // Validate họ và tên
     if (!this.billingInfo.firstName || !this.billingInfo.lastName) {
@@ -1096,6 +1122,13 @@ export class CheckoutComponent implements OnInit {
       style: 'currency',
       currency: 'VND'
     }).format(amount);
+  }
+
+  getBankTransferQrUrl(): string {
+    const amount = Math.round(this.getTotal() || 0);
+    const description = this.transactionCode || 'TDK CHECKOUT';
+    const amountQuery = amount > 0 ? `&amount=${amount}` : '';
+    return `https://img.vietqr.io/image/${this.bankInfo.bankCode}-${this.bankInfo.accountNumber}-${this.bankInfo.template || 'compact2'}.png?addInfo=${encodeURIComponent(description)}${amountQuery}`;
   }
 
   copyTransactionCode(): void {

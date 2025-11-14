@@ -257,11 +257,16 @@
             </thead>
             <tbody>
               <ng-container *ngIf="hasCartItems(); else emptyCart">
-                <tr *ngFor="let item of (cart?.danhSachGioHang || (isTempCart && tempCart ? tempCart : []))">
+                <tr *ngFor="let item of getOrderItems()">
                   <td>
-                    {{ (isTempCart ? item.productName : item.tenSanPham) }} x {{ (isTempCart ? item.quantity : item.soLuong) }}
+                    <div class="product-name">{{ item.name }}</div>
+                    <div class="product-meta">
+                      <span>Mã chi tiết: <strong>#{{ item.code || 'N/A' }}</strong></span>
+                      <span>Đơn giá: <strong>{{ formatCurrency(item.unitPrice) }}</strong></span>
+                      <span>Số lượng: <strong>{{ item.quantity }}</strong></span>
+                    </div>
                   </td>
-                  <td>{{ formatCurrency(isTempCart ? (item.totalItemPrice || 0) : (item.thanhTien || 0)) }}</td>
+                  <td>{{ formatCurrency(item.total) }}</td>
                 </tr>
               </ng-container>
               <ng-template #emptyCart>
@@ -288,6 +293,21 @@
               </tr>
             </tfoot>
           </table>
+
+          <div class="order-details-extra" *ngIf="hasCartItems()">
+            <div class="detail-line">
+              <span>Mã đơn tạm</span>
+              <strong>{{ cart?.maHoaDonCho || 'Sẽ tạo khi xác nhận' }}</strong>
+            </div>
+            <div class="detail-line">
+              <span>Số lượng sản phẩm</span>
+              <strong>{{ getTotalItems() }}</strong>
+            </div>
+            <div class="detail-line">
+              <span>Phương thức thanh toán</span>
+              <strong>{{ paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt khi nhận hàng' }}</strong>
+            </div>
+          </div>
 
           <!-- Payment Methods -->
           <div class="payment-methods">
@@ -328,6 +348,11 @@
                 <p><strong>Số tài khoản:</strong> {{ bankInfo.accountNumber }}</p>
                 <p><strong>Chủ tài khoản:</strong> {{ bankInfo.accountName }}</p>
                 <p><strong>Số tiền:</strong> {{ formatCurrency(getTotal()) }}</p>
+              </div>
+
+              <div class="bank-qr">
+                <img [src]="getBankTransferQrUrl()" alt="QR chuyển khoản">
+                <span>Quét QR để thanh toán nhanh</span>
               </div>
 
               <div class="transaction-code">

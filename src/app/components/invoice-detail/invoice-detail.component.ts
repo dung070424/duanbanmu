@@ -960,6 +960,22 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  startPendingInvoiceEdit(): void {
+    if (!this.invoice) {
+      this.showToast('Không tìm thấy dữ liệu hóa đơn để cập nhật.', 'warning');
+      return;
+    }
+
+    if (this.invoice.trangThai !== 'CHO_XAC_NHAN') {
+      this.showToast('Chỉ hóa đơn ở trạng thái chờ xác nhận mới được chỉnh sửa.', 'warning');
+      return;
+    }
+
+    this.isEditMode = true;
+    this.editingInvoice = { ...this.invoice };
+    this.stopAutoRefresh();
+  }
+
   cancelEdit(): void {
     // Đóng modal update nếu đang mở
     const modal = document.getElementById('updateInvoiceModal');
@@ -1001,7 +1017,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       }
 
       // Show loading state
-      const saveButton = document.querySelector('.btn-success') as HTMLButtonElement;
+      const saveButton = document.getElementById('saveChangesButton') as HTMLButtonElement | null;
       if (saveButton) {
         saveButton.disabled = true;
         saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';

@@ -81,85 +81,58 @@
       <!-- Hero Section -->
       <section class="hero-section">
         <div class="hero-content">
-          <h1 class="hero-title">Giới thiệu về TDK Store</h1>
-          <p class="hero-subtitle">Chuyên cung cấp mũ bảo hiểm chất lượng cao, đảm bảo an toàn cho mọi hành trình</p>
+          <h1 class="hero-title">{{ aboutInfo.heroTitle }}</h1>
+          <p class="hero-subtitle">{{ aboutInfo.heroSubtitle }}</p>
+        </div>
+      </section>
+
+      <section class="stats-section" *ngIf="aboutInfo.stats?.length">
+        <div class="stats-grid">
+          <div class="stat-card" *ngFor="let stat of aboutInfo.stats">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+            <p class="stat-description">{{ stat.description }}</p>
+          </div>
         </div>
       </section>
 
       <!-- About Content Section -->
       <section class="content-section">
         <div class="about-content">
-          <div class="content-block">
+          <div class="content-block" *ngIf="aboutInfo.description">
             <h2><i class="fas fa-store"></i> Về chúng tôi</h2>
-            <p>
-              TDK Store là cửa hàng chuyên kinh doanh các loại mũ bảo hiểm chất lượng cao, 
-              cam kết mang đến cho khách hàng những sản phẩm an toàn, đẹp mắt và phù hợp với 
-              mọi nhu cầu sử dụng. Với nhiều năm kinh nghiệm trong ngành, chúng tôi tự hào 
-              là địa chỉ tin cậy của hàng nghìn khách hàng trên toàn quốc.
-            </p>
+            <p>{{ aboutInfo.description }}</p>
           </div>
 
-          <div class="content-block">
-            <h2><i class="fas fa-bullseye"></i> Sứ mệnh</h2>
-            <p>
-              Sứ mệnh của chúng tôi là bảo vệ sự an toàn của mọi người tham gia giao thông 
-              bằng cách cung cấp các sản phẩm mũ bảo hiểm chất lượng cao, đạt tiêu chuẩn 
-              an toàn quốc tế. Chúng tôi tin rằng an toàn là ưu tiên hàng đầu và mỗi chiếc 
-              mũ bảo hiểm đều góp phần bảo vệ mạng sống quý giá.
-            </p>
-          </div>
-
-          <div class="content-block">
-            <h2><i class="fas fa-eye"></i> Tầm nhìn</h2>
-            <p>
-              Trở thành cửa hàng mũ bảo hiểm hàng đầu Việt Nam, được khách hàng tin tưởng 
-              và lựa chọn. Chúng tôi hướng tới việc mở rộng mạng lưới cửa hàng trên toàn quốc 
-              và không ngừng cải thiện chất lượng dịch vụ để mang đến trải nghiệm mua sắm 
-              tốt nhất cho khách hàng.
-            </p>
-          </div>
-
-          <div class="content-block">
-            <h2><i class="fas fa-star"></i> Giá trị cốt lõi</h2>
-            <ul class="value-list">
-              <li><strong>Chất lượng:</strong> Cam kết chỉ bán các sản phẩm đạt tiêu chuẩn chất lượng cao</li>
-              <li><strong>An toàn:</strong> Ưu tiên sự an toàn của khách hàng trong mọi sản phẩm và dịch vụ</li>
-              <li><strong>Uy tín:</strong> Xây dựng niềm tin với khách hàng thông qua sự minh bạch và trung thực</li>
-              <li><strong>Dịch vụ:</strong> Chăm sóc khách hàng tận tâm, hỗ trợ 24/7</li>
-              <li><strong>Đổi mới:</strong> Không ngừng cập nhật các sản phẩm mới, công nghệ tiên tiến</li>
+          <div class="content-block" *ngFor="let section of aboutInfo.sections || []">
+            <h2>
+              <i class="fas" [ngClass]="section.icon || 'fa-star'"></i>
+              {{ section.title }}
+            </h2>
+            <p>{{ section.body }}</p>
+            <ul class="value-list" *ngIf="section.bulletPoints?.length">
+              <li *ngFor="let bullet of section.bulletPoints">{{ bullet }}</li>
             </ul>
           </div>
 
-          <div class="content-block">
+          <div class="content-block" *ngIf="aboutInfo.coreValues?.length">
+            <h2><i class="fas fa-star"></i> Giá trị cốt lõi</h2>
+            <ul class="value-list">
+              <li *ngFor="let value of aboutInfo.coreValues">
+                <strong>{{ value.title }}:</strong> {{ value.description }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="content-block" *ngIf="aboutInfo.commitments?.length">
             <h2><i class="fas fa-handshake"></i> Cam kết với khách hàng</h2>
             <div class="commitment-grid">
-              <div class="commitment-item">
+              <div class="commitment-item" *ngFor="let commitment of aboutInfo.commitments">
                 <div class="commitment-icon">
-                  <i class="fas fa-shield-alt"></i>
+                  <i class="fas" [ngClass]="commitment.icon"></i>
                 </div>
-                <h3>Chất lượng đảm bảo</h3>
-                <p>Tất cả sản phẩm đều được kiểm tra kỹ lưỡng trước khi bán ra thị trường</p>
-              </div>
-              <div class="commitment-item">
-                <div class="commitment-icon">
-                  <i class="fas fa-truck"></i>
-                </div>
-                <h3>Giao hàng nhanh chóng</h3>
-                <p>Miễn phí vận chuyển toàn quốc, giao hàng trong 24-48 giờ</p>
-              </div>
-              <div class="commitment-item">
-                <div class="commitment-icon">
-                  <i class="fas fa-undo-alt"></i>
-                </div>
-                <h3>Đổi trả dễ dàng</h3>
-                <p>Chính sách đổi trả linh hoạt trong vòng 7 ngày nếu sản phẩm lỗi</p>
-              </div>
-              <div class="commitment-item">
-                <div class="commitment-icon">
-                  <i class="fas fa-headset"></i>
-                </div>
-                <h3>Hỗ trợ 24/7</h3>
-                <p>Đội ngũ tư vấn chuyên nghiệp, sẵn sàng hỗ trợ mọi lúc mọi nơi</p>
+                <h3>{{ commitment.title }}</h3>
+                <p>{{ commitment.description }}</p>
               </div>
             </div>
           </div>

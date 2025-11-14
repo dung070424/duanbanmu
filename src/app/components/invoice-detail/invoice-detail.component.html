@@ -344,18 +344,6 @@
             </div>
           </form>
         </div>
-        <div class="status-update-actions">
-          <button
-            type="button"
-            class="btn btn-success"
-            (click)="submitConfirmInvoice()"
-            [disabled]="savingStatus"
-          >
-            <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
-            <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
-            {{ savingStatus ? 'Đang xử lý...' : 'Xác nhận' }}
-          </button>
-        </div>
       </div>
     </div>
 
@@ -403,360 +391,297 @@
       </div>
             </div>
 
-    <!-- Chi tiết hóa đơn khi trạng thái là Đã Xác Nhận, Đang Vận Chuyển, Đã Giao Hàng hoặc Đã Hủy -->
-    <div *ngIf="invoice && (invoice.trangThai === 'DA_XAC_NHAN' || invoice.trangThai === 'DANG_GIAO_HANG' || invoice.trangThai === 'DA_GIAO_HANG' || invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY')" class="confirmed-invoice-details-view">
-      <!-- Thông tin Shop -->
-      <div class="shop-info-section mb-4">
-        <div class="shop-name">Shop TDK</div>
-        <div class="shop-address">139 Cầu Giấy, Phường Quan Hoa, Hà Nội</div>
-      </div>
-
-      <!-- Bảng sản phẩm đơn giản -->
-      <div class="simple-products-table mb-4">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th style="width: 5%">Stt</th>
-              <th style="width: 10%">Ảnh</th>
-              <th style="width: 25%">Tên sản phẩm</th>
-              <th style="width: 12%">Màu sắc</th>
-              <th style="width: 10%">Size</th>
-              <th style="width: 10%">Số lượng</th>
-              <th style="width: 14%">Đơn giá</th>
-              <th style="width: 14%">Thành tiền</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngIf="!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0">
-              <td colspan="8" class="text-center text-muted py-4">
-                <i class="fas fa-inbox me-2"></i>Chưa có sản phẩm nào trong hóa đơn này
-              </td>
-            </tr>
-            <tr *ngFor="let product of invoice.danhSachSanPham; let i = index">
-              <td class="text-center">{{ i + 1 }}</td>
-              <td class="text-center">
-                <img
-                  [src]="product.anhSanPham || 'assets/images/no-image.png'"
-                  [alt]="product.tenSanPham"
-                  class="product-thumbnail"
-                  (error)="$event.target.src='assets/images/no-image.png'"
-                />
-              </td>
-              <td>{{ product.tenSanPham }}</td>
-              <td>{{ product.mauSac || '-' }}</td>
-              <td>{{ product.kichThuoc || '-' }}</td>
-              <td class="text-center">{{ product.soLuong }}</td>
-              <td class="text-end">{{ formatCurrency(product.donGia) }} ₫</td>
-              <td class="text-end">{{ formatCurrency(product.thanhTien) }} ₫</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Thông tin người nhận và Tổng kết (nằm ngang nhau) -->
-      <div class="row mb-4">
-        <!-- Thông tin người nhận -->
-        <div class="col-md-6">
-          <div class="recipient-info-card">
-            <h5 class="card-title mb-3">
-              <i class="bi bi-person-fill me-2"></i>Thông tin người nhận
-            </h5>
-            <div class="info-item">
-              <span class="label">Họ tên người nhận:</span>
-              <span class="value">{{ invoice.tenKhachHang || customer?.tenKhachHang || 'Chưa có' }}</span>
-            </div>
-            <div class="info-item mt-2">
-              <span class="label">Địa chỉ:</span>
-              <span class="value">{{ getCustomerAddress() }}</span>
-            </div>
-            <div class="info-item mt-2">
-              <span class="label">Sđt:</span>
-              <span class="value">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai || 'Chưa có' }}</span>
-            </div>
-            <div class="info-item mt-2" *ngIf="invoice.emailKhachHang || customer?.email">
-              <span class="label">Email:</span>
-              <span class="value">{{ invoice.emailKhachHang || customer?.email }}</span>
-            </div>
-            <!-- Ghi chú khi trạng thái là Hủy -->
-            <div class="info-item mt-3" *ngIf="(invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY') && invoice.ghiChu">
-              <span class="label text-danger">
-                <i class="bi bi-exclamation-circle me-2"></i>Lý do hủy:
+    <!-- Unified Invoice Information -->
+    <section class="invoice-info-grid" *ngIf="invoice">
+      <article class="info-card order-card">
+        <header class="card-header">
+          <i class="bi bi-receipt-cutoff me-2"></i>Thông tin đơn hàng
+        </header>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="label">Mã hóa đơn</span>
+            <span class="value">{{ invoice.maHoaDon }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Ngày tạo</span>
+            <span class="value">{{ formatDate(invoice.ngayTao) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Nhân viên xử lý</span>
+            <span class="value">{{ invoice.tenNhanVien || 'Chưa xác định' }}</span>
+          </div>
+          <div class="info-row status-row">
+            <span class="label">Trạng thái</span>
+            <span class="value">
+              <span class="status-pill" [ngClass]="getStatusClass(invoice.trangThai)">
+                <i [class]="getStatusIcon(invoice.trangThai)" class="me-1"></i>
+                {{ getStatusLabel(invoice.trangThai) }}
               </span>
-              <span class="value text-danger">{{ invoice.ghiChu }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tổng kết tiền -->
-        <div class="col-md-6">
-          <div class="cost-summary-card">
-            <h5 class="card-title mb-3">
-              <i class="bi bi-calculator me-2"></i>Tổng kết
-            </h5>
-            <div class="cost-summary">
-              <div class="cost-row">
-                <span class="cost-label">Tổng tiền các sản phẩm:</span>
-                <span class="cost-value">{{ formatCurrency(invoice.tongTien || 0) }} ₫</span>
-              </div>
-              <!-- Phí vận chuyển chỉ hiển thị khi đã có giá trị (đã xác nhận) -->
-              <div class="cost-row" *ngIf="invoice.phiGiaoHang && invoice.phiGiaoHang > 0">
-                <span class="cost-label">Phí vận chuyển:</span>
-                <span class="cost-value">{{ formatCurrency(invoice.phiGiaoHang) }} ₫</span>
-              </div>
-              <!-- Tiền giảm chỉ hiển thị khi có giá trị -->
-              <div class="cost-row" *ngIf="invoice.tienGiamGia && invoice.tienGiamGia > 0">
-                <span class="cost-label">Tiền giảm:</span>
-                <span class="cost-value text-danger">-{{ formatCurrency(invoice.tienGiamGia) }} ₫</span>
-              </div>
-              <div class="cost-row total-cost-row">
-                <span class="cost-label">Tổng tiền:</span>
-                <span class="cost-value total-amount">{{ formatCurrency(getTotalAmountWithShipping()) }} ₫</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="action-buttons-section">
-        <!-- Action buttons chỉ hiển thị khi trạng thái là DA_XAC_NHAN hoặc DANG_GIAO_HANG (không hiển thị cho DA_GIAO_HANG và DA_HUY/HUY) -->
-        <div class="d-flex justify-content-end gap-3" *ngIf="invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'">
-          <button
-            type="button"
-            class="btn btn-outline-danger"
-            (click)="openCancelInvoiceModal()"
-            [disabled]="savingStatus"
-          >
-            <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
-            <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>Hủy
-          </button>
-          <button
-            type="button"
-            class="btn btn-success btn-lg"
-            (click)="completeInvoice()"
-            [disabled]="savingStatus"
-          >
-            <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
-            <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
-            <span *ngIf="invoice.trangThai === 'DA_XAC_NHAN'">
-              {{ savingStatus ? 'Đang xử lý...' : 'Giao cho ĐVVC' }}
             </span>
-            <span *ngIf="invoice.trangThai === 'DANG_GIAO_HANG'">
-              {{ savingStatus ? 'Đang xử lý...' : 'Hoàn thành' }}
-            </span>
-          </button>
-        </div>
-      </div>
-            </div>
-
-
-    <!-- Main Content Tables (ẩn khi trạng thái là Đã Xác Nhận, Đang Vận Chuyển, Đã Giao Hàng hoặc Đã Hủy) -->
-    <div class="invoice-detail-tables" *ngIf="!invoice || (invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY')">
-      <!-- Table 1: Thông tin đơn hàng và khách hàng -->
-      <div class="table-responsive mb-4">
-        <table class="table table-bordered invoice-info-table">
-          <thead>
-            <tr>
-              <th colspan="2" class="table-header-primary">
-                Thông tin đơn hàng
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="label-cell"><strong>Mã hóa đơn:</strong></td>
-              <td class="value-cell">{{ invoice.maHoaDon }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Ngày tạo:</strong></td>
-              <td class="value-cell">{{ formatDate(invoice.ngayTao) }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Nhân viên xử lý:</strong></td>
-              <td class="value-cell">{{ invoice.tenNhanVien || 'Chưa xác định' }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Trạng thái:</strong></td>
-              <td class="value-cell">
-                <span class="badge status-badge" [ngClass]="getStatusClass(invoice.trangThai)">
-                  <i [class]="getStatusIcon(invoice.trangThai)" class="me-1"></i>
-                  {{ getStatusLabel(invoice.trangThai) }}
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Ghi chú:</strong></td>
-              <td class="value-cell">{{ invoice.ghiChu || 'Không có' }}</td>
-            </tr>
-          </tbody>
-        </table>
-        </div>
-
-      <!-- Table 2: Thông tin khách hàng và thanh toán -->
-      <div class="table-responsive mb-4">
-        <table class="table table-bordered invoice-info-table">
-          <thead>
-            <tr>
-              <th colspan="2" class="table-header-secondary">
-                Thông tin khách hàng & Thanh toán
-              </th>
-                </tr>
-              </thead>
-              <tbody>
-            <tr>
-              <td class="label-cell"><strong>Tên khách hàng:</strong></td>
-              <td class="value-cell">{{ invoice.tenKhachHang || customer?.tenKhachHang || 'Không có thông tin' }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Email:</strong></td>
-              <td class="value-cell">{{ invoice.emailKhachHang || customer?.email || 'Không có' }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Số điện thoại:</strong></td>
-              <td class="value-cell">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai || 'Không có' }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Địa chỉ:</strong></td>
-              <td class="value-cell">
-                <span *ngIf="loadingAddresses" class="loading-text">Đang tải địa chỉ...</span>
-                <span *ngIf="!loadingAddresses">{{ getCustomerAddress() }}</span>
-                  </td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>ID khách hàng:</strong></td>
-              <td class="value-cell">{{ invoice.khachHangId || 'Không có' }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Trạng thái thanh toán:</strong></td>
-              <td class="value-cell" [ngClass]="getDerivedPaymentStatusClass()">
-                {{ getDerivedPaymentStatusLabel() }}
-                  </td>
-            </tr>
-            <tr *ngIf="invoice.ngayThanhToan">
-              <td class="label-cell"><strong>Ngày thanh toán:</strong></td>
-              <td class="value-cell">{{ formatDate(invoice.ngayThanhToan) }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Phương thức thanh toán:</strong></td>
-              <td class="value-cell">{{ getPaymentMethodLabel(invoice.phuongThucThanhToan) || 'Tiền mặt' }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Tổng tiền:</strong></td>
-              <td class="value-cell amount">{{ formatCurrency(invoice.tongTien) }}</td>
-            </tr>
-            <tr>
-              <td class="label-cell"><strong>Tiền giảm giá:</strong></td>
-              <td class="value-cell amount discount">{{ formatCurrency(invoice.tienGiamGia || 0) }}</td>
-            </tr>
-            <tr class="total-row">
-              <td class="label-cell"><strong>Thành tiền:</strong></td>
-              <td class="value-cell amount total">{{ formatCurrency(invoice.thanhTien || invoice.tongTien) }}</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
+          <div class="info-row">
+            <span class="label">Số lượng sản phẩm</span>
+            <span class="value">{{ invoice.soLuongSanPham || invoice.danhSachSanPham?.length || 0 }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Ghi chú</span>
+            <span class="value">{{ invoice.ghiChu || 'Không có' }}</span>
+          </div>
+          <div class="info-row text-danger" *ngIf="(invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY') && invoice.ghiChu">
+            <span class="label text-danger">
+              <i class="bi bi-exclamation-triangle me-2"></i>Lý do hủy
+            </span>
+            <span class="value">{{ invoice.ghiChu }}</span>
+          </div>
+        </div>
+      </article>
 
-      <!-- Table 3: Danh sách sản phẩm -->
+      <article class="info-card customer-card">
+        <header class="card-header">
+          <i class="bi bi-person-badge me-2"></i>Thông tin khách hàng & Thanh toán
+        </header>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="label">Tên khách hàng</span>
+            <span class="value">{{ invoice.tenKhachHang || customer?.tenKhachHang || 'Không có thông tin' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Email</span>
+            <span class="value">{{ invoice.emailKhachHang || customer?.email || 'Không có' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Số điện thoại</span>
+            <span class="value">{{ invoice.soDienThoaiKhachHang || customer?.soDienThoai || 'Không có' }}</span>
+          </div>
+          <div class="info-row address-row">
+            <span class="label">Địa chỉ</span>
+            <span class="value">
+              <span *ngIf="loadingAddresses" class="loading-text">Đang tải địa chỉ...</span>
+              <span *ngIf="!loadingAddresses">{{ getCustomerAddress() }}</span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="label">ID khách hàng</span>
+            <span class="value">{{ invoice.khachHangId || 'Không có' }}</span>
+          </div>
+          <div class="info-row payment-row">
+            <span class="label">Trạng thái thanh toán</span>
+            <span class="value" [ngClass]="getDerivedPaymentStatusClass()">{{ getDerivedPaymentStatusLabel() }}</span>
+          </div>
+          <div class="info-row" *ngIf="invoice.ngayThanhToan">
+            <span class="label">Ngày thanh toán</span>
+            <span class="value">{{ formatDate(invoice.ngayThanhToan) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phương thức thanh toán</span>
+            <span class="value">{{ getPaymentMethodLabel(invoice.phuongThucThanhToan) || 'Tiền mặt' }}</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="info-card shipping-card">
+        <header class="card-header">
+          <i class="bi bi-truck me-2"></i>Vận chuyển & Chi phí
+        </header>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="label">Ngày dự kiến giao</span>
+            <span class="value">{{ invoice.ngayDuKienGiao ? formatDate(invoice.ngayDuKienGiao) : 'Chưa cập nhật' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Người chịu phí</span>
+            <span class="value">{{ invoice.nguoiChiuPhi === 'nguoi_nhan' ? 'Khách hàng' : 'Cửa hàng' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phí giao hàng</span>
+            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }} ₫</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Khối lượng</span>
+            <span class="value">{{ invoice.khoiLuong ? invoice.khoiLuong + ' kg' : 'Chưa cập nhật' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Kích thước</span>
+            <span class="value">
+              <ng-container *ngIf="invoice.chieuDai || invoice.chieuRong || invoice.chieuCao; else sizeFallback">
+                {{ invoice.chieuDai || 0 }} x {{ invoice.chieuRong || 0 }} x {{ invoice.chieuCao || 0 }} cm
+              </ng-container>
+              <ng-template #sizeFallback>Chưa cập nhật</ng-template>
+            </span>
+          </div>
+          <div class="divider"></div>
+          <div class="info-row">
+            <span class="label">Tổng tiền hàng</span>
+            <span class="value">{{ formatCurrency(invoice.tongTien || 0) }} ₫</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Giảm giá</span>
+            <span class="value text-danger">-{{ formatCurrency(invoice.tienGiamGia || 0) }} ₫</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phí vận chuyển</span>
+            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }} ₫</span>
+          </div>
+          <div class="info-row total">
+            <span class="label">Thành tiền</span>
+            <span class="value">{{ formatCurrency(getTotalAmountWithShipping()) }} ₫</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="invoice-products-card" *ngIf="invoice">
+      <header class="card-header d-flex justify-content-between align-items-center">
+        <div><i class="bi bi-box-seam me-2"></i>Danh sách sản phẩm</div>
+        <span class="count-pill">{{ invoice.soLuongSanPham || invoice.danhSachSanPham?.length || 0 }} sản phẩm</span>
+      </header>
       <div class="table-responsive">
-        <table class="table table-bordered table-striped invoice-products-table">
+        <table class="table align-middle mb-0">
           <thead>
             <tr>
-              <th colspan="8" class="table-header-success">
-                Danh sách sản phẩm
-              </th>
-            </tr>
-            <tr class="sub-header">
-              <th style="width: 4%">STT</th>
-              <th style="width: 8%">Hình ảnh</th>
-              <th style="width: 28%">Thông tin sản phẩm</th>
-              <th style="width: 12%">Đặc tính</th>
-              <th style="width: 8%">Số lượng</th>
-              <th style="width: 15%">Đơn giá</th>
-              <th style="width: 10%">Giảm giá</th>
-              <th style="width: 15%">Thành tiền</th>
+              <th>STT</th>
+              <th>Sản phẩm</th>
+              <th>Thuộc tính</th>
+              <th class="text-center">Số lượng</th>
+              <th class="text-end">Đơn giá</th>
+              <th class="text-end">Giảm giá</th>
+              <th class="text-end">Thành tiền</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngIf="!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0">
-              <td colspan="8" class="text-center text-muted py-4">
+              <td colspan="7" class="text-center py-4 text-muted">
                 <i class="fas fa-inbox me-2"></i>Chưa có sản phẩm nào trong hóa đơn này
               </td>
             </tr>
             <tr *ngFor="let product of invoice.danhSachSanPham; let i = index">
-              <td class="text-center">{{ i + 1 }}</td>
-              <td class="product-image-cell">
-                <div class="product-image-wrapper">
-                  <img
-                    [src]="product.anhSanPham || 'assets/images/no-image.png'"
-                    [alt]="product.tenSanPham"
-                    class="product-image"
-                    (error)="$event.target.src='assets/images/no-image.png'"
-                  />
-          </div>
-              </td>
-              <td class="product-info-cell">
+              <td><span class="badge bg-primary">{{ i + 1 }}</span></td>
+              <td>
                 <div class="product-info">
-                  <div class="product-code">
-                    <span class="badge bg-secondary">{{ product.maSanPham || 'N/A' }}</span>
+                  <div class="thumb">
+                    <img
+                      [src]="product.anhSanPham || 'assets/images/no-image.png'"
+                      [alt]="product.tenSanPham"
+                      (error)="$event.target.src='assets/images/no-image.png'"
+                    />
                   </div>
-                  <div class="product-name">
-                    <strong>{{ product.tenSanPham }}</strong>
-                  </div>
-                  <div class="product-category-brand">
-                    <span class="category-badge" *ngIf="product.danhMuc">
-                      <i class="fas fa-tag me-1"></i>{{ product.danhMuc }}
-                    </span>
-                    <span class="brand-badge" *ngIf="product.thuongHieu">
-                      <i class="fas fa-building me-1"></i>{{ product.thuongHieu }}
-                    </span>
+                  <div class="details">
+                    <div class="name">{{ product.tenSanPham }}</div>
+                    <div class="meta">
+                      <span class="code">{{ product.maSanPham || 'N/A' }}</span>
+                      <span class="separator">•</span>
+                      <span class="brand">{{ product.thuongHieu || 'Không rõ thương hiệu' }}</span>
+                    </div>
                   </div>
                 </div>
               </td>
-              <td class="product-specs-cell">
-                <div class="product-specs">
-                  <div class="spec-item" *ngIf="product.mauSac">
-                    <span class="spec-label">Màu:</span>
-                    <span class="spec-value color-spec">{{ product.mauSac }}</span>
-              </div>
-                  <div class="spec-item" *ngIf="product.kichThuoc">
-                    <span class="spec-label">Kích thước:</span>
-                    <span class="spec-value size-spec">{{ product.kichThuoc }}</span>
-            </div>
-                  <div class="spec-item" *ngIf="!product.mauSac && !product.kichThuoc">
-                    <span class="text-muted small">Chưa có thông tin</span>
-          </div>
-        </div>
+              <td>
+                <div class="attributes">
+                  <span *ngIf="product.mauSac">Màu: <strong>{{ product.mauSac }}</strong></span>
+                  <span *ngIf="product.kichThuoc">Size: <strong>{{ product.kichThuoc }}</strong></span>
+                  <span *ngIf="!product.mauSac && !product.kichThuoc" class="text-muted">Không có thuộc tính</span>
+                </div>
               </td>
-              <td class="text-center quantity-cell">
-                <span class="quantity-value">{{ product.soLuong }}</span>
-              </td>
-              <td class="text-end price-cell">
-                <span class="price-value">{{ formatCurrency(product.donGia) }}</span>
-              </td>
-              <td class="text-end discount-cell">
-                <span class="discount-value" *ngIf="product.giamGia && product.giamGia > 0">
-                  {{ formatCurrency(product.giamGia) }}
+              <td class="text-center">{{ product.soLuong }}</td>
+              <td class="text-end">{{ formatCurrency(product.donGia) }}</td>
+              <td class="text-end">
+                <span *ngIf="product.giamGia && product.giamGia > 0" class="text-danger">
+                  -{{ formatCurrency(product.giamGia) }}
                 </span>
-                <span class="text-muted" *ngIf="!product.giamGia || product.giamGia === 0">-</span>
+                <span *ngIf="!product.giamGia || product.giamGia === 0" class="text-muted">0</span>
               </td>
-              <td class="text-end amount-cell">
-                <span class="amount-value">{{ formatCurrency(product.thanhTien) }}</span>
-              </td>
-            </tr>
-            <tr *ngIf="invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0" class="summary-row">
-              <td colspan="6" class="text-end"><strong>Tổng cộng:</strong></td>
-              <td colspan="2" class="text-end">
-                <strong class="text-success fs-5">{{ formatCurrency(invoice.thanhTien || invoice.tongTien) }}</strong>
-              </td>
+              <td class="text-end fw-semibold text-primary">{{ formatCurrency(product.thanhTien) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
+      <div class="products-summary" *ngIf="invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0">
+        <div class="summary-row">
+          <span>Tổng tiền hàng</span>
+          <strong>{{ formatCurrency(invoice.tongTien || 0) }} ₫</strong>
+        </div>
+        <div class="summary-row" *ngIf="invoice.tienGiamGia && invoice.tienGiamGia > 0">
+          <span>Giảm giá</span>
+          <strong class="text-danger">-{{ formatCurrency(invoice.tienGiamGia) }} ₫</strong>
+        </div>
+        <div class="summary-row" *ngIf="invoice.phiGiaoHang && invoice.phiGiaoHang > 0">
+          <span>Phí vận chuyển</span>
+          <strong>{{ formatCurrency(invoice.phiGiaoHang) }} ₫</strong>
+        </div>
+        <div class="summary-row total">
+          <span>Thành tiền</span>
+          <strong>{{ formatCurrency(getTotalAmountWithShipping()) }} ₫</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="action-buttons-section" *ngIf="invoice">
+      <div
+        class="d-flex flex-wrap justify-content-end gap-3"
+        *ngIf="invoice.trangThai === 'CHO_XAC_NHAN'"
+      >
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          *ngIf="!isEditMode"
+          (click)="startPendingInvoiceEdit()"
+          [disabled]="savingStatus"
+        >
+          <i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-danger"
+          (click)="openCancelInvoiceModal()"
+          [disabled]="savingStatus"
+        >
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>Hủy hóa đơn
+        </button>
+        <button
+          type="button"
+          class="btn btn-success"
+          (click)="submitConfirmInvoice()"
+          [disabled]="savingStatus"
+        >
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
+          {{ savingStatus ? 'Đang xử lý...' : 'Xác nhận' }}
+        </button>
+      </div>
+      <div
+        class="d-flex justify-content-end gap-3"
+        *ngIf="invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'"
+      >
+        <button
+          type="button"
+          class="btn btn-outline-danger"
+          (click)="openCancelInvoiceModal()"
+          [disabled]="savingStatus"
+          *ngIf="invoice.trangThai !== 'DANG_GIAO_HANG'"
+        >
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>Hủy
+        </button>
+        <button
+          type="button"
+          class="btn btn-success btn-lg"
+          (click)="completeInvoice()"
+          [disabled]="savingStatus"
+        >
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
+          <span *ngIf="invoice.trangThai === 'DA_XAC_NHAN'">
+            {{ savingStatus ? 'Đang xử lý...' : 'Giao cho ĐVVC' }}
+          </span>
+          <span *ngIf="invoice.trangThai === 'DANG_GIAO_HANG'">
+            {{ savingStatus ? 'Đang xử lý...' : 'Hoàn thành' }}
+          </span>
+        </button>
+      </div>
     </div>
-
-
     <!-- Edit Mode -->
-    <div *ngIf="isEditMode && editingInvoice" class="edit-section" id="edit-section">
+    <div *ngIf="invoice?.trangThai === 'CHO_XAC_NHAN' && isEditMode && editingInvoice" class="edit-section" id="edit-section">
       <h3>Cập nhật thông tin hóa đơn</h3>
       <div class="edit-form">
         <div class="row">
@@ -808,8 +733,12 @@
           </div>
         </div>
         <div class="edit-actions">
-          <button class="btn btn-success" (click)="saveChanges()">
-      Lưu thay đổi
+          <button
+            id="saveChangesButton"
+            class="btn btn-success"
+            (click)="saveChanges()"
+          >
+            <i class="fas fa-save me-2"></i>Lưu thay đổi
           </button>
           <button class="btn btn-secondary" (click)="cancelEdit()">
             Hủy

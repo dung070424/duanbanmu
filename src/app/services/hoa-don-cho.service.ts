@@ -11,6 +11,8 @@ export interface GioHangChoItem {
   donGia: number;
   giamGia?: number;
   thanhTien?: number;
+  mauSac?: string;
+  kichThuoc?: string;
 }
 
 export interface HoaDonCho {

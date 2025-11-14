@@ -329,6 +329,30 @@
             td {
               padding: 12px 0;
               color: #666;
+
+              .product-name {
+                font-weight: 600;
+                color: #111;
+                margin-bottom: 4px;
+              }
+
+              .product-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px 12px;
+                font-size: 0.9rem;
+                color: #94a3b8;
+
+                span {
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 4px;
+
+                  strong {
+                    color: #111;
+                  }
+                }
+              }
             }
 
             &.empty-cart-row {
@@ -373,6 +397,25 @@
                 padding-top: 20px;
               }
             }
+          }
+        }
+      }
+
+      .order-details-extra {
+        border-top: 1px solid #f0f0f0;
+        padding-top: 15px;
+        margin-bottom: 25px;
+        display: grid;
+        gap: 10px;
+
+        .detail-line {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.95rem;
+          color: #475569;
+
+          strong {
+            color: #0f172a;
           }
         }
       }
@@ -440,6 +483,25 @@
               strong {
                 color: #333;
               }
+            }
+          }
+
+          .bank-qr {
+            text-align: center;
+            margin-bottom: 20px;
+
+            img {
+              width: 180px;
+              border-radius: 16px;
+              border: 6px solid rgba(254, 188, 73, 0.15);
+              box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+            }
+
+            span {
+              display: block;
+              margin-top: 8px;
+              font-size: 0.9rem;
+              color: #475569;
             }
           }
 

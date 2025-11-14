@@ -1,0 +1,336 @@
+@use '../shop.component.scss';
+
+.contact-container {
+  min-height: 100vh;
+  background: #f7f7fb;
+  color: #1f2937;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.contact-main {
+  padding: clamp(2rem, 6vw, 4rem) 0;
+}
+
+.hero-section {
+  background: linear-gradient(120deg, #111827, #1f2937);
+  border-radius: 28px;
+  padding: clamp(2rem, 5vw, 3.5rem);
+  color: white;
+  margin-bottom: 2.5rem;
+
+  &.loading {
+    text-align: center;
+
+    i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .hero-content {
+    max-width: 720px;
+
+    .hero-badge {
+      display: inline-flex;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin: 0;
+    }
+  }
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+
+  .contact-card {
+    background: #fff;
+    border-radius: 22px;
+    padding: 1.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+
+    &.primary {
+      background: #111827;
+      color: #fff;
+      border: none;
+
+      .description {
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
+
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: rgba(17, 24, 39, 0.08);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #f4a11a;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      margin: 0 0 0.35rem 0;
+    }
+
+    p {
+      margin: 0;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    .description {
+      margin-top: 0.35rem;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.channels-section {
+  margin-bottom: 2.5rem;
+
+  h2 {
+    margin-bottom: 1rem;
+  }
+
+  .channel-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .channel-item {
+    border: none;
+    border-radius: 18px;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+    }
+
+    i {
+      font-size: 1.5rem;
+      color: #f4a11a;
+    }
+
+    h4 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0;
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.showroom-section {
+  margin-bottom: 2.5rem;
+
+  .showroom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .showroom-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid rgba(15, 23, 42, 0.05);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+
+    h3 {
+      margin-top: 0;
+    }
+
+    p {
+      margin: 0.25rem 0;
+      color: #475569;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .text-link {
+      border: none;
+      background: transparent;
+      color: #111827;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+.business-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+
+  .business-card,
+  .social-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 1.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.05);
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .day {
+        font-weight: 600;
+      }
+
+      .time {
+        color: #475569;
+      }
+    }
+  }
+
+  .social-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .social-link {
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1.25rem;
+    background: rgba(17, 24, 39, 0.06);
+    color: #111827;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+
+    i {
+      color: #f4a11a;
+    }
+  }
+}
+
+.bank-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  background: #fff;
+  border-radius: 24px;
+  padding: 2rem;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  margin-bottom: 3rem;
+
+  .bank-info {
+    display: grid;
+    gap: 0.5rem;
+
+    .bank-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .account-name,
+    .account-number,
+    .bank-branch,
+    .bank-note {
+      margin: 0;
+      color: #475569;
+    }
+
+    .account-number {
+      font-size: 1.15rem;
+    }
+
+    .bank-note {
+      margin-top: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      background: rgba(244, 161, 26, 0.1);
+      color: #7c4b0d;
+      font-weight: 600;
+    }
+  }
+
+  .bank-qr {
+    text-align: center;
+
+    img {
+      width: min(260px, 100%);
+      border-radius: 18px;
+      border: 8px solid rgba(15, 23, 42, 0.05);
+      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+      background: #fff;
+    }
+
+    p {
+      margin-top: 0.75rem;
+      color: #475569;
+      font-weight: 600;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .channels-section .channel-list {
+    grid-template-columns: 1fr;
+  }
+}
+
