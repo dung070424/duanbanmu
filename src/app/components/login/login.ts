@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
@@ -17,7 +17,9 @@ interface LoginData {
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('videoBackground') videoElement!: ElementRef<HTMLVideoElement>;
+
   loginData: LoginData = {
     username: '',
     password: '',
@@ -27,6 +29,7 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
   returnUrl: string | null = null;
+  private videoCheckInterval: any = null;
 
   constructor(
     private authService: AuthService, 
@@ -39,6 +42,92 @@ export class LoginComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       this.returnUrl = params['returnUrl'] || null;
     });
+  }
+
+  ngAfterViewInit(): void {
+    // Đảm bảo video tự động phát và lặp lại
+    setTimeout(() => {
+      if (this.videoElement && this.videoElement.nativeElement) {
+        const video = this.videoElement.nativeElement;
+        
+        // Đảm bảo các thuộc tính cần thiết
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.autoplay = true;
+        
+        // Function để play video
+        const playVideo = () => {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log('✅ Video is playing');
+              })
+              .catch((error) => {
+                console.warn('⚠️ Video autoplay failed:', error);
+                // Thử lại sau một chút
+                setTimeout(() => {
+                  playVideo();
+                }, 500);
+              });
+          }
+        };
+        
+        // Xử lý khi video có thể play
+        video.addEventListener('loadeddata', () => {
+          console.log('✅ Video loaded');
+          playVideo();
+        });
+        
+        // Xử lý khi video kết thúc - đảm bảo lặp lại
+        video.addEventListener('ended', () => {
+          console.log('🔄 Video ended, restarting...');
+          video.currentTime = 0;
+          playVideo();
+        });
+        
+        // Xử lý khi video bị pause - tự động play lại
+        video.addEventListener('pause', () => {
+          if (!video.ended) {
+            console.log('▶️ Video paused, resuming...');
+            playVideo();
+          }
+        });
+        
+        // Xử lý khi video có thể play (canplay event)
+        video.addEventListener('canplay', () => {
+          playVideo();
+        });
+        
+        // Xử lý lỗi
+        video.addEventListener('error', (e) => {
+          console.error('❌ Video error:', e);
+          console.error('Video src:', video.src);
+          console.error('Video error code:', video.error?.code);
+        });
+        
+        // Load và play video ngay lập tức
+        video.load();
+        playVideo();
+        
+        // Đảm bảo video luôn play - kiểm tra định kỳ
+        this.videoCheckInterval = setInterval(() => {
+          if (video.paused && !video.ended) {
+            console.log('🔄 Video is paused, resuming...');
+            playVideo();
+          }
+        }, 1000);
+      }
+    }, 100);
+  }
+
+  ngOnDestroy(): void {
+    // Cleanup interval khi component bị destroy
+    if (this.videoCheckInterval) {
+      clearInterval(this.videoCheckInterval);
+      this.videoCheckInterval = null;
+    }
   }
 
   onLogin() {
