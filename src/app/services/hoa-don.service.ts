@@ -314,7 +314,7 @@ export class HoaDonService {
     return this.http.get<string[]>(`${this.apiUrl}/search-suggestions`, { params });
   }
 
-  getHoaDonActivities(params: { hoaDonId?: number; page?: number; size?: number }): Observable<{
+  getHoaDonActivities(params: { hoaDonId?: number | null; page?: number; size?: number }): Observable<{
     content: HoaDonActivity[];
     totalElements: number;
     totalPages: number;
@@ -322,11 +322,15 @@ export class HoaDonService {
     size: number;
   }> {
     let httpParams = new HttpParams();
-    if (params.hoaDonId !== undefined && params.hoaDonId !== null) {
-      httpParams = httpParams.set('hoaDonId', params.hoaDonId);
+    // Chỉ thêm hoaDonId nếu có giá trị hợp lệ (không null, không undefined)
+    if (params.hoaDonId !== undefined && params.hoaDonId !== null && !isNaN(Number(params.hoaDonId))) {
+      httpParams = httpParams.set('hoaDonId', String(params.hoaDonId));
     }
-    httpParams = httpParams.set('page', String(params.page ?? 0));
-    httpParams = httpParams.set('size', String(params.size ?? 20));
+    // Đảm bảo page và size luôn là số hợp lệ
+    const page = params.page !== undefined && !isNaN(Number(params.page)) ? Number(params.page) : 0;
+    const size = params.size !== undefined && !isNaN(Number(params.size)) ? Number(params.size) : 20;
+    httpParams = httpParams.set('page', String(page));
+    httpParams = httpParams.set('size', String(size));
     return this.http.get<{
       content: HoaDonActivity[];
       totalElements: number;

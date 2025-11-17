@@ -1020,12 +1020,20 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   loadActivityLogs(): void {
     this.loadingActivityLogs = true;
+    
+    // Chỉ gửi hoaDonId nếu có giá trị hợp lệ
+    const params: { hoaDonId?: number; page: number; size: number } = {
+      page: this.activityPage - 1,
+      size: this.activityPageSize
+    };
+    
+    // Chỉ thêm hoaDonId nếu activityFilterInvoice có id hợp lệ
+    if (this.activityFilterInvoice?.id && !isNaN(Number(this.activityFilterInvoice.id))) {
+      params.hoaDonId = Number(this.activityFilterInvoice.id);
+    }
+    
     this.hoaDonService
-      .getHoaDonActivities({
-        hoaDonId: this.activityFilterInvoice?.id,
-        page: this.activityPage - 1,
-        size: this.activityPageSize
-      })
+      .getHoaDonActivities(params)
       .subscribe({
         next: (response) => {
           this.activityLogs = response.content || [];
@@ -1035,6 +1043,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error loading invoice activities:', error);
+          console.error('Request params:', params);
           this.activityLogs = [];
           this.activityTotalItems = 0;
           this.loadingActivityLogs = false;

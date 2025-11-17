@@ -560,9 +560,9 @@
                 <div class="product-info">
                   <div class="thumb">
                     <img
-                      [src]="product.anhSanPham || 'assets/images/no-image.png'"
+                      [src]="product.anhSanPham || 'https://via.placeholder.com/100x100?text=No+Image'"
                       [alt]="product.tenSanPham"
-                      (error)="$event.target.src='assets/images/no-image.png'"
+                      (error)="$event.target.src='https://via.placeholder.com/100x100?text=No+Image'"
                     />
                   </div>
                   <div class="details">
