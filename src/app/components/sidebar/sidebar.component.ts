@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../services/auth';
+import { User } from '../../interfaces/auth.interface';
 
 @Component({
   selector: 'app-sidebar',
@@ -17,6 +18,9 @@ export class SidebarComponent implements OnInit {
   isHovered = false; // Thêm state để track hover
   filteredMenuItems: any[] = [];
   menuItems: any[] = []; // Reference for template
+  currentUserName: string = 'Chưa đăng nhập';
+  currentUserRole: string = '—';
+  currentUserAvatar?: string;
   
   allMenuItems = [
     {
@@ -194,6 +198,7 @@ export class SidebarComponent implements OnInit {
   ngOnInit() {
     // Filter menu items based on user role
     this.filterMenuByRole();
+    this.updateUserInfo(this.authService.getCurrentUser());
     
     // Update active menu on initial load
     this.updateActiveMenuItem(this.router.url);
@@ -206,8 +211,9 @@ export class SidebarComponent implements OnInit {
       });
     
     // Re-filter menu when user changes
-    this.authService.currentUser$.subscribe(() => {
+    this.authService.currentUser$.subscribe((user) => {
       this.filterMenuByRole();
+      this.updateUserInfo(user);
     });
   }
 
@@ -286,5 +292,29 @@ export class SidebarComponent implements OnInit {
 
   onMouseLeave() {
     this.isHovered = false;
+  }
+
+  private updateUserInfo(user?: User | null): void {
+    const current = user ?? this.authService.getCurrentUser();
+    if (current) {
+      this.currentUserName = current.fullName || current.username || 'Người dùng';
+      this.currentUserRole = this.mapRoleLabel(current.roles?.[0]) || '—';
+    } else {
+      this.currentUserName = 'Chưa đăng nhập';
+      this.currentUserRole = '—';
+    }
+  }
+
+  private mapRoleLabel(role?: string): string {
+    switch ((role || '').toUpperCase()) {
+      case 'ADMIN':
+        return 'Quản trị viên';
+      case 'STAFF':
+        return 'Nhân viên';
+      case 'CUSTOMER':
+        return 'Khách hàng';
+      default:
+        return role || '';
+    }
   }
 }
