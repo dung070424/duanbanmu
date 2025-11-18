@@ -1032,7 +1032,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.activityFilterInvoice = invoice ?? null;
     this.activityPage = 1;
     this.showActivityModal = true;
-    this.activityLogs = []; // Clear previous data
+    // Không clear data ngay, giữ lại data cũ để hiển thị trong khi load
     this.loadingActivityLogs = true;
     this.loadActivityLogs();
   }
@@ -1134,10 +1134,122 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     if (!jsonString) return '';
     try {
       const obj = JSON.parse(jsonString);
-      return JSON.stringify(obj, null, 2);
+      return this.formatObjectToText(obj);
     } catch (e) {
       return jsonString;
     }
+  }
+
+  formatObjectToText(obj: any): string {
+    if (!obj || typeof obj !== 'object') {
+      return String(obj || '');
+    }
+
+    const lines: string[] = [];
+    
+    // Map các key sang tiếng Việt
+    const keyMap: { [key: string]: string } = {
+      'id': 'ID',
+      'maHoaDon': 'Mã hóa đơn',
+      'trangThai': 'Trạng thái',
+      'tongTien': 'Tổng tiền',
+      'tienGiamGia': 'Tiền giảm giá',
+      'thanhTien': 'Thành tiền',
+      'ghiChu': 'Ghi chú',
+      'soLuongSanPham': 'Số lượng sản phẩm',
+      'khachHangId': 'ID khách hàng',
+      'tenKhachHang': 'Tên khách hàng',
+      'nhanVienId': 'ID nhân viên',
+      'tenNhanVien': 'Tên nhân viên',
+      'ngayTao': 'Ngày tạo',
+      'ngayThanhToan': 'Ngày thanh toán',
+      'soLuongChiTiet': 'Số lượng chi tiết',
+      'phuongThucThanhToan': 'Phương thức thanh toán',
+      'trangThaiThanhToan': 'Trạng thái thanh toán',
+      'diaChiGiaoHang': 'Địa chỉ giao hàng',
+      'soDienThoai': 'Số điện thoại',
+      'email': 'Email'
+    };
+
+    // Map trạng thái sang tiếng Việt
+    const statusMap: { [key: string]: string } = {
+      'CHO_XAC_NHAN': 'Chờ xác nhận',
+      'DA_XAC_NHAN': 'Đã xác nhận',
+      'DANG_GIAO_HANG': 'Đang giao hàng',
+      'DA_GIAO_HANG': 'Đã giao hàng',
+      'HUY': 'Đã hủy',
+      'HOAN_TRA': 'Hoàn trả'
+    };
+
+    // Format giá trị
+    const formatValue = (key: string, value: any): string => {
+      if (value === null || value === undefined) {
+        return 'Không có';
+      }
+      
+      // Format trạng thái
+      if (key === 'trangThai' && typeof value === 'string') {
+        return statusMap[value] || value;
+      }
+      
+      // Format số tiền
+      if ((key.includes('Tien') || key.includes('tien')) && typeof value === 'string') {
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+          return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+          }).format(num);
+        }
+      }
+      
+      // Format ngày tháng
+      if ((key.includes('ngay') || key.includes('Ngay')) && typeof value === 'string') {
+        try {
+          const date = new Date(value);
+          if (!isNaN(date.getTime())) {
+            return new Intl.DateTimeFormat('vi-VN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            }).format(date);
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+      
+      // Format boolean
+      if (typeof value === 'boolean') {
+        return value ? 'Có' : 'Không';
+      }
+      
+      // Format array
+      if (Array.isArray(value)) {
+        return `[${value.length} mục]`;
+      }
+      
+      // Format object
+      if (typeof value === 'object') {
+        return '[Object]';
+      }
+      
+      return String(value);
+    };
+
+    // Duyệt qua các key và format
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const displayKey = keyMap[key] || key;
+        const value = formatValue(key, obj[key]);
+        lines.push(`${displayKey}: ${value}`);
+      }
+    }
+
+    return lines.join('\n');
   }
 
   trackByActivityIdFn = (index: number, activity: HoaDonActivity): number => {

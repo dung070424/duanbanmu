@@ -245,10 +245,12 @@ $text-light: #6c757d;
     overflow-x: hidden;
     flex: 1;
     min-height: 0; // Cho phép flex shrink
+    position: relative; // Để loading overlay hoạt động
     
     .activity-table-wrapper {
       width: 100%;
       overflow-x: auto;
+      position: relative; // Để loading overlay hoạt động
       
       table {
         width: 100%;

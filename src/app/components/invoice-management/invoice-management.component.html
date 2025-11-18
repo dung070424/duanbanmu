@@ -427,11 +427,13 @@
       </button>
     </div>
     <div class="modal-body">
-      <div *ngIf="loadingActivityLogs" class="text-center py-4 text-muted">
-        <div class="spinner-border text-warning mb-3" role="status"></div>
-        <p>Đang tải lịch sử...</p>
-      </div>
-      <div class="activity-table-wrapper" *ngIf="!loadingActivityLogs">
+      <div class="activity-table-wrapper">
+        <div *ngIf="loadingActivityLogs" class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center bg-white bg-opacity-75" style="z-index: 10;">
+          <div class="text-center">
+            <div class="spinner-border text-warning mb-2" role="status"></div>
+            <p class="mb-0 small text-muted">Đang tải...</p>
+          </div>
+        </div>
         <table class="table table-hover table-striped">
           <thead>
             <tr>
@@ -463,14 +465,18 @@
                     <i class="bi" [ngClass]="selectedActivityDetail?.id === log.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                   </button>
                 </div>
-                <div *ngIf="selectedActivityDetail?.id === log.id" class="activity-detail mt-2 p-2 bg-light rounded">
-                  <div *ngIf="log.oldData" class="mb-2">
-                    <strong>Dữ liệu cũ:</strong>
-                    <pre class="mb-0 small">{{ formatJsonData(log.oldData) }}</pre>
+                <div *ngIf="selectedActivityDetail?.id === log.id" class="activity-detail mt-2 p-3 bg-light rounded">
+                  <div *ngIf="log.oldData" class="mb-3">
+                    <strong class="text-danger">📋 Dữ liệu cũ:</strong>
+                    <div class="mt-2 p-2 bg-white rounded border border-danger border-opacity-25">
+                      <pre class="mb-0 small text-dark" style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;">{{ formatJsonData(log.oldData) }}</pre>
+                    </div>
                   </div>
                   <div *ngIf="log.newData">
-                    <strong>Dữ liệu mới:</strong>
-                    <pre class="mb-0 small">{{ formatJsonData(log.newData) }}</pre>
+                    <strong class="text-success">✨ Dữ liệu mới:</strong>
+                    <div class="mt-2 p-2 bg-white rounded border border-success border-opacity-25">
+                      <pre class="mb-0 small text-dark" style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;">{{ formatJsonData(log.newData) }}</pre>
+                    </div>
                   </div>
                 </div>
               </td>
@@ -492,10 +498,10 @@
               </td>
             </tr>
             <tr *ngIf="!loadingActivityLogs && activityLogs.length === 0">
-              <td colspan="5" class="text-center text-muted py-4">
+              <td colspan="5" class="text-center text-muted py-5">
                 <div>
-                  <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
-                  <p class="mt-2 mb-0">Chưa có thay đổi nào.</p>
+                  <i class="bi bi-inbox" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                  <p class="mt-3 mb-0 fs-6">Chưa có thay đổi nào.</p>
                 </div>
               </td>
             </tr>
