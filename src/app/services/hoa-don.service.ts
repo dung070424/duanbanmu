@@ -337,7 +337,7 @@ export class HoaDonService {
       totalPages: number;
       currentPage: number;
       size: number;
-    }>(`${this.apiUrl}/activities`, { params: httpParams });
+    }>(`${environment.apiUrl}/hoa-don-activity`, { params: httpParams });
   }
 
   // SanPham API methods

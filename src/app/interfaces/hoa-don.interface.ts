@@ -114,4 +114,8 @@ export interface HoaDonActivity {
   performedBy?: string;
   performedByName?: string;
   performedAt: string;
+  oldData?: string;
+  newData?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }

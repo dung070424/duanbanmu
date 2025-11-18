@@ -184,30 +184,37 @@ $text-light: #6c757d;
 
 .invoice-activity-modal {
   position: fixed;
-  inset: 0;
-  z-index: 1100;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999 !important; // Đảm bảo hiển thị trên cùng
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  pointer-events: auto;
 
   .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(5px);
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(8px);
+    z-index: 1;
   }
 
   .modal-panel {
     position: relative;
     z-index: 2;
-    width: min(900px, 95%);
+    width: min(1000px, 95%);
+    max-width: 95vw;
     background: #fff;
     border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+    box-shadow: 0 25px 80px rgba(15, 23, 42, 0.4);
     display: flex;
     flex-direction: column;
-    max-height: 85vh;
+    max-height: 90vh;
+    overflow: hidden;
   }
 
   .modal-header,
@@ -233,8 +240,93 @@ $text-light: #6c757d;
   }
 
   .modal-body {
-    padding: 0 24px 24px;
-    overflow: auto;
+    padding: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    min-height: 0; // Cho phép flex shrink
+    
+    .activity-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      
+      table {
+        width: 100%;
+        min-width: 800px;
+      }
+    }
+  }
+
+  .activity-row {
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: rgba(254, 188, 73, 0.05);
+    }
+  }
+
+  .activity-description {
+    display: flex;
+    align-items: center;
+    
+    .btn-link {
+      color: $primary-color;
+      text-decoration: none;
+      
+      &:hover {
+        color: $primary-dark;
+      }
+    }
+  }
+
+  .activity-detail {
+    background-color: $light-bg;
+    border-left: 3px solid $primary-color;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 8px;
+    
+    pre {
+      background-color: $white;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    strong {
+      color: $text-dark;
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+  }
+  
+  // Đảm bảo table responsive và dễ đọc
+  .table {
+    margin-bottom: 0;
+    
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 12px;
+      border-bottom: 2px solid #dee2e6;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    td {
+      padding: 12px;
+      vertical-align: middle;
+      font-size: 0.9rem;
+    }
   }
 
   .activity-table-wrapper {
