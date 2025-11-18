@@ -926,16 +926,36 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     return new Intl.DateTimeFormat('vi-VN').format(new Date(date));
   }
 
-  formatDateTime(date: string): string {
+  formatDateTime(date: string | Date | undefined | null): string {
     if (!date) return 'Chưa có';
-    return new Intl.DateTimeFormat('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }).format(new Date(date));
+    try {
+      let dateObj: Date;
+      if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date instanceof Date) {
+        dateObj = date;
+      } else {
+        // Handle object with date properties (from backend LocalDateTime)
+        dateObj = new Date(date as any);
+      }
+      
+      if (isNaN(dateObj.getTime())) {
+        console.warn('Invalid date:', date);
+        return 'Ngày không hợp lệ';
+      }
+      
+      return new Intl.DateTimeFormat('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(dateObj);
+    } catch (e) {
+      console.error('Error formatting date:', e, date);
+      return 'Ngày không hợp lệ';
+    }
   }
 
   getRelativeTime(date: string): string {
@@ -1008,9 +1028,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   openActivityModal(invoice?: HoaDonDTO): void {
+    console.log('🔍 Opening activity modal for invoice:', invoice);
     this.activityFilterInvoice = invoice ?? null;
     this.activityPage = 1;
     this.showActivityModal = true;
+    this.activityLogs = []; // Clear previous data
+    this.loadingActivityLogs = true;
     this.loadActivityLogs();
   }
 
@@ -1020,21 +1043,46 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   loadActivityLogs(): void {
     this.loadingActivityLogs = true;
+    
+    // Chỉ gửi hoaDonId nếu có giá trị hợp lệ
+    const params: { hoaDonId?: number; page: number; size: number } = {
+      page: this.activityPage - 1,
+      size: this.activityPageSize
+    };
+    
+    // Chỉ thêm hoaDonId nếu activityFilterInvoice có id hợp lệ
+    if (this.activityFilterInvoice?.id && !isNaN(Number(this.activityFilterInvoice.id))) {
+      params.hoaDonId = Number(this.activityFilterInvoice.id);
+    }
+    
     this.hoaDonService
-      .getHoaDonActivities({
-        hoaDonId: this.activityFilterInvoice?.id,
-        page: this.activityPage - 1,
-        size: this.activityPageSize
-      })
+      .getHoaDonActivities(params)
       .subscribe({
         next: (response) => {
+          console.log('✅ Activities loaded:', response);
           this.activityLogs = response.content || [];
           this.activityTotalItems = response.totalElements || 0;
           this.loadingActivityLogs = false;
+          console.log('📊 Activity logs:', this.activityLogs);
+          console.log('📊 Total items:', this.activityTotalItems);
           this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Error loading invoice activities:', error);
+          console.error('❌ Error loading invoice activities:', error);
+          console.error('Request URL:', `http://localhost:8088/api/hoa-don-activity`);
+          console.error('Request params:', params);
+          console.error('Error status:', error.status);
+          console.error('Error message:', error.message);
+          
+          // Hiển thị thông báo lỗi cho user
+          if (error.status === 404) {
+            console.error('⚠️ Endpoint /api/hoa-don-activity không tồn tại. Vui lòng restart backend!');
+          } else if (error.status === 401) {
+            console.error('⚠️ Unauthorized - Token không hợp lệ hoặc đã hết hạn');
+          } else if (error.status === 403) {
+            console.error('⚠️ Forbidden - Không có quyền truy cập');
+          }
+          
           this.activityLogs = [];
           this.activityTotalItems = 0;
           this.loadingActivityLogs = false;
@@ -1060,6 +1108,40 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       DELETE: 'Xóa hóa đơn'
     };
     return mapping[action] || action;
+  }
+
+  getActivityBadgeClass(action: string): string {
+    const mapping: Record<string, string> = {
+      CREATE: 'text-bg-success',
+      UPDATE: 'text-bg-info',
+      STATUS_CHANGE: 'text-bg-warning',
+      DELETE: 'text-bg-danger'
+    };
+    return mapping[action] || 'text-bg-light';
+  }
+
+  selectedActivityDetail: HoaDonActivity | null = null;
+
+  toggleActivityDetail(activity: HoaDonActivity): void {
+    if (this.selectedActivityDetail?.id === activity.id) {
+      this.selectedActivityDetail = null;
+    } else {
+      this.selectedActivityDetail = activity;
+    }
+  }
+
+  formatJsonData(jsonString: string | undefined): string {
+    if (!jsonString) return '';
+    try {
+      const obj = JSON.parse(jsonString);
+      return JSON.stringify(obj, null, 2);
+    } catch (e) {
+      return jsonString;
+    }
+  }
+
+  trackByActivityIdFn = (index: number, activity: HoaDonActivity): number => {
+    return activity.id;
   }
 
   formatActivityDescription(activity: HoaDonActivity): string {

@@ -412,9 +412,9 @@
   </div>
 </div>
 
-<div class="invoice-activity-modal" *ngIf="showActivityModal">
+<div class="invoice-activity-modal" *ngIf="showActivityModal" style="z-index: 9999;">
   <div class="modal-backdrop" (click)="closeActivityModal()"></div>
-  <div class="modal-panel">
+  <div class="modal-panel" style="z-index: 10000;">
     <div class="modal-header">
       <div>
         <h5>Lịch sử thay đổi</h5>
@@ -427,8 +427,12 @@
       </button>
     </div>
     <div class="modal-body">
-      <div class="activity-table-wrapper" *ngIf="!loadingActivityLogs; else loadingActivitiesTpl">
-        <table class="table table-hover">
+      <div *ngIf="loadingActivityLogs" class="text-center py-4 text-muted">
+        <div class="spinner-border text-warning mb-3" role="status"></div>
+        <p>Đang tải lịch sử...</p>
+      </div>
+      <div class="activity-table-wrapper" *ngIf="!loadingActivityLogs">
+        <table class="table table-hover table-striped">
           <thead>
             <tr>
               <th>Mã HĐ</th>
@@ -439,37 +443,65 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let log of activityLogs">
+            <tr *ngFor="let log of activityLogs; trackBy: trackByActivityIdFn" class="activity-row">
               <td>
                 <span class="fw-semibold">{{ log.maHoaDon || ('#' + log.hoaDonId) }}</span>
               </td>
               <td>
-                <span class="badge text-bg-light">{{ getActivityActionLabel(log.action) }}</span>
+                <span class="badge" [ngClass]="getActivityBadgeClass(log.action)">
+                  {{ getActivityActionLabel(log.action) }}
+                </span>
               </td>
               <td>
-                {{ formatActivityDescription(log) }}
+                <div class="activity-description">
+                  {{ formatActivityDescription(log) }}
+                  <button 
+                    *ngIf="log.oldData || log.newData" 
+                    class="btn btn-sm btn-link p-0 ms-2"
+                    (click)="toggleActivityDetail(log)"
+                    [attr.aria-expanded]="selectedActivityDetail?.id === log.id">
+                    <i class="bi" [ngClass]="selectedActivityDetail?.id === log.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                  </button>
+                </div>
+                <div *ngIf="selectedActivityDetail?.id === log.id" class="activity-detail mt-2 p-2 bg-light rounded">
+                  <div *ngIf="log.oldData" class="mb-2">
+                    <strong>Dữ liệu cũ:</strong>
+                    <pre class="mb-0 small">{{ formatJsonData(log.oldData) }}</pre>
+                  </div>
+                  <div *ngIf="log.newData">
+                    <strong>Dữ liệu mới:</strong>
+                    <pre class="mb-0 small">{{ formatJsonData(log.newData) }}</pre>
+                  </div>
+                </div>
               </td>
               <td>
-                {{ log.performedByName || log.performedBy || 'Hệ thống' }}
+                <div>
+                  <div class="fw-semibold">{{ log.performedByName || log.performedBy || 'Hệ thống' }}</div>
+                  <small class="text-muted" *ngIf="log.performedBy && log.performedBy !== 'system'">
+                    @{{ log.performedBy }}
+                  </small>
+                </div>
               </td>
               <td>
-                {{ formatDateTime(log.performedAt) }}
+                <div>
+                  <div>{{ formatDateTime(log.performedAt) }}</div>
+                  <small class="text-muted" *ngIf="log.ipAddress">
+                    IP: {{ log.ipAddress }}
+                  </small>
+                </div>
               </td>
             </tr>
-            <tr *ngIf="activityLogs.length === 0">
+            <tr *ngIf="!loadingActivityLogs && activityLogs.length === 0">
               <td colspan="5" class="text-center text-muted py-4">
-                Chưa có thay đổi nào.
+                <div>
+                  <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
+                  <p class="mt-2 mb-0">Chưa có thay đổi nào.</p>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <ng-template #loadingActivitiesTpl>
-        <div class="text-center py-4 text-muted">
-          <div class="spinner-border text-warning mb-3" role="status"></div>
-          <p>Đang tải lịch sử...</p>
-        </div>
-      </ng-template>
     </div>
     <div class="modal-footer" *ngIf="activityTotalItems > activityPageSize">
       <nav aria-label="Activity pagination" class="ms-auto">

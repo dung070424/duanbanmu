@@ -1691,7 +1691,7 @@ export class DashboardComponent implements OnInit {
         if (response && response.data) {
           this.topSellingProductsTable = response.data.map((product, index) => ({
             rank: index + 1,
-            image: '/assets/images/default-product.png', // Placeholder - sẽ cần thêm API để lấy ảnh
+            image: 'https://via.placeholder.com/200x200?text=No+Image', // Placeholder - sẽ cần thêm API để lấy ảnh
             name: `${product.tenSanPham || 'N/A'}${product.mauSac ? ' - ' + product.mauSac : ''}${product.kieuDang ? ' - ' + product.kieuDang : ''}`,
             price: product.donGia ? Number(product.donGia) : 0,
             soldQuantity: product.soLuongBan || 0

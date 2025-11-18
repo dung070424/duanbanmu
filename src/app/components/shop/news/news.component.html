@@ -91,7 +91,7 @@
         <div class="news-grid">
           <article *ngFor="let news of newsItems" class="news-card">
             <div class="news-image">
-              <img [src]="news.imageUrl || '/assets/images/news-placeholder.jpg'" [alt]="news.title">
+              <img [src]="news.imageUrl || 'https://via.placeholder.com/400x250?text=News'" [alt]="news.title">
               <div class="news-category">{{ news.category }}</div>
             </div>
             <div class="news-content">

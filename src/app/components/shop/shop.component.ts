@@ -202,6 +202,15 @@ export class ShopComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         this.products = response.content.filter(p => p.trangThai === true);
+        // Debug: Log để kiểm tra ảnh sản phẩm
+        console.log('📦 Loaded products:', this.products.length);
+        if (this.products.length > 0) {
+          console.log('📸 Sample product image:', {
+            name: this.products[0].tenSanPham,
+            imageUrl: this.products[0].anhSanPham,
+            fullUrl: this.getProductImageUrl(this.products[0])
+          });
+        }
         this.filteredProducts = [...this.products];
         
         // Featured products: lấy 8 sản phẩm đầu tiên
@@ -642,7 +651,32 @@ export class ShopComponent implements OnInit, OnDestroy {
   }
 
   getProductImageUrl(product: SanPhamResponse): string {
-    return product.anhSanPham || '/assets/default-product.png';
+    if (!product.anhSanPham || product.anhSanPham.trim() === '') {
+      // Sử dụng placeholder image từ placeholder.com hoặc data URL
+      return 'https://via.placeholder.com/400x400?text=No+Image';
+    }
+    
+    // Nếu là URL đầy đủ (http/https), trả về trực tiếp
+    if (product.anhSanPham.startsWith('http://') || product.anhSanPham.startsWith('https://')) {
+      return product.anhSanPham;
+    }
+    
+    // Nếu là đường dẫn tương đối, thêm base URL nếu cần
+    // Nếu bắt đầu bằng /, giữ nguyên
+    if (product.anhSanPham.startsWith('/')) {
+      return product.anhSanPham;
+    }
+    
+    // Nếu không có / ở đầu, thêm / để trở thành đường dẫn tương đối
+    return '/' + product.anhSanPham;
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    // Nếu ảnh lỗi, thay bằng placeholder
+    if (img.src && !img.src.includes('placeholder.com')) {
+      img.src = 'https://via.placeholder.com/400x400?text=No+Image';
+    }
   }
 
   viewProduct(productId: number): void {
