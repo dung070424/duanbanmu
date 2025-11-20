@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
+import { ShopTabsComponent } from '../shop-tabs/shop-tabs.component';
 
 interface NewsArticle {
   id: number;
@@ -18,7 +19,7 @@ interface NewsArticle {
 @Component({
   selector: 'app-news',
   standalone: true,
-  imports: [CommonModule, RouterModule, ChatbotComponent],
+  imports: [CommonModule, RouterModule, ChatbotComponent, ShopTabsComponent],
   templateUrl: './news.component.html',
   styleUrls: ['./news.component.scss']
 })

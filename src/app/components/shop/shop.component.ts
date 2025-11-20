@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { ProductApiService, SanPhamResponse } from '../../services/product-api.service';
 import { StatisticsService } from '../../services/statistics.service';
 import { LoaiMuBaoHiemApiService } from '../../services/loai-mu-bao-hiem-api.service';
@@ -10,6 +10,7 @@ import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.s
 import { AuthService } from '../../services/auth';
 import { CustomerService } from '../../services/customer.service';
 import { ChatbotComponent } from './chatbot/chatbot.component';
+import { ShopTabsComponent } from './shop-tabs/shop-tabs.component';
 import { Subscription } from 'rxjs';
 import { distinctUntilChanged, skip } from 'rxjs/operators';
 
@@ -30,14 +31,31 @@ interface HomepageNews {
   publishedAt: string;
 }
 
+interface HeroSlide {
+  eyebrow: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  primaryCta?: {
+    label: string;
+    filter?: string;
+  };
+  secondaryCta?: {
+    label: string;
+    filter?: string;
+  };
+}
+
 @Component({
   selector: 'app-shop',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ChatbotComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ChatbotComponent, ShopTabsComponent],
   templateUrl: './shop.component.html',
   styleUrls: ['./shop.component.scss']
 })
 export class ShopComponent implements OnInit, OnDestroy {
+  @ViewChild(ChatbotComponent) chatbotComponent!: ChatbotComponent;
+
   products: SanPhamResponse[] = [];
   filteredProducts: SanPhamResponse[] = [];
   bestSellingProducts: SanPhamResponse[] = [];
@@ -53,6 +71,13 @@ export class ShopComponent implements OnInit, OnDestroy {
   cartCount = 0; // Cart count from backend
   customerName: string = ''; // Tên khách hàng để hiển thị
   newsArticles: HomepageNews[] = this.createHomepageNews();
+  heroSlides: string[] = [
+    '/assets/image/maxresdefault.jpg',
+    '/assets/image/anh-bia.jpg',
+    '/assets/image/vn-11134208-7r98o-ll7thxwxu4l297.jpg'
+  ];
+  currentHeroSlide = 0;
+  private heroSlideIntervalId?: number;
   
   private authSubscription?: Subscription;
 
@@ -73,6 +98,7 @@ export class ShopComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private customerService: CustomerService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) {
     // Không gọi loadCart() trong constructor - sẽ gọi trong ngOnInit
@@ -83,6 +109,15 @@ export class ShopComponent implements OnInit, OnDestroy {
     this.loadBestSellingProducts();
     this.loadCategories();
     this.updateCartCount();
+    this.startHeroSlideshow();
+    
+    // Đồng bộ activeTab với query params từ ShopTabsComponent
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] && ['best-selling', 'featured', 'best-price'].includes(params['tab'])) {
+        this.activeTab = params['tab'] as 'best-selling' | 'featured' | 'best-price';
+        this.cdr.detectChanges();
+      }
+    });
     
     // Load thông tin khách hàng nếu đã login
     if (this.authService.isLoggedIn()) {
@@ -128,6 +163,7 @@ export class ShopComponent implements OnInit, OnDestroy {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
+    this.clearHeroSlideshow();
   }
 
   /**
@@ -752,6 +788,15 @@ export class ShopComponent implements OnInit, OnDestroy {
     });
   }
 
+  selectHeroSlide(index: number): void {
+    if (index < 0 || index >= this.heroSlides.length) {
+      return;
+    }
+    this.currentHeroSlide = index;
+    this.cdr.detectChanges();
+    this.startHeroSlideshow();
+  }
+
   goToNews(articleId?: number): void {
     const extras = articleId ? { queryParams: { highlight: articleId } } : undefined;
     this.router.navigate(['/shop/news'], extras).catch((error) => {
@@ -910,6 +955,36 @@ export class ShopComponent implements OnInit, OnDestroy {
       // Redirect to shop
       this.router.navigate(['/shop']);
       this.cdr.detectChanges();
+    }
+  }
+
+  private startHeroSlideshow(): void {
+    if (this.heroSlides.length <= 1 || typeof window === 'undefined') {
+      return;
+    }
+    this.clearHeroSlideshow();
+    this.heroSlideIntervalId = window.setInterval(() => {
+      this.currentHeroSlide = (this.currentHeroSlide + 1) % this.heroSlides.length;
+      this.cdr.detectChanges();
+    }, 5000);
+  }
+
+  private clearHeroSlideshow(): void {
+    if (this.heroSlideIntervalId) {
+      window.clearInterval(this.heroSlideIntervalId);
+      this.heroSlideIntervalId = undefined;
+    }
+  }
+
+  /**
+   * Mở chatbot khi click vào card "HỖ TRỢ 24/7"
+   */
+  openChatbot(): void {
+    if (this.chatbotComponent) {
+      // Nếu chatbot đang đóng, mở nó
+      if (!this.chatbotComponent.isOpen) {
+        this.chatbotComponent.toggleChatbot();
+      }
     }
   }
 }

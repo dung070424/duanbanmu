@@ -1,4 +1,73 @@
 <div class="product-detail-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-content">
+        <div class="top-bar-left">
+          <span class="top-bar-item">
+            <i class="fas fa-envelope"></i>
+            contact@tdkstore.com
+          </span>
+          <span class="top-bar-item">
+            <i class="fas fa-phone"></i>
+            1900 636 648
+          </span>
+        </div>
+        <div class="top-bar-right">
+          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="navigateToProfile($event)"
+            [title]="customerName || 'Tài khoản'"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
+          </a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="logout()"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <header class="shop-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo-section">
+          <a routerLink="/shop" class="logo-link">
+            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+            <span class="logo-text">TDK Store</span>
+          </a>
+        </div>
+        <nav class="nav-menu">
+          <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
+          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
+          <a routerLink="/shop/categories" routerLinkActive="active">Sản phẩm</a>
+          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
+          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-btn search-btn" (click)="toggleSearch()">
+            <i class="fas fa-search"></i>
+          </button>
+          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+  
   <div class="container">
     <!-- Breadcrumb -->
 
@@ -53,6 +122,24 @@
 
           <div class="product-price">
             <span class="current-price">{{ formatCurrency(getProductPrice()) }}</span>
+          </div>
+
+          <!-- Size Selection - Hiển thị giữa giá và số lượng -->
+          <div class="size-selection" *ngIf="productVariants.length > 0 && getUniqueSizes().length > 0">
+            <label class="size-label">Kích thước:</label>
+            <div class="size-options">
+              <button
+                *ngFor="let size of getUniqueSizes()"
+                class="size-btn"
+                [class.active]="isSelectedSize(size)"
+                [class.unavailable]="!isSizeAvailable(size)"
+                (click)="selectSizeVariant(size)"
+                [disabled]="!isSizeAvailable(size)"
+              >
+                {{ size }}
+                <span *ngIf="!isSizeAvailable(size)" class="unavailable-badge">Hết</span>
+              </button>
+            </div>
           </div>
 
           <!-- Product Variants -->
@@ -137,12 +224,12 @@
               <p>Sản phẩm chưa có biến thể (màu sắc, kích thước). Vui lòng liên hệ cửa hàng để đặt hàng.</p>
             </div>
 
-            <!-- Hiển thị nút khi có variant -->
-            <div *ngIf="productVariants.length > 0">
+            <!-- Hiển thị 2 nút button luôn -->
+            <div class="action-buttons-group">
               <button
                 class="btn btn-add-cart"
                 (click)="addToCart()"
-                [disabled]="!product.trangThai || !selectedVariant || (selectedVariant.soLuongTon || 0) === 0"
+                [disabled]="!product.trangThai || (productVariants.length > 0 && (!selectedVariant || (selectedVariant.soLuongTon || 0) === 0))"
               >
                 <i class="fas fa-shopping-cart"></i>
                 Thêm vào giỏ hàng
@@ -150,7 +237,7 @@
               <button
                 class="btn btn-buy-now"
                 (click)="buyNow()"
-                [disabled]="!product.trangThai || !selectedVariant || (selectedVariant.soLuongTon || 0) === 0"
+                [disabled]="!product.trangThai || (productVariants.length > 0 && (!selectedVariant || (selectedVariant.soLuongTon || 0) === 0))"
               >
                 <i class="fas fa-bolt"></i>
                 Mua ngay
@@ -229,6 +316,126 @@
             <p class="no-reviews">Chưa có đánh giá nào cho sản phẩm này.</p>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Similar Products Section -->
+  <section class="similar-products-section" *ngIf="similarProducts.length > 0">
+    <div class="container">
+      <h2 class="section-title">SẢN PHẨM TƯƠNG TỰ</h2>
+      <div class="similar-products-grid">
+        <div 
+          *ngFor="let similarProduct of similarProducts.slice(0, 5)" 
+          class="similar-product-card"
+          (click)="viewProduct(similarProduct.id)"
+        >
+          <div class="similar-product-image">
+            <img [src]="getProductImageUrl(similarProduct)" [alt]="similarProduct.tenSanPham" />
+          </div>
+          <div class="similar-product-info">
+            <h4 class="similar-product-name">{{ similarProduct.tenSanPham }}</h4>
+            <div class="similar-product-price">{{ formatCurrency(getSimilarProductPrice(similarProduct)) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Email Subscription Bar -->
+  <section class="subscription-bar">
+    <div class="container">
+      <div class="subscription-content">
+        <div class="subscription-form">
+          <input type="email" placeholder="Email..." class="subscription-input" />
+          <button class="subscription-btn">ĐĂNG KÝ</button>
+        </div>
+        <div class="social-icons">
+          <a href="https://facebook.com" target="_blank" class="social-icon">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="https://instagram.com" target="_blank" class="social-icon">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="https://twitter.com" target="_blank" class="social-icon">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="https://youtube.com" target="_blank" class="social-icon">
+            <i class="fab fa-youtube"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="shop-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Liên hệ</h4>
+          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Phường 15, Quận 11, Tp.HCM</p>
+          <p><i class="fas fa-phone"></i> 076 922 0162</p>
+          <p><i class="fas fa-envelope"></i> demonhunterg@gmail.com</p>
+          <p><i class="fas fa-envelope"></i> mon@mona.media</p>
+        </div>
+        <div class="footer-section">
+          <h4>Menu</h4>
+          <ul>
+            <li><a routerLink="/shop/about">Giới thiệu</a></li>
+            <li><a routerLink="/shop/products">Cửa hàng</a></li>
+            <li><a routerLink="/shop/news">Tin tức</a></li>
+            <li><a routerLink="/shop/contact">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Tài khoản</h4>
+          <ul>
+            <li><a routerLink="/customer/profile">My account</a></li>
+            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
+            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Dịch vụ</h4>
+          <ul>
+            <li><a routerLink="/shop/about">Giới thiệu</a></li>
+            <li><a routerLink="/shop/products">Cửa hàng</a></li>
+            <li><a routerLink="/shop/news">Tin tức</a></li>
+            <li><a routerLink="/shop/contact">Liên hệ</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Đăng ký</h4>
+          <p>Đăng ký để nhận được thông tin mới nhất từ chúng tôi.</p>
+          <div class="newsletter-form">
+            <input type="email" placeholder="Email..." class="newsletter-input">
+            <button class="newsletter-btn">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; Bản quyền thuộc về TDK Store. Thiết kế website MonaMedia <strong>Mona Media</strong></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Chatbot Widget -->
+  <app-chatbot></app-chatbot>
+
+  <!-- Search Overlay -->
+  <div class="search-overlay" *ngIf="showSearch" (click)="toggleSearch()">
+    <div class="search-modal" (click)="$event.stopPropagation()">
+      <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          type="text" 
+          placeholder="Tìm kiếm sản phẩm..."
+          class="search-input"
+          (keyup.enter)="toggleSearch(); navigateToProducts()"
+        />
       </div>
     </div>
   </div>

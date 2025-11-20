@@ -1,0 +1,148 @@
+<div class="categories-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-content">
+        <div class="top-bar-left">
+          <span class="top-bar-item">
+            <i class="fas fa-envelope"></i>
+            contact@tdkstore.com
+          </span>
+          <span class="top-bar-item">
+            <i class="fas fa-phone"></i>
+            1900 636 648
+          </span>
+        </div>
+        <div class="top-bar-right">
+          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="navigateToProfile($event)"
+            [title]="customerName || 'Tài khoản'"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
+          </a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="logout()"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <header class="shop-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo-section">
+          <a routerLink="/shop" class="logo-link">
+            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+            <span class="logo-text">TDK Store</span>
+          </a>
+        </div>
+        <nav class="nav-menu">
+          <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
+          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
+          <a routerLink="/shop/categories" routerLinkActive="active">Sản phẩm</a>
+          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
+          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-btn search-btn" (click)="toggleSearch()">
+            <i class="fas fa-search"></i>
+          </button>
+          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Categories Content -->
+  <main class="categories-main">
+    <div class="container">
+      <div class="categories-header">
+        <h1>Danh mục sản phẩm</h1>
+        <p>Chọn danh mục để xem các sản phẩm</p>
+      </div>
+
+      <div class="categories-grid">
+        <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}" class="category-card">
+          <div class="category-icon">
+            <i class="fas fa-hard-hat"></i>
+          </div>
+          <h3>Nón 3/4</h3>
+          <p>Mũ bảo hiểm 3/4 đầu</p>
+        </a>
+
+        <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}" class="category-card">
+          <div class="category-icon">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <h3>Nón Full Face</h3>
+          <p>Mũ bảo hiểm full face</p>
+        </a>
+
+        <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}" class="category-card">
+          <div class="category-icon">
+            <i class="fas fa-helmet-battle"></i>
+          </div>
+          <h3>Nón lật cằm</h3>
+          <p>Mũ bảo hiểm lật cằm</p>
+        </a>
+
+        <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}" class="category-card">
+          <div class="category-icon">
+            <i class="fas fa-child"></i>
+          </div>
+          <h3>Nón trẻ em</h3>
+          <p>Mũ bảo hiểm cho trẻ em</p>
+        </a>
+
+        <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}" class="category-card">
+          <div class="category-icon">
+            <i class="fas fa-gem"></i>
+          </div>
+          <h3>Nón Carbon</h3>
+          <p>Mũ bảo hiểm carbon cao cấp</p>
+        </a>
+
+        <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}" class="category-card">
+          <div class="category-icon">
+            <i class="fas fa-tools"></i>
+          </div>
+          <h3>Phụ kiện</h3>
+          <p>Phụ kiện cho mũ bảo hiểm</p>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Search Overlay -->
+  <div class="search-overlay" *ngIf="showSearch" (click)="toggleSearch()">
+    <div class="search-modal" (click)="$event.stopPropagation()">
+      <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          type="text" 
+          placeholder="Tìm kiếm sản phẩm..."
+          class="search-input"
+          (keyup.enter)="router.navigate(['/shop/products'], { queryParams: { search: $any($event.target).value } }); toggleSearch()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Chatbot Widget -->
+  <app-chatbot></app-chatbot>
+</div>

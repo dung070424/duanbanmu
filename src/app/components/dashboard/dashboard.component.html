@@ -17,9 +17,10 @@
               <label class="filter-label">Khoảng thời gian:</label>
               <select class="report-time-filter" [(ngModel)]="reportTimeRange" (change)="onReportTimeRangeChange()">
                 <option value="day">Hôm nay</option>
-                <option value="week">Tuần này</option>
-                <option value="month" [selected]="true">Tháng này</option>
-                <option value="year">Năm nay</option>
+                <option value="week">Tuần</option>
+                <option value="month" [selected]="true">Tháng</option>
+                <option value="quarter">Quý</option>
+                <option value="year">Năm</option>
                 <option value="custom">Tùy chọn</option>
               </select>
               
@@ -49,69 +50,104 @@
                 <tr>
                   <th>#</th>
                   <th>Thời gian</th>
+                  <th>Tổng Đơn Hàng</th>
+                  <th>Đơn Online</th>
+                  <th>Đơn Offline</th>
                   <th>Đơn thành công</th>
-                  <th>Bán lẻ</th>
-                  <th>Bán sỉ</th>
-                  <th>Chiết khấu</th>
-                  <th>Doanh thu</th>
-                  <th>Thực tế</th>
-                  <th>Công nợ</th>
-                  <th>Lợi nhuận</th>
+                  <th>Đơn Thất Bại</th>
+                  <th>Số Sản Phẩm Đã Bán</th>
+                  <th>Khách Hàng Mới</th>
+                  <th>Khách hàng Quay Lại</th>
+                  <th>Lượt Giảm Giá</th>
+                  <th>Tổng</th>
+                  <th>Tiền Giảm</th>
+                  <th>Thực Thu</th>
+                  <th>Thu Thực tế</th>
+                  <th>Dư nợ</th>
+                  <th>Tăng Trưởng Cùng Kì</th>
                 </tr>
               </thead>
               <tbody>
                 <!-- Hàng tổng -->
                 <tr class="summary-row total-row">
-                  <td colspan="2" class="summary-label">Tổng</td>
-                  <td class="highlight-value">{{ reportTotalOrders }}</td>
-                  <td class="highlight-value">{{ getRetailRevenue() | number }} ₫</td>
-                  <td class="highlight-value">{{ getWholesaleRevenue() | number }} ₫</td>
-                  <td class="highlight-value">{{ getTotalDiscount() | number }} ₫</td>
-                  <td class="highlight-value revenue">{{ reportTotalRevenue | number }} ₫</td>
-                  <td class="highlight-value actual-revenue">{{ reportTotalActualRevenue | number }} ₫</td>
-                  <td class="highlight-value debt-revenue">{{ reportTotalDebtRevenue | number }} ₫</td>
-                  <td class="highlight-value profit">{{ getTotalProfit() | number }} ₫</td>
+                  <td colspan="2" class="summary-label">TỔNG</td>
+                  <td class="highlight-value">{{ getTotalOrders() }}</td>
+                  <td class="highlight-value">{{ getTotalOnlineOrders() }}</td>
+                  <td class="highlight-value">{{ getTotalOfflineOrders() }}</td>
+                  <td class="highlight-value">{{ getTotalSuccessfulOrders() }}</td>
+                  <td class="highlight-value">{{ getTotalFailedOrders() }}</td>
+                  <td class="highlight-value">{{ getTotalProductsSold() }}</td>
+                  <td class="highlight-value">{{ getTotalNewCustomers() }}</td>
+                  <td class="highlight-value">{{ getTotalReturningCustomers() }}</td>
+                  <td class="highlight-value">{{ getTotalDiscountsUsed() }}</td>
+                  <td class="highlight-value revenue">{{ getTotalRevenue() | number }} ₫</td>
+                  <td class="highlight-value">{{ getTotalDiscountAmount() | number }} ₫</td>
+                  <td class="highlight-value actual-revenue">{{ getThucThu() | number }} ₫</td>
+                  <td class="highlight-value actual-revenue">{{ getThuThucTe() | number }} ₫</td>
+                  <td class="highlight-value debt-revenue">{{ getDuNo() | number }} ₫</td>
+                  <td class="highlight-value">-</td>
                 </tr>
                 <!-- Hàng trung bình -->
                 <tr class="summary-row average-row">
-                  <td colspan="2" class="summary-label">Trung bình</td>
+                  <td colspan="2" class="summary-label">TRUNG BÌNH</td>
                   <td>{{ getAverageOrders() }}</td>
-                  <td>{{ getAverageRetailRevenue() | number }} ₫</td>
-                  <td>{{ getAverageWholesaleRevenue() | number }} ₫</td>
-                  <td>{{ getAverageDiscount() | number }} ₫</td>
+                  <td>{{ getAverageOnlineOrders() }}</td>
+                  <td>{{ getAverageOfflineOrders() }}</td>
+                  <td>{{ getAverageSuccessfulOrders() }}</td>
+                  <td>{{ getAverageFailedOrders() }}</td>
+                  <td>{{ getAverageProductsSold() }}</td>
+                  <td>{{ getAverageNewCustomers() }}</td>
+                  <td>{{ getAverageReturningCustomers() }}</td>
+                  <td>{{ getAverageDiscountsUsed() }}</td>
                   <td>{{ getAverageRevenue() | number }} ₫</td>
+                  <td>{{ getAverageDiscountAmount() | number }} ₫</td>
                   <td>{{ getAverageActualRevenue() | number }} ₫</td>
+                  <td>{{ getAverageThuThucTe() | number }} ₫</td>
                   <td>{{ getAverageDebtRevenue() | number }} ₫</td>
-                  <td>{{ getAverageProfit() | number }} ₫</td>
+                  <td>-</td>
                 </tr>
                 <!-- Hàng tỷ lệ -->
                 <tr class="summary-row ratio-row">
-                  <td colspan="2" class="summary-label">Tỷ lệ / Tổng</td>
+                  <td colspan="2" class="summary-label">TỶ LỆ / TỔNG</td>
                   <td>100%</td>
-                  <td>{{ getRetailPercentage() }}%</td>
-                  <td>{{ getWholesalePercentage() }}%</td>
-                  <td>{{ getDiscountPercentage() }}%</td>
+                  <td>{{ getOnlineOrdersPercentage() }}%</td>
+                  <td>{{ getOfflineOrdersPercentage() }}%</td>
+                  <td>{{ getSuccessfulOrdersPercentage() }}%</td>
+                  <td>{{ getFailedOrdersPercentage() }}%</td>
+                  <td>{{ getProductsSoldPercentage() }}%</td>
+                  <td>{{ getNewCustomersPercentage() }}%</td>
+                  <td>{{ getReturningCustomersPercentage() }}%</td>
+                  <td>{{ getDiscountsUsedPercentage() }}%</td>
                   <td>100%</td>
+                  <td>{{ getDiscountAmountPercentage() }}%</td>
                   <td>{{ getActualRevenuePercentage() }}%</td>
+                  <td>{{ getThuThucTePercentage() }}%</td>
                   <td>{{ getDebtPercentage() }}%</td>
-                  <td>{{ getProfitPercentage() }}%</td>
+                  <td>-</td>
                 </tr>
                 <!-- Dữ liệu chi tiết theo thời gian -->
                 <tr *ngFor="let data of getReportTableData(); let i = index" class="data-row">
                   <td>{{ i + 1 }}</td>
                   <td>{{ data.period }}</td>
-                  <td>{{ data.orders }}</td>
-                  <td class="highlight-value">{{ data.retail | number }} ₫</td>
-                  <td>{{ data.wholesale | number }} ₫</td>
-                  <td>{{ data.discount | number }} ₫</td>
-                  <td class="highlight-value revenue">{{ data.revenue | number }} ₫</td>
+                  <td>{{ data.totalOrders }}</td>
+                  <td>{{ data.onlineOrders }}</td>
+                  <td>{{ data.offlineOrders }}</td>
+                  <td>{{ data.successfulOrders }}</td>
+                  <td>{{ data.failedOrders }}</td>
+                  <td>{{ data.productsSold }}</td>
+                  <td>{{ data.newCustomers }}</td>
+                  <td>{{ data.returningCustomers }}</td>
+                  <td>{{ data.discountsUsed }}</td>
+                  <td class="highlight-value revenue">{{ data.totalRevenue | number }} ₫</td>
+                  <td>{{ data.discountAmount | number }} ₫</td>
                   <td class="highlight-value actual-revenue">{{ data.actualRevenue | number }} ₫</td>
-                  <td class="highlight-value debt-revenue">{{ data.debt | number }} ₫</td>
-                  <td class="highlight-value profit">{{ data.profit | number }} ₫</td>
+                  <td class="highlight-value actual-revenue">{{ data.actualCollected | number }} ₫</td>
+                  <td class="highlight-value debt-revenue">{{ data.outstandingDebt | number }} ₫</td>
+                  <td>{{ data.growth }}%</td>
                 </tr>
                 <!-- Nếu không có dữ liệu -->
                 <tr *ngIf="getReportTableData().length === 0" class="no-data-row">
-                  <td colspan="10" class="no-data-message">
+                  <td colspan="17" class="no-data-message">
                     Chưa có dữ liệu cho khoảng thời gian này
                   </td>
                 </tr>

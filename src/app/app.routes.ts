@@ -45,6 +45,7 @@ import { ChatManagementComponent } from './components/chat-management/chat-manag
 import { AboutComponent } from './components/shop/about/about.component';
 import { NewsComponent } from './components/shop/news/news.component';
 import { ContactComponent } from './components/shop/contact/contact.component';
+import { CategoriesComponent } from './components/shop/categories/categories';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -61,6 +62,7 @@ export const routes: Routes = [
   { path: 'shop/checkout', component: CheckoutComponent },
   { path: 'shop/product/:id', component: ProductDetailComponent },
   { path: 'shop/products', component: ShopComponent },
+  { path: 'shop/categories', component: CategoriesComponent },
   { path: 'shop/about', component: AboutComponent },
   { path: 'shop/news', component: NewsComponent },
   { path: 'shop/contact', component: ContactComponent },

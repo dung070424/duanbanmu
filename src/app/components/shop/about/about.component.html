@@ -50,18 +50,7 @@
         <nav class="nav-menu">
           <a routerLink="/shop" routerLinkActive="active">Trang chủ</a>
           <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
-          <a routerLink="/shop/products" routerLinkActive="active" class="has-dropdown">
-            Sản phẩm
-            <i class="fas fa-chevron-down"></i>
-            <div class="dropdown-menu">
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}">Nón 3/4</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}">Nón Full Face</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}">Nón lật cằm</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}">Nón trẻ em</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}">Nón Carbon</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}">Phụ kiện</a>
-            </div>
-          </a>
+          <a routerLink="/shop/categories" routerLinkActive="active">Sản phẩm</a>
           <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
           <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
         </nav>
@@ -74,6 +63,9 @@
       </div>
     </div>
   </header>
+
+  <!-- Shop Tabs -->
+  <app-shop-tabs></app-shop-tabs>
 
   <!-- About Content -->
   <main class="about-main">

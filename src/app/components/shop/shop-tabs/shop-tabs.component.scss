@@ -1,0 +1,35 @@
+$white: #ffffff;
+$background: #f7f7fb;
+
+.shop-tabs-container {
+  padding: clamp(2rem, 4vw, 3rem) 0 0;
+  background: $background;
+  .tabs-header {
+    display: inline-flex;
+    background: $white;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    padding: 0.25rem;
+    margin: 0 auto;
+    gap: 0.35rem;
+  }
+  .tab-btn {
+    border: none;
+    background: transparent;
+    padding: 0.65rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    &.active {
+      background: #111827;
+      color: $white;
+    }
+    &:hover:not(.active) {
+      background: rgba(15, 23, 42, 0.05);
+      color: #1f2937;
+    }
+  }
+}
+

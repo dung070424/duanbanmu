@@ -1,4 +1,73 @@
 <div class="cart-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-content">
+        <div class="top-bar-left">
+          <span class="top-bar-item">
+            <i class="fas fa-envelope"></i>
+            contact@tdkstore.com
+          </span>
+          <span class="top-bar-item">
+            <i class="fas fa-phone"></i>
+            1900 636 648
+          </span>
+        </div>
+        <div class="top-bar-right">
+          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="navigateToProfile($event)"
+            [title]="customerName || 'Tài khoản'"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
+          </a>
+          <a 
+            class="top-bar-link" 
+            *ngIf="authService.isLoggedIn()"
+            (click)="logout()"
+            style="cursor: pointer;"
+          >
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <header class="shop-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo-section">
+          <a routerLink="/shop" class="logo-link">
+            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
+            <span class="logo-text">TDK Store</span>
+          </a>
+        </div>
+        <nav class="nav-menu">
+          <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
+          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
+          <a routerLink="/shop/categories" routerLinkActive="active">Sản phẩm</a>
+          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
+          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-btn search-btn" (click)="toggleSearch()">
+            <i class="fas fa-search"></i>
+          </button>
+          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
   <div class="container">
     <!-- Breadcrumb -->
     <nav class="breadcrumb-nav">
@@ -230,5 +299,20 @@
         <button class="btn-primary" (click)="saveItemDetail()">Cập nhật</button>
       </div>
     </footer>
+  </div>
+
+  <!-- Search Overlay -->
+  <div class="search-overlay" *ngIf="showSearch" (click)="toggleSearch()">
+    <div class="search-modal" (click)="$event.stopPropagation()">
+      <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          type="text" 
+          placeholder="Tìm kiếm sản phẩm..."
+          class="search-input"
+          (keyup.enter)="router.navigate(['/shop/products'], { queryParams: { search: $any($event.target).value } }); toggleSearch()"
+        />
+      </div>
+    </div>
   </div>
 </div>

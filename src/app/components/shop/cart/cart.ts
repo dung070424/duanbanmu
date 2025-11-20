@@ -6,6 +6,7 @@ import { HoaDonChoService, HoaDonCho, GioHangChoItem } from '../../../services/h
 import { AuthService } from '../../../services/auth';
 import { ColorApiService, ColorResponse } from '../../../services/color-api.service';
 import { SizeApiService, SizeResponse } from '../../../services/size-api.service';
+import { CustomerService } from '../../../services/customer.service';
 
 @Component({
   selector: 'app-cart',
@@ -29,6 +30,9 @@ export class CartComponent implements OnInit {
   detailSize = '';
   availableColors: ColorResponse[] = [];
   availableSizes: SizeResponse[] = [];
+  customerName: string = '';
+  cartCount = 0;
+  showSearch = false;
   bankTransferInfo = {
     bankName: 'MB Bank - Ngân hàng Quân đội',
     accountName: 'CÔNG TY TDK STUDIO',
@@ -41,12 +45,13 @@ export class CartComponent implements OnInit {
 
   constructor(
     private hoaDonChoService: HoaDonChoService,
-    private authService: AuthService,
-    private router: Router,
+    public authService: AuthService,
+    public router: Router,
     private location: Location,
     private cdr: ChangeDetectorRef,
     private colorApiService: ColorApiService,
-    private sizeApiService: SizeApiService
+    private sizeApiService: SizeApiService,
+    private customerService: CustomerService
   ) {}
 
   ngOnInit(): void {
@@ -89,6 +94,12 @@ export class CartComponent implements OnInit {
     }
 
     this.loadReferenceData();
+    this.updateCartCount();
+    
+    // Load thông tin khách hàng nếu đã login
+    if (this.authService.isLoggedIn()) {
+      this.loadCustomerName();
+    }
 
     // Sau đó load từ DB nếu đã đăng nhập (bất đồng bộ - update sau)
     if (this.authService.isLoggedIn()) {
@@ -790,5 +801,92 @@ export class CartComponent implements OnInit {
         updater(this.cart.danhSachGioHang[index]);
       }
     }
+  }
+
+  updateCartCount(): void {
+    // Đếm từ temp cart nếu chưa đăng nhập
+    if (!this.authService.isLoggedIn()) {
+      const tempCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
+      this.cartCount = tempCart.length;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Đếm từ DB nếu đã đăng nhập
+    const savedCartId = localStorage.getItem('current_cart_id');
+    if (savedCartId) {
+      this.hoaDonChoService.getHoaDonChoById(parseInt(savedCartId)).subscribe({
+        next: (cart) => {
+          this.cartCount = cart?.danhSachGioHang?.length || 0;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.cartCount = 0;
+          this.cdr.detectChanges();
+        }
+      });
+    } else {
+      this.cartCount = 0;
+      this.cdr.detectChanges();
+    }
+  }
+
+  loadCustomerName(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.customerName = '';
+      return;
+    }
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser || !currentUser.id) {
+      this.customerName = '';
+      return;
+    }
+
+    this.customerService.getCustomerByUserId(currentUser.id).subscribe({
+      next: (customer) => {
+        this.customerName = customer.tenKhachHang || '';
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.customerName = '';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleSearch(): void {
+    this.showSearch = !this.showSearch;
+  }
+
+  navigateToProfile(event: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigateByUrl('/shop/login');
+      return;
+    }
+    
+    this.router.navigate(['/customer/profile']);
+  }
+
+  logout(): void {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+      this.authService.logout();
+      this.customerName = '';
+      this.cartCount = 0;
+      localStorage.removeItem('temp_cart');
+      localStorage.removeItem('current_cart_id');
+      this.router.navigate(['/shop']);
+      this.cdr.detectChanges();
+    }
+  }
+
+  goToCart(): void {
+    // Đã ở trang cart rồi, không cần navigate
+    this.router.navigate(['/shop/cart']);
   }
 }

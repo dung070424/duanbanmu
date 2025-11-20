@@ -56,6 +56,44 @@ export interface LowStockProductDTO {
   soLuongTon: number; // Số lượng tồn kho hiện tại
 }
 
+export interface PeriodDetailDTO {
+  period: string;
+  tongDonHang: number;
+  donOffline: number;
+  donOnline: number;
+  donThanhCong: number;
+  donThatBai: number;
+  soSanPhamDaBan: number;
+  khachHangMoi: number;
+  khachHangQuayLai: number;
+  luotGiamGia: number;
+  tong: number;
+  tienGiam: number;
+  thucThu: number;
+  thuThucTe: number;
+  duNo: number;
+  tangTruong: string;
+}
+
+export interface DetailedStatisticsDTO {
+  tongDonHang: number;
+  donOffline: number;
+  donOnline: number;
+  donThanhCong: number;
+  donThatBai: number;
+  soSanPhamDaBan: number;
+  khachHangMoi: number;
+  khachHangQuayLai: number;
+  tongSoKhachHang: number;
+  luotGiamGia: number;
+  tong: number;
+  tienGiam: number;
+  thucThu: number;
+  thuThucTe: number;
+  duNo: number;
+  chiTietTheoPeriod: PeriodDetailDTO[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -326,6 +364,38 @@ export class StatisticsService {
           if (error.url) {
             console.error('   - Requested URL:', error.url);
           }
+        }
+      })
+    );
+  }
+
+  getDetailedStatistics(period: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'month'): Observable<DetailedStatisticsDTO> {
+    const fullUrl = `${this.apiUrl}/detailed?period=${period}`;
+    console.log('📡 [StatisticsService] Calling Detailed Statistics API:', fullUrl);
+    
+    return this.http.get<DetailedStatisticsDTO>(fullUrl).pipe(
+      tap({
+        next: (response) => {
+          console.log(`📥 [StatisticsService] Detailed Statistics (${period}) received:`, response);
+        },
+        error: (error) => {
+          console.error(`❌ [StatisticsService] Detailed Statistics (${period}) Error:`, error);
+        }
+      })
+    );
+  }
+
+  getDetailedStatisticsByDateRange(startDate: string, endDate: string): Observable<DetailedStatisticsDTO> {
+    const fullUrl = `${this.apiUrl}/detailed/date-range?startDate=${startDate}&endDate=${endDate}`;
+    console.log('📡 [StatisticsService] Calling Detailed Statistics by Date Range API:', fullUrl);
+    
+    return this.http.get<DetailedStatisticsDTO>(fullUrl).pipe(
+      tap({
+        next: (response) => {
+          console.log(`📥 [StatisticsService] Detailed Statistics (date range ${startDate} -> ${endDate}) received:`, response);
+        },
+        error: (error) => {
+          console.error('❌ [StatisticsService] Detailed Statistics (date range) Error:', error);
         }
       })
     );

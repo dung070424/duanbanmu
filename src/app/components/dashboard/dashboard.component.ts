@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { StatisticsService, BestSellingProductDTO, BrandStatisticsDTO, LowStockProductDTO, OrderStatusStatisticsDTO, PeriodStatisticsDTO, WeeklyRevenueDTO } from '../../services/statistics.service';
+import { StatisticsService, BestSellingProductDTO, BrandStatisticsDTO, LowStockProductDTO, OrderStatusStatisticsDTO, PeriodStatisticsDTO, WeeklyRevenueDTO, DetailedStatisticsDTO, PeriodDetailDTO } from '../../services/statistics.service';
 import { KhachHangService } from '../../services/khach-hang.service';
 import { KhachHang } from '../../interfaces/khach-hang.interface';
 import { forkJoin, of } from 'rxjs';
@@ -722,21 +722,56 @@ export class DashboardComponent implements OnInit {
   reportCustomEndDate: string = '';
   
   // Dữ liệu báo cáo riêng (để không ảnh hưởng đến dữ liệu chính)
-  reportRevenueData: number[] = [];
-  reportChartLabels: string[] = [];
-  reportTotalOrders: number = 0;
-  reportTotalRevenue: number = 0;
-  reportTotalActualRevenue: number = 0;
-  reportTotalDebtRevenue: number = 0;
+  reportDetailedStats: DetailedStatisticsDTO | null = null;
+  reportReportTableData: Array<{
+    period: string;
+    totalOrders: number;
+    onlineOrders: number;
+    offlineOrders: number;
+    successfulOrders: number;
+    failedOrders: number;
+    productsSold: number;
+    newCustomers: number;
+    returningCustomers: number;
+    discountsUsed: number;
+    totalRevenue: number;
+    discountAmount: number;
+    actualRevenue: number;
+    actualCollected: number;
+    outstandingDebt: number;
+    growth: string;
+  }> = [];
 
   exportReport() {
     // Mở modal hiển thị thông tin báo cáo
     console.log('🔄 [Dashboard] Opening report information modal...');
+    console.log('   - Current selectedTimeRange:', this.selectedTimeRange);
     
     // Khởi tạo filter báo cáo từ filter hiện tại
-    this.reportTimeRange = this.selectedTimeRange;
-    this.reportCustomStartDate = this.customStartDate;
-    this.reportCustomEndDate = this.customEndDate;
+    // Map selectedTimeRange sang reportTimeRange (có thể khác nhau)
+    if (this.selectedTimeRange === 'custom') {
+      this.reportTimeRange = 'custom';
+      this.reportCustomStartDate = this.customStartDate || '';
+      this.reportCustomEndDate = this.customEndDate || '';
+    } else {
+      // Map các giá trị: 'day', 'week', 'month', 'quarter', 'year'
+      // Đảm bảo luôn có giá trị hợp lệ
+      const validPeriods = ['day', 'week', 'month', 'quarter', 'year'];
+      if (validPeriods.includes(this.selectedTimeRange)) {
+        this.reportTimeRange = this.selectedTimeRange;
+      } else {
+        // Nếu không khớp, mặc định là 'month'
+        this.reportTimeRange = 'month';
+      }
+      this.reportCustomStartDate = '';
+      this.reportCustomEndDate = '';
+    }
+    
+    console.log('   - Set reportTimeRange to:', this.reportTimeRange);
+    
+    // Reset dữ liệu trước khi load
+    this.reportDetailedStats = null;
+    this.reportReportTableData = [];
     
     // Load dữ liệu cho báo cáo
     this.loadReportData();
@@ -794,81 +829,335 @@ export class DashboardComponent implements OnInit {
         this.loadReportDataByDateRange(this.reportCustomStartDate, this.reportCustomEndDate);
       }
     } else {
-      this.loadReportDataByPeriod(this.reportTimeRange as 'day' | 'week' | 'month' | 'year');
+      this.loadReportDataByPeriod(this.reportTimeRange as 'day' | 'week' | 'month' | 'quarter' | 'year');
     }
   }
 
-  loadReportDataByPeriod(period: 'day' | 'week' | 'month' | 'year') {
-    // Load period statistics
-    this.statisticsService.getPeriodStatistics(period).subscribe({
+  loadReportDataByPeriod(period: 'day' | 'week' | 'month' | 'quarter' | 'year') {
+    console.log('🔄 [Dashboard] Loading report data for period:', period);
+    
+    // Load detailed statistics từ API mới
+    this.statisticsService.getDetailedStatistics(period).subscribe({
       next: (response) => {
+        console.log('✅ [Dashboard] Detailed statistics received:', response);
         if (response) {
-          this.reportTotalOrders = response.donHang || 0;
-          this.reportTotalRevenue = typeof response.doanhThu === 'number' 
-            ? response.doanhThu 
-            : Number(response.doanhThu) || 0;
-          this.reportTotalActualRevenue = response.actualRevenue != null ? Number(response.actualRevenue) : 0;
-          this.reportTotalDebtRevenue = response.debtRevenue != null ? Number(response.debtRevenue) : 0;
+          this.reportDetailedStats = response;
+          console.log('📊 [Dashboard] Report detailed stats:', {
+            tongDonHang: response.tongDonHang,
+            donOnline: response.donOnline,
+            donOffline: response.donOffline,
+            donThanhCong: response.donThanhCong,
+            donThatBai: response.donThatBai,
+            khachHangMoi: response.khachHangMoi,
+            khachHangQuayLai: response.khachHangQuayLai,
+            tongSoKhachHang: response.tongSoKhachHang,
+            luotGiamGia: response.luotGiamGia,
+            tong: response.tong,
+            thucThu: response.thucThu,
+            duNo: response.duNo
+          });
+          this.generateReportTableData(period);
+          console.log('📋 [Dashboard] Generated table data rows:', this.reportReportTableData.length);
+        } else {
+          console.warn('⚠️ [Dashboard] Response is null or undefined');
+          this.reportDetailedStats = null;
+          this.reportReportTableData = [];
         }
       },
       error: (error) => {
-        console.error('❌ [Dashboard] Error loading report period statistics:', error);
+        console.error('❌ [Dashboard] Error loading detailed statistics:', error);
+        console.error('   - Error details:', error.error);
+        console.error('   - Status:', error.status);
+        this.reportDetailedStats = null;
+        this.reportReportTableData = [];
       }
     });
+  }
 
-    // Load weekly revenue nếu là week/month/year
-    if (period === 'week' || period === 'month' || period === 'year') {
-      this.statisticsService.getWeeklyRevenue().subscribe({
-        next: (response) => {
-          if (response && response.data && Array.isArray(response.data) && response.data.length > 0) {
-            this.reportRevenueData = response.data.map(week => {
-              const revenue = typeof week.totalRevenue === 'number' 
-                ? week.totalRevenue 
-                : Number(week.totalRevenue);
-              return isNaN(revenue) ? 0 : revenue;
-            });
-            this.reportChartLabels = response.data.map(week => week.weekLabel);
-          } else {
-            this.reportRevenueData = [];
-            this.reportChartLabels = [];
-          }
-        },
-        error: (error) => {
-          console.error('❌ [Dashboard] Error loading report weekly revenue:', error);
-          this.reportRevenueData = [];
-          this.reportChartLabels = [];
-        }
+  generateReportTableData(period: 'day' | 'week' | 'month' | 'quarter' | 'year') {
+    this.reportReportTableData = [];
+    
+    if (!this.reportDetailedStats) {
+      return;
+    }
+    
+    // Sử dụng dữ liệu từ backend nếu có
+    if (this.reportDetailedStats.chiTietTheoPeriod && this.reportDetailedStats.chiTietTheoPeriod.length > 0) {
+      this.reportReportTableData = this.reportDetailedStats.chiTietTheoPeriod.map((item, index) => ({
+        period: item.period,
+        totalOrders: item.tongDonHang,
+        onlineOrders: item.donOnline,
+        offlineOrders: item.donOffline,
+        successfulOrders: item.donThanhCong,
+        failedOrders: item.donThatBai,
+        productsSold: item.soSanPhamDaBan,
+        newCustomers: item.khachHangMoi,
+        returningCustomers: item.khachHangQuayLai,
+        discountsUsed: item.luotGiamGia,
+        totalRevenue: Number(item.tong),
+        discountAmount: Number(item.tienGiam),
+        actualRevenue: Number(item.thucThu),
+        actualCollected: Number(item.thuThucTe || 0),
+        outstandingDebt: Number(item.duNo),
+        growth: item.tangTruong || '0.0%'
+      }));
+      console.log('📋 [Dashboard] Using backend period details:', this.reportReportTableData.length, 'rows');
+      return;
+    }
+    
+    // Fallback: Generate data based on period (nếu backend chưa có dữ liệu)
+    const today = new Date();
+    const stats = this.reportDetailedStats;
+    
+    // Generate data based on period
+    if (period === 'day') {
+      // Hôm nay: hiển thị thông tin hôm nay
+      this.reportReportTableData.push({
+        period: `Ngày ${today.getDate()}/${today.getMonth() + 1}`,
+        totalOrders: stats.tongDonHang,
+        onlineOrders: stats.donOnline,
+        offlineOrders: stats.donOffline,
+        successfulOrders: stats.donThanhCong,
+        failedOrders: stats.donThatBai,
+        productsSold: stats.soSanPhamDaBan,
+        newCustomers: stats.khachHangMoi,
+        returningCustomers: stats.khachHangQuayLai,
+        discountsUsed: stats.luotGiamGia,
+        totalRevenue: Number(stats.tong),
+        discountAmount: Number(stats.tienGiam),
+        actualRevenue: Number(stats.thucThu),
+        actualCollected: Number(stats.thuThucTe || 0),
+        outstandingDebt: Number(stats.duNo),
+        growth: '0.0'
       });
-    } else {
-      // Với "day", chỉ hiển thị một hàng dữ liệu
-      this.reportRevenueData = [];
-      this.reportChartLabels = [];
+    } else if (period === 'week') {
+      // Tuần: hiển thị 7 ngày trong tuần hiện tại
+      const dayOfWeek = today.getDay();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - dayOfWeek);
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        this.reportReportTableData.push({
+          period: `Ngày ${date.getDate()}/${date.getMonth() + 1}`,
+          totalOrders: Math.floor(stats.tongDonHang / 7),
+          onlineOrders: Math.floor(stats.donOnline / 7),
+          offlineOrders: Math.floor(stats.donOffline / 7),
+          successfulOrders: Math.floor(stats.donThanhCong / 7),
+          failedOrders: Math.floor(stats.donThatBai / 7),
+          productsSold: Math.floor(stats.soSanPhamDaBan / 7),
+          newCustomers: Math.floor(stats.khachHangMoi / 7),
+          returningCustomers: Math.floor(stats.khachHangQuayLai / 7),
+          discountsUsed: Math.floor(stats.luotGiamGia / 7),
+          totalRevenue: Math.floor(Number(stats.tong) / 7),
+          discountAmount: Math.floor(Number(stats.tienGiam) / 7),
+          actualRevenue: Math.floor(Number(stats.thucThu) / 7),
+          actualCollected: Math.floor(Number(stats.thucThu) / 7),
+          outstandingDebt: Math.floor(Number(stats.duNo) / 7),
+          growth: '0.0'
+        });
+      }
+    } else if (period === 'month') {
+      // Tháng: hiển thị các tuần trong tháng hiện tại
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+      const firstDayWeek = firstDayOfMonth.getDay();
+      const daysInMonth = lastDayOfMonth.getDate();
+      const weeksInMonth = Math.ceil((daysInMonth + firstDayWeek) / 7);
+      
+      for (let week = 0; week < weeksInMonth; week++) {
+        this.reportReportTableData.push({
+          period: `Tuần ${week + 1}`,
+          totalOrders: Math.floor(stats.tongDonHang / weeksInMonth),
+          onlineOrders: Math.floor(stats.donOnline / weeksInMonth),
+          offlineOrders: Math.floor(stats.donOffline / weeksInMonth),
+          successfulOrders: Math.floor(stats.donThanhCong / weeksInMonth),
+          failedOrders: Math.floor(stats.donThatBai / weeksInMonth),
+          productsSold: Math.floor(stats.soSanPhamDaBan / weeksInMonth),
+          newCustomers: Math.floor(stats.khachHangMoi / weeksInMonth),
+          returningCustomers: Math.floor(stats.khachHangQuayLai / weeksInMonth),
+          discountsUsed: Math.floor(stats.luotGiamGia / weeksInMonth),
+          totalRevenue: Math.floor(Number(stats.tong) / weeksInMonth),
+          discountAmount: Math.floor(Number(stats.tienGiam) / weeksInMonth),
+          actualRevenue: Math.floor(Number(stats.thucThu) / weeksInMonth),
+          actualCollected: Math.floor(Number(stats.thucThu) / weeksInMonth),
+          outstandingDebt: Math.floor(Number(stats.duNo) / weeksInMonth),
+          growth: '0.0'
+        });
+      }
+    } else if (period === 'quarter') {
+      // Quý: hiển thị các tháng trong quý hiện tại
+      const currentMonth = today.getMonth() + 1;
+      let quarterStartMonth: number;
+      
+      if (currentMonth >= 1 && currentMonth <= 3) {
+        quarterStartMonth = 1;
+      } else if (currentMonth >= 4 && currentMonth <= 6) {
+        quarterStartMonth = 4;
+      } else if (currentMonth >= 7 && currentMonth <= 9) {
+        quarterStartMonth = 7;
+      } else {
+        quarterStartMonth = 10;
+      }
+      
+      for (let i = 0; i < 3; i++) {
+        const month = quarterStartMonth + i;
+        this.reportReportTableData.push({
+          period: `Tháng ${month}`,
+          totalOrders: Math.floor(stats.tongDonHang / 3),
+          onlineOrders: Math.floor(stats.donOnline / 3),
+          offlineOrders: Math.floor(stats.donOffline / 3),
+          successfulOrders: Math.floor(stats.donThanhCong / 3),
+          failedOrders: Math.floor(stats.donThatBai / 3),
+          productsSold: Math.floor(stats.soSanPhamDaBan / 3),
+          newCustomers: Math.floor(stats.khachHangMoi / 3),
+          returningCustomers: Math.floor(stats.khachHangQuayLai / 3),
+          discountsUsed: Math.floor(stats.luotGiamGia / 3),
+          totalRevenue: Math.floor(Number(stats.tong) / 3),
+          discountAmount: Math.floor(Number(stats.tienGiam) / 3),
+          actualRevenue: Math.floor(Number(stats.thucThu) / 3),
+          actualCollected: Math.floor(Number(stats.thucThu) / 3),
+          outstandingDebt: Math.floor(Number(stats.duNo) / 3),
+          growth: '0.0'
+        });
+      }
+    } else if (period === 'year') {
+      // Năm: hiển thị các quý trong năm (4 quý)
+      for (let quarter = 1; quarter <= 4; quarter++) {
+        this.reportReportTableData.push({
+          period: `Quý ${quarter}`,
+          totalOrders: Math.floor(stats.tongDonHang / 4),
+          onlineOrders: Math.floor(stats.donOnline / 4),
+          offlineOrders: Math.floor(stats.donOffline / 4),
+          successfulOrders: Math.floor(stats.donThanhCong / 4),
+          failedOrders: Math.floor(stats.donThatBai / 4),
+          productsSold: Math.floor(stats.soSanPhamDaBan / 4),
+          newCustomers: Math.floor(stats.khachHangMoi / 4),
+          returningCustomers: Math.floor(stats.khachHangQuayLai / 4),
+          discountsUsed: Math.floor(stats.luotGiamGia / 4),
+          totalRevenue: Math.floor(Number(stats.tong) / 4),
+          discountAmount: Math.floor(Number(stats.tienGiam) / 4),
+          actualRevenue: Math.floor(Number(stats.thucThu) / 4),
+          actualCollected: Math.floor(Number(stats.thucThu) / 4),
+          outstandingDebt: Math.floor(Number(stats.duNo) / 4),
+          growth: '0.0'
+        });
+      }
     }
   }
 
   loadReportDataByDateRange(startDate: string, endDate: string) {
-    // Load period statistics by date range
-    this.statisticsService.getPeriodStatisticsByDateRange(startDate, endDate).subscribe({
+    // Load detailed statistics từ API mới
+    this.statisticsService.getDetailedStatisticsByDateRange(startDate, endDate).subscribe({
       next: (response) => {
         if (response) {
-          this.reportTotalOrders = response.donHang || 0;
-          this.reportTotalRevenue = typeof response.doanhThu === 'number' 
-            ? response.doanhThu 
-            : Number(response.doanhThu) || 0;
-          this.reportTotalActualRevenue = response.actualRevenue != null ? Number(response.actualRevenue) : 0;
-          this.reportTotalDebtRevenue = response.debtRevenue != null ? Number(response.debtRevenue) : 0;
+          this.reportDetailedStats = response;
+          this.generateReportTableDataForDateRange(startDate, endDate);
         }
       },
       error: (error) => {
-        console.error('❌ [Dashboard] Error loading report date range statistics:', error);
+        console.error('❌ [Dashboard] Error loading detailed statistics by date range:', error);
+        this.reportDetailedStats = null;
+        this.reportReportTableData = [];
       }
     });
-
-    // Với custom date range, có thể tạo dữ liệu theo ngày hoặc tuần
-    // Tạm thời để trống, sẽ hiển thị một hàng tổng hợp
-    this.reportRevenueData = [];
-    this.reportChartLabels = [];
   }
+
+  generateReportTableDataForDateRange(startDate: string, endDate: string) {
+    this.reportReportTableData = [];
+    
+    if (!this.reportDetailedStats) {
+      return;
+    }
+    
+    const stats = this.reportDetailedStats;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    
+    // If range is less than 30 days, show daily data
+    if (diffDays <= 30) {
+      for (let i = 0; i < diffDays; i++) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const dateLabel = `Ngày ${date.getDate()}/${date.getMonth() + 1}`;
+        
+        this.reportReportTableData.push({
+          period: dateLabel,
+          totalOrders: Math.floor(stats.tongDonHang / diffDays),
+          onlineOrders: Math.floor(stats.donOnline / diffDays),
+          offlineOrders: Math.floor(stats.donOffline / diffDays),
+          successfulOrders: Math.floor(stats.donThanhCong / diffDays),
+          failedOrders: Math.floor(stats.donThatBai / diffDays),
+          productsSold: Math.floor(stats.soSanPhamDaBan / diffDays),
+          newCustomers: Math.floor(stats.khachHangMoi / diffDays),
+          returningCustomers: Math.floor(stats.khachHangQuayLai / diffDays),
+          discountsUsed: Math.floor(stats.luotGiamGia / diffDays),
+          totalRevenue: Math.floor(Number(stats.tong) / diffDays),
+          discountAmount: Math.floor(Number(stats.tienGiam) / diffDays),
+          actualRevenue: Math.floor(Number(stats.thucThu) / diffDays),
+          actualCollected: Math.floor(Number(stats.thucThu) / diffDays),
+          outstandingDebt: Math.floor(Number(stats.duNo) / diffDays),
+          growth: '0.0'
+        });
+      }
+    } else {
+      // If range is more than 30 days, show monthly data
+      const startMonth = start.getMonth() + 1;
+      const startYear = start.getFullYear();
+      const endMonth = end.getMonth() + 1;
+      const endYear = end.getFullYear();
+      
+      let monthCount = 0;
+      let currentMonth = startMonth;
+      let currentYear = startYear;
+      
+      while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
+        monthCount++;
+        this.reportReportTableData.push({
+          period: `Tháng ${currentMonth}`,
+          totalOrders: Math.floor(stats.tongDonHang / monthCount),
+          onlineOrders: Math.floor(stats.donOnline / monthCount),
+          offlineOrders: Math.floor(stats.donOffline / monthCount),
+          successfulOrders: Math.floor(stats.donThanhCong / monthCount),
+          failedOrders: Math.floor(stats.donThatBai / monthCount),
+          productsSold: Math.floor(stats.soSanPhamDaBan / monthCount),
+          newCustomers: Math.floor(stats.khachHangMoi / monthCount),
+          returningCustomers: Math.floor(stats.khachHangQuayLai / monthCount),
+          discountsUsed: Math.floor(stats.luotGiamGia / monthCount),
+          totalRevenue: Math.floor(Number(stats.tong) / monthCount),
+          discountAmount: Math.floor(Number(stats.tienGiam) / monthCount),
+          actualRevenue: Math.floor(Number(stats.thucThu) / monthCount),
+          actualCollected: Math.floor(Number(stats.thucThu) / monthCount),
+          outstandingDebt: Math.floor(Number(stats.duNo) / monthCount),
+          growth: '0.0'
+        });
+        
+        currentMonth++;
+        if (currentMonth > 12) {
+          currentMonth = 1;
+          currentYear++;
+        }
+      }
+    }
+  }
+
+  getPeriodLabel(period: string): string {
+    const labels: { [key: string]: string } = {
+      'day': 'Hôm nay',
+      'week': 'Tuần',
+      'month': 'Tháng',
+      'quarter': 'Quý',
+      'year': 'Năm',
+      'custom': 'Tùy chọn'
+    };
+    return labels[period] || period;
+  }
+
 
   getTimeRangeLabel(): string {
     const labels: { [key: string]: string } = {
@@ -882,14 +1171,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getReportTimeRangeLabel(): string {
-    const labels: { [key: string]: string } = {
-      'day': 'Hôm nay',
-      'week': 'Tuần này',
-      'month': 'Tháng này',
-      'year': 'Năm nay',
-      'custom': 'Tùy chọn'
-    };
-    return labels[this.reportTimeRange] || 'Không xác định';
+    return this.getPeriodLabel(this.reportTimeRange);
   }
 
   getCurrentDate(): string {
@@ -913,200 +1195,397 @@ export class DashboardComponent implements OnInit {
   // Hàm tính toán dữ liệu cho bảng báo cáo (sử dụng dữ liệu riêng của modal)
   getReportTableData(): Array<{
     period: string;
-    orders: number;
-    retail: number;
-    wholesale: number;
-    discount: number;
-    revenue: number;
+    totalOrders: number;
+    onlineOrders: number;
+    offlineOrders: number;
+    successfulOrders: number;
+    failedOrders: number;
+    productsSold: number;
+    newCustomers: number;
+    returningCustomers: number;
+    discountsUsed: number;
+    totalRevenue: number;
+    discountAmount: number;
     actualRevenue: number;
-    debt: number;
-    profit: number;
+    actualCollected: number;
+    outstandingDebt: number;
+    growth: string;
   }> {
-    const data: Array<{
-      period: string;
-      orders: number;
-      retail: number;
-      wholesale: number;
-      discount: number;
-      revenue: number;
-      actualRevenue: number;
-      debt: number;
-      profit: number;
-    }> = [];
+    return this.reportReportTableData;
+  }
 
-    // Sử dụng dữ liệu từ reportRevenueData và reportChartLabels (riêng cho modal)
-    if (this.reportRevenueData.length > 0 && this.reportChartLabels.length > 0) {
-      this.reportRevenueData.forEach((revenue, index) => {
-        const label = this.reportChartLabels[index] || `Kỳ ${index + 1}`;
-        // Phân chia doanh thu: 80% bán lẻ, 20% bán sỉ (có thể điều chỉnh)
-        const retail = Math.round(revenue * 0.8);
-        const wholesale = Math.round(revenue * 0.2);
-        // Chiết khấu ước tính 5% doanh thu
-        const discount = Math.round(revenue * 0.05);
-        // Lợi nhuận ước tính 20% doanh thu
-        const profit = Math.round(revenue * 0.2);
-        // Số đơn hàng ước tính dựa trên doanh thu
-        const avgOrderValue = revenue > 0 ? 500000 : 0; // Giá trị đơn hàng trung bình
-        const orders = Math.round(revenue / avgOrderValue) || 0;
-        // Thực tế và công nợ
-        const actualRevenue = Math.round(revenue * 0.7); // 70% đã thanh toán
-        const debt = revenue - actualRevenue;
-
-        data.push({
-          period: label,
-          orders: orders,
-          retail: retail,
-          wholesale: wholesale,
-          discount: discount,
-          revenue: revenue,
-          actualRevenue: actualRevenue,
-          debt: debt,
-          profit: profit
-        });
-      });
-    } else if (this.reportTotalRevenue > 0) {
-      // Nếu không có dữ liệu chi tiết, tạo một hàng tổng hợp
-      const retail = Math.round(this.reportTotalRevenue * 0.8);
-      const wholesale = Math.round(this.reportTotalRevenue * 0.2);
-      const discount = Math.round(this.reportTotalRevenue * 0.05);
-      const profit = Math.round(this.reportTotalRevenue * 0.2);
-      const avgOrderValue = this.reportTotalRevenue > 0 ? 500000 : 0;
-      const orders = Math.round(this.reportTotalRevenue / avgOrderValue) || this.reportTotalOrders;
-
-      data.push({
-        period: this.getReportTimeRangeLabel(),
-        orders: orders,
-        retail: retail,
-        wholesale: wholesale,
-        discount: discount,
-        revenue: this.reportTotalRevenue,
-        actualRevenue: this.reportTotalActualRevenue,
-        debt: this.reportTotalDebtRevenue,
-        profit: profit
-      });
+  // New calculation methods for the updated table structure
+  getTotalOrders(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.tongDonHang;
     }
-
-    return data;
-  }
-
-  getRetailRevenue(): number {
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    return data.reduce((sum, item) => sum + item.retail, 0);
+    return data.reduce((sum, item) => sum + item.totalOrders, 0);
   }
 
-  getWholesaleRevenue(): number {
+  getTotalOnlineOrders(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.donOnline;
+    }
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    return data.reduce((sum, item) => sum + item.wholesale, 0);
+    return data.reduce((sum, item) => sum + item.onlineOrders, 0);
   }
 
-  getTotalDiscount(): number {
+  getTotalOfflineOrders(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.donOffline;
+    }
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    return data.reduce((sum, item) => sum + item.discount, 0);
+    return data.reduce((sum, item) => sum + item.offlineOrders, 0);
   }
 
-  getTotalProfit(): number {
+  getTotalSuccessfulOrders(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.donThanhCong;
+    }
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    return data.reduce((sum, item) => sum + item.profit, 0);
+    return data.reduce((sum, item) => sum + item.successfulOrders, 0);
+  }
+
+  getTotalFailedOrders(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.donThatBai;
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.failedOrders, 0);
+  }
+
+  getTotalProductsSold(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.soSanPhamDaBan;
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.productsSold, 0);
+  }
+
+  getTotalNewCustomers(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.khachHangMoi;
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.newCustomers, 0);
+  }
+
+  getTotalReturningCustomers(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.khachHangQuayLai;
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.returningCustomers, 0);
+  }
+
+  getTotalDiscountsUsed(): number {
+    if (this.reportDetailedStats) {
+      return this.reportDetailedStats.luotGiamGia;
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.discountsUsed, 0);
+  }
+
+  getTotalDiscountAmount(): number {
+    if (this.reportDetailedStats) {
+      return Number(this.reportDetailedStats.tienGiam);
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.discountAmount, 0);
   }
 
   getAverageOrders(): number {
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    const total = data.reduce((sum, item) => sum + item.orders, 0);
+    const total = data.reduce((sum, item) => sum + item.totalOrders, 0);
     return Math.round(total / data.length);
   }
 
-  getAverageRetailRevenue(): number {
+  getAverageOnlineOrders(): number {
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    const total = data.reduce((sum, item) => sum + item.retail, 0);
+    const total = data.reduce((sum, item) => sum + item.onlineOrders, 0);
     return Math.round(total / data.length);
   }
 
-  getAverageWholesaleRevenue(): number {
+  getAverageOfflineOrders(): number {
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    const total = data.reduce((sum, item) => sum + item.wholesale, 0);
+    const total = data.reduce((sum, item) => sum + item.offlineOrders, 0);
     return Math.round(total / data.length);
   }
 
-  getAverageDiscount(): number {
+  getAverageSuccessfulOrders(): number {
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    const total = data.reduce((sum, item) => sum + item.discount, 0);
+    const total = data.reduce((sum, item) => sum + item.successfulOrders, 0);
+    return Math.round(total / data.length);
+  }
+
+  getAverageFailedOrders(): number {
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.failedOrders, 0);
+    return Math.round(total / data.length);
+  }
+
+  getAverageProductsSold(): number {
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.productsSold, 0);
+    return Math.round(total / data.length);
+  }
+
+  getAverageNewCustomers(): number {
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.newCustomers, 0);
+    return Math.round(total / data.length);
+  }
+
+  getAverageReturningCustomers(): number {
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.returningCustomers, 0);
+    return Math.round(total / data.length);
+  }
+
+  getAverageDiscountsUsed(): number {
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.discountsUsed, 0);
+    return Math.round(total / data.length);
+  }
+
+  getAverageDiscountAmount(): number {
+    if (this.reportDetailedStats) {
+      const data = this.getReportTableData();
+      if (data.length === 0) return Number(this.reportDetailedStats.tienGiam);
+      const total = data.reduce((sum, item) => sum + item.discountAmount, 0);
+      return Math.round(total / data.length);
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.discountAmount, 0);
     return Math.round(total / data.length);
   }
 
   getAverageRevenue(): number {
-    if (this.reportRevenueData.length === 0) {
-      // Nếu không có dữ liệu chi tiết, trả về tổng doanh thu
-      return this.reportTotalRevenue;
+    if (this.reportDetailedStats) {
+      const data = this.getReportTableData();
+      if (data.length === 0) return Number(this.reportDetailedStats.tong);
+      const total = data.reduce((sum, item) => sum + item.totalRevenue, 0);
+      return Math.round(total / data.length);
     }
-    const total = this.reportRevenueData.reduce((sum, val) => sum + val, 0);
-    return Math.round(total / this.reportRevenueData.length);
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.totalRevenue, 0);
+    return Math.round(total / data.length);
   }
 
   getAverageActualRevenue(): number {
+    // Trung bình Thực Thu (tổng tất cả)
+    if (this.reportDetailedStats) {
+      const data = this.getReportTableData();
+      if (data.length === 0) return Number(this.reportDetailedStats.thucThu);
+      const total = data.reduce((sum, item) => sum + item.actualRevenue, 0);
+      return Math.round(total / data.length);
+    }
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
     const total = data.reduce((sum, item) => sum + item.actualRevenue, 0);
     return Math.round(total / data.length);
   }
 
+  getAverageThuThucTe(): number {
+    // Trung bình Thu Thực tế (đã hoàn thành)
+    if (this.reportDetailedStats) {
+      const data = this.getReportTableData();
+      if (data.length === 0) return Number(this.reportDetailedStats.thuThucTe || 0);
+      const total = data.reduce((sum, item) => sum + item.actualCollected, 0);
+      return Math.round(total / data.length);
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    const total = data.reduce((sum, item) => sum + item.actualCollected, 0);
+    return Math.round(total / data.length);
+  }
+
   getAverageDebtRevenue(): number {
+    if (this.reportDetailedStats) {
+      const data = this.getReportTableData();
+      if (data.length === 0) return Number(this.reportDetailedStats.duNo);
+      const total = data.reduce((sum, item) => sum + item.outstandingDebt, 0);
+      return Math.round(total / data.length);
+    }
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    const total = data.reduce((sum, item) => sum + item.debt, 0);
+    const total = data.reduce((sum, item) => sum + item.outstandingDebt, 0);
     return Math.round(total / data.length);
   }
 
-  getAverageProfit(): number {
+  // Percentage methods
+  getOnlineOrdersPercentage(): number {
+    const total = this.getTotalOrders();
+    if (total === 0) return 0;
+    return Math.round((this.getTotalOnlineOrders() / total) * 100);
+  }
+
+  getOfflineOrdersPercentage(): number {
+    const total = this.getTotalOrders();
+    if (total === 0) return 0;
+    return Math.round((this.getTotalOfflineOrders() / total) * 100);
+  }
+
+  getSuccessfulOrdersPercentage(): number {
+    const total = this.getTotalOrders();
+    if (total === 0) return 0;
+    return Math.round((this.getTotalSuccessfulOrders() / total) * 100);
+  }
+
+  getFailedOrdersPercentage(): number {
+    const total = this.getTotalOrders();
+    if (total === 0) return 0;
+    return Math.round((this.getTotalFailedOrders() / total) * 100);
+  }
+
+  getProductsSoldPercentage(): number {
+    // Tỷ lệ / tổng của trường số sản phẩm đã bán là 100%
+    return 100;
+  }
+
+  getNewCustomersPercentage(): number {
+    // Tỷ lệ / tổng của khách hàng mới = (tổng khách hàng mới / tổng khách hàng của các hóa đơn) x 100%
+    if (this.reportDetailedStats) {
+      const tongSoKhachHang = this.reportDetailedStats.tongSoKhachHang || 0;
+      const khachHangMoi = this.getTotalNewCustomers();
+      
+      console.log('📊 [Dashboard] getNewCustomersPercentage:', {
+        khachHangMoi,
+        tongSoKhachHang,
+        percentage: tongSoKhachHang === 0 ? 0 : Math.round((khachHangMoi / tongSoKhachHang) * 100)
+      });
+      
+      if (tongSoKhachHang === 0) return 0;
+      return Math.round((khachHangMoi / tongSoKhachHang) * 100);
+    }
+    return 0;
+  }
+
+  getReturningCustomersPercentage(): number {
+    // Tỷ lệ / tổng của khách hàng quay lại = (tổng khách hàng quay lại / tổng khách hàng của các hóa đơn) x 100%
+    if (this.reportDetailedStats) {
+      const tongSoKhachHang = this.reportDetailedStats.tongSoKhachHang || 0;
+      const khachHangQuayLai = this.getTotalReturningCustomers();
+      
+      console.log('📊 [Dashboard] getReturningCustomersPercentage:', {
+        khachHangQuayLai,
+        tongSoKhachHang,
+        percentage: tongSoKhachHang === 0 ? 0 : Math.round((khachHangQuayLai / tongSoKhachHang) * 100)
+      });
+      
+      if (tongSoKhachHang === 0) return 0;
+      return Math.round((khachHangQuayLai / tongSoKhachHang) * 100);
+    }
+    return 0;
+  }
+
+  getDiscountsUsedPercentage(): number {
+    // Tỷ lệ / tổng của trường lượt giảm giá = (tổng số lượt giảm giá / số hóa đơn) x 100%
+    const total = this.getTotalOrders();
+    if (total === 0) return 0;
+    return Math.round((this.getTotalDiscountsUsed() / total) * 100);
+  }
+
+  getDiscountAmountPercentage(): number {
+    if (this.reportDetailedStats) {
+      const tong = Number(this.reportDetailedStats.tong);
+      const tienGiam = Number(this.reportDetailedStats.tienGiam);
+      if (tong === 0) return 0;
+      return Math.round((tienGiam / tong) * 100 * 10) / 10;
+    }
+    return 0;
+  }
+
+  getTotalRevenue(): number {
+    if (this.reportDetailedStats) {
+      return Number(this.reportDetailedStats.tong);
+    }
     const data = this.getReportTableData();
     if (data.length === 0) return 0;
-    const total = data.reduce((sum, item) => sum + item.profit, 0);
-    return Math.round(total / data.length);
+    return data.reduce((sum, item) => sum + item.totalRevenue, 0);
   }
 
-  getRetailPercentage(): number {
-    const retail = this.getRetailRevenue();
-    const total = this.reportTotalRevenue;
-    if (total === 0) return 0;
-    return Math.round((retail / total) * 100 * 10) / 10;
+  getThucThu(): number {
+    // Tổng Thực Thu: Tổng thành tiền của TẤT CẢ các hóa đơn (không phân biệt trạng thái)
+    if (this.reportDetailedStats) {
+      return Number(this.reportDetailedStats.thucThu);
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.actualRevenue, 0);
   }
 
-  getWholesalePercentage(): number {
-    const wholesale = this.getWholesaleRevenue();
-    const total = this.reportTotalRevenue;
-    if (total === 0) return 0;
-    return Math.round((wholesale / total) * 100 * 10) / 10;
+  getThuThucTe(): number {
+    // Tổng Thu Thực tế: Tổng thành tiền của các hóa đơn có trạng thái DA_GIAO_HANG (đã hoàn thành)
+    if (this.reportDetailedStats) {
+      return Number(this.reportDetailedStats.thuThucTe || 0);
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.actualCollected, 0);
   }
 
-  getDiscountPercentage(): number {
-    const discount = this.getTotalDiscount();
-    const total = this.reportTotalRevenue;
-    if (total === 0) return 0;
-    return Math.round((discount / total) * 100 * 10) / 10;
+  getDuNo(): number {
+    if (this.reportDetailedStats) {
+      return Number(this.reportDetailedStats.duNo);
+    }
+    const data = this.getReportTableData();
+    if (data.length === 0) return 0;
+    return data.reduce((sum, item) => sum + item.outstandingDebt, 0);
   }
 
   getActualRevenuePercentage(): number {
-    if (this.reportTotalRevenue === 0) return 0;
-    return Math.round((this.reportTotalActualRevenue / this.reportTotalRevenue) * 100 * 10) / 10;
+    // Tỷ lệ Thực Thu / Tổng
+    if (this.reportDetailedStats) {
+      const tong = Number(this.reportDetailedStats.tong);
+      const thucThu = Number(this.reportDetailedStats.thucThu);
+      if (tong === 0) return 0;
+      return Math.round((thucThu / tong) * 100 * 10) / 10;
+    }
+    return 0;
+  }
+
+  getThuThucTePercentage(): number {
+    // Tỷ lệ Thu Thực tế / Tổng
+    if (this.reportDetailedStats) {
+      const tong = Number(this.reportDetailedStats.tong);
+      const thuThucTe = Number(this.reportDetailedStats.thuThucTe || 0);
+      if (tong === 0) return 0;
+      return Math.round((thuThucTe / tong) * 100 * 10) / 10;
+    }
+    return 0;
   }
 
   getDebtPercentage(): number {
-    if (this.reportTotalRevenue === 0) return 0;
-    return Math.round((this.reportTotalDebtRevenue / this.reportTotalRevenue) * 100 * 10) / 10;
-  }
-
-  getProfitPercentage(): number {
-    const profit = this.getTotalProfit();
-    const total = this.reportTotalRevenue;
-    if (total === 0) return 0;
-    return Math.round((profit / total) * 100 * 10) / 10;
+    if (this.reportDetailedStats) {
+      const tong = Number(this.reportDetailedStats.tong);
+      const duNo = Number(this.reportDetailedStats.duNo);
+      if (tong === 0) return 0;
+      return Math.round((duNo / tong) * 100 * 10) / 10;
+    }
+    return 0;
   }
 
   // Modal state cho chỉnh sửa mẫu

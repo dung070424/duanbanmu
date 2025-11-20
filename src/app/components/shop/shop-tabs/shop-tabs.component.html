@@ -1,0 +1,28 @@
+<div class="shop-tabs-container">
+  <div class="container">
+    <div class="tabs-header">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'best-selling'"
+        (click)="setActiveTab('best-selling')"
+      >
+        BÁN CHẠY
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'featured'"
+        (click)="setActiveTab('featured')"
+      >
+        NỔI BẬT
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'best-price'"
+        (click)="setActiveTab('best-price')"
+      >
+        GIÁ TỐT
+      </button>
+    </div>
+  </div>
+</div>
+

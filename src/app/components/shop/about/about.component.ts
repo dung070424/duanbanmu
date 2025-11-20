@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
+import { ShopTabsComponent } from '../shop-tabs/shop-tabs.component';
 
 interface AboutInfo {
   heroTitle: string;
@@ -41,7 +42,7 @@ interface CommitmentItem {
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [CommonModule, RouterModule, ChatbotComponent],
+  imports: [CommonModule, RouterModule, ChatbotComponent, ShopTabsComponent],
   templateUrl: './about.component.html',
   styleUrls: ['./about.component.scss']
 })
