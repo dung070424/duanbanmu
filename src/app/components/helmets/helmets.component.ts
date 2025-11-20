@@ -115,6 +115,8 @@ export class HelmetsComponent implements OnInit {
     giaBan: number;
     soLuongTon: number;
     trangThai: boolean;
+    anhSanPham?: string | null;
+    imageFileName?: string | null;
   }> = [];
   newProduct: HelmetProduct = {
     id: 0,
@@ -530,22 +532,14 @@ export class HelmetsComponent implements OnInit {
       }
     });
 
-    // Kiểm tra ảnh sản phẩm (tùy chọn nhưng nếu có thì phải hợp lệ)
-    if (this.newProduct.anhSanPham) {
-      // Kiểm tra nếu là URL
-      if (this.newProduct.anhSanPham.startsWith('http')) {
-        try {
-          new URL(this.newProduct.anhSanPham);
-        } catch {
-          validationErrors.push('URL ảnh sản phẩm không hợp lệ');
+    if (!this.helmetVersions.length) {
+      validationErrors.push('Sản phẩm cần ít nhất một biến thể để lưu.');
+    } else {
+      this.helmetVersions.forEach((variant, index) => {
+        if (!variant.anhSanPham) {
+          validationErrors.push(`Biến thể số ${index + 1} chưa có ảnh sản phẩm.`);
         }
-      }
-      // Kiểm tra nếu là base64
-      else if (this.newProduct.anhSanPham.startsWith('data:image/')) {
-        // Base64 hợp lệ, không cần kiểm tra thêm
-      } else {
-        validationErrors.push('Định dạng ảnh sản phẩm không hợp lệ');
-      }
+      });
     }
 
     // Hiển thị lỗi nếu có
@@ -636,7 +630,6 @@ export class HelmetsComponent implements OnInit {
         xuatXuId: Number(this.newProduct.xuatXuId),
         kieuDangMuId: Number(this.newProduct.kieuDangMuId),
         congNgheAnToanId: Number(this.newProduct.congNgheAnToanId),
-        anhSanPham: this.newProduct.anhSanPham || null,
       } as any;
 
       this.productApi.update(this.selectedProduct.id, payloadUpdate).subscribe({
@@ -669,6 +662,7 @@ export class HelmetsComponent implements OnInit {
               soLuongTon:
                 v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
               trangThai: v.trangThai !== false,
+              anhSanPham: v.anhSanPham || null,
             };
             if (v.id) {
               this.helmetVersionApi.update(v.id, versionPayload).subscribe({
@@ -716,7 +710,6 @@ export class HelmetsComponent implements OnInit {
       xuatXuId: toId(this.newProduct.xuatXuId),
       kieuDangMuId: toId(this.newProduct.kieuDangMuId),
       congNgheAnToanId: toId(this.newProduct.congNgheAnToanId),
-      anhSanPham: this.newProduct.anhSanPham || null,
     } as any;
 
     this.productApi.create(payload).subscribe({
@@ -910,6 +903,8 @@ export class HelmetsComponent implements OnInit {
             giaBan: v.giaBan || '',
             soLuongTon: v.soLuongTon || '',
             trangThai: v.trangThai !== false,
+            anhSanPham: v.anhSanPham || v.anh_san_pham || null,
+            imageFileName: v.anhSanPham || v.anh_san_pham ? 'Ảnh hiện có' : null,
           };
         });
         this.cdr.detectChanges();
@@ -930,33 +925,35 @@ export class HelmetsComponent implements OnInit {
     event.target.parentElement.innerHTML = '<span class="text-muted">Lỗi tải ảnh</span>';
   }
 
-  onImageSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      // Kiểm tra kích thước file (tối đa 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Kích thước file quá lớn. Vui lòng chọn file nhỏ hơn 5MB.');
-        return;
-      }
+  onVariantImageSelected(event: any, index: number) {
+    const file = event.target.files?.[0];
+    if (!file || !this.helmetVersions[index]) return;
 
-      // Kiểm tra định dạng file
-      if (!file.type.startsWith('image/')) {
-        alert('Vui lòng chọn file ảnh hợp lệ.');
-        return;
-      }
-
-      // Đọc file và chuyển thành base64
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.newProduct.anhSanPham = e.target.result;
-        this.markFieldTouched('image');
-      };
-      reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước file quá lớn. Vui lòng chọn file nhỏ hơn 5MB.');
+      event.target.value = '';
+      return;
     }
+
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn file ảnh hợp lệ.');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.helmetVersions[index].anhSanPham = e.target.result;
+      this.helmetVersions[index].imageFileName = file.name;
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
   }
 
-  removeImage() {
-    this.newProduct.anhSanPham = null;
+  removeVariantImage(index: number) {
+    if (!this.helmetVersions[index]) return;
+    this.helmetVersions[index].anhSanPham = null;
+    this.helmetVersions[index].imageFileName = null;
   }
 
   // Validation methods for real-time feedback
@@ -994,22 +991,6 @@ export class HelmetsComponent implements OnInit {
     return null;
   }
 
-  getImageError(): string | null {
-    if (!this.newProduct.anhSanPham) return null;
-    if (this.newProduct.anhSanPham.startsWith('http')) {
-      try {
-        new URL(this.newProduct.anhSanPham);
-        return null;
-      } catch {
-        return 'URL ảnh sản phẩm không hợp lệ';
-      }
-    } else if (this.newProduct.anhSanPham.startsWith('data:image/')) {
-      return null;
-    } else {
-      return 'Định dạng ảnh sản phẩm không hợp lệ';
-    }
-  }
-
   hasFieldError(field: string): boolean {
     // Only show error if field has been touched
     if (!this.touchedFields.has(field)) {
@@ -1025,8 +1006,6 @@ export class HelmetsComponent implements OnInit {
         return !!this.getPriceError();
       case 'quantity':
         return !!this.getQuantityError();
-      case 'image':
-        return !!this.getImageError();
       default:
         return false;
     }
@@ -1044,7 +1023,6 @@ export class HelmetsComponent implements OnInit {
       'name',
       'price',
       'quantity',
-      'image',
       'loaiMuBaoHiemId',
       'nhaSanXuatId',
       'chatLieuVoId',

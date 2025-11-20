@@ -13,6 +13,7 @@ export interface HelmetVersion {
   giaBan: string;
   soLuongTon: string;
   trangThai: boolean;
+  anhSanPham?: string | null;
 }
 export interface HelmetVersionRequest {
   sanPhamId: number;
@@ -23,6 +24,7 @@ export interface HelmetVersionRequest {
   giaBan: string;
   soLuongTon: string;
   trangThai: boolean;
+  anhSanPham?: string | null;
 }
 export interface ApiResponse<T> {
   success: boolean;

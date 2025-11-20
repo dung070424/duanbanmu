@@ -117,6 +117,7 @@ export class CounterSalesComponent implements OnInit {
   showBestTab: boolean = true;
   showVoucherModal: boolean = false; // Modal để xem tất cả phiếu giảm giá
   voucherModalSearchTerm: string = ''; // Tìm kiếm trong modal
+  showConfirmPaymentModal: boolean = false;
 
   // Product filter + pagination for POS list
   // Options cho bộ lọc – được build động từ dữ liệu sản phẩm chi tiết
@@ -209,6 +210,7 @@ export class CounterSalesComponent implements OnInit {
   availableProducts: any[] = [];
   productIdToImageUrl: { [productId: number]: string } = {};
   chiTietSanPhamIdToProductId: { [chiTietSanPhamId: number]: number } = {};
+  chiTietImageUrl: { [chiTietSanPhamId: number]: string } = {};
   productOrderMap: Map<number, number> = new Map(); // Map to preserve product order: productId -> originalIndex
   productOriginalStock: Record<number, number> = {};
 
@@ -223,6 +225,9 @@ export class CounterSalesComponent implements OnInit {
 
   // Helper method to get image URL from chiTietSanPhamId
   private getImageUrlFromChiTietSanPhamId(chiTietSanPhamId: number): string | undefined {
+    if (this.chiTietImageUrl[chiTietSanPhamId]) {
+      return this.chiTietImageUrl[chiTietSanPhamId];
+    }
     // First, try to get productId from mapping
     const productId = this.chiTietSanPhamIdToProductId[chiTietSanPhamId];
     if (productId && this.productIdToImageUrl[productId]) {
@@ -305,6 +310,30 @@ export class CounterSalesComponent implements OnInit {
     this.loadPendingInvoices();
     this.loadProvinces();
   }
+
+  isPayButtonDisabled(): boolean {
+    if (this.cart.length === 0) return true;
+    if (this.checkoutPaymentMethod === 'cash') {
+      const received = this.cashReceived;
+      if (received === null || received === undefined) return true;
+      return Number(received) < this.cartTotal;
+    }
+    return false;
+  }
+
+  confirmPayment(): void {
+    this.showConfirmPaymentModal = true;
+  }
+
+  cancelPaymentConfirmation(): void {
+    this.showConfirmPaymentModal = false;
+  }
+
+  proceedPaymentConfirmation(): void {
+    this.showConfirmPaymentModal = false;
+    this.processSale();
+  }
+
 
   loadSampleData(): void {
     this.counterSales = [
@@ -393,16 +422,22 @@ export class CounterSalesComponent implements OnInit {
       next: (rows: ChiTietSanPhamResponse[] | any) => {
         // Xử lý response structure khác nhau
         const raw = Array.isArray(rows) ? rows : rows?.data || rows?.content || [];
+        this.chiTietSanPhamIdToProductId = {};
+        this.chiTietImageUrl = {};
 
         const variants = (raw || []).map((r: any) => {
           // Lấy trongLuongTen từ DB - không dùng trongLuongId
           const trongLuongTen = r.trongLuongTen || r.trong_luong_ten || '';
           const chiTietId = r.id;
           const productId = r.sanPhamId || r.san_pham_id;
+          const variantImage = r.anhSanPham || r.anh_san_pham || null;
 
           // Map chiTietSanPhamId to productId
           if (chiTietId && productId) {
             this.chiTietSanPhamIdToProductId[chiTietId] = productId;
+          }
+          if (chiTietId && variantImage) {
+            this.chiTietImageUrl[chiTietId] = variantImage;
           }
 
           return {
@@ -420,7 +455,7 @@ export class CounterSalesComponent implements OnInit {
             ram: r.kichThuocTen || r.kich_thuoc_ten || '',
             storage: trongLuongTen, // Dùng trongLuongTen từ DB
             productId: productId,
-            imageUrl: undefined as string | undefined,
+            imageUrl: variantImage || undefined,
           };
         });
 
@@ -475,11 +510,18 @@ export class CounterSalesComponent implements OnInit {
               // Gán vào các biến thể cùng productId
               this.availableProducts
                 .filter((v) => v.productId === pid)
-                .forEach((v) => (v.imageUrl = p.anhSanPham as string));
+                .forEach((v) => {
+                  if (!v.imageUrl) {
+                    v.imageUrl = p.anhSanPham as string;
+                  }
+                });
             }
           });
         });
-        this.filterProducts();
+        // Hiển thị ngay danh sách sản phẩm khi mở màn hình
+        this.filteredProducts = [...this.availableProducts];
+        this.productPage = 1;
+        this.updateProductPagination();
         this.applyCartStockReservations();
       },
       error: (err) => {

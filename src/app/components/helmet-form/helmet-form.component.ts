@@ -60,6 +60,20 @@ interface HelmetProduct {
   updatedAt: Date;
 }
 
+interface HelmetVariantRow {
+  id?: number;
+  sanPhamId?: number;
+  kichThuocId: number;
+  mauSacId: number;
+  trongLuongId?: number | null;
+  trongLuongTen?: string | null;
+  giaBan: string;
+  soLuongTon: string;
+  trangThai: boolean;
+  anhSanPham?: string | null;
+  imageFileName?: string | null;
+}
+
 @Component({
   selector: 'app-helmet-form',
   standalone: true,
@@ -128,7 +142,7 @@ export class HelmetFormComponent implements OnInit {
   selectedSizes: number[] = [];
   selectedColors: number[] = [];
 
-  helmetVersions: any[] = [];
+  helmetVersions: HelmetVariantRow[] = [];
   priceAll: number = 0;
   quantityAll: number = 0;
   generatingVariants: boolean = false;
@@ -208,6 +222,8 @@ export class HelmetFormComponent implements OnInit {
                   ? v.trang_thai
                   : true,
               isNew: false,
+              anhSanPham: v.anhSanPham || v.anh_san_pham || null,
+              imageFileName: v.anhSanPham || v.anh_san_pham ? 'Ảnh hiện có' : null,
             };
           });
           this.cdr.detectChanges();
@@ -701,15 +717,32 @@ export class HelmetFormComponent implements OnInit {
     this.showQuickAddModal = false;
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.newProduct.anhSanPham = e.target.result;
-      };
-      reader.readAsDataURL(file);
+  onVariantImageSelected(event: any, index: number) {
+    const file = event.target.files?.[0];
+    if (!file || !this.helmetVersions[index]) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước file quá lớn. Vui lòng chọn file nhỏ hơn 5MB.');
+      event.target.value = '';
+      return;
     }
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn file ảnh hợp lệ.');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.helmetVersions[index].anhSanPham = e.target.result;
+      this.helmetVersions[index].imageFileName = file.name;
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  }
+
+  removeVariantImage(index: number) {
+    if (!this.helmetVersions[index]) return;
+    this.helmetVersions[index].anhSanPham = null;
+    this.helmetVersions[index].imageFileName = null;
   }
 
   // Sinh các phiên bản/biến thể dựa vào tổ hợp thuộc tính user chọn
@@ -737,6 +770,13 @@ export class HelmetFormComponent implements OnInit {
             (old && typeof old.soLuongTon !== 'undefined' ? old.soLuongTon : this.quantityAll) || ''
           ),
           trangThai: true, // default on
+          anhSanPham: old && typeof old.anhSanPham !== 'undefined' ? old.anhSanPham : null,
+          imageFileName:
+            old && typeof old.imageFileName !== 'undefined'
+              ? old.imageFileName
+              : old && old.anhSanPham
+              ? 'Ảnh hiện có'
+              : null,
         });
       });
     });
@@ -786,6 +826,10 @@ export class HelmetFormComponent implements OnInit {
     for (const [i, v] of this.helmetVersions.entries()) {
       if (!v.kichThuocId) {
         this.versionError = `Biến thể dòng ${i + 1} thiếu kích thước!`;
+        return false;
+      }
+      if (!v.anhSanPham) {
+        this.versionError = `Biến thể dòng ${i + 1} chưa có ảnh sản phẩm!`;
         return false;
       }
     }
@@ -864,7 +908,6 @@ export class HelmetFormComponent implements OnInit {
       kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
       congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
       moTa: this.newProduct.description,
-      anhSanPham: this.newProduct.anhSanPham,
       giaBan: giaBanValue !== undefined ? giaBanValue : 0, // Gửi giá bán, mặc định 0 nếu không có
       soLuongTon: soLuongTonValue !== undefined ? soLuongTonValue : 0, // Gửi số lượng tồn, mặc định 0 nếu không có
     };
@@ -887,10 +930,11 @@ export class HelmetFormComponent implements OnInit {
             mauSacId: Number(v.mauSacId),
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
-            giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
             soLuongTon:
               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-            trangThai: true,
+             trangThai: true,
+             anhSanPham: v.anhSanPham || null,
           };
           this.helmetVersionApi.create(versionPayload).subscribe({
             next: () => {
@@ -973,7 +1017,6 @@ export class HelmetFormComponent implements OnInit {
       kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
       congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
       moTa: this.newProduct.description,
-      anhSanPham: this.newProduct.anhSanPham,
       giaBan: giaBanValue !== undefined ? giaBanValue : 0, // Gửi giá bán, mặc định 0 nếu không có
       soLuongTon: soLuongTonValue !== undefined ? soLuongTonValue : 0, // Gửi số lượng tồn, mặc định 0 nếu không có
     };
@@ -989,9 +1032,10 @@ export class HelmetFormComponent implements OnInit {
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
-            soLuongTon:
-              v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-            trangThai: true,
+             soLuongTon:
+               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+             trangThai: true,
+             anhSanPham: v.anhSanPham || null,
           };
           if (v.id) {
             this.helmetVersionApi.update(v.id, versionPayload).subscribe();

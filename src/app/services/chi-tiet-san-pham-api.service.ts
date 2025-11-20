@@ -17,6 +17,7 @@ export interface ChiTietSanPhamResponse {
   giaBan: string;
   soLuongTon: string;
   trangThai: boolean;
+  anhSanPham?: string | null;
 }
 
 export interface ChiTietSanPhamRequest {
@@ -28,6 +29,7 @@ export interface ChiTietSanPhamRequest {
   giaBan: string;
   soLuongTon: string;
   trangThai: boolean;
+  anhSanPham?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

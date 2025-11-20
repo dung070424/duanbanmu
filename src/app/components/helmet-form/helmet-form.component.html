@@ -283,6 +283,7 @@
                   <th>Trọng lượng</th>
                   <th>Giá bán (VNĐ)</th>
                   <th>Số lượng</th>
+                  <th>Ảnh biến thể</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
@@ -339,6 +340,39 @@
                     />
                   </td>
                   <td>
+                    <div class="variant-image-cell">
+                      <div class="variant-image-preview" *ngIf="v.anhSanPham; else noVariantImage">
+                        <img [src]="v.anhSanPham" alt="Ảnh biến thể" class="variant-image-thumb" />
+                      </div>
+                      <ng-template #noVariantImage>
+                        <div class="variant-image-placeholder text-muted">Chưa có ảnh</div>
+                      </ng-template>
+                      <div class="variant-image-actions">
+                        <input
+                          type="file"
+                          class="d-none"
+                          id="variantImage_{{ i }}"
+                          accept="image/*"
+                          (change)="onVariantImageSelected($event, i)"
+                        />
+                        <label for="variantImage_{{ i }}" class="btn btn-outline-primary btn-sm">
+                          <i class="bi bi-upload me-1"></i>Chọn ảnh
+                        </label>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger btn-sm ms-2"
+                          *ngIf="v.anhSanPham"
+                          (click)="removeVariantImage(i)"
+                        >
+                          <i class="bi bi-trash me-1"></i>Xóa
+                        </button>
+                      </div>
+                      <small class="text-muted d-block mt-1">
+                        {{ v.imageFileName || 'Chưa chọn ảnh' }}
+                      </small>
+                    </div>
+                  </td>
+                  <td>
                     <button type="button" class="btn btn-sm btn-danger" (click)="removeVariant(i)">
                       <i class="bi bi-trash"></i>
                     </button>
@@ -346,39 +380,6 @@
                 </tr>
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <!-- Ảnh sản phẩm -->
-        <div class="section-title mb-3">
-          <h6 class="text-orange fw-bold mb-0"><i class="bi bi-image me-2"></i>Ảnh sản phẩm</h6>
-          <hr class="mt-2" />
-        </div>
-
-        <div class="row g-3 mb-4">
-          <div class="col-12">
-            <div class="image-upload-section">
-              <div *ngIf="!newProduct.anhSanPham" class="no-image-placeholder">
-                <i class="bi bi-image display-1 text-muted"></i>
-                <p class="text-muted mt-2">Chưa có ảnh</p>
-              </div>
-              <div *ngIf="newProduct.anhSanPham" class="image-preview">
-                <img [src]="newProduct.anhSanPham" alt="Preview" class="preview-image" />
-              </div>
-              <div class="upload-controls">
-                <input
-                  type="file"
-                  id="imageUpload"
-                  class="form-control d-none"
-                  accept="image/*"
-                  (change)="onFileSelected($event)"
-                />
-                <label for="imageUpload" class="btn btn-outline-primary">
-                  <i class="bi bi-upload me-2"></i>Chọn tệp
-                </label>
-                <small class="text-muted d-block mt-1">Không có tệp nào được chọn</small>
-              </div>
-            </div>
           </div>
         </div>
 

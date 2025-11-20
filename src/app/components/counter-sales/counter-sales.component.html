@@ -416,14 +416,18 @@
                   </div>
                 </div>
                 <!-- Nút xem thêm nếu có nhiều phiếu giảm giá -->
-                <div class="voucher-more-action" *ngIf="allVouchers.length > maxDisplayedVouchers && allVouchers.length > 0">
-                  <button 
-                    type="button" 
+                <div
+                  class="voucher-more-action"
+                  *ngIf="allVouchers.length > maxDisplayedVouchers && allVouchers.length > 0"
+                >
+                  <button
+                    type="button"
                     class="btn btn-link btn-sm p-0 text-primary fw-bold"
                     (click)="openVoucherModal()"
                     title="Xem tất cả phiếu giảm giá"
                   >
-                    <i class="bi bi-three-dots"></i> Xem thêm {{ allVouchers.length - maxDisplayedVouchers }} phiếu giảm giá khác...
+                    <i class="bi bi-three-dots"></i> Xem thêm
+                    {{ allVouchers.length - maxDisplayedVouchers }} phiếu giảm giá khác...
                   </button>
                 </div>
                 <div class="text-muted small text-center py-2" *ngIf="allVouchers.length === 0">
@@ -497,9 +501,7 @@
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
                   <label class="form-label mb-0">Địa chỉ đã lưu</label>
-                  <div class="text-muted small">
-                    Chọn địa chỉ giao nhanh hoặc thêm địa chỉ mới
-                  </div>
+                  <div class="text-muted small">Chọn địa chỉ giao nhanh hoặc thêm địa chỉ mới</div>
                 </div>
                 <span class="badge bg-light text-dark">
                   {{ customerAddresses.length }} địa chỉ
@@ -525,9 +527,7 @@
                 class="selected-address-preview mt-2"
                 *ngIf="customerSavedAddress && selectedSavedAddressId !== 'new'"
               >
-                <div class="fw-semibold text-primary">
-                  Địa chỉ giao hàng
-                </div>
+                <div class="fw-semibold text-primary">Địa chỉ giao hàng</div>
                 <div class="text-dark">
                   {{ customerSavedAddress }}
                 </div>
@@ -599,8 +599,8 @@
 
           <button
             class="btn btn-primary w-100 mt-3"
-            (click)="processSale()"
-            [disabled]="cart.length === 0"
+            (click)="confirmPayment()"
+            [disabled]="isPayButtonDisabled()"
           >
             Thanh toán
           </button>
@@ -650,6 +650,21 @@
   </div>
 </div>
 
+<!-- Modal xác nhận thanh toán -->
+<div *ngIf="showConfirmPaymentModal" class="modal-overlay" (click)="cancelPaymentConfirmation()">
+  <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header bg-warning text-dark">
+      <h5 class="modal-title mb-0">Xác nhận thanh toán</h5>
+      <button class="btn-close" (click)="cancelPaymentConfirmation()"></button>
+    </div>
+    <div class="modal-body">Bạn có chắc chắn muốn thanh toán đơn hàng này?</div>
+    <div class="modal-footer">
+      <button class="btn btn-outline-secondary" (click)="cancelPaymentConfirmation()">Huỷ</button>
+      <button class="btn btn-primary" (click)="proceedPaymentConfirmation()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast top-right (no dependency on utility classes) -->
 <div
   style="position: fixed; top: 12px; right: 12px; z-index: 50000; min-width: 260px"
@@ -694,7 +709,7 @@
           [(ngModel)]="voucherModalSearchTerm"
         />
       </div>
-      
+
       <!-- Danh sách phiếu giảm giá -->
       <div class="voucher-modal-list">
         <div
@@ -737,9 +752,7 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="closeVoucherModal()">
-        Đóng
-      </button>
+      <button type="button" class="btn btn-secondary" (click)="closeVoucherModal()">Đóng</button>
     </div>
   </div>
 </div>

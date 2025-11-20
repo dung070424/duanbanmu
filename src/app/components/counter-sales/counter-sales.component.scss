@@ -1131,6 +1131,13 @@
   flex-shrink: 0;
 }
 
+.confirm-modal {
+  width: 360px;
+  max-width: 92vw;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
 .voucher-modal-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
