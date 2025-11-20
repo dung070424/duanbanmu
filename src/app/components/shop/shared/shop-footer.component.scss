@@ -1,0 +1,71 @@
+.shop-footer {
+  background: #0b1324;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 3rem 0 2rem;
+
+  .container {
+    width: min(1200px, 95%);
+    margin: 0 auto;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h4 {
+    margin-bottom: 0.6rem;
+  }
+
+  p,
+  ul {
+    margin: 0;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.3rem;
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+  }
+
+  .newsletter {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+
+    input {
+      flex: 1;
+      border-radius: 999px;
+      border: none;
+      padding: 0.5rem 1rem;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.5rem 1rem;
+      background: #f4a11a;
+      color: #0f172a;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+  }
+}

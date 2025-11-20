@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
+import { ShopHeaderComponent } from '../shared/shop-header.component';
+import { ShopFooterComponent } from '../shared/shop-footer.component';
 
 interface ContactInfo {
   hotline: string;
@@ -47,7 +49,7 @@ interface BankInfo {
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [CommonModule, RouterModule, ChatbotComponent],
+  imports: [CommonModule, RouterModule, ChatbotComponent, ShopHeaderComponent, ShopFooterComponent],
   templateUrl: './contact.component.html',
   styleUrls: ['./contact.component.scss']
 })

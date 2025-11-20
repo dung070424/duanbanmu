@@ -1,56 +1,85 @@
+// Import shared styles từ shop component
 @use '../shop.component.scss';
 
 .contact-container {
   min-height: 100vh;
   background: #f7f7fb;
-  color: #1f2937;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1f2937;
 }
 
 .contact-main {
-  padding: clamp(2rem, 6vw, 4rem) 0;
+  padding: 60px 0;
 }
 
+// Hero Section
 .hero-section {
-  background: linear-gradient(120deg, #111827, #1f2937);
-  border-radius: 28px;
-  padding: clamp(2rem, 5vw, 3.5rem);
-  color: white;
-  margin-bottom: 2.5rem;
+  background: radial-gradient(circle at top right, #fde68a, #fff) no-repeat;
+  color: #111827;
+  padding: clamp(3rem, 6vw, 5rem) 0;
+  text-align: center;
+  margin-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
 
-  &.loading {
-    text-align: center;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85')
+      center/cover;
+    opacity: 0.05;
+    z-index: 0;
+  }
 
-    i {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
+  .container {
+    position: relative;
+    z-index: 1;
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 3vw, 2rem);
   }
 
   .hero-content {
-    max-width: 720px;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
 
     .hero-badge {
       display: inline-flex;
-      padding: 0.35rem 1rem;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(244, 161, 26, 0.2);
+      color: #d88908;
+      padding: 0.5rem 1.25rem;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.1);
       font-weight: 600;
-      letter-spacing: 0.08em;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
     }
 
-    h1 {
-      font-size: clamp(2rem, 5vw, 3.2rem);
-      margin-bottom: 1rem;
+    .hero-title {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 800;
+      margin: 0 0 1.5rem 0;
       line-height: 1.2;
+      color: #111827;
     }
 
     .hero-subtitle {
-      color: rgba(255, 255, 255, 0.75);
-      font-size: 1.05rem;
-      line-height: 1.7;
+      font-size: clamp(1.1rem, 2vw, 1.4rem);
       margin: 0;
+      opacity: 0.8;
+      line-height: 1.7;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #1f2937;
     }
   }
 }
@@ -69,8 +98,8 @@
     box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
 
     &.primary {
-      background: #111827;
-      color: #fff;
+      background: #fff;
+      color: #111827;
       border: none;
 
       .description {
@@ -324,7 +353,22 @@
   }
 }
 
+// Responsive
 @media (max-width: 768px) {
+  .hero-section {
+    padding: 50px 0;
+
+    .hero-content {
+      .hero-title {
+        font-size: 2rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.1rem;
+      }
+    }
+  }
+
   .contact-grid {
     grid-template-columns: 1fr;
   }
@@ -333,4 +377,3 @@
     grid-template-columns: 1fr;
   }
 }
-

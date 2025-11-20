@@ -334,7 +334,6 @@ export class CounterSalesComponent implements OnInit {
     this.processSale();
   }
 
-
   loadSampleData(): void {
     this.counterSales = [
       {

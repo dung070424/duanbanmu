@@ -1,83 +1,5 @@
 <div class="shop-container">
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="container">
-      <div class="top-bar-content">
-        <div class="top-bar-left">
-          <span class="top-bar-item">
-            <i class="fas fa-envelope"></i>
-            contact@tdkstore.com
-          </span>
-          <span class="top-bar-item">
-            <i class="fas fa-phone"></i>
-            1900 636 648
-          </span>
-        </div>
-        <div class="top-bar-right">
-          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
-          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            (click)="navigateToProfile($event)"
-            [title]="customerName || 'Tài khoản'"
-            style="cursor: pointer;"
-          >
-            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
-          </a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            (click)="logout()"
-            style="cursor: pointer;"
-          >
-            <i class="fas fa-sign-out-alt"></i> Đăng xuất
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Header -->
-  <header class="shop-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="logo-section">
-          <a routerLink="/shop" class="logo-link">
-            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
-            <span class="logo-text">TDK Store</span>
-          </a>
-        </div>
-        <nav class="nav-menu">
-          <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
-          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
-          <a routerLink="/shop/products" routerLinkActive="active" class="has-dropdown">
-            Sản phẩm
-            <i class="fas fa-chevron-down"></i>
-            <div class="dropdown-menu">
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}">Nón 3/4</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}">Nón Full Face</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}">Nón lật cằm</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}">Nón trẻ em</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}">Nón Carbon</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}">Phụ kiện</a>
-            </div>
-          </a>
-          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
-          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
-        </nav>
-        <div class="header-actions">
-          <button class="icon-btn search-btn" (click)="toggleSearch()">
-            <i class="fas fa-search"></i>
-          </button>
-          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
+  <app-shop-header></app-shop-header>
 
   <!-- Hero Section -->
   <section class="hero-section">
@@ -89,12 +11,12 @@
             Bộ sưu tập 2025 vừa ra mắt
           </div>
           <h1>
-            Bảo vệ an toàn<br>
+            Bảo vệ an toàn<br />
             <span>Khẳng định phong cách</span>
           </h1>
           <p class="hero-text">
-            Gần 1 triệu khách hàng tin dùng mũ bảo hiểm cao cấp của TDK Store.
-            Thiết kế chuẩn form đầu người Việt, đạt tiêu chuẩn châu Âu ECE 22.06.
+            Gần 1 triệu khách hàng tin dùng mũ bảo hiểm cao cấp của TDK Store. Thiết kế chuẩn form
+            đầu người Việt, đạt tiêu chuẩn châu Âu ECE 22.06.
           </p>
           <div class="hero-cta">
             <button class="hero-btn primary" (click)="goToProducts('featured')">
@@ -122,7 +44,10 @@
         </div>
         <div class="hero-showcase">
           <div class="showcase-card primary">
-            <img src="https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=600&q=80" alt="Royal Collection" />
+            <img
+              src="https://nonbaohiemdep.vn/wp-content/uploads/2020/12/mu-bao-hiem-cao-cao.png"
+              alt="Royal Collection"
+            />
             <div class="card-content">
               <p class="eyebrow">Royal M-series</p>
               <h3>Hiện đại & khí động học</h3>
@@ -132,7 +57,10 @@
             </div>
           </div>
           <div class="showcase-card secondary">
-            <img src="https://images.unsplash.com/photo-1529429617124-aee711a7041c?auto=format&fit=crop&w=600&q=80" alt="Urban Series" />
+            <img
+              src="https://fado.vn/blog/wp-content/uploads/2021/09/top-10-mu-bao-hiem-phan-khoi-lon-nhap-khau-chinh-hang-duoi-10tr-3-min.jpg"
+              alt="Urban Series"
+            />
             <div class="card-content">
               <p class="eyebrow">Urban Series</p>
               <h3>Tối giản cho phố thị</h3>
@@ -144,9 +72,7 @@
               <p class="eyebrow">Ưu đãi tháng 11</p>
               <h3>Giảm đến 20%</h3>
               <p>Áp dụng cho khách hàng đăng ký thành viên online.</p>
-              <button class="hero-btn primary" (click)="goToProducts('sale')">
-                Đăng ký ngay
-              </button>
+              <button class="hero-btn primary" (click)="goToProducts('sale')">Đăng ký ngay</button>
             </div>
           </div>
         </div>
@@ -170,23 +96,6 @@
     </div>
   </div>
 
-  <!-- Search Overlay -->
-  <div class="search-overlay" *ngIf="showSearch" (click)="toggleSearch()">
-    <div class="search-modal" (click)="$event.stopPropagation()">
-      <div class="search-box">
-        <i class="fas fa-search search-icon"></i>
-        <input 
-          type="text" 
-          [(ngModel)]="searchKeyword"
-          (ngModelChange)="filterProducts()"
-          placeholder="Tìm kiếm sản phẩm..."
-          class="search-input"
-          (keyup.enter)="toggleSearch()"
-        />
-      </div>
-    </div>
-  </div>
-
   <!-- Feature Cards Section -->
   <section class="features-section">
     <div class="container">
@@ -196,21 +105,27 @@
             <i class="fas fa-truck"></i>
           </div>
           <h3 class="feature-title">FREESHIP</h3>
-          <p class="feature-text">Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.</p>
+          <p class="feature-text">
+            Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.
+          </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">
             <i class="fas fa-undo-alt"></i>
           </div>
           <h3 class="feature-title">HOÀN TIỀN 100%</h3>
-          <p class="feature-text">Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.</p>
+          <p class="feature-text">
+            Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.
+          </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">
             <i class="fas fa-headset"></i>
           </div>
           <h3 class="feature-title">HỖ TRỢ 24/7</h3>
-          <p class="feature-text">Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.</p>
+          <p class="feature-text">
+            Lorem Ipsum chỉ đơn giản là một đoạn văn bản giả, được dùng vào việc trình bày.
+          </p>
         </div>
       </div>
     </div>
@@ -221,7 +136,10 @@
     <div class="container">
       <div class="story-grid">
         <div class="story-media">
-          <img src="https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80" alt="Showroom" />
+          <img
+            src="https://royalhelmet.com.vn/storage/2024/11/mu-fullface-avrar.jpg"
+            alt="Showroom"
+          />
           <div class="media-badge">
             <span>ISO 9001:2015</span>
             <p>Quy trình kiểm định nghiêm ngặt</p>
@@ -231,8 +149,9 @@
           <p class="eyebrow">TDK Studio</p>
           <h2>Showroom trải nghiệm 360°</h2>
           <p class="story-text">
-            Mỗi chiếc mũ được tạo ra từ hơn 40 công đoạn thủ công kết hợp công nghệ ép khuôn tự động.
-            Tại showroom TDK, khách hàng có thể thử mô phỏng gió, test tiếng ồn, chọn cấu hình màu và chất liệu.
+            Mỗi chiếc mũ được tạo ra từ hơn 40 công đoạn thủ công kết hợp công nghệ ép khuôn tự
+            động. Tại showroom TDK, khách hàng có thể thử mô phỏng gió, test tiếng ồn, chọn cấu hình
+            màu và chất liệu.
           </p>
           <ul class="story-features">
             <li>
@@ -249,86 +168,62 @@
             </li>
           </ul>
           <div class="story-cta">
-            <button class="hero-btn primary" (click)="navigateToProfile($event)">Đặt lịch showroom</button>
-            <button class="hero-btn ghost" (click)="goToProducts('new')">Sản phẩm mới</button>
+            <button class="hero-btn primary" (click)="navigateToProfile($event)">
+              Đặt lịch showroom
+            </button>
+            <button class="hero-btn ghost" (click)="goToProducts()">Xem tất cả sản phẩm</button>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Product Tabs Section -->
-  <section class="product-tabs-section">
+  <!-- About Section -->
+  <section class="about-section">
     <div class="container">
-      <div class="tabs-header">
-        <button 
-          class="tab-btn" 
-          [class.active]="activeTab === 'best-selling'"
-          (click)="setActiveTab('best-selling')"
-        >
-          BÁN CHẠY
-        </button>
-        <button 
-          class="tab-btn" 
-          [class.active]="activeTab === 'featured'"
-          (click)="setActiveTab('featured')"
-        >
-          NỔI BẬT
-        </button>
-        <button 
-          class="tab-btn" 
-          [class.active]="activeTab === 'best-price'"
-          (click)="setActiveTab('best-price')"
-        >
-          GIÁ TỐT
-        </button>
-      </div>
-
-      <div class="tab-content">
-        <!-- <div *ngIf="isLoading" class="loading">
-          <div class="spinner"></div>
-          <p>Đang tải sản phẩm...</p>
-        </div> -->
-
-        <div *ngIf="getActiveProducts().length === 0" class="no-products">
-          <i class="fas fa-box-open"></i>
-          <p>Không tìm thấy sản phẩm nào</p>
-        </div>
-
-        <div class="products-grid" *ngIf="getActiveProducts().length > 0">
-          <div 
-            *ngFor="let product of getActiveProducts()" 
-            class="product-card"
-            (click)="viewProduct(product.id)"
-          >
-            <div class="product-image">
-              <img 
-                [src]="getProductImageUrl(product)" 
-                [alt]="product.tenSanPham"
-                (error)="onImageError($event)"
-                loading="lazy"
-              />
-              <div class="product-overlay">
-                <button class="btn-quick-view" (click)="viewProduct(product.id); $event.stopPropagation()">
-                  <i class="fas fa-eye"></i> Xem nhanh
-                </button>
+      <div class="about-content">
+        <div class="about-text">
+          <p class="eyebrow">Về TDK Store</p>
+          <h2>Chuyên gia mũ bảo hiểm hàng đầu Việt Nam</h2>
+          <p class="about-description">
+            Với hơn 15 năm kinh nghiệm trong ngành sản xuất và phân phối mũ bảo hiểm, TDK Store tự
+            hào là đối tác tin cậy của hàng triệu khách hàng trên toàn quốc. Chúng tôi chuyên cung
+            cấp các sản phẩm mũ bảo hiểm cao cấp, đạt tiêu chuẩn quốc tế với thiết kế phù hợp với
+            người Việt Nam.
+          </p>
+          <div class="about-features">
+            <div class="about-feature-item">
+              <i class="fas fa-award"></i>
+              <div>
+                <h4>Chất lượng đảm bảo</h4>
+                <p>Đạt chứng nhận ECE 22.06, DOT FMVSS và ISO 9001:2015</p>
               </div>
             </div>
-            <div class="product-info">
-              <h4 class="product-name">{{ product.tenSanPham }}</h4>
-              <div class="product-price">{{ formatCurrency(getProductPrice(product)) }}</div>
-              <button 
-                class="btn-add-cart" 
-                (click)="addToCart(product); $event.stopPropagation()"
-                [disabled]="!product.trangThai"
-              >
-                <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
-              </button>
+            <div class="about-feature-item">
+              <i class="fas fa-users"></i>
+              <div>
+                <h4>Đội ngũ chuyên nghiệp</h4>
+                <p>Hơn 200 nhân viên tư vấn và kỹ thuật viên giàu kinh nghiệm</p>
+              </div>
             </div>
-            <div class="product-badge" *ngIf="!product.trangThai">
-              <span class="badge-out-of-stock">Hết hàng</span>
+            <div class="about-feature-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <div>
+                <h4>Mạng lưới rộng khắp</h4>
+                <p>120+ đại lý và showroom trên toàn quốc</p>
+              </div>
             </div>
           </div>
+          <button class="hero-btn primary" (click)="goToProducts()">
+            Khám phá sản phẩm
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+        <div class="about-image">
+          <img
+            src="https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85"
+            alt="TDK Store Showroom"
+          />
         </div>
       </div>
     </div>
@@ -348,14 +243,22 @@
         </button>
       </div>
       <div class="news-grid">
-        <article class="news-card" *ngFor="let article of newsArticles | slice:0:3" (click)="goToNews(article.id)">
+        <article
+          class="news-card"
+          *ngFor="let article of newsArticles | slice : 0 : 3"
+          (click)="goToNews(article.id)"
+        >
           <div class="news-thumb">
-            <img [src]="article.imageUrl || 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=800&q=80'" [alt]="article.title">
+            <img
+              [src]="
+                article.imageUrl ||
+                'https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85'
+              "
+              [alt]="article.title"
+            />
           </div>
           <div class="news-content">
-            <p class="news-meta">
-              {{ formatDate(article.publishedAt) }} · {{ article.category }}
-            </p>
+            <p class="news-meta">{{ formatDate(article.publishedAt) }} · {{ article.category }}</p>
             <h4>{{ article.title }}</h4>
             <p>{{ article.excerpt }}</p>
             <button class="text-link" type="button">
@@ -367,181 +270,21 @@
     </div>
   </section>
 
-  <!-- Categories Section -->
-  <section class="categories-section" *ngIf="categories.length > 0">
+  <!-- CTA Section -->
+  <section class="cta-section">
     <div class="container">
-      <div class="categories-grid">
-        <div class="category-section" *ngFor="let category of categories.slice(0, 3)">
-          <h2 class="category-title">{{ category.tenLoaiMu }}</h2>
-          <div class="category-products">
-            <div 
-              *ngFor="let product of getProductsByCategory(category.id).slice(0, 4)" 
-              class="category-product-card"
-              (click)="viewProduct(product.id)"
-            >
-              <div class="category-product-image">
-                <img 
-                  [src]="getProductImageUrl(product)" 
-                  [alt]="product.tenSanPham"
-                  (error)="onImageError($event)"
-                  loading="lazy"
-                />
-              </div>
-              <div class="category-product-info">
-                <h4 class="category-product-name">{{ product.tenSanPham }}</h4>
-                <div class="category-product-price">{{ formatCurrency(getProductPrice(product)) }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="cta-content">
+        <h2>Sẵn sàng tìm chiếc mũ bảo hiểm hoàn hảo?</h2>
+        <p>Khám phá bộ sưu tập đa dạng với hơn 200+ mẫu mũ bảo hiểm cao cấp</p>
+        <button class="hero-btn primary" (click)="goToProducts()">
+          Xem tất cả sản phẩm
+          <i class="fas fa-arrow-right"></i>
+        </button>
       </div>
     </div>
   </section>
 
-  <!-- All Products Section -->
-  <section class="all-products-section">
-    <div class="container">
-      <div class="section-header">
-        <h3>Tất cả sản phẩm</h3>
-        <p>{{ filteredProducts.length }} sản phẩm</p>
-      </div>
-
-      <div class="filter-section">
-      <div class="filter-content">
-        <div class="search-box">
-          <i class="fas fa-search search-icon"></i>
-          <input 
-            type="text" 
-            [(ngModel)]="searchKeyword"
-            (ngModelChange)="filterProducts()"
-            placeholder="Tìm kiếm sản phẩm..."
-            class="search-input"
-          />
-        </div>
-        
-        <div class="filter-controls">
-          <select 
-            [(ngModel)]="selectedPriceRange"
-            (ngModelChange)="filterProducts()"
-            class="filter-select"
-          >
-            <option *ngFor="let range of priceRanges" [value]="range.value">
-              {{ range.label }}
-            </option>
-          </select>
-        </div>
-      </div>
-      </div>
-
-      <div *ngIf="isLoading" class="loading">
-        <div class="spinner"></div>
-        <p>Đang tải sản phẩm...</p>
-      </div>
-
-      <div *ngIf="!isLoading && filteredProducts.length === 0" class="no-products">
-        <i class="fas fa-box-open"></i>
-        <p>Không tìm thấy sản phẩm nào</p>
-      </div>
-
-      <div class="products-grid" *ngIf="!isLoading && filteredProducts.length > 0">
-        <div 
-          *ngFor="let product of filteredProducts" 
-          class="product-card"
-          (click)="viewProduct(product.id)"
-        >
-          <div class="product-image">
-            <img 
-              [src]="getProductImageUrl(product)" 
-              [alt]="product.tenSanPham"
-              (error)="onImageError($event)"
-              loading="lazy"
-            />
-            <div class="product-overlay">
-              <button class="btn-quick-view" (click)="viewProduct(product.id); $event.stopPropagation()">
-                <i class="fas fa-eye"></i> Xem nhanh
-              </button>
-            </div>
-          </div>
-          <div class="product-info">
-            <h4 class="product-name">{{ product.tenSanPham }}</h4>
-            <div class="product-details">
-              <span class="product-color" *ngIf="product.mauSacTen">
-                <i class="fas fa-palette"></i> {{ product.mauSacTen }}
-              </span>
-              <span class="product-manufacturer" *ngIf="product.nhaSanXuatTen">
-                <i class="fas fa-industry"></i> {{ product.nhaSanXuatTen }}
-              </span>
-            </div>
-            <div class="product-footer">
-              <span class="product-price">{{ formatCurrency(getProductPrice(product)) }}</span>
-              <button 
-                class="btn-add-cart" 
-                (click)="addToCart(product); $event.stopPropagation()"
-                [disabled]="!product.trangThai"
-              >
-                <i class="fas fa-shopping-cart"></i>
-              </button>
-            </div>
-            <div class="product-badge" *ngIf="!product.trangThai">
-              <span class="badge-out-of-stock">Hết hàng</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="shop-footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h4>Liên hệ</h4>
-          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Phường 15, Quận 11, Tp.HCM</p>
-          <p><i class="fas fa-phone"></i> 076 922 0162</p>
-          <p><i class="fas fa-envelope"></i> contact@tdkstore.com</p>
-          <p><i class="fas fa-envelope"></i> mon@mona.media</p>
-        </div>
-        <div class="footer-section">
-          <h4>Menu</h4>
-          <ul>
-            <li><a routerLink="/shop">Giới thiệu</a></li>
-            <li><a routerLink="/shop/products">Cửa hàng</a></li>
-            <li><a routerLink="/shop">Tin tức</a></li>
-            <li><a routerLink="/shop">Liên hệ</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Tài khoản</h4>
-          <ul>
-            <li><a routerLink="/customer/profile">My account</a></li>
-            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
-            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Dịch vụ</h4>
-          <ul>
-            <li><a routerLink="/shop">Giới thiệu</a></li>
-            <li><a routerLink="/shop/products">Cửa hàng</a></li>
-            <li><a routerLink="/shop">Tin tức</a></li>
-            <li><a routerLink="/shop">Liên hệ</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Đăng ký</h4>
-          <p>Đăng ký để nhận được thông tin mới nhất từ chúng tôi.</p>
-          <div class="newsletter-form">
-            <input type="email" placeholder="Email của bạn" class="newsletter-input">
-            <button class="newsletter-btn">Đăng ký</button>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; Bản quyền thuộc về TDK Store. Thiết kế website MonaMedia <strong>Mona Media</strong></p>
-      </div>
-    </div>
-  </footer>
+  <app-shop-footer></app-shop-footer>
 
   <!-- Chatbot Widget -->
   <app-chatbot></app-chatbot>

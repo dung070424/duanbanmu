@@ -1,0 +1,62 @@
+<div class="shop-header-wrapper">
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-content">
+        <div class="top-bar-left">
+          <span><i class="fas fa-location-dot"></i> 83 Điện Biên Phủ, Quận 1</span>
+          <span><i class="fas fa-phone"></i> 1900 636 648</span>
+          <span><i class="fas fa-envelope"></i> contact@tdkstore.com</span>
+        </div>
+        <div class="top-bar-right">
+          <a routerLink="/shop/login" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
+          <a routerLink="/shop/register" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
+          <a
+            href="#"
+            *ngIf="authService.isLoggedIn()"
+            (click)="navigateToProfile($event)"
+            [title]="customerName || 'Tài khoản'"
+          >
+            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
+          </a>
+          <a href="#" *ngIf="authService.isLoggedIn()" (click)="logout()">Đăng xuất</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <header class="main-header">
+    <div class="container">
+      <div class="header-content">
+        <a routerLink="/shop" class="brand">
+          <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" />
+          <div>
+            <span>TDK Store</span>
+            <small>Helmet Studio</small>
+          </div>
+        </a>
+        <nav class="primary-nav">
+          <a
+            routerLink="/shop"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            >Trang chủ</a
+          >
+          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
+
+          <a routerLink="/shop/products" routerLinkActive="active">Sản phẩm</a>
+          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
+          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-btn" routerLink="/shop/products">
+            <i class="fas fa-search"></i>
+          </button>
+          <button class="icon-btn cart-btn" (click)="goToCart()">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>

@@ -1,94 +1,30 @@
 <div class="about-container">
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="container">
-      <div class="top-bar-content">
-        <div class="top-bar-left">
-          <span class="top-bar-item">
-            <i class="fas fa-envelope"></i>
-            contact@tdkstore.com
-          </span>
-          <span class="top-bar-item">
-            <i class="fas fa-phone"></i>
-            1900 636 648
-          </span>
-        </div>
-        <div class="top-bar-right">
-          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
-          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            routerLink="/customer/profile"
-            [title]="customerName || 'Tài khoản'"
-          >
-            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
-          </a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            (click)="logout()"
-            style="cursor: pointer;"
-          >
-            <i class="fas fa-sign-out-alt"></i> Đăng xuất
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Header -->
-  <header class="shop-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="logo-section">
-          <a routerLink="/shop" class="logo-link">
-            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
-            <span class="logo-text">TDK Store</span>
-          </a>
-        </div>
-        <nav class="nav-menu">
-          <a routerLink="/shop" routerLinkActive="active">Trang chủ</a>
-          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
-          <a routerLink="/shop/products" routerLinkActive="active" class="has-dropdown">
-            Sản phẩm
-            <i class="fas fa-chevron-down"></i>
-            <div class="dropdown-menu">
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}">Nón 3/4</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}">Nón Full Face</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}">Nón lật cằm</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}">Nón trẻ em</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}">Nón Carbon</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}">Phụ kiện</a>
-            </div>
-          </a>
-          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
-          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
-        </nav>
-        <div class="header-actions">
-          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
+  <app-shop-header></app-shop-header>
 
   <!-- About Content -->
   <main class="about-main">
-    <div class="container">
-      <!-- Hero Section -->
-      <section class="hero-section">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
         <div class="hero-content">
+          <div class="hero-badge">
+            <i class="fas fa-helmet-safety"></i>
+            Về TDK Store
+          </div>
           <h1 class="hero-title">{{ aboutInfo.heroTitle }}</h1>
           <p class="hero-subtitle">{{ aboutInfo.heroSubtitle }}</p>
         </div>
-      </section>
+      </div>
+    </section>
 
+    <div class="container">
+      <!-- Stats Section -->
       <section class="stats-section" *ngIf="aboutInfo.stats?.length">
         <div class="stats-grid">
           <div class="stat-card" *ngFor="let stat of aboutInfo.stats">
+            <div class="stat-icon">
+              <i class="fas" [ngClass]="stat.icon"></i>
+            </div>
             <span class="stat-value">{{ stat.value }}</span>
             <span class="stat-label">{{ stat.label }}</span>
             <p class="stat-description">{{ stat.description }}</p>
@@ -96,105 +32,102 @@
         </div>
       </section>
 
-      <!-- About Content Section -->
-      <section class="content-section">
-        <div class="about-content">
-          <div class="content-block" *ngIf="aboutInfo.description">
-            <h2><i class="fas fa-store"></i> Về chúng tôi</h2>
-            <p>{{ aboutInfo.description }}</p>
+      <!-- Story Section -->
+      <section class="story-section">
+        <div class="story-grid">
+          <div class="story-image">
+            <img
+              src="https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85"
+              alt="TDK Store Showroom"
+            />
           </div>
-
-          <div class="content-block" *ngFor="let section of aboutInfo.sections || []">
-            <h2>
-              <i class="fas" [ngClass]="section.icon || 'fa-star'"></i>
-              {{ section.title }}
-            </h2>
-            <p>{{ section.body }}</p>
-            <ul class="value-list" *ngIf="section.bulletPoints?.length">
-              <li *ngFor="let bullet of section.bulletPoints">{{ bullet }}</li>
-            </ul>
-          </div>
-
-          <div class="content-block" *ngIf="aboutInfo.coreValues?.length">
-            <h2><i class="fas fa-star"></i> Giá trị cốt lõi</h2>
-            <ul class="value-list">
-              <li *ngFor="let value of aboutInfo.coreValues">
-                <strong>{{ value.title }}:</strong> {{ value.description }}
-              </li>
-            </ul>
-          </div>
-
-          <div class="content-block" *ngIf="aboutInfo.commitments?.length">
-            <h2><i class="fas fa-handshake"></i> Cam kết với khách hàng</h2>
-            <div class="commitment-grid">
-              <div class="commitment-item" *ngFor="let commitment of aboutInfo.commitments">
-                <div class="commitment-icon">
-                  <i class="fas" [ngClass]="commitment.icon"></i>
+          <div class="story-content">
+            <h2>Lịch sử hình thành</h2>
+            <p class="story-text">{{ aboutInfo.description }}</p>
+            <div class="story-highlights">
+              <div class="highlight-item" *ngFor="let section of aboutInfo.sections || []">
+                <div class="highlight-icon">
+                  <i class="fas" [ngClass]="section.icon || 'fa-star'"></i>
                 </div>
-                <h3>{{ commitment.title }}</h3>
-                <p>{{ commitment.description }}</p>
+                <div class="highlight-content">
+                  <h3>{{ section.title }}</h3>
+                  <p>{{ section.body }}</p>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Core Values Section -->
+      <section class="values-section" *ngIf="aboutInfo.coreValues?.length">
+        <div class="section-header">
+          <h2><i class="fas fa-star"></i> Giá trị cốt lõi</h2>
+          <p>Những nguyên tắc định hướng mọi hoạt động của chúng tôi</p>
+        </div>
+        <div class="values-grid">
+          <div class="value-card" *ngFor="let value of aboutInfo.coreValues">
+            <div class="value-icon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>{{ value.title }}</h3>
+            <p>{{ value.description }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Certifications Section -->
+      <section class="certifications-section">
+        <div class="section-header">
+          <h2><i class="fas fa-certificate"></i> Chứng nhận & Tiêu chuẩn</h2>
+          <p>Cam kết chất lượng và an toàn</p>
+        </div>
+        <div class="cert-grid">
+          <div class="cert-item">
+            <div class="cert-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3>ECE 22.06</h3>
+            <p>Tiêu chuẩn châu Âu về an toàn mũ bảo hiểm</p>
+          </div>
+          <div class="cert-item">
+            <div class="cert-icon">
+              <i class="fas fa-award"></i>
+            </div>
+            <h3>DOT FMVSS</h3>
+            <p>Chứng nhận an toàn của Bộ Giao thông Hoa Kỳ</p>
+          </div>
+          <div class="cert-item">
+            <div class="cert-icon">
+              <i class="fas fa-certificate"></i>
+            </div>
+            <h3>ISO 9001:2015</h3>
+            <p>Hệ thống quản lý chất lượng quốc tế</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Commitments Section -->
+      <section class="commitments-section" *ngIf="aboutInfo.commitments?.length">
+        <div class="section-header">
+          <h2><i class="fas fa-handshake"></i> Cam kết với khách hàng</h2>
+          <p>Những gì chúng tôi cam kết mang đến cho bạn</p>
+        </div>
+        <div class="commitment-grid">
+          <div class="commitment-item" *ngFor="let commitment of aboutInfo.commitments">
+            <div class="commitment-icon">
+              <i class="fas" [ngClass]="commitment.icon"></i>
+            </div>
+            <h3>{{ commitment.title }}</h3>
+            <p>{{ commitment.description }}</p>
           </div>
         </div>
       </section>
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="shop-footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h4>Liên hệ</h4>
-          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Phường 15, Quận 11, Tp.HCM</p>
-          <p><i class="fas fa-phone"></i> 076 922 0162</p>
-          <p><i class="fas fa-envelope"></i> contact@tdkstore.com</p>
-          <p><i class="fas fa-envelope"></i> mon@mona.media</p>
-        </div>
-        <div class="footer-section">
-          <h4>Menu</h4>
-          <ul>
-            <li><a routerLink="/shop/about">Giới thiệu</a></li>
-            <li><a routerLink="/shop/products">Cửa hàng</a></li>
-            <li><a routerLink="/shop/news">Tin tức</a></li>
-            <li><a routerLink="/shop/contact">Liên hệ</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Tài khoản</h4>
-          <ul>
-            <li><a routerLink="/customer/profile">My account</a></li>
-            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
-            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Dịch vụ</h4>
-          <ul>
-            <li><a routerLink="/shop/about">Giới thiệu</a></li>
-            <li><a routerLink="/shop/products">Cửa hàng</a></li>
-            <li><a routerLink="/shop/news">Tin tức</a></li>
-            <li><a routerLink="/shop/contact">Liên hệ</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Đăng ký</h4>
-          <p>Đăng ký để nhận được thông tin mới nhất từ chúng tôi.</p>
-          <div class="newsletter-form">
-            <input type="email" placeholder="Email của bạn" class="newsletter-input">
-            <button class="newsletter-btn">Đăng ký</button>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; Bản quyền thuộc về TDK Store. Thiết kế website MonaMedia <strong>Mona Media</strong></p>
-      </div>
-    </div>
-  </footer>
+  <app-shop-footer></app-shop-footer>
 
   <!-- Chatbot Widget -->
   <app-chatbot></app-chatbot>
 </div>
-
-

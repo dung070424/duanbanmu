@@ -3,17 +3,29 @@ import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductApiService, SanPhamResponse } from '../../../services/product-api.service';
-import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../../services/chi-tiet-san-pham-api.service';
+import {
+  ChiTietSanPhamApiService,
+  ChiTietSanPhamResponse,
+} from '../../../services/chi-tiet-san-pham-api.service';
 import { HoaDonChoService, GioHangChoItem } from '../../../services/hoa-don-cho.service';
 import { AuthService } from '../../../services/auth';
-
+import { ShopHeaderComponent } from '../shared/shop-header.component';
+import { ShopFooterComponent } from '../shared/shop-footer.component';
+import { ChatbotComponent } from '../chatbot/chatbot.component';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    ShopHeaderComponent,
+    ShopFooterComponent,
+    ChatbotComponent,
+  ],
   templateUrl: './product-detail.html',
-  styleUrls: ['./product-detail.scss']
+  styleUrls: ['./product-detail.scss'],
 })
 export class ProductDetailComponent implements OnInit, AfterViewInit {
   product: SanPhamResponse | null = null;
@@ -85,7 +97,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
         // Set product ngay lập tức để hiển thị view
         this.product = product;
-        this.mainImageUrl = product.anhSanPham || '/assets/default-product.png';
+        // Tạm thời set placeholder, sẽ cập nhật khi load variants
+        this.mainImageUrl = 'https://via.placeholder.com/400x400?text=Loading...';
         this.productImages = [this.mainImageUrl];
 
         // Force change detection NGAY LẬP TỨC để hiển thị sản phẩm (TRƯỚC khi load variants)
@@ -120,7 +133,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
         // Force change detection
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -138,16 +151,21 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
           return;
         }
 
-        this.productVariants = variants.filter(v => v && v.trangThai !== false);
+        this.productVariants = variants.filter((v) => v && v.trangThai !== false);
         console.log('   - Active variants after filter:', this.productVariants.length);
 
         // Auto-select first available variant
         if (this.productVariants.length > 0) {
           this.selectedVariant = this.productVariants[0];
           console.log('   - Selected variant:', this.selectedVariant);
+          // Cập nhật ảnh từ biến thể đã chọn
+          this.updateImageFromVariant(this.selectedVariant);
         } else {
           console.warn('⚠️ loadProductVariants - No active variants found');
           this.selectedVariant = null;
+          // Nếu không có variant, dùng placeholder
+          this.mainImageUrl = 'https://via.placeholder.com/400x400?text=No+Image';
+          this.productImages = [this.mainImageUrl];
         }
 
         // Force change detection để hiển thị variants ngay lập tức
@@ -165,13 +183,15 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
         // Force change detection
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
   selectVariant(variant: ChiTietSanPhamResponse): void {
     this.selectedVariant = variant;
     this.selectedQuantity = 1; // Reset quantity when changing variant
+    // Cập nhật ảnh từ biến thể mới
+    this.updateImageFromVariant(variant);
     // Force change detection để cập nhật UI ngay lập tức
     this.cdr.detectChanges();
   }
@@ -226,7 +246,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const price = parseFloat(this.selectedVariant.giaBan?.toString() || '0') || this.product.giaBan || 0;
+    const price =
+      parseFloat(this.selectedVariant.giaBan?.toString() || '0') || this.product.giaBan || 0;
     const totalPrice = price * this.selectedQuantity;
 
     // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
@@ -242,15 +263,18 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         totalItemPrice: totalPrice,
         imageUrl: this.mainImageUrl,
         mauSac: this.selectedVariant.mauSacTen || '',
-        kichThuoc: this.selectedVariant.kichThuocTen || ''
+        kichThuoc: this.selectedVariant.kichThuocTen || '',
       };
 
       const tempCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
-      const existingIndex = tempCart.findIndex((item: any) => item.chiTietSanPhamId === cartItem.chiTietSanPhamId);
+      const existingIndex = tempCart.findIndex(
+        (item: any) => item.chiTietSanPhamId === cartItem.chiTietSanPhamId
+      );
 
       if (existingIndex >= 0) {
         tempCart[existingIndex].quantity += cartItem.quantity;
-        tempCart[existingIndex].totalItemPrice = tempCart[existingIndex].quantity * tempCart[existingIndex].price;
+        tempCart[existingIndex].totalItemPrice =
+          tempCart[existingIndex].quantity * tempCart[existingIndex].price;
       } else {
         tempCart.push(cartItem);
       }
@@ -263,7 +287,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     }
 
     // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
-    this.getOrCreateCart().then(cartId => {
+    this.getOrCreateCart().then((cartId) => {
       if (!cartId) {
         alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
         return;
@@ -280,7 +304,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         soLuong: this.selectedQuantity,
         donGia: price,
         giamGia: 0,
-        thanhTien: totalPrice
+        thanhTien: totalPrice,
       };
 
       this.hoaDonChoService.addItemToCart(cartId, gioHangItem).subscribe({
@@ -291,11 +315,14 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         },
         error: (error) => {
           console.error('Error adding to cart:', error);
-          const errorMsg = error.error?.error || error.message || 'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
+          const errorMsg =
+            error.error?.error ||
+            error.message ||
+            'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
           // Force change detection sau khi có lỗi
           this.cdr.detectChanges();
           alert(errorMsg);
-        }
+        },
       });
     });
   }
@@ -318,7 +345,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
           error: () => {
             localStorage.removeItem('current_cart_id');
             this.createNewCart(resolve);
-          }
+          },
         });
       } else {
         this.createNewCart(resolve);
@@ -334,7 +361,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       maHoaDonCho: maHoaDonCho,
       khachHangId: customerId || undefined,
       trangThai: 'DANG_CHO',
-      danhSachGioHang: []
+      danhSachGioHang: [],
     };
 
     this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
@@ -345,7 +372,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       error: (error) => {
         console.error('Error creating cart:', error);
         resolve(null);
-      }
+      },
     });
   }
 
@@ -356,7 +383,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VND'
+      currency: 'VND',
     }).format(amount);
   }
 
@@ -404,23 +431,23 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   // Variant selection methods
   hasColorVariants(): boolean {
     if (this.productVariants.length === 0) return false;
-    const colors = new Set(this.productVariants.map(v => v.mauSacTen).filter(Boolean));
+    const colors = new Set(this.productVariants.map((v) => v.mauSacTen).filter(Boolean));
     return colors.size > 1;
   }
 
   hasSizeVariants(): boolean {
     if (this.productVariants.length === 0) return false;
-    const sizes = new Set(this.productVariants.map(v => v.kichThuocTen).filter(Boolean));
+    const sizes = new Set(this.productVariants.map((v) => v.kichThuocTen).filter(Boolean));
     return sizes.size > 1;
   }
 
   getUniqueColors(): string[] {
-    const colors = new Set(this.productVariants.map(v => v.mauSacTen).filter(Boolean));
+    const colors = new Set(this.productVariants.map((v) => v.mauSacTen).filter(Boolean));
     return Array.from(colors) as string[];
   }
 
   getUniqueSizes(): string[] {
-    const sizes = new Set(this.productVariants.map(v => v.kichThuocTen).filter(Boolean));
+    const sizes = new Set(this.productVariants.map((v) => v.kichThuocTen).filter(Boolean));
     return Array.from(sizes) as string[];
   }
 
@@ -434,8 +461,9 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
   isSizeAvailable(size: string): boolean {
     const variant = this.productVariants.find(
-      v => v.kichThuocTen === size &&
-      (this.selectedVariant?.mauSacTen ? v.mauSacTen === this.selectedVariant.mauSacTen : true)
+      (v) =>
+        v.kichThuocTen === size &&
+        (this.selectedVariant?.mauSacTen ? v.mauSacTen === this.selectedVariant.mauSacTen : true)
     );
     return variant ? this.isVariantAvailable(variant) : false;
   }
@@ -444,18 +472,16 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     // Tìm variant với màu đã chọn và size hiện tại (nếu có)
     const currentSize = this.selectedVariant?.kichThuocTen;
     let variant = this.productVariants.find(
-      v => v.mauSacTen === color && (!currentSize || v.kichThuocTen === currentSize)
+      (v) => v.mauSacTen === color && (!currentSize || v.kichThuocTen === currentSize)
     );
 
     // Nếu không tìm thấy với size hiện tại, lấy variant đầu tiên với màu này
     if (!variant) {
-      variant = this.productVariants.find(v => v.mauSacTen === color);
+      variant = this.productVariants.find((v) => v.mauSacTen === color);
     }
 
     if (variant) {
       this.selectVariant(variant);
-      // Force change detection để cập nhật UI ngay lập tức
-      this.cdr.detectChanges();
     }
   }
 
@@ -463,34 +489,32 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     // Tìm variant với size đã chọn và màu hiện tại (nếu có)
     const currentColor = this.selectedVariant?.mauSacTen;
     let variant = this.productVariants.find(
-      v => v.kichThuocTen === size && (!currentColor || v.mauSacTen === currentColor)
+      (v) => v.kichThuocTen === size && (!currentColor || v.mauSacTen === currentColor)
     );
 
     // Nếu không tìm thấy với màu hiện tại, lấy variant đầu tiên với size này
     if (!variant) {
-      variant = this.productVariants.find(v => v.kichThuocTen === size);
+      variant = this.productVariants.find((v) => v.kichThuocTen === size);
     }
 
     if (variant && this.isVariantAvailable(variant)) {
       this.selectVariant(variant);
-      // Force change detection để cập nhật UI ngay lập tức
-      this.cdr.detectChanges();
     }
   }
 
   getColorCode(colorName: string): string {
     // Map màu sắc phổ biến sang mã màu (có thể mở rộng)
     const colorMap: { [key: string]: string } = {
-      'Đỏ': '#ff0000',
-      'Xanh': '#0000ff',
+      Đỏ: '#ff0000',
+      Xanh: '#0000ff',
       'Xanh lá': '#00ff00',
-      'Vàng': '#ffff00',
-      'Đen': '#000000',
-      'Trắng': '#ffffff',
-      'Xám': '#808080',
-      'Cam': '#ffa500',
-      'Tím': '#800080',
-      'Hồng': '#ffc0cb'
+      Vàng: '#ffff00',
+      Đen: '#000000',
+      Trắng: '#ffffff',
+      Xám: '#808080',
+      Cam: '#ffa500',
+      Tím: '#800080',
+      Hồng: '#ffc0cb',
     };
     return colorMap[colorName] || '#cccccc';
   }
@@ -501,5 +525,52 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.router.navigate(['/shop/cart']);
     }, 500);
+  }
+
+  private updateImageFromVariant(variant: ChiTietSanPhamResponse): void {
+    if (variant && variant.anhSanPham) {
+      const imageUrl = this.normalizeImagePath(variant.anhSanPham);
+      this.mainImageUrl = imageUrl;
+      this.productImages = [imageUrl];
+    } else {
+      // Nếu variant không có ảnh, dùng placeholder
+      this.mainImageUrl = 'https://via.placeholder.com/400x400?text=No+Image';
+      this.productImages = [this.mainImageUrl];
+    }
+  }
+
+  private normalizeImagePath(src?: string | null): string {
+    if (!src) {
+      return 'https://via.placeholder.com/400x400?text=No+Image';
+    }
+
+    const trimmed = src.trim();
+    if (!trimmed) {
+      return 'https://via.placeholder.com/400x400?text=No+Image';
+    }
+
+    if (/^data:image\//i.test(trimmed)) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    if (this.looksLikeBase64(trimmed)) {
+      return `data:image/jpeg;base64,${trimmed.replace(/^\/+/, '')}`;
+    }
+
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+
+    return `/${trimmed}`;
+  }
+
+  private looksLikeBase64(value: string): boolean {
+    if (!value) return false;
+    const cleaned = value.replace(/\s+/g, '');
+    return cleaned.length > 40 && /^[A-Za-z0-9+/]+=*$/.test(cleaned);
   }
 }

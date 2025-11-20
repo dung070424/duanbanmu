@@ -7,11 +7,15 @@ import { HoaDonService } from '../../../services/hoa-don.service';
 import { AuthService } from '../../../services/auth';
 import { CustomerAddressService } from '../../../services/customer-address.service';
 import { CustomerService } from '../../../services/customer.service';
+import { PhieuGiamGiaService } from '../../../services/phieu-giam-gia.service';
+import { ShopHeaderComponent } from '../shared/shop-header.component';
+import { ShopFooterComponent } from '../shared/shop-footer.component';
+import { ChatbotComponent } from '../chatbot/chatbot.component';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ShopHeaderComponent, ShopFooterComponent, ChatbotComponent],
   templateUrl: './checkout.html',
   styleUrls: ['./checkout.scss']
 })
@@ -76,12 +80,30 @@ export class CheckoutComponent implements OnInit {
   createdInvoice: any = null;
   showInvoiceDetails = false;
 
+  // Discount code / Voucher
+  couponCode: string = '';
+  appliedCoupon: {
+    id: number;
+    code: string;
+    type: 'PERCENT' | 'FIXED';
+    value: number;
+    maxDiscount?: number;
+    minOrder?: number;
+  } | null = null;
+  couponDiscount: number = 0;
+  displayedVouchers: any[] = [];
+  allVouchers: any[] = [];
+  maxDisplayedVouchers: number = 3;
+  showVoucherModal: boolean = false;
+  voucherModalSearchTerm: string = '';
+
   constructor(
     private hoaDonChoService: HoaDonChoService,
     private hoaDonService: HoaDonService,
     private authService: AuthService,
     private customerAddressService: CustomerAddressService,
     private customerService: CustomerService,
+    private phieuGiamGiaService: PhieuGiamGiaService,
     private router: Router,
     private route: ActivatedRoute,
     private location: Location,
@@ -169,6 +191,7 @@ export class CheckoutComponent implements OnInit {
 
     // Generate transaction code
     this.generateTransactionCode();
+    this.refreshVoucherSuggestions();
   }
 
   /**
@@ -613,6 +636,7 @@ export class CheckoutComponent implements OnInit {
       bankInfo: { ...this.bankInfo },
       subtotal: this.getSubtotal(),
       discount: this.getDiscount(),
+      couponDiscount: this.couponDiscount,
       total: this.getTotal(),
       orderNotes: this.orderNotes
     };
@@ -636,18 +660,11 @@ export class CheckoutComponent implements OnInit {
   closeInvoiceDetails(): void {
     this.showInvoiceDetails = false;
     
+    // Chuyển về trang chủ sau khi đóng modal
+    this.router.navigate(['/shop']);
+    
     // Force change detection để cập nhật UI ngay lập tức
     this.cdr.detectChanges();
-    
-    const currentUser = this.authService.getCurrentUser();
-    
-    // Chuyển đến trang đơn hàng của khách hàng (nếu đã đăng nhập) hoặc về shop
-    if (currentUser) {
-      this.router.navigate(['/customer/orders']);
-    } else {
-      // Nếu chưa đăng nhập, chuyển về shop
-      this.router.navigate(['/shop']);
-    }
   }
   
   /**
@@ -927,7 +944,8 @@ export class CheckoutComponent implements OnInit {
         danhSachChiTiet: cartItems,
         tongTien: this.getSubtotal(),
         thanhTien: this.getTotal(),
-        tienGiamGia: this.getDiscount() || 0,
+        tienGiamGia: (this.getDiscount() || 0) + (this.couponDiscount || 0),
+        phieuGiamGiaId: this.appliedCoupon?.id || null,
         soLuongSanPham: this.getTotalItems()
       };
 
@@ -988,6 +1006,8 @@ export class CheckoutComponent implements OnInit {
           
           // Force change detection để hiển thị invoice details ngay lập tức
           this.cdr.detectChanges();
+          
+          
         },
         error: (err) => {
           console.error('❌ Error creating invoice:', err);
@@ -1104,7 +1124,27 @@ export class CheckoutComponent implements OnInit {
   }
 
   getTotal(): number {
-    return this.getSubtotal();
+    const subtotal = this.getSubtotal();
+    const discount = this.getDiscount();
+    const base = Math.max(0, subtotal - discount);
+    
+    // Tính coupon discount
+    this.couponDiscount = 0;
+    if (this.appliedCoupon) {
+      if (this.appliedCoupon.minOrder && base < this.appliedCoupon.minOrder) {
+        this.couponDiscount = 0;
+      } else if (this.appliedCoupon.type === 'PERCENT') {
+        this.couponDiscount = (base * this.appliedCoupon.value) / 100;
+        if (this.appliedCoupon.maxDiscount !== undefined && this.appliedCoupon.maxDiscount !== null) {
+          this.couponDiscount = Math.min(this.couponDiscount, this.appliedCoupon.maxDiscount);
+        }
+      } else {
+        this.couponDiscount = this.appliedCoupon.value;
+      }
+      this.couponDiscount = Math.min(this.couponDiscount, base);
+    }
+    
+    return Math.max(0, base - this.couponDiscount);
   }
 
   getTotalItems(): number {
@@ -1149,5 +1189,134 @@ export class CheckoutComponent implements OnInit {
       // Nếu không có lịch sử, chuyển về giỏ hàng
       this.router.navigate(['/shop/cart']);
     }
+  }
+
+  // Discount code / Voucher methods
+  applyCoupon(): void {
+    const code = (this.couponCode || '').trim();
+    if (!code) return;
+    this.phieuGiamGiaService.getPhieuGiamGiaByMaPhieu(code).subscribe({
+      next: (res: any) => {
+        const v = res?.data || res?.result || res;
+        if (v) {
+          this.applyCouponFromSuggestion(this.mapVoucher(v));
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  applyCouponFromSuggestion(v: any): void {
+    const mapped = this.mapVoucher(v);
+    this.appliedCoupon = mapped;
+    this.couponCode = mapped.code;
+    this.cdr.detectChanges();
+  }
+
+  removeCoupon(): void {
+    this.appliedCoupon = null;
+    this.couponCode = '';
+    this.couponDiscount = 0;
+    this.cdr.detectChanges();
+  }
+
+  private mapVoucher(v: any) {
+    return {
+      id: v.id ?? v.voucherId ?? 0,
+      code: v.code ?? v.maPhieu ?? v.ma ?? '',
+      type:
+        (v.type ?? v.loaiPhieuGiamGia ?? v.loaiGiam ?? v.kieuGiam ?? 'PERCENT')
+          .toString()
+          .toUpperCase() === 'PERCENT'
+          ? 'PERCENT'
+          : 'FIXED',
+      value: Number(v.value ?? v.giaTri ?? v.giaTriGiam ?? 0),
+      maxDiscount: v.maxDiscount ?? v.giamToiDa ?? v.soTienToiDa ?? undefined,
+      minOrder:
+        v.minOrder ?? v.dieuKienToiThieu ?? v.hoaDonToiThieu ?? v.giaTriToiThieu ?? undefined,
+    } as {
+      id: number;
+      code: string;
+      type: 'PERCENT' | 'FIXED';
+      value: number;
+      maxDiscount?: number;
+      minOrder?: number;
+    };
+  }
+
+  private refreshVoucherSuggestions(): void {
+    const base = Math.max(0, this.getSubtotal() - this.getDiscount());
+    const currentUser = this.authService.getCurrentUser();
+    const customerId = currentUser?.id;
+    const collected: any[] = [];
+    
+    // Lấy mã chung đang hoạt động
+    this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
+      next: (res: any) => {
+        const general = (res?.data || res?.content || res || []) as any[];
+        collected.push(...general);
+        if (customerId) {
+          // Lấy toàn bộ mã cá nhân rồi lọc theo khách hàng hiện tại
+          this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+            next: (pers: any) => {
+              const raw = pers?.data || pers?.content || pers || [];
+              const personal = (Array.isArray(raw) ? raw : [])
+                .filter((r: any) => (r?.khachHangId ?? r?.khachHang?.id) === customerId)
+                .map((r: any) => r?.phieuGiamGia || r?.voucher || r);
+              this.computeVoucherLists([...collected, ...personal], base);
+            },
+            error: () => this.computeVoucherLists(collected, base),
+          });
+        } else {
+          this.computeVoucherLists(collected, base);
+        }
+      },
+      error: () => this.computeVoucherLists([], base),
+    });
+  }
+
+  private computeVoucherLists(raw: any[], base: number): void {
+    const mapped = (raw || [])
+      .map((v) => this.mapVoucher(v))
+      .filter((m) => m && (!m.minOrder || base >= m.minOrder));
+    const usable = mapped
+      .map((m) => ({ ...m, discount: this.computeVoucherDiscount(m, base) }))
+      .filter((x) => x.discount > 0)
+      .sort((a, b) => b.discount - a.discount);
+    this.allVouchers = usable;
+    this.displayedVouchers = usable.slice(0, this.maxDisplayedVouchers);
+    this.cdr.detectChanges();
+  }
+
+  private computeVoucherDiscount(v: any, base: number): number {
+    if (v.type === 'PERCENT') {
+      let d = (base * v.value) / 100;
+      if (v.maxDiscount !== undefined && v.maxDiscount !== null) d = Math.min(d, v.maxDiscount);
+      return Math.min(d, base);
+    }
+    return Math.min(v.value, base);
+  }
+
+  openVoucherModal(): void {
+    this.showVoucherModal = true;
+    this.voucherModalSearchTerm = '';
+  }
+
+  closeVoucherModal(): void {
+    this.showVoucherModal = false;
+    this.voucherModalSearchTerm = '';
+  }
+
+  get filteredVouchersForModal(): any[] {
+    if (!this.voucherModalSearchTerm || this.voucherModalSearchTerm.trim() === '') {
+      return this.allVouchers;
+    }
+    const searchTerm = this.voucherModalSearchTerm.toLowerCase().trim();
+    return this.allVouchers.filter(
+      (v) =>
+        v.code.toLowerCase().includes(searchTerm) ||
+        (v.discount && v.discount.toString().includes(searchTerm))
+    );
   }
 }

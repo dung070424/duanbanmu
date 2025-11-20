@@ -10,6 +10,8 @@ import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.s
 import { AuthService } from '../../services/auth';
 import { CustomerService } from '../../services/customer.service';
 import { ChatbotComponent } from './chatbot/chatbot.component';
+import { ShopHeaderComponent } from './shared/shop-header.component';
+import { ShopFooterComponent } from './shared/shop-footer.component';
 import { Subscription } from 'rxjs';
 import { distinctUntilChanged, skip } from 'rxjs/operators';
 
@@ -33,9 +35,16 @@ interface HomepageNews {
 @Component({
   selector: 'app-shop',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ChatbotComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    ChatbotComponent,
+    ShopHeaderComponent,
+    ShopFooterComponent,
+  ],
   templateUrl: './shop.component.html',
-  styleUrls: ['./shop.component.scss']
+  styleUrls: ['./shop.component.scss'],
 })
 export class ShopComponent implements OnInit, OnDestroy {
   products: SanPhamResponse[] = [];
@@ -44,7 +53,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   featuredProducts: SanPhamResponse[] = [];
   bestPriceProducts: SanPhamResponse[] = [];
   categories: Category[] = [];
-  
+
   activeTab: 'best-selling' | 'featured' | 'best-price' = 'best-selling';
   searchKeyword = '';
   selectedPriceRange = 'all';
@@ -53,7 +62,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   cartCount = 0; // Cart count from backend
   customerName: string = ''; // Tên khách hàng để hiển thị
   newsArticles: HomepageNews[] = this.createHomepageNews();
-  
+
   private authSubscription?: Subscription;
 
   priceRanges = [
@@ -61,7 +70,7 @@ export class ShopComponent implements OnInit, OnDestroy {
     { value: '0-500000', label: 'Dưới 500.000đ' },
     { value: '500000-1000000', label: '500.000đ - 1.000.000đ' },
     { value: '1000000-2000000', label: '1.000.000đ - 2.000.000đ' },
-    { value: '2000000', label: 'Trên 2.000.000đ' }
+    { value: '2000000', label: 'Trên 2.000.000đ' },
   ];
 
   constructor(
@@ -79,44 +88,44 @@ export class ShopComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadProducts();
-    this.loadBestSellingProducts();
-    this.loadCategories();
+    // Không load products nữa vì trang chủ không hiển thị sản phẩm
+    // this.loadProducts();
+    // this.loadBestSellingProducts();
+    // this.loadCategories();
     this.updateCartCount();
-    
+
     // Load thông tin khách hàng nếu đã login
     if (this.authService.isLoggedIn()) {
       this.loadCustomerName();
     }
-    
+
     // Lắng nghe event merge giỏ hàng tạm sau khi đăng nhập
     if (typeof window !== 'undefined') {
       window.addEventListener('mergeTempCart', this.handleMergeTempCart.bind(this));
     }
-    
+
     // QUAN TRỌNG: Reload products khi user đăng nhập thành công
     // Subscribe vào auth state để reload khi login
     // Sử dụng skip(1) để bỏ qua giá trị đầu tiên (khi component init)
     // và distinctUntilChanged để chỉ reload khi state thay đổi
-    this.authSubscription = this.authService.isAuthenticated$.pipe(
-      distinctUntilChanged(),
-      skip(1) // Bỏ qua giá trị đầu tiên khi component init
-    ).subscribe(isAuthenticated => {
-      // Chỉ reload khi user vừa đăng nhập (chuyển từ false -> true)
-      if (isAuthenticated) {
-        console.log('🔄 ShopComponent: User logged in, reloading products...');
-        // Reload tất cả dữ liệu sau khi login
-        this.loadProducts();
-        this.loadBestSellingProducts();
-        this.loadCategories();
-        this.updateCartCount();
-        this.loadCustomerName(); // Load tên khách hàng khi login
-      } else {
-        // User đã logout
-        this.customerName = '';
-        this.cdr.detectChanges();
-      }
-    });
+    this.authSubscription = this.authService.isAuthenticated$
+      .pipe(
+        distinctUntilChanged(),
+        skip(1) // Bỏ qua giá trị đầu tiên khi component init
+      )
+      .subscribe((isAuthenticated) => {
+        // Chỉ reload khi user vừa đăng nhập (chuyển từ false -> true)
+        if (isAuthenticated) {
+          console.log('🔄 ShopComponent: User logged in...');
+          // Chỉ update cart count và customer name
+          this.updateCartCount();
+          this.loadCustomerName(); // Load tên khách hàng khi login
+        } else {
+          // User đã logout
+          this.customerName = '';
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -140,9 +149,9 @@ export class ShopComponent implements OnInit, OnDestroy {
     }
 
     console.log('🛒 ShopComponent: Merging temp cart with DB cart');
-    
+
     // Lấy hoặc tạo giỏ hàng trong DB
-    this.getOrCreateCart().then(cartId => {
+    this.getOrCreateCart().then((cartId) => {
       if (!cartId) {
         console.error('❌ Cannot create cart for merging');
         return;
@@ -159,7 +168,7 @@ export class ShopComponent implements OnInit, OnDestroy {
           soLuong: tempItem.quantity,
           donGia: tempItem.price,
           giamGia: 0,
-          thanhTien: tempItem.totalItemPrice
+          thanhTien: tempItem.totalItemPrice,
         };
 
         // Thêm vào giỏ hàng DB
@@ -186,7 +195,7 @@ export class ShopComponent implements OnInit, OnDestroy {
                 this.updateCartCount();
               }
             }
-          }
+          },
         });
       });
     });
@@ -194,54 +203,56 @@ export class ShopComponent implements OnInit, OnDestroy {
 
   loadProducts(): void {
     // Không set isLoading để không block UI
-    this.productApiService.search({
-      trangThai: true,
-      page: 0,
-      size: 1000,
-      useCustomerEndpoint: true
-    }).subscribe({
-      next: (response) => {
-        this.products = response.content.filter(p => p.trangThai === true);
-        // Debug: Log để kiểm tra ảnh sản phẩm
-        console.log('📦 Loaded products:', this.products.length);
-        if (this.products.length > 0) {
-          console.log('📸 Sample product image:', {
-            name: this.products[0].tenSanPham,
-            imageUrl: this.products[0].anhSanPham,
-            fullUrl: this.getProductImageUrl(this.products[0])
-          });
-        }
-        this.filteredProducts = [...this.products];
-        
-        // Featured products: lấy 8 sản phẩm đầu tiên
-        this.featuredProducts = this.products.slice(0, 8);
-        
-        // Best price products: sắp xếp theo giá tăng dần, lấy 8 sản phẩm
-        this.bestPriceProducts = [...this.products]
-          .sort((a, b) => (Number(a.giaBan) || 0) - (Number(b.giaBan) || 0))
-          .slice(0, 8);
-        
-        // Force change detection để hiển thị sản phẩm ngay lập tức
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        // Xử lý lỗi một cách graceful - không log lỗi connection refused
-        if (error.status === 0 || error.status === undefined) {
-          // Connection refused hoặc network error - backend có thể chưa chạy
-          console.warn('⚠️ Backend không khả dụng. Vui lòng đảm bảo backend đang chạy.');
-        } else {
-        console.error('Error loading products:', error);
-        }
-        // Fallback: hiển thị empty state
-        this.products = [];
-        this.filteredProducts = [];
-        this.featuredProducts = [];
-        this.bestPriceProducts = [];
-        
-        // Force change detection
-        this.cdr.detectChanges();
-      }
-    });
+    this.productApiService
+      .search({
+        trangThai: true,
+        page: 0,
+        size: 1000,
+        useCustomerEndpoint: true,
+      })
+      .subscribe({
+        next: (response) => {
+          this.products = response.content.filter((p) => p.trangThai === true);
+          // Debug: Log để kiểm tra ảnh sản phẩm
+          console.log('📦 Loaded products:', this.products.length);
+          if (this.products.length > 0) {
+            console.log('📸 Sample product image:', {
+              name: this.products[0].tenSanPham,
+              imageUrl: this.products[0].anhSanPham,
+              fullUrl: this.getProductImageUrl(this.products[0]),
+            });
+          }
+          this.filteredProducts = [...this.products];
+
+          // Featured products: lấy 8 sản phẩm đầu tiên
+          this.featuredProducts = this.products.slice(0, 8);
+
+          // Best price products: sắp xếp theo giá tăng dần, lấy 8 sản phẩm
+          this.bestPriceProducts = [...this.products]
+            .sort((a, b) => (Number(a.giaBan) || 0) - (Number(b.giaBan) || 0))
+            .slice(0, 8);
+
+          // Force change detection để hiển thị sản phẩm ngay lập tức
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          // Xử lý lỗi một cách graceful - không log lỗi connection refused
+          if (error.status === 0 || error.status === undefined) {
+            // Connection refused hoặc network error - backend có thể chưa chạy
+            console.warn('⚠️ Backend không khả dụng. Vui lòng đảm bảo backend đang chạy.');
+          } else {
+            console.error('Error loading products:', error);
+          }
+          // Fallback: hiển thị empty state
+          this.products = [];
+          this.filteredProducts = [];
+          this.featuredProducts = [];
+          this.bestPriceProducts = [];
+
+          // Force change detection
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   loadBestSellingProducts(): void {
@@ -250,35 +261,37 @@ export class ShopComponent implements OnInit, OnDestroy {
         if (response && response.data) {
           // Map best selling products từ statistics service
           // Cần load chi tiết sản phẩm từ product service
-          const bestSellingIds = response.data.map(item => item.sanPhamId);
-          this.productApiService.search({
-            trangThai: true,
-            page: 0,
-            size: 1000,
-            useCustomerEndpoint: true
-          }).subscribe({
-            next: (productResponse) => {
-              this.bestSellingProducts = productResponse.content
-                .filter(p => bestSellingIds.includes(p.id))
-                .slice(0, 8);
-              
-              // Force change detection để hiển thị sản phẩm ngay lập tức
-              this.cdr.detectChanges();
-            },
-            error: (error) => {
-              // Xử lý lỗi một cách graceful
-              if (error.status === 0 || error.status === undefined) {
-                // Connection refused - fallback
-                this.bestSellingProducts = this.products.slice(0, 8);
-              } else {
-                console.error('Error loading best selling product details:', error);
-                this.bestSellingProducts = this.products.slice(0, 8);
-              }
-              
-              // Force change detection
-              this.cdr.detectChanges();
-            }
-          });
+          const bestSellingIds = response.data.map((item) => item.sanPhamId);
+          this.productApiService
+            .search({
+              trangThai: true,
+              page: 0,
+              size: 1000,
+              useCustomerEndpoint: true,
+            })
+            .subscribe({
+              next: (productResponse) => {
+                this.bestSellingProducts = productResponse.content
+                  .filter((p) => bestSellingIds.includes(p.id))
+                  .slice(0, 8);
+
+                // Force change detection để hiển thị sản phẩm ngay lập tức
+                this.cdr.detectChanges();
+              },
+              error: (error) => {
+                // Xử lý lỗi một cách graceful
+                if (error.status === 0 || error.status === undefined) {
+                  // Connection refused - fallback
+                  this.bestSellingProducts = this.products.slice(0, 8);
+                } else {
+                  console.error('Error loading best selling product details:', error);
+                  this.bestSellingProducts = this.products.slice(0, 8);
+                }
+
+                // Force change detection
+                this.cdr.detectChanges();
+              },
+            });
         }
       },
       error: (error) => {
@@ -291,22 +304,22 @@ export class ShopComponent implements OnInit, OnDestroy {
           // Fallback: lấy 8 sản phẩm đầu tiên
           this.bestSellingProducts = this.products.slice(0, 8);
         }
-        
+
         // Force change detection
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
   loadCategories(): void {
     this.loaiMuBaoHiemService.getAllActive().subscribe({
       next: (categories) => {
-        this.categories = categories.map(cat => ({
+        this.categories = categories.map((cat) => ({
           id: cat.id,
           tenLoaiMu: cat.tenLoai || '', // Map tenLoai to tenLoaiMu
-          trangThai: cat.trangThai || true
+          trangThai: cat.trangThai || true,
         }));
-        
+
         // Force change detection để hiển thị categories ngay lập tức
         this.cdr.detectChanges();
       },
@@ -319,10 +332,10 @@ export class ShopComponent implements OnInit, OnDestroy {
           console.error('Error loading categories:', error);
         }
         this.categories = [];
-        
+
         // Force change detection
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -346,52 +359,15 @@ export class ShopComponent implements OnInit, OnDestroy {
   }
 
   getProductsByCategory(categoryId: number): SanPhamResponse[] {
-    return this.products.filter(p => p.loaiMuBaoHiemId === categoryId);
+    return this.products.filter((p) => p.loaiMuBaoHiemId === categoryId);
   }
 
   toggleSearch(): void {
     this.showSearch = !this.showSearch;
   }
 
-  filterProducts(): void {
-    let filtered = [...this.products];
-
-    // Tìm kiếm theo từ khóa
-    if (this.searchKeyword.trim()) {
-      const keyword = this.searchKeyword.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.tenSanPham?.toLowerCase().includes(keyword) ||
-        p.maSanPham?.toLowerCase().includes(keyword) ||
-        p.mauSacTen?.toLowerCase().includes(keyword) ||
-        p.loaiMuBaoHiemTen?.toLowerCase().includes(keyword) ||
-        p.nhaSanXuatTen?.toLowerCase().includes(keyword)
-      );
-    }
-
-    // Lọc theo khoảng giá
-    if (this.selectedPriceRange !== 'all') {
-      filtered = filtered.filter(p => {
-        const price = Number(p.giaBan) || 0;
-        switch (this.selectedPriceRange) {
-          case '0-500000':
-            return price < 500000;
-          case '500000-1000000':
-            return price >= 500000 && price < 1000000;
-          case '1000000-2000000':
-            return price >= 1000000 && price < 2000000;
-          case '2000000':
-            return price >= 2000000;
-          default:
-            return true;
-        }
-      });
-    }
-
-    this.filteredProducts = filtered;
-    
-    // Force change detection để cập nhật danh sách sản phẩm ngay lập tức
-    this.cdr.detectChanges();
-  }
+  // Không cần filter products nữa vì không hiển thị sản phẩm trên trang chủ
+  // Method này đã được loại bỏ
 
   addToCart(product: SanPhamResponse): void {
     // Lấy chi tiết sản phẩm đầu tiên (hoặc có thể cho user chọn size/color)
@@ -403,8 +379,9 @@ export class ShopComponent implements OnInit, OnDestroy {
         }
 
         // Lấy chi tiết đầu tiên có sẵn
-        const chiTiet = chiTietList.find(ct => ct.trangThai && parseInt(ct.soLuongTon) > 0) || chiTietList[0];
-        
+        const chiTiet =
+          chiTietList.find((ct) => ct.trangThai && parseInt(ct.soLuongTon) > 0) || chiTietList[0];
+
         if (!chiTiet) {
           alert('Sản phẩm này hiện không có sẵn!');
           return;
@@ -414,12 +391,14 @@ export class ShopComponent implements OnInit, OnDestroy {
         const stock = parseInt(chiTiet.soLuongTon) || 0;
         if (stock <= 0) {
           alert('Sản phẩm này đã hết hàng!');
-      return;
-    }
+          return;
+        }
 
         // Cảnh báo nếu sắp hết hàng (còn ít hơn 5 sản phẩm)
         if (stock <= 5) {
-          const confirmAdd = confirm(`⚠️ Cảnh báo: Sản phẩm chỉ còn ${stock} cái trong kho.\n\nBạn có muốn thêm vào giỏ hàng không?`);
+          const confirmAdd = confirm(
+            `⚠️ Cảnh báo: Sản phẩm chỉ còn ${stock} cái trong kho.\n\nBạn có muốn thêm vào giỏ hàng không?`
+          );
           if (!confirmAdd) {
             return;
           }
@@ -430,7 +409,7 @@ export class ShopComponent implements OnInit, OnDestroy {
         // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
         if (!this.authService.isLoggedIn()) {
           console.log('🛒 addToCart - User not logged in, saving to temp_cart');
-          
+
           const tempCartItem: any = {
             productId: product.id,
             chiTietSanPhamId: chiTiet.id,
@@ -440,7 +419,7 @@ export class ShopComponent implements OnInit, OnDestroy {
             totalItemPrice: price,
             imageUrl: product.anhSanPham,
             mauSac: chiTiet.mauSacTen || '',
-            kichThuoc: chiTiet.kichThuocTen || ''
+            kichThuoc: chiTiet.kichThuocTen || '',
           };
 
           console.log('🛒 addToCart - tempCartItem:', tempCartItem);
@@ -450,30 +429,33 @@ export class ShopComponent implements OnInit, OnDestroy {
           const tempCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
           console.log('🛒 addToCart - Current tempCart from localStorage:', tempCart);
           console.log('   - tempCart length before:', tempCart.length);
-          
-          const existingIndex = tempCart.findIndex((item: any) => item.chiTietSanPhamId === chiTiet.id);
+
+          const existingIndex = tempCart.findIndex(
+            (item: any) => item.chiTietSanPhamId === chiTiet.id
+          );
           console.log('🛒 addToCart - existingIndex:', existingIndex);
-          
+
           if (existingIndex >= 0) {
             tempCart[existingIndex].quantity += 1;
-            tempCart[existingIndex].totalItemPrice = tempCart[existingIndex].quantity * tempCart[existingIndex].price;
+            tempCart[existingIndex].totalItemPrice =
+              tempCart[existingIndex].quantity * tempCart[existingIndex].price;
             console.log('🛒 addToCart - Updated existing item:', tempCart[existingIndex]);
-    } else {
+          } else {
             tempCart.push(tempCartItem);
             console.log('🛒 addToCart - Added new item to tempCart');
           }
-          
+
           console.log('🛒 addToCart - Final tempCart:', tempCart);
           console.log('   - tempCart length after:', tempCart.length);
-          
+
           localStorage.setItem('temp_cart', JSON.stringify(tempCart));
-          
+
           // Verify saved
           const savedCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
           console.log('🛒 addToCart - Verified saved tempCart:', savedCart);
           console.log('   - savedCart length:', savedCart.length);
-          
-    this.updateCartCount();
+
+          this.updateCartCount();
           // Force change detection để cập nhật cart count ngay lập tức
           this.cdr.detectChanges();
           alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
@@ -481,7 +463,7 @@ export class ShopComponent implements OnInit, OnDestroy {
         }
 
         // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
-        this.getOrCreateCart().then(cartId => {
+        this.getOrCreateCart().then((cartId) => {
           if (!cartId) {
             alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
             return;
@@ -494,7 +476,7 @@ export class ShopComponent implements OnInit, OnDestroy {
             soLuong: 1,
             donGia: price,
             giamGia: 0,
-            thanhTien: price
+            thanhTien: price,
           };
 
           // Thêm vào giỏ hàng qua backend
@@ -503,20 +485,23 @@ export class ShopComponent implements OnInit, OnDestroy {
               this.updateCartCount();
               // Force change detection để cập nhật cart count ngay lập tức
               this.cdr.detectChanges();
-    alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+              alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
             },
             error: (error) => {
               console.error('Error adding to cart:', error);
-              const errorMsg = error.error?.error || error.message || 'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
+              const errorMsg =
+                error.error?.error ||
+                error.message ||
+                'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
               alert(errorMsg);
-            }
+            },
           });
         });
       },
       error: (error) => {
         console.error('Error loading product details:', error);
         alert('Không thể tải thông tin sản phẩm. Vui lòng thử lại!');
-      }
+      },
     });
   }
 
@@ -530,14 +515,17 @@ export class ShopComponent implements OnInit, OnDestroy {
         this.hoaDonChoService.getHoaDonChoByKhachHangId(currentUser.id).subscribe({
           next: (carts) => {
             // Tìm giỏ hàng đang chờ (trạng thái DANG_CHO)
-            const activeCart = carts.find(c => c.trangThai === 'DANG_CHO');
+            const activeCart = carts.find((c) => c.trangThai === 'DANG_CHO');
             if (activeCart && activeCart.id) {
               console.log('✅ Found existing cart for customer:', activeCart.id);
               localStorage.setItem('current_cart_id', activeCart.id.toString());
               resolve(activeCart.id);
             } else {
               // Không có giỏ hàng đang chờ, tạo mới
-              console.log('📦 No active cart found, creating new cart for customer:', currentUser.id);
+              console.log(
+                '📦 No active cart found, creating new cart for customer:',
+                currentUser.id
+              );
               this.createNewCart(resolve);
             }
           },
@@ -545,7 +533,7 @@ export class ShopComponent implements OnInit, OnDestroy {
             console.error('Error loading cart by customer ID:', error);
             // Nếu lỗi, thử tạo mới
             this.createNewCart(resolve);
-          }
+          },
         });
       } else {
         // Chưa đăng nhập, tạo giỏ hàng tạm (không có khachHangId)
@@ -561,7 +549,7 @@ export class ShopComponent implements OnInit, OnDestroy {
       maHoaDonCho: maHoaDonCho,
       khachHangId: currentUser?.id || undefined,
       trangThai: 'DANG_CHO',
-      danhSachGioHang: []
+      danhSachGioHang: [],
     };
 
     this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
@@ -576,7 +564,7 @@ export class ShopComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error creating cart:', error);
         resolve(null);
-      }
+      },
     });
   }
 
@@ -588,8 +576,10 @@ export class ShopComponent implements OnInit, OnDestroy {
     if (!currentUser) {
       try {
         const tempCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
-        this.cartCount = Array.isArray(tempCart) ? tempCart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) : 0;
-        } catch (e) {
+        this.cartCount = Array.isArray(tempCart)
+          ? tempCart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+          : 0;
+      } catch (e) {
         this.cartCount = 0;
       }
       // Force change detection để cập nhật cart count ngay lập tức
@@ -600,14 +590,15 @@ export class ShopComponent implements OnInit, OnDestroy {
     // Nếu đã đăng nhập, load cart từ backend
     this.hoaDonChoService.getHoaDonChoByKhachHangId(currentUser.id).subscribe({
       next: (carts) => {
-        const activeCart = carts.find(c => c.trangThai === 'DANG_CHO');
+        const activeCart = carts.find((c) => c.trangThai === 'DANG_CHO');
         if (activeCart) {
-          this.cartCount = activeCart.danhSachGioHang?.reduce((sum, item) => sum + (item.soLuong || 0), 0) || 0;
+          this.cartCount =
+            activeCart.danhSachGioHang?.reduce((sum, item) => sum + (item.soLuong || 0), 0) || 0;
           localStorage.setItem('current_cart_id', activeCart.id!.toString());
         } else {
           this.cartCount = 0;
         }
-        
+
         // Force change detection để cập nhật cart count ngay lập tức
         this.cdr.detectChanges();
       },
@@ -617,7 +608,9 @@ export class ShopComponent implements OnInit, OnDestroy {
           // Connection refused - fallback to localStorage
           try {
             const tempCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
-            this.cartCount = Array.isArray(tempCart) ? tempCart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) : 0;
+            this.cartCount = Array.isArray(tempCart)
+              ? tempCart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+              : 0;
           } catch (e) {
             this.cartCount = 0;
           }
@@ -625,10 +618,10 @@ export class ShopComponent implements OnInit, OnDestroy {
           console.error('Error loading cart:', error);
           this.cartCount = 0;
         }
-        
+
         // Force change detection
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -642,7 +635,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VND'
+      currency: 'VND',
     }).format(amount);
   }
 
@@ -655,18 +648,18 @@ export class ShopComponent implements OnInit, OnDestroy {
       // Sử dụng placeholder image từ placeholder.com hoặc data URL
       return 'https://via.placeholder.com/400x400?text=No+Image';
     }
-    
+
     // Nếu là URL đầy đủ (http/https), trả về trực tiếp
     if (product.anhSanPham.startsWith('http://') || product.anhSanPham.startsWith('https://')) {
       return product.anhSanPham;
     }
-    
+
     // Nếu là đường dẫn tương đối, thêm base URL nếu cần
     // Nếu bắt đầu bằng /, giữ nguyên
     if (product.anhSanPham.startsWith('/')) {
       return product.anhSanPham;
     }
-    
+
     // Nếu không có / ở đầu, thêm / để trở thành đường dẫn tương đối
     return '/' + product.anhSanPham;
   }
@@ -679,48 +672,54 @@ export class ShopComponent implements OnInit, OnDestroy {
     }
   }
 
-  viewProduct(productId: number): void {
-    this.router.navigate(['/shop/product', productId]);
+  viewProduct(productId?: number): void {
+    const extras = productId ? { queryParams: { highlight: productId } } : undefined;
+    this.router.navigate(['/shop/products'], extras).catch((error) => {
+      console.error('Navigation to products list failed:', error);
+    });
   }
 
   addToCartFromDetail(cartItem: any): void {
     // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
     if (!this.authService.isLoggedIn()) {
       console.log('🛒 addToCartFromDetail - User not logged in, saving to temp_cart');
-      
+
       const tempCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
       console.log('🛒 addToCartFromDetail - Current tempCart from localStorage:', tempCart);
       console.log('   - tempCart length before:', tempCart.length);
-      
-      const existingIndex = tempCart.findIndex((item: any) => item.chiTietSanPhamId === cartItem.chiTietSanPhamId);
+
+      const existingIndex = tempCart.findIndex(
+        (item: any) => item.chiTietSanPhamId === cartItem.chiTietSanPhamId
+      );
       console.log('🛒 addToCartFromDetail - existingIndex:', existingIndex);
-      
+
       if (existingIndex >= 0) {
         tempCart[existingIndex].quantity += cartItem.quantity;
-        tempCart[existingIndex].totalItemPrice = tempCart[existingIndex].quantity * tempCart[existingIndex].price;
+        tempCart[existingIndex].totalItemPrice =
+          tempCart[existingIndex].quantity * tempCart[existingIndex].price;
         console.log('🛒 addToCartFromDetail - Updated existing item:', tempCart[existingIndex]);
       } else {
         tempCart.push(cartItem);
         console.log('🛒 addToCartFromDetail - Added new item to tempCart');
       }
-      
+
       console.log('🛒 addToCartFromDetail - Final tempCart:', tempCart);
       console.log('   - tempCart length after:', tempCart.length);
-      
+
       localStorage.setItem('temp_cart', JSON.stringify(tempCart));
-      
+
       // Verify saved
       const savedCart = JSON.parse(localStorage.getItem('temp_cart') || '[]');
       console.log('🛒 addToCartFromDetail - Verified saved tempCart:', savedCart);
       console.log('   - savedCart length:', savedCart.length);
-      
+
       this.updateCartCount();
       alert(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`);
       return;
     }
 
     // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
-    this.getOrCreateCart().then(cartId => {
+    this.getOrCreateCart().then((cartId) => {
       if (!cartId) {
         alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
         return;
@@ -733,7 +732,7 @@ export class ShopComponent implements OnInit, OnDestroy {
         soLuong: cartItem.quantity,
         donGia: cartItem.price,
         giamGia: 0,
-        thanhTien: cartItem.totalItemPrice
+        thanhTien: cartItem.totalItemPrice,
       };
 
       // Thêm vào giỏ hàng qua backend
@@ -744,16 +743,20 @@ export class ShopComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error adding to cart:', error);
-          const errorMsg = error.error?.error || error.message || 'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
+          const errorMsg =
+            error.error?.error ||
+            error.message ||
+            'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
           alert(errorMsg);
-        }
+        },
       });
     });
   }
 
-  goToProducts(filter?: string): void {
+  goToProducts(filter?: string | number): void {
+    const normalizedFilter = typeof filter === 'number' ? String(filter) : filter;
     const queryParams: Record<string, any> = {};
-    switch (filter) {
+    switch (normalizedFilter) {
       case 'featured':
         queryParams['featured'] = true;
         break;
@@ -774,8 +777,8 @@ export class ShopComponent implements OnInit, OnDestroy {
         queryParams['section'] = 'news';
         break;
       default:
-        if (filter) {
-          queryParams['category'] = filter;
+        if (normalizedFilter) {
+          queryParams['category'] = normalizedFilter;
         }
         break;
     }
@@ -800,7 +803,7 @@ export class ShopComponent implements OnInit, OnDestroy {
     return new Date(dateString).toLocaleDateString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 
@@ -836,7 +839,8 @@ export class ShopComponent implements OnInit, OnDestroy {
     this.customerService.getCustomerByUserId(currentUser.id).subscribe({
       next: (customer) => {
         console.log('✅ Customer name loaded:', customer.tenKhachHang);
-        this.customerName = customer.tenKhachHang || currentUser.fullName || currentUser.username || 'Tài khoản';
+        this.customerName =
+          customer.tenKhachHang || currentUser.fullName || currentUser.username || 'Tài khoản';
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -844,7 +848,7 @@ export class ShopComponent implements OnInit, OnDestroy {
         // Fallback to user's fullName or username
         this.customerName = currentUser.fullName || currentUser.username || 'Tài khoản';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -853,27 +857,31 @@ export class ShopComponent implements OnInit, OnDestroy {
       {
         id: 1,
         title: 'TDK ra mắt bộ sưu tập Royal Carbon 2025',
-        excerpt: 'Phiên bản Royal Carbon sử dụng vật liệu T700 kết hợp phủ gốm giúp giảm 12% khối lượng nhưng tăng 18% khả năng hấp thụ lực.',
-        imageUrl: 'https://images.unsplash.com/photo-1529429617124-aee711a7041c?auto=format&fit=crop&w=900&q=80',
+        excerpt:
+          'Phiên bản Royal Carbon sử dụng vật liệu T700 kết hợp phủ gốm giúp giảm 12% khối lượng nhưng tăng 18% khả năng hấp thụ lực.',
+        imageUrl:
+          'https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85',
         category: 'Sản phẩm mới',
-        publishedAt: '2024-02-15'
+        publishedAt: '2024-02-15',
       },
       {
         id: 2,
         title: 'Hướng dẫn chọn mũ fullface đạt chuẩn track-day',
         excerpt: 'Checklist kiểm tra lực nén, padding và góc nhìn trước khi xuống đường đua.',
-        imageUrl: 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80',
+        imageUrl:
+          'https://bigbike.vn/wp-content/uploads/2024/06/CABERG-AVALON-X-BLACK-WHITE-09.jpg',
         category: 'Kinh nghiệm',
-        publishedAt: '2024-02-09'
+        publishedAt: '2024-02-09',
       },
       {
         id: 3,
         title: 'Workshop “Build Your Carbon Helmet” tại HCM',
         excerpt: 'Trải nghiệm tự tay lắp ráp mũ carbon, khắc tên laser, tùy biến tem.',
-        imageUrl: 'https://images.unsplash.com/photo-1529429617124-aee711a7041c?auto=format&fit=crop&w=900&q=80',
+        imageUrl:
+          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsDzNcBmVRGLFkFqk8hGqNP4lB3iy0ETZVZA&s',
         category: 'Sự kiện',
-        publishedAt: '2024-02-04'
-      }
+        publishedAt: '2024-02-04',
+      },
     ];
   }
 
@@ -885,14 +893,14 @@ export class ShopComponent implements OnInit, OnDestroy {
       event.preventDefault();
       event.stopPropagation();
     }
-    
+
     const currentUser = this.authService.getCurrentUser();
     console.log('👤 Navigating to profile...');
     console.log('   - Current user:', currentUser);
     console.log('   - Is logged in:', this.authService.isLoggedIn());
     console.log('   - User roles:', currentUser?.roles);
     console.log('   - Has CUSTOMER role:', this.authService.hasRole('CUSTOMER'));
-    
+
     if (!this.authService.isLoggedIn()) {
       console.warn('⚠️ User not logged in, redirecting to login');
       this.router.navigateByUrl('/login');

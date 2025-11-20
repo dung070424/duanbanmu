@@ -45,6 +45,7 @@ import { ChatManagementComponent } from './components/chat-management/chat-manag
 import { AboutComponent } from './components/shop/about/about.component';
 import { NewsComponent } from './components/shop/news/news.component';
 import { ContactComponent } from './components/shop/contact/contact.component';
+import { ShopProductsComponent } from './components/shop/products/products.component';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -60,7 +61,7 @@ export const routes: Routes = [
   { path: 'shop/cart', component: CartComponent },
   { path: 'shop/checkout', component: CheckoutComponent },
   { path: 'shop/product/:id', component: ProductDetailComponent },
-  { path: 'shop/products', component: ShopComponent },
+  { path: 'shop/products', component: ShopProductsComponent },
   { path: 'shop/about', component: AboutComponent },
   { path: 'shop/news', component: NewsComponent },
   { path: 'shop/contact', component: ContactComponent },
@@ -77,15 +78,14 @@ export const routes: Routes = [
     path: 'customer/orders',
     component: CustomerOrdersComponent,
     canActivate: [AuthGuard, roleGuard],
-    data: { roles: ['CUSTOMER'] }
+    data: { roles: ['CUSTOMER'] },
   },
   {
     path: 'customer/orders/:id',
     component: InvoiceDetailComponent,
     canActivate: [AuthGuard, roleGuard],
-    data: { roles: ['CUSTOMER'] }
+    data: { roles: ['CUSTOMER'] },
   },
-
 
   {
     path: '',

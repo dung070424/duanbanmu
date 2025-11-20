@@ -6,11 +6,14 @@ import { HoaDonChoService, HoaDonCho, GioHangChoItem } from '../../../services/h
 import { AuthService } from '../../../services/auth';
 import { ColorApiService, ColorResponse } from '../../../services/color-api.service';
 import { SizeApiService, SizeResponse } from '../../../services/size-api.service';
+import { ShopHeaderComponent } from '../shared/shop-header.component';
+import { ShopFooterComponent } from '../shared/shop-footer.component';
+import { ChatbotComponent } from '../chatbot/chatbot.component';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ShopHeaderComponent, ShopFooterComponent, ChatbotComponent],
   templateUrl: './cart.html',
   styleUrls: ['./cart.scss']
 })

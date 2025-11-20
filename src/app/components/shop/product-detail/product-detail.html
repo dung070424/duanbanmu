@@ -1,235 +1,260 @@
 <div class="product-detail-container">
-  <div class="container">
-    <!-- Breadcrumb -->
+  <app-shop-header></app-shop-header>
 
-    <nav class="breadcrumb-nav">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-          <a routerLink="/shop"><i class="fas fa-home"></i> Trang chủ</a>
-        </li>
-        <li class="breadcrumb-item">
-          <a routerLink="/shop"><i class="fas fa-shopping-bag"></i> Sản phẩm</a>
-        </li>
-        <li class="breadcrumb-item active" aria-current="page" *ngIf="product">
-          <i class="fas fa-box"></i> {{ product.tenSanPham }}
-        </li>
-      </ol>
-      <button class="btn-back" (click)="goBack()" type="button">
-        <i class="fas fa-arrow-left"></i> Quay lại
-      </button>
-    </nav>
+  <main class="product-detail-main">
+    <div class="container">
 
-
-    <!-- Product Detail - Hiển thị ngay khi có product, không cần chờ loading -->
-    <div *ngIf="product" class="product-detail">
-      <div class="product-main">
-        <!-- Product Images -->
-        <div class="product-images">
-          <div class="main-image">
-            <img [src]="mainImageUrl" [alt]="product.tenSanPham" />
-          </div>
-          <div class="image-thumbnails" *ngIf="productImages.length > 1">
-            <div
-              *ngFor="let img of productImages; let i = index"
-              class="thumbnail"
-              [class.active]="i === selectedImageIndex"
-              (click)="selectImage(i)"
-            >
-              <img [src]="img" [alt]="product.tenSanPham" />
+      <!-- Product Detail - Hiển thị ngay khi có product, không cần chờ loading -->
+      <div *ngIf="product" class="product-detail">
+        <div class="product-main">
+          <!-- Product Images -->
+          <div class="product-images">
+            <div class="main-image">
+              <img [src]="mainImageUrl" [alt]="product.tenSanPham" />
+            </div>
+            <div class="image-thumbnails" *ngIf="productImages.length > 1">
+              <div
+                *ngFor="let img of productImages; let i = index"
+                class="thumbnail"
+                [class.active]="i === selectedImageIndex"
+                (click)="selectImage(i)"
+              >
+                <img [src]="img" [alt]="product.tenSanPham" />
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Product Info -->
-        <div class="product-info">
-          <h1 class="product-title">{{ product.tenSanPham }}</h1>
+          <!-- Product Info -->
+          <div class="product-info">
+            <h1 class="product-title">{{ product.tenSanPham }}</h1>
 
-          <div class="product-meta">
-            <span class="product-code">Mã SP: {{ product.maSanPham }}</span>
-            <span class="product-status" [class.in-stock]="product.trangThai" [class.out-of-stock]="!product.trangThai">
-              {{ product.trangThai ? 'Còn hàng' : 'Hết hàng' }}
-            </span>
-          </div>
+            <div class="product-meta">
+              <span class="product-code">Mã SP: {{ product.maSanPham }}</span>
+              <span
+                class="product-status"
+                [class.in-stock]="product.trangThai"
+                [class.out-of-stock]="!product.trangThai"
+              >
+                {{ product.trangThai ? 'Còn hàng' : 'Hết hàng' }}
+              </span>
+            </div>
 
-          <div class="product-price">
-            <span class="current-price">{{ formatCurrency(getProductPrice()) }}</span>
-          </div>
+            <div class="product-price">
+              <span class="current-price">{{ formatCurrency(getProductPrice()) }}</span>
+            </div>
 
-          <!-- Product Variants -->
-          <div class="product-variants" *ngIf="productVariants.length > 0">
-            <!-- Color Selection -->
-            <div class="variant-group" *ngIf="hasColorVariants()">
-              <label class="variant-label">Màu sắc:</label>
-              <div class="variant-options">
+            <!-- Product Variants -->
+            <div class="product-variants" *ngIf="productVariants.length > 0">
+              <!-- Color Selection -->
+              <div class="variant-group" *ngIf="hasColorVariants()">
+                <label class="variant-label">Màu sắc:</label>
+                <div class="variant-options">
+                  <button
+                    *ngFor="let variant of getUniqueColors()"
+                    class="variant-btn color-btn"
+                    [class.active]="isSelectedColor(variant)"
+                    [style.background-color]="getColorCode(variant)"
+                    [title]="variant"
+                    (click)="selectColorVariant(variant)"
+                  >
+                    {{ variant }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Size Selection -->
+              <div class="variant-group" *ngIf="hasSizeVariants()">
+                <label class="variant-label">Kích thước:</label>
+                <div class="variant-options">
+                  <button
+                    *ngFor="let variant of getUniqueSizes()"
+                    class="variant-btn size-btn"
+                    [class.active]="isSelectedSize(variant)"
+                    [class.unavailable]="!isSizeAvailable(variant)"
+                    (click)="selectSizeVariant(variant)"
+                  >
+                    {{ variant }}
+                    <span *ngIf="!isSizeAvailable(variant)" class="unavailable-badge">Hết</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Selected Variant Info -->
+              <div class="selected-variant-info" *ngIf="selectedVariant">
+                <p class="stock-info">
+                  <i class="fas fa-box"></i>
+                  Còn lại: <strong>{{ selectedVariant.soLuongTon || 0 }}</strong> sản phẩm
+                </p>
+              </div>
+            </div>
+
+            <!-- Quantity Selection -->
+            <div class="quantity-section">
+              <label class="quantity-label">Số lượng:</label>
+              <div class="quantity-controls">
                 <button
-                  *ngFor="let variant of getUniqueColors()"
-                  class="variant-btn color-btn"
-                  [class.active]="isSelectedColor(variant)"
-                  [style.background-color]="getColorCode(variant)"
-                  [title]="variant"
-                  (click)="selectColorVariant(variant)"
+                  class="quantity-btn"
+                  (click)="decreaseQuantity()"
+                  [disabled]="selectedQuantity <= 1"
                 >
-                  {{ variant }}
+                  <i class="fas fa-minus"></i>
+                </button>
+                <input
+                  type="number"
+                  [value]="selectedQuantity"
+                  min="1"
+                  [max]="getMaxStock()"
+                  (change)="onQuantityChange($event)"
+                  class="quantity-input"
+                />
+                <button
+                  class="quantity-btn"
+                  (click)="increaseQuantity()"
+                  [disabled]="selectedQuantity >= getMaxStock()"
+                >
+                  <i class="fas fa-plus"></i>
                 </button>
               </div>
             </div>
 
-            <!-- Size Selection -->
-            <div class="variant-group" *ngIf="hasSizeVariants()">
-              <label class="variant-label">Kích thước:</label>
-              <div class="variant-options">
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+              <!-- Hiển thị thông báo nếu không có variant -->
+              <div *ngIf="productVariants.length === 0" class="no-variants-message">
+                <i class="fas fa-info-circle"></i>
+                <p>
+                  Sản phẩm chưa có biến thể (màu sắc, kích thước). Vui lòng liên hệ cửa hàng để đặt
+                  hàng.
+                </p>
+              </div>
+
+              <!-- Hiển thị nút khi có variant -->
+              <div *ngIf="productVariants.length > 0">
                 <button
-                  *ngFor="let variant of getUniqueSizes()"
-                  class="variant-btn size-btn"
-                  [class.active]="isSelectedSize(variant)"
-                  [class.unavailable]="!isSizeAvailable(variant)"
-                  (click)="selectSizeVariant(variant)"
+                  class="btn btn-add-cart"
+                  (click)="addToCart()"
+                  [disabled]="
+                    !product.trangThai ||
+                    !selectedVariant ||
+                    (selectedVariant.soLuongTon || 0) === 0
+                  "
                 >
-                  {{ variant }}
-                  <span *ngIf="!isSizeAvailable(variant)" class="unavailable-badge">Hết</span>
+                  <i class="fas fa-shopping-cart"></i>
+                  Thêm vào giỏ hàng
+                </button>
+                <button
+                  class="btn btn-buy-now"
+                  (click)="buyNow()"
+                  [disabled]="
+                    !product.trangThai ||
+                    !selectedVariant ||
+                    (selectedVariant.soLuongTon || 0) === 0
+                  "
+                >
+                  <i class="fas fa-bolt"></i>
+                  Mua ngay
                 </button>
               </div>
             </div>
 
-            <!-- Selected Variant Info -->
-            <div class="selected-variant-info" *ngIf="selectedVariant">
-              <p class="stock-info">
-                <i class="fas fa-box"></i>
-                Còn lại: <strong>{{ selectedVariant.soLuongTon || 0 }}</strong> sản phẩm
-              </p>
-            </div>
-          </div>
-
-          <!-- Quantity Selection -->
-          <div class="quantity-section">
-            <label class="quantity-label">Số lượng:</label>
-            <div class="quantity-controls">
-              <button
-                class="quantity-btn"
-                (click)="decreaseQuantity()"
-                [disabled]="selectedQuantity <= 1"
-              >
-                <i class="fas fa-minus"></i>
-              </button>
-              <input
-                type="number"
-                [value]="selectedQuantity"
-                min="1"
-                [max]="getMaxStock()"
-                (change)="onQuantityChange($event)"
-                class="quantity-input"
-              />
-              <button
-                class="quantity-btn"
-                (click)="increaseQuantity()"
-                [disabled]="selectedQuantity >= getMaxStock()"
-              >
-                <i class="fas fa-plus"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="action-buttons">
-            <!-- Hiển thị thông báo nếu không có variant -->
-            <div *ngIf="productVariants.length === 0" class="no-variants-message">
-              <i class="fas fa-info-circle"></i>
-              <p>Sản phẩm chưa có biến thể (màu sắc, kích thước). Vui lòng liên hệ cửa hàng để đặt hàng.</p>
-            </div>
-
-            <!-- Hiển thị nút khi có variant -->
-            <div *ngIf="productVariants.length > 0">
-              <button
-                class="btn btn-add-cart"
-                (click)="addToCart()"
-                [disabled]="!product.trangThai || !selectedVariant || (selectedVariant.soLuongTon || 0) === 0"
-              >
-                <i class="fas fa-shopping-cart"></i>
-                Thêm vào giỏ hàng
-              </button>
-              <button
-                class="btn btn-buy-now"
-                (click)="buyNow()"
-                [disabled]="!product.trangThai || !selectedVariant || (selectedVariant.soLuongTon || 0) === 0"
-              >
-                <i class="fas fa-bolt"></i>
-                Mua ngay
-              </button>
-            </div>
-          </div>
-
-          <!-- Product Features -->
-          <div class="product-features">
-            <div class="feature-item">
-              <i class="fas fa-truck"></i>
-              <span>Miễn phí vận chuyển</span>
-            </div>
-            <div class="feature-item">
-              <i class="fas fa-undo-alt"></i>
-              <span>Đổi trả trong 7 ngày</span>
-            </div>
-            <div class="feature-item">
-              <i class="fas fa-shield-alt"></i>
-              <span>Bảo hành chính hãng</span>
+            <!-- Product Features -->
+            <div class="product-features">
+              <div class="feature-item">
+                <i class="fas fa-truck"></i>
+                <span>Miễn phí vận chuyển</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-undo-alt"></i>
+                <span>Đổi trả trong 7 ngày</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-shield-alt"></i>
+                <span>Bảo hành chính hãng</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Product Details Tabs -->
-      <div class="product-tabs">
-        <div class="tab-headers">
-          <button class="tab-header active" (click)="activeTab = 'description'">Mô tả sản phẩm</button>
-          <button class="tab-header" (click)="activeTab = 'specifications'">Thông số kỹ thuật</button>
-          <button class="tab-header" (click)="activeTab = 'reviews'">Đánh giá</button>
-        </div>
-
-        <div class="tab-content">
-          <!-- Description Tab -->
-          <div *ngIf="activeTab === 'description'" class="tab-panel">
-            <div class="product-description" [innerHTML]="product.moTa || 'Chưa có mô tả sản phẩm'"></div>
+        <!-- Product Details Tabs -->
+        <div class="product-tabs">
+          <div class="tab-headers">
+            <button class="tab-header active" (click)="activeTab = 'description'">
+              Mô tả sản phẩm
+            </button>
+            <button class="tab-header" (click)="activeTab = 'specifications'">
+              Thông số kỹ thuật
+            </button>
+            <button class="tab-header" (click)="activeTab = 'reviews'">Đánh giá</button>
           </div>
 
-          <!-- Specifications Tab -->
-          <div *ngIf="activeTab === 'specifications'" class="tab-panel">
-            <table class="specifications-table">
-              <tr *ngIf="product.loaiMuBaoHiemTen">
-                <td>Loại mũ:</td>
-                <td><strong>{{ product.loaiMuBaoHiemTen }}</strong></td>
-              </tr>
-              <tr *ngIf="product.nhaSanXuatTen">
-                <td>Nhà sản xuất:</td>
-                <td><strong>{{ product.nhaSanXuatTen }}</strong></td>
-              </tr>
-              <tr *ngIf="product.chatLieuVoTen">
-                <td>Chất liệu vỏ:</td>
-                <td><strong>{{ product.chatLieuVoTen }}</strong></td>
-              </tr>
-              <tr *ngIf="product.trongLuongTen">
-                <td>Trọng lượng:</td>
-                <td><strong>{{ product.trongLuongTen }}</strong></td>
-              </tr>
-              <tr *ngIf="product.xuatXuTen">
-                <td>Xuất xứ:</td>
-                <td><strong>{{ product.xuatXuTen }}</strong></td>
-              </tr>
-              <tr *ngIf="product.kieuDangMuTen">
-                <td>Kiểu dáng:</td>
-                <td><strong>{{ product.kieuDangMuTen }}</strong></td>
-              </tr>
-              <tr *ngIf="product.congNgheAnToanTen">
-                <td>Công nghệ an toàn:</td>
-                <td><strong>{{ product.congNgheAnToanTen }}</strong></td>
-              </tr>
-            </table>
-          </div>
+          <div class="tab-content">
+            <!-- Description Tab -->
+            <div *ngIf="activeTab === 'description'" class="tab-panel">
+              <div
+                class="product-description"
+                [innerHTML]="product.moTa || 'Chưa có mô tả sản phẩm'"
+              ></div>
+            </div>
 
-          <!-- Reviews Tab -->
-          <div *ngIf="activeTab === 'reviews'" class="tab-panel">
-            <p class="no-reviews">Chưa có đánh giá nào cho sản phẩm này.</p>
+            <!-- Specifications Tab -->
+            <div *ngIf="activeTab === 'specifications'" class="tab-panel">
+              <table class="specifications-table">
+                <tr *ngIf="product.loaiMuBaoHiemTen">
+                  <td>Loại mũ:</td>
+                  <td>
+                    <strong>{{ product.loaiMuBaoHiemTen }}</strong>
+                  </td>
+                </tr>
+                <tr *ngIf="product.nhaSanXuatTen">
+                  <td>Nhà sản xuất:</td>
+                  <td>
+                    <strong>{{ product.nhaSanXuatTen }}</strong>
+                  </td>
+                </tr>
+                <tr *ngIf="product.chatLieuVoTen">
+                  <td>Chất liệu vỏ:</td>
+                  <td>
+                    <strong>{{ product.chatLieuVoTen }}</strong>
+                  </td>
+                </tr>
+                <tr *ngIf="product.trongLuongTen">
+                  <td>Trọng lượng:</td>
+                  <td>
+                    <strong>{{ product.trongLuongTen }}</strong>
+                  </td>
+                </tr>
+                <tr *ngIf="product.xuatXuTen">
+                  <td>Xuất xứ:</td>
+                  <td>
+                    <strong>{{ product.xuatXuTen }}</strong>
+                  </td>
+                </tr>
+                <tr *ngIf="product.kieuDangMuTen">
+                  <td>Kiểu dáng:</td>
+                  <td>
+                    <strong>{{ product.kieuDangMuTen }}</strong>
+                  </td>
+                </tr>
+                <tr *ngIf="product.congNgheAnToanTen">
+                  <td>Công nghệ an toàn:</td>
+                  <td>
+                    <strong>{{ product.congNgheAnToanTen }}</strong>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Reviews Tab -->
+            <div *ngIf="activeTab === 'reviews'" class="tab-panel">
+              <p class="no-reviews">Chưa có đánh giá nào cho sản phẩm này.</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </main>
+
+  <app-shop-footer></app-shop-footer>
+
+  <app-chatbot></app-chatbot>
 </div>

@@ -1,0 +1,114 @@
+<div class="products-page">
+  <app-shop-header></app-shop-header>
+
+  <!-- Products Main -->
+  <main class="products-main">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <i class="fas fa-helmet-safety"></i>
+            Bộ sưu tập 2025
+          </div>
+          <h1 class="hero-title">Danh sách sản phẩm</h1>
+          <p class="hero-subtitle">
+            Tất cả model đang có sẵn tại TDK Store. Lọc theo dòng mũ, tìm kiếm bằng tên hoặc mã sản
+            phẩm để chọn nhanh chiếc mũ phù hợp với hành trình của bạn.
+          </p>
+          
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <!-- Filter Section -->
+      <section class="filters-section">
+        <div class="filters-grid">
+          <div class="filter-control search-control">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              [(ngModel)]="searchKeyword"
+              (input)="onSearchChange()"
+              placeholder="Tìm tên hoặc mã sản phẩm..."
+            />
+          </div>
+          <div class="filter-control select-control">
+            <i class="fas fa-layer-group"></i>
+            <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()">
+              <option value="all">Tất cả dòng mũ</option>
+              <option *ngFor="let category of categories" [value]="category.id">
+                {{ category.tenLoai }}
+              </option>
+            </select>
+          </div>
+          <div class="filter-meta">
+            <span *ngIf="!isLoading">{{ filteredProducts.length }} sản phẩm hiển thị</span>
+            <button class="ghost-btn" type="button" (click)="loadProducts()">
+              <i class="fas fa-rotate"></i> Làm mới
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Product Grid -->
+      <section class="products-section">
+        <div class="state-card" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p>Đang tải sản phẩm...</p>
+        </div>
+
+        <div class="state-card" *ngIf="!isLoading && filteredProducts.length === 0">
+          <i class="fas fa-box-open"></i>
+          <p>Không tìm thấy sản phẩm phù hợp</p>
+          <span>Thử đổi từ khóa hoặc chọn dòng mũ khác</span>
+        </div>
+
+        <div class="products-grid" *ngIf="!isLoading && filteredProducts.length > 0">
+          <article
+            class="product-card"
+            *ngFor="let product of filteredProducts; trackBy: trackByProduct"
+            [attr.data-product-id]="product.id"
+            [class.highlight]="product.id === highlightProductId"
+          >
+            <div class="product-image">
+              <img
+                [src]="getProductImageUrl(product)"
+                [alt]="product.tenSanPham"
+                loading="lazy"
+                (error)="onImageError($event)"
+              />
+              <span class="status-badge" [class.out-of-stock]="!product.trangThai">
+                {{ product.trangThai ? 'Còn hàng' : 'Hết hàng' }}
+              </span>
+            </div>
+            <div class="product-body">
+              <div class="product-meta">
+                <span class="product-code">{{ product.maSanPham }}</span>
+                <span class="product-category" *ngIf="product.loaiMuBaoHiemTen">
+                  {{ product.loaiMuBaoHiemTen }}
+                </span>
+              </div>
+              <h3 class="product-title">{{ product.tenSanPham }}</h3>
+              <p class="product-desc">
+                {{ product.moTa || 'Chưa có mô tả chi tiết' }}
+              </p>
+            </div>
+            <div class="product-footer">
+              <span class="product-price">{{ formatCurrency(product.giaBan) }}</span>
+              <button class="btn-primary" type="button" (click)="viewProductDetail(product.id)">
+                Xem chi tiết
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <app-shop-footer></app-shop-footer>
+
+  <!-- Chatbot -->
+  <app-chatbot></app-chatbot>
+</div>

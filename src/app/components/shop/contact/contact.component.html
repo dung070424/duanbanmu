@@ -1,79 +1,24 @@
 <div class="contact-container">
-  <div class="top-bar">
-    <div class="container">
-      <div class="top-bar-content">
-        <div class="top-bar-left">
-          <span class="top-bar-item">
-            <i class="fas fa-envelope"></i>
-            {{ contactInfo.supportEmail }}
-          </span>
-          <span class="top-bar-item">
-            <i class="fas fa-phone"></i>
-            {{ contactInfo.hotline }}
-          </span>
-        </div>
-        <div class="top-bar-right">
-          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
-          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            routerLink="/customer/profile"
-            [title]="customerName || 'Tài khoản'"
-          >
-            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
-          </a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            (click)="logout()"
-            style="cursor: pointer;"
-          >
-            <i class="fas fa-sign-out-alt"></i> Đăng xuất
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <header class="shop-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="logo-section">
-          <a routerLink="/shop" class="logo-link">
-            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
-            <span class="logo-text">TDK Store</span>
-          </a>
-        </div>
-        <nav class="nav-menu">
-          <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
-          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
-          <a routerLink="/shop/products" routerLinkActive="active">Sản phẩm</a>
-          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
-          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
-        </nav>
-        <div class="header-actions">
-          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
+  <app-shop-header></app-shop-header>
 
   <main class="contact-main">
-    <div class="container">
-      <section class="hero-section">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
         <div class="hero-content">
-          <p class="hero-badge">TDK Care</p>
-          <h1>Kết nối trực tiếp với đội ngũ chuyên gia TDK</h1>
+          <div class="hero-badge">
+            <i class="fas fa-headset"></i>
+            TDK Care
+          </div>
+          <h1 class="hero-title">Kết nối trực tiếp với đội ngũ chuyên gia TDK</h1>
           <p class="hero-subtitle">
             Hotline 24/7, showroom trải dài 3 miền cùng hệ thống cố vấn cá nhân cho từng khách hàng.
           </p>
         </div>
-      </section>
+      </div>
+    </section>
 
+    <div class="container">
       <section class="contact-grid">
         <div class="contact-card primary">
           <div class="card-icon">
@@ -106,8 +51,8 @@
       <section class="channels-section">
         <h2>Kênh liên hệ nhanh</h2>
         <div class="channel-list">
-          <button 
-            class="channel-item" 
+          <button
+            class="channel-item"
             *ngFor="let channel of contactInfo.channels"
             type="button"
             (click)="openLink(channel.link || channel.value)"
@@ -148,9 +93,9 @@
         <div class="social-card">
           <h2>Kết nối với TDK</h2>
           <div class="social-links">
-            <button 
-              class="social-link" 
-              type="button" 
+            <button
+              class="social-link"
+              type="button"
               *ngFor="let social of contactInfo.socialLinks"
               (click)="openLink(social.url)"
             >
@@ -178,47 +123,7 @@
     </div>
   </main>
 
-  <footer class="shop-footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h4>Liên hệ</h4>
-          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Quận 11, Tp.HCM</p>
-          <p><i class="fas fa-phone"></i> {{ contactInfo.hotline }}</p>
-          <p><i class="fas fa-envelope"></i> {{ contactInfo.supportEmail }}</p>
-        </div>
-        <div class="footer-section">
-          <h4>Menu</h4>
-          <ul>
-            <li><a routerLink="/shop/about">Giới thiệu</a></li>
-            <li><a routerLink="/shop/products">Cửa hàng</a></li>
-            <li><a routerLink="/shop/news">Tin tức</a></li>
-            <li><a routerLink="/shop/contact">Liên hệ</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Tài khoản</h4>
-          <ul>
-            <li><a routerLink="/customer/profile">My account</a></li>
-            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
-            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Đăng ký</h4>
-          <p>Đăng ký để nhận được thông tin mới nhất từ chúng tôi.</p>
-          <div class="newsletter-form">
-            <input type="email" placeholder="Email của bạn" class="newsletter-input">
-            <button class="newsletter-btn">Đăng ký</button>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; {{ currentYear }} TDK Store. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+  <app-shop-footer></app-shop-footer>
 
   <app-chatbot></app-chatbot>
 </div>
-

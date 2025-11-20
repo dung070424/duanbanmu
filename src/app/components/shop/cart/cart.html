@@ -1,47 +1,40 @@
 <div class="cart-container">
-  <div class="container">
-    <!-- Breadcrumb -->
-    <nav class="breadcrumb-nav">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-          <a routerLink="/shop"><i class="fas fa-home"></i> Trang chủ</a>
-        </li>
-        <li class="breadcrumb-item active" aria-current="page">
-          <i class="fas fa-shopping-cart"></i> Giỏ hàng
-        </li>
-      </ol>
-      <button class="btn-back" (click)="goBack()" type="button">
-        <i class="fas fa-arrow-left"></i> Quay lại
-      </button>
-    </nav>
+  <app-shop-header></app-shop-header>
 
+  <main class="cart-main">
+    <div class="container">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb-nav">
+        <button class="btn-back" (click)="goBack()" type="button">
+          <i class="fas fa-arrow-left"></i> Quay lại
+        </button>
+      </nav>
 
-    <div class="page-header">
-      <h1><i class="fas fa-shopping-cart"></i> Giỏ hàng của bạn</h1>
+      <div class="page-header">
+        <h1><i class="fas fa-shopping-cart"></i> Giỏ hàng của bạn</h1>
+      </div>
 
-    </div>
-
-    <!-- Loading State - Đã tắt để hiển thị dữ liệu ngay -->
-    <!-- <div *ngIf="isLoading" class="loading">
+      <!-- Loading State - Đã tắt để hiển thị dữ liệu ngay -->
+      <!-- <div *ngIf="isLoading" class="loading">
       <div class="spinner"></div>
       <p>Đang tải giỏ hàng...</p>
     </div> -->
 
-    <!-- <div *ngIf="error" class="error-message">
+      <!-- <div *ngIf="error" class="error-message">
       <i class="fas fa-exclamation-circle"></i>
       {{ error }}
     </div>
 
     Login prompt for temp cart -->
-    <!-- <div *ngIf="isTempCart && tempCart.length > 0" class="login-prompt">
+      <!-- <div *ngIf="isTempCart && tempCart.length > 0" class="login-prompt">
       <div class="alert alert-info">
         <i class="fas fa-info-circle"></i>
         <p>Bạn đang xem giỏ hàng tạm. <a routerLink="/shop/login">Đăng nhập</a> để lưu giỏ hàng và tiếp tục mua sắm!</p>
       </div>
     </div> -->
 
-    <!-- Debug info (tạm thời để debug - có thể bật bằng cách xóa display: none) -->
-    <!-- <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; display: block;">
+      <!-- Debug info (tạm thời để debug - có thể bật bằng cách xóa display: none) -->
+      <!-- <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; display: block;">
       <strong>Debug Info:</strong><br>
       isTempCart: {{ isTempCart }}<br>
       tempCart.length: {{ tempCart.length }}<br>
@@ -55,72 +48,77 @@
       <button (click)="forceRefresh()" style="margin-top: 5px; padding: 5px 10px;">Force Refresh</button>
     </div> -->
 
-    <div *ngIf="cartItems.length === 0" class="empty-cart">
-      <i class="fas fa-shopping-cart"></i>
-      <h3>Giỏ hàng của bạn đang trống </h3>
-      <p>Hãy <a routerLink="/shop">mua sắm ngay</a> để thêm sản phẩm vào giỏ hàng!</p>
-    </div>
+      <div *ngIf="cartItems.length === 0" class="empty-cart">
+        <i class="fas fa-shopping-cart"></i>
+        <h3>Giỏ hàng của bạn đang trống</h3>
+        <p>Hãy <a routerLink="/shop">mua sắm ngay</a> để thêm sản phẩm vào giỏ hàng!</p>
+      </div>
 
-    <div *ngIf="cartItems.length > 0" class="cart-content">
-      <div class="cart-items">
-        <table class="cart-table">
-          <thead>
-            <tr>
-              <th>Sản phẩm</th>
-              <th>Giá</th>
-              <th>Số lượng</th>
-              <th>Tổng</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of cartItems" class="cart-item">
-              <td class="product-info">
-                <div class="product-details">
-                  <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.productName || item.tenSanPham" class="product-thumbnail" />
-                  <div>
-                    <h4>{{ item.productName || item.tenSanPham }}</h4>
-                    <p *ngIf="item.mauSac || item.kichThuoc" class="product-variants">
-                      <span *ngIf="item.mauSac">Màu: {{ item.mauSac }}</span>
-                      <span *ngIf="item.kichThuoc">Size: {{ item.kichThuoc }}</span>
-                    </p>
-                    <button type="button" class="btn-detail" (click)="openItemDetail(item)">
-                      <i class="fas fa-eye"></i> Chi tiết
+      <div *ngIf="cartItems.length > 0" class="cart-content">
+        <div class="cart-items">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Tổng</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of cartItems" class="cart-item">
+                <td class="product-info">
+                  <div class="product-details">
+                    <img
+                      *ngIf="item.imageUrl"
+                      [src]="item.imageUrl"
+                      [alt]="item.productName || item.tenSanPham"
+                      class="product-thumbnail"
+                    />
+                    <div>
+                      <h4>{{ item.productName || item.tenSanPham }}</h4>
+                      <p *ngIf="item.mauSac || item.kichThuoc" class="product-variants">
+                        <span *ngIf="item.mauSac">Màu: {{ item.mauSac }}</span>
+                        <span *ngIf="item.kichThuoc">Size: {{ item.kichThuoc }}</span>
+                      </p>
+                      <button type="button" class="btn-detail" (click)="openItemDetail(item)">
+                        <i class="fas fa-eye"></i> Chi tiết
+                      </button>
+                    </div>
+                  </div>
+                </td>
+                <td class="product-price">
+                  {{ formatCurrency(item.price || item.donGia) }}
+                </td>
+                <td class="product-quantity">
+                  <div class="quantity-controls">
+                    <button
+                      class="btn-quantity"
+                      (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) - 1)"
+                      [disabled]="(item.quantity || item.soLuong || 1) <= 1"
+                    >
+                      <i class="fas fa-minus"></i>
+                    </button>
+                    <input
+                      type="number"
+                      [value]="item.quantity || item.soLuong || 1"
+                      min="1"
+                      (change)="updateQuantity(item, +$any($event.target).value)"
+                      class="quantity-input"
+                    />
+                    <button
+                      class="btn-quantity"
+                      (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) + 1)"
+                    >
+                      <i class="fas fa-plus"></i>
                     </button>
                   </div>
-                </div>
-              </td>
-              <td class="product-price">
-                {{ formatCurrency(item.price || item.donGia) }}
-              </td>
-              <td class="product-quantity">
-                <div class="quantity-controls">
-                  <button
-                    class="btn-quantity"
-                    (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) - 1)"
-                    [disabled]="(item.quantity || item.soLuong || 1) <= 1"
-                  >
-                    <i class="fas fa-minus"></i>
-                  </button>
-                  <input
-                    type="number"
-                    [value]="item.quantity || item.soLuong || 1"
-                    min="1"
-                    (change)="updateQuantity(item, +$any($event.target).value)"
-                    class="quantity-input"
-                  />
-                  <button
-                    class="btn-quantity"
-                    (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) + 1)"
-                  >
-                    <i class="fas fa-plus"></i>
-                  </button>
-                </div>
-              </td>
-              <td class="product-total">
-                {{ formatCurrency(item.totalItemPrice || item.thanhTien) }}
-              </td>
-              <!-- <td class="product-actions">
+                </td>
+                <td class="product-total">
+                  {{ formatCurrency(item.totalItemPrice || item.thanhTien) }}
+                </td>
+                <!-- <td class="product-actions">
                 <button
                   class="btn-remove"
                   (click)="removeItem(item)"
@@ -129,39 +127,41 @@
                   <i class="fas fa-trash"></i>
                 </button>
               </td> -->
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-      <div class="cart-summary">
-        <div class="summary-card">
-          <h3>Tóm tắt đơn hàng</h3>
-          <div class="summary-row">
-            <span class="label">Số lượng sản phẩm:</span>
-            <span class="value">{{ getTotalItems() }}</span>
+        <div class="cart-summary">
+          <div class="summary-card">
+            <h3>Tóm tắt đơn hàng</h3>
+            <div class="summary-row">
+              <span class="label">Số lượng sản phẩm:</span>
+              <span class="value">{{ getTotalItems() }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">Tổng phụ:</span>
+              <span class="value">{{ formatCurrency(getSubtotal()) }}</span>
+            </div>
+            <div class="summary-row total">
+              <span class="label">Tổng cộng:</span>
+              <span class="value">{{ formatCurrency(getTotal()) }}</span>
+            </div>
+            <button class="btn-checkout" (click)="proceedToCheckout()">
+              <i class="fas fa-credit-card"></i> Tiến hành thanh toán
+            </button>
+            <a routerLink="/shop" class="btn-continue">
+              <i class="fas fa-arrow-left"></i> Tiếp tục mua sắm
+            </a>
           </div>
-          <div class="summary-row">
-            <span class="label">Tổng phụ:</span>
-            <span class="value">{{ formatCurrency(getSubtotal()) }}</span>
-          </div>
-          <div class="summary-row total">
-            <span class="label">Tổng cộng:</span>
-            <span class="value">{{ formatCurrency(getTotal()) }}</span>
-          </div>
-          <button
-            class="btn-checkout"
-            (click)="proceedToCheckout()"
-          >
-            <i class="fas fa-credit-card"></i> Tiến hành thanh toán
-          </button>
-          <a routerLink="/shop" class="btn-continue">
-            <i class="fas fa-arrow-left"></i> Tiếp tục mua sắm
-          </a>
         </div>
       </div>
     </div>
-  </div>
+  </main>
+
+  <app-shop-footer></app-shop-footer>
+
+  <app-chatbot></app-chatbot>
 </div>
 
 <div class="cart-item-detail" *ngIf="showItemDetail && selectedItem">
@@ -171,7 +171,9 @@
       <div>
         <p class="detail-label">Sản phẩm</p>
         <h3>{{ selectedItem.productName || selectedItem.tenSanPham }}</h3>
-        <p class="detail-meta">Mã chi tiết: #{{ selectedItem.chiTietSanPhamId || selectedItem.productId }}</p>
+        <p class="detail-meta">
+          Mã chi tiết: #{{ selectedItem.chiTietSanPhamId || selectedItem.productId }}
+        </p>
       </div>
       <button class="btn-close" (click)="closeItemDetail()">
         <i class="fas fa-times"></i>
@@ -186,13 +188,11 @@
       <div class="detail-row quantity-row">
         <label>Số lượng</label>
         <div class="quantity-controls">
-          <button class="btn-quantity"
-            (click)="decreaseDetailQuantity()">
+          <button class="btn-quantity" (click)="decreaseDetailQuantity()">
             <i class="fas fa-minus"></i>
           </button>
           <input type="number" min="1" [(ngModel)]="detailQuantity" />
-          <button class="btn-quantity"
-            (click)="increaseDetailQuantity()">
+          <button class="btn-quantity" (click)="increaseDetailQuantity()">
             <i class="fas fa-plus"></i>
           </button>
         </div>
@@ -217,7 +217,9 @@
       </div>
       <div class="detail-row">
         <label>Tổng tạm tính</label>
-        <strong>{{ formatCurrency((selectedItem.price || selectedItem.donGia) * detailQuantity) }}</strong>
+        <strong>{{
+          formatCurrency((selectedItem.price || selectedItem.donGia) * detailQuantity)
+        }}</strong>
       </div>
     </div>
 

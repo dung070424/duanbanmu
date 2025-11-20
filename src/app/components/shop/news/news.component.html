@@ -1,102 +1,42 @@
 <div class="news-container">
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="container">
-      <div class="top-bar-content">
-        <div class="top-bar-left">
-          <span class="top-bar-item">
-            <i class="fas fa-envelope"></i>
-            contact@tdkstore.com
-          </span>
-          <span class="top-bar-item">
-            <i class="fas fa-phone"></i>
-            1900 636 648
-          </span>
-        </div>
-        <div class="top-bar-right">
-          <a routerLink="/shop/login" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
-          <a routerLink="/shop/register" class="top-bar-link" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            routerLink="/customer/profile"
-            [title]="customerName || 'Tài khoản'"
-          >
-            <i class="fas fa-user"></i> {{ customerName || 'Tài khoản' }}
-          </a>
-          <a 
-            class="top-bar-link" 
-            *ngIf="authService.isLoggedIn()"
-            (click)="logout()"
-            style="cursor: pointer;"
-          >
-            <i class="fas fa-sign-out-alt"></i> Đăng xuất
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Header -->
-  <header class="shop-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="logo-section">
-          <a routerLink="/shop" class="logo-link">
-            <img src="/z7063456867854_195cc272faa6f958e404079bf5042ae7.jpg" alt="TDK Store" class="logo-img">
-            <span class="logo-text">TDK Store</span>
-          </a>
-        </div>
-        <nav class="nav-menu">
-          <a routerLink="/shop" routerLinkActive="active">Trang chủ</a>
-          <a routerLink="/shop/about" routerLinkActive="active">Giới thiệu</a>
-          <a routerLink="/shop/products" routerLinkActive="active" class="has-dropdown">
-            Sản phẩm
-            <i class="fas fa-chevron-down"></i>
-            <div class="dropdown-menu">
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-3-4'}">Nón 3/4</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-full-face'}">Nón Full Face</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-lat-cam'}">Nón lật cằm</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-tre-em'}">Nón trẻ em</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'non-carbon'}">Nón Carbon</a>
-              <a routerLink="/shop/products" [queryParams]="{category: 'phu-kien'}">Phụ kiện</a>
-            </div>
-          </a>
-          <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
-          <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
-        </nav>
-        <div class="header-actions">
-          <button class="icon-btn cart-link" (click)="goToCart()" type="button">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="cart-badge" *ngIf="cartCount > 0">{{ cartCount }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
+  <app-shop-header></app-shop-header>
 
   <!-- News Content -->
   <main class="news-main">
-    <div class="container">
-      <!-- Hero Section -->
-      <section class="hero-section">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
         <div class="hero-content">
-          <h1 class="hero-title"><i class="fas fa-newspaper"></i> Tin tức & Cập nhật</h1>
-          <p class="hero-subtitle">Cập nhật những tin tức mới nhất về mũ bảo hiểm, an toàn giao thông và các sản phẩm mới</p>
+          <div class="hero-badge">
+            <i class="fas fa-newspaper"></i>
+            Tin tức & Blog
+          </div>
+          <h1 class="hero-title">Tin tức & Cập nhật</h1>
+          <p class="hero-subtitle">
+            Cập nhật những tin tức mới nhất về mũ bảo hiểm, an toàn giao thông, kinh nghiệm sử dụng và các sản phẩm mới từ TDK Store
+          </p>
         </div>
-      </section>
+      </div>
+    </section>
 
+    <div class="container">
       <!-- News Grid -->
       <section class="news-section">
         <div class="news-grid">
           <article *ngFor="let news of newsItems" class="news-card">
             <div class="news-image">
-              <img [src]="news.imageUrl || 'https://via.placeholder.com/400x250?text=News'" [alt]="news.title">
+              <img
+                [src]="news.imageUrl || 'https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85'"
+                [alt]="news.title"
+                (error)="onImageError($event)"
+              />
               <div class="news-category">{{ news.category }}</div>
             </div>
             <div class="news-content">
               <div class="news-meta">
-                <span class="news-date"><i class="fas fa-calendar"></i> {{ formatDate(news.publishedAt) }}</span>
+                <span class="news-date"
+                  ><i class="fas fa-calendar"></i> {{ formatDate(news.publishedAt) }}</span
+                >
                 <span class="news-category-badge">{{ news.category }}</span>
               </div>
               <h2 class="news-title">{{ news.title }}</h2>
@@ -111,59 +51,8 @@
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="shop-footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h4>Liên hệ</h4>
-          <p><i class="fas fa-map-marker-alt"></i> 319 C16 Lý Thường Kiệt, Phường 15, Quận 11, Tp.HCM</p>
-          <p><i class="fas fa-phone"></i> 076 922 0162</p>
-          <p><i class="fas fa-envelope"></i> contact@tdkstore.com</p>
-          <p><i class="fas fa-envelope"></i> mon@mona.media</p>
-        </div>
-        <div class="footer-section">
-          <h4>Menu</h4>
-          <ul>
-            <li><a routerLink="/shop/about">Giới thiệu</a></li>
-            <li><a routerLink="/shop/products">Cửa hàng</a></li>
-            <li><a routerLink="/shop/news">Tin tức</a></li>
-            <li><a routerLink="/shop/contact">Liên hệ</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Tài khoản</h4>
-          <ul>
-            <li><a routerLink="/customer/profile">My account</a></li>
-            <li><a routerLink="/customer/orders">Kiểm tra đơn hàng</a></li>
-            <li><a routerLink="/shop/cart">Giỏ hàng</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Dịch vụ</h4>
-          <ul>
-            <li><a routerLink="/shop/about">Giới thiệu</a></li>
-            <li><a routerLink="/shop/products">Cửa hàng</a></li>
-            <li><a routerLink="/shop/news">Tin tức</a></li>
-            <li><a routerLink="/shop/contact">Liên hệ</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Đăng ký</h4>
-          <p>Đăng ký để nhận được thông tin mới nhất từ chúng tôi.</p>
-          <div class="newsletter-form">
-            <input type="email" placeholder="Email của bạn" class="newsletter-input">
-            <button class="newsletter-btn">Đăng ký</button>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; Bản quyền thuộc về TDK Store. Thiết kế website MonaMedia <strong>Mona Media</strong></p>
-      </div>
-    </div>
-  </footer>
+  <app-shop-footer></app-shop-footer>
 
   <!-- Chatbot Widget -->
   <app-chatbot></app-chatbot>
 </div>
-
