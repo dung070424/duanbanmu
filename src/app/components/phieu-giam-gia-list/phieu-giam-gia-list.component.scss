@@ -940,6 +940,13 @@
               color: #495057;
               margin-bottom: 8px;
               font-size: 14px;
+              
+              // Làm mờ label khi trường bị disabled
+              &:has(+ .form-control.disabled-input),
+              &:has(+ .form-control:disabled) {
+                opacity: 0.7;
+                color: #6c757d;
+              }
             }
 
             .form-control {
@@ -965,7 +972,8 @@
               }
 
               // Disabled input style - Mã phiếu không thể chỉnh sửa
-              &.disabled-input {
+              &.disabled-input,
+              &:disabled {
                 background-color: #e9ecef !important;
                 color: #6c757d !important;
                 cursor: not-allowed !important;
