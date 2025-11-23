@@ -1,0 +1,101 @@
+<div class="shift-management-container">
+  <div class="container-fluid">
+    <div class="page-header">
+      <h2 class="page-title">
+        LỊCH LÀM VIỆC CHO NHÂN VIÊN 
+        <span class="week-selector" (click)="toggleWeekDropdown()">
+          TUẦN {{ selectedWeek }}
+          <i class="bi bi-chevron-down"></i>
+        </span>
+        <span class="week-date-range">{{ getWeekDateRange() }}</span>
+        <div class="week-dropdown" *ngIf="showWeekDropdown">
+          <div class="week-dropdown-header">
+            <label>Chọn tuần:</label>
+          </div>
+          <div class="week-dropdown-list">
+            <div 
+              *ngFor="let week of getAvailableWeeks()" 
+              class="week-option"
+              [class.active]="week === selectedWeek"
+              (click)="onWeekChange(week)">
+              Tuần {{ week }}
+            </div>
+          </div>
+        </div>
+      </h2>
+    </div>
+
+    <div class="content-section">
+      <div class="row g-4">
+        <!-- Bảng lịch làm việc -->
+        <div class="col-12">
+          <div class="card schedule-card">
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table schedule-table">
+                  <thead>
+                    <tr>
+                      <th class="stt-col">STT</th>
+                      <th class="msnv-col">MSNV</th>
+                      <th class="name-col">Tên Nhân Viên</th>
+                      <th class="gender-col">Giới Tính</th>
+                      <th class="position-col">Vị trí làm việc</th>
+                      <th *ngFor="let day of weekDays" class="day-col">{{ day }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let employee of employeeSchedules">
+                      <td class="stt-col">{{ employee.stt }}</td>
+                      <td class="msnv-col">{{ employee.maNhanVien }}</td>
+                      <td class="name-col">{{ employee.tenNhanVien }}</td>
+                      <td class="gender-col">{{ employee.gioiTinh }}</td>
+                      <td class="position-col">{{ employee.viTriLamViec }}</td>
+                      <td *ngFor="let day of weekDays" class="day-col shift-cell" [ngClass]="getShiftColorClass(employee.shifts[day])">
+                        <select 
+                          class="shift-select" 
+                          [value]="employee.shifts[day] || ''"
+                          (change)="onShiftChange(employee, day, $any($event.target).value ? +$any($event.target).value : null)">
+                          <option value="">--</option>
+                          <option *ngFor="let shift of shiftTypes" [value]="shift.id">
+                            {{ shift.id }}
+                          </option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng chú giải ca làm việc -->
+        <div class="col-12 col-md-6">
+          <div class="card legend-card">
+            <div class="card-header">
+              <h5>Giờ Làm Việc</h5>
+            </div>
+            <div class="card-body">
+              <table class="table legend-table">
+                <thead>
+                  <tr>
+                    <th>Ca</th>
+                    <th>Giờ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let shift of shiftTypes">
+                    <td [ngClass]="shift.color">{{ shift.tenCa }}</td>
+                    <td>{{ shift.gio }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

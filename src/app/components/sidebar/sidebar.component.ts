@@ -191,6 +191,16 @@ export class SidebarComponent implements OnInit {
         },
       ],
     },
+    {
+      icon: 'bi-clock-history',
+      label: 'Quản lý Ca Làm',
+      route: '/shift-management',
+      active: false,
+      hasSubmenu: false,
+      isExpanded: false,
+      submenu: [],
+      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
+    },
   ];
 
   constructor(private router: Router, private authService: AuthService) {}

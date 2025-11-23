@@ -1,0 +1,529 @@
+.shift-management-container {
+  padding: 2rem;
+  
+  .page-header {
+    margin-bottom: 2rem;
+    position: relative;
+    
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f232e;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      
+      .week-selector {
+        color: #000000;
+        font-size: 1rem;
+        cursor: pointer;
+        user-select: none;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        position: relative;
+        
+        &:hover {
+          background-color: #f0f0f0;
+          color: #000000;
+        }
+        
+        i {
+          font-size: 0.75rem;
+          transition: transform 0.2s ease;
+          color: #000000;
+        }
+        
+        &.active i,
+        &:hover i {
+          transform: rotate(180deg);
+        }
+      }
+      
+      .week-date-range {
+        color: #6c757d;
+        font-size: 1rem;
+        font-weight: 400;
+        margin-left: 0.5rem;
+      }
+      
+      .week-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 0.5rem;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        min-width: 200px;
+        max-height: 300px;
+        overflow-y: auto;
+        
+        .week-dropdown-header {
+          padding: 0.75rem 1rem;
+          border-bottom: 1px solid #e9ecef;
+          background-color: #f8f9fa;
+          
+          label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            margin: 0;
+          }
+        }
+        
+        .week-dropdown-list {
+          padding: 0.5rem 0;
+          
+          .week-option {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            color: #495057;
+            
+            &:hover {
+              background-color: #f8f9fa;
+              color: #0d6efd;
+            }
+            
+            &.active {
+              background-color: #e7f1ff;
+              color: #0a58ca;
+              font-weight: 600;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .content-section {
+    .card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      .card-body {
+        padding: 1.5rem;
+      }
+    }
+
+    .schedule-card {
+      .card-body {
+        padding: 1rem;
+      }
+    }
+
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0;
+      font-size: 0.9rem;
+
+      thead {
+        background-color: #f8f9fa;
+        
+        th {
+          font-weight: 600;
+          padding: 0.75rem 0.5rem;
+          text-align: center;
+          border: 1px solid #dee2e6;
+          background-color: #f8f9fa;
+          color: #495057;
+          font-size: 0.85rem;
+          
+          &.stt-col {
+            width: 50px;
+          }
+          
+          &.msnv-col {
+            width: 100px;
+          }
+          
+          &.name-col {
+            width: 180px;
+            text-align: left;
+          }
+          
+          &.gender-col {
+            width: 80px;
+          }
+          
+          &.position-col {
+            width: 150px;
+            text-align: left;
+          }
+          
+          &.day-col {
+            width: 100px;
+          }
+        }
+      }
+
+      tbody {
+        tr {
+          &:hover {
+            background-color: #f8f9fa;
+          }
+          
+          td {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            text-align: center;
+            vertical-align: middle;
+            
+            &.stt-col {
+              font-weight: 600;
+            }
+            
+            &.msnv-col {
+              font-weight: 600;
+              color: #495057;
+            }
+            
+            &.name-col {
+              text-align: left;
+            }
+            
+            &.position-col {
+              text-align: left;
+            }
+            
+            &.shift-cell {
+              position: relative;
+              padding: 0.25rem;
+              
+              .shift-select {
+                width: 100%;
+                border: none;
+                background: transparent;
+                text-align: center;
+                font-weight: 600;
+                font-size: 0.95rem;
+                cursor: pointer;
+                padding: 0.35rem 1.5rem 0.35rem 0.5rem;
+                appearance: none;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 0.5rem center;
+                transition: all 0.2s ease;
+                
+                &:hover {
+                  background-color: rgba(255, 255, 255, 0.3);
+                }
+                
+                &:focus {
+                  outline: 2px solid #0d6efd;
+                  outline-offset: -2px;
+                  background-color: rgba(255, 255, 255, 0.5);
+                }
+                
+                option {
+                  background-color: white;
+                  color: #333;
+                  padding: 0.5rem;
+                }
+              }
+              
+              // Màu sắc cho các ca làm việc
+              &.shift-1 {
+                background-color: #e8d5b7; // Light brown
+                
+                .shift-select {
+                  color: #8b6914;
+                  
+                  &:hover {
+                    background-color: rgba(255, 255, 255, 0.4);
+                  }
+                }
+              }
+              
+              &.shift-2 {
+                background-color: #f4d4a6; // Light orange/brown
+                
+                .shift-select {
+                  color: #b8860b;
+                  
+                  &:hover {
+                    background-color: rgba(255, 255, 255, 0.4);
+                  }
+                }
+              }
+              
+              &.shift-3 {
+                background-color: #b8d4e3; // Light blue
+                
+                .shift-select {
+                  color: #1e5f8f;
+                  
+                  &:hover {
+                    background-color: rgba(255, 255, 255, 0.4);
+                  }
+                }
+              }
+              
+              &.shift-4 {
+                background-color: #c8e6c9; // Light green
+                
+                .shift-select {
+                  color: #2e7d32;
+                  
+                  &:hover {
+                    background-color: rgba(255, 255, 255, 0.4);
+                  }
+                }
+              }
+              
+              // Cell không có ca (trống)
+              &:not(.shift-1):not(.shift-2):not(.shift-3):not(.shift-4) {
+                background-color: #ffffff;
+                
+                .shift-select {
+                  color: #6c757d;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .legend-card {
+      .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0.75rem 1rem;
+        
+        h5 {
+          margin: 0;
+          font-size: 1rem;
+          font-weight: 600;
+          color: #495057;
+        }
+      }
+      
+      .legend-table {
+        margin-bottom: 0;
+        font-size: 0.9rem;
+        
+        thead {
+          background-color: #f8f9fa;
+          
+          th {
+            font-weight: 600;
+            padding: 0.5rem;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            font-size: 0.85rem;
+          }
+        }
+        
+        tbody {
+          tr {
+            td {
+              padding: 0.5rem;
+              border: 1px solid #dee2e6;
+              text-align: center;
+              
+              &:first-child {
+                font-weight: 600;
+                width: 80px;
+              }
+              
+              // Màu sắc cho các ca trong bảng chú giải
+              &.shift-1 {
+                background-color: #e8d5b7; // Light brown
+                color: #8b6914;
+              }
+              
+              &.shift-2 {
+                background-color: #f4d4a6; // Light orange/brown
+                color: #b8860b;
+              }
+              
+              &.shift-3 {
+                background-color: #b8d4e3; // Light blue
+                color: #1e5f8f;
+              }
+              
+              &.shift-4 {
+                background-color: #c8e6c9; // Light green
+                color: #2e7d32;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .filter-card {
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e6e6e6;
+      }
+
+      .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+
+        label {
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          color: #4f5464;
+        }
+
+        .form-control,
+        .form-select {
+          border-radius: 6px;
+        }
+      }
+
+      .filter-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        width: 100%;
+        gap: 0.75rem;
+
+        button {
+          min-width: 160px;
+        }
+      }
+
+      .btn-action {
+        background-color: #febc49;
+        border-color: #febc49;
+        color: #1f232e;
+        font-weight: 600;
+
+        &:hover,
+        &:focus {
+          background-color: #f7a927;
+          border-color: #f7a927;
+          color: #1f232e;
+        }
+      }
+    }
+
+    .shift-card {
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #fafbff;
+        border-bottom: 1px solid #f0f0f0;
+
+        h5 {
+          margin-bottom: 0.25rem;
+          font-weight: 600;
+        }
+
+        .badge-count {
+          font-size: 0.85rem;
+          padding: 0.35rem 0.75rem;
+          background-color: #f1f4ff;
+          color: #1e3a8a;
+          border-radius: 999px;
+          font-weight: 600;
+        }
+      }
+
+      .table {
+        margin-bottom: 0;
+
+        thead {
+          background-color: #f8f9fb;
+
+          th {
+            font-weight: 600;
+            color: #5c5f6d;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+          }
+        }
+
+        tbody tr {
+          transition: background 0.2s ease;
+
+          &:hover {
+            background-color: #f5f9ff;
+          }
+        }
+      }
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: capitalize;
+
+      &.status-pending {
+        background-color: #fff4e6;
+        color: #c77800;
+      }
+
+      &.status-confirmed {
+        background-color: #e7f1ff;
+        color: #0b63ce;
+      }
+
+      &.status-success {
+        background-color: #e2f6e9;
+        color: #1e7b4f;
+      }
+
+      &.status-warning {
+        background-color: #fdecec;
+        color: #c43d3d;
+      }
+
+      &.status-default {
+        background-color: #f1f2f6;
+        color: #5b6070;
+      }
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 1rem;
+      color: #8c92a3;
+      border: 1px dashed #d1d4de;
+      border-radius: 12px;
+      background-color: #fafbff;
+
+      i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+    }
+  }
+}
+
+

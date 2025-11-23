@@ -46,6 +46,7 @@ import { AboutComponent } from './components/shop/about/about.component';
 import { NewsComponent } from './components/shop/news/news.component';
 import { ContactComponent } from './components/shop/contact/contact.component';
 import { CategoriesComponent } from './components/shop/categories/categories';
+import { ShiftManagementComponent } from './components/shift-management/shift-management';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -162,6 +163,12 @@ export const routes: Routes = [
     path: 'phieu-giam-gia-form',
     component: PhieuGiamGiaFormComponent,
     canActivate: [AuthGuard],
+  },
+  {
+    path: 'shift-management',
+    component: ShiftManagementComponent,
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN', 'STAFF'] },
   },
   {
     path: 'products/helmets',
