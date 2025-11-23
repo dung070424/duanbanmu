@@ -46,6 +46,7 @@ import { AboutComponent } from './components/shop/about/about.component';
 import { NewsComponent } from './components/shop/news/news.component';
 import { ContactComponent } from './components/shop/contact/contact.component';
 import { ShopProductsComponent } from './components/shop/products/products.component';
+import { CaLamManagementComponent } from './components/ca-lam-management/ca-lam-management.component';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -241,6 +242,12 @@ export const routes: Routes = [
     path: 'staff',
     component: StaffManagementComponent,
     canActivate: [AuthGuard],
+  },
+  {
+    path: 'ca-lam',
+    component: CaLamManagementComponent,
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
 
   { path: '**', redirectTo: '/dashboard' },
