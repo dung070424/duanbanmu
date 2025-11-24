@@ -3,10 +3,11 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { ProductApiService, SanPhamResponse } from '../../services/product-api.service';
+import { ProductApiService } from '../../services/product-api.service';
 import {
   ChiTietSanPhamApiService,
   ChiTietSanPhamResponse,
+  ChiTietSanPhamRequest,
 } from '../../services/chi-tiet-san-pham-api.service';
 import { KhachHangService } from '../../services/khach-hang.service';
 import { HoaDonService } from '../../services/hoa-don.service';
@@ -23,7 +24,13 @@ import districtsData from 'sub-vn/json_data/districts.json';
 import wardsData from 'sub-vn/json_data/wards.json';
 import { DiaChiKhachHangService } from '../../services/dia-chi-khach-hang.service';
 
-type UICartItem = CartItem & { imageUrl?: string; gioHangChoId?: number };
+type UICartItem = CartItem & {
+  imageUrl?: string;
+  gioHangChoId?: number;
+  colorLabel?: string;
+  colorCode?: string;
+  sizeLabel?: string;
+};
 
 @Component({
   selector: 'app-counter-sales',
@@ -45,7 +52,7 @@ export class CounterSalesComponent implements OnInit {
   cartTotal: number = 0;
   cartSubtotal: number = 0;
   cartDiscount: number = 0;
-  cartTax: number = 10;
+  cartTax: number = 0;
   cartTaxAmount: number = 0;
   couponDiscount: number = 0;
   // Cash received from customer at checkout
@@ -175,7 +182,7 @@ export class CounterSalesComponent implements OnInit {
     subtotal: 0,
     discount: 0,
     discountAmount: 0,
-    tax: 10,
+    tax: 0,
     taxAmount: 0,
     totalAmount: 0,
     paymentMethod: 'cash',
@@ -213,6 +220,7 @@ export class CounterSalesComponent implements OnInit {
   chiTietImageUrl: { [chiTietSanPhamId: number]: string } = {};
   productOrderMap: Map<number, number> = new Map(); // Map to preserve product order: productId -> originalIndex
   productOriginalStock: Record<number, number> = {};
+  variantRawMap: Record<number, any> = {};
 
   private parsePrice(value: any): number {
     if (typeof value === 'number' && isFinite(value)) return value;
@@ -221,6 +229,12 @@ export class CounterSalesComponent implements OnInit {
       return digits ? Number(digits) : 0;
     }
     return 0;
+  }
+
+  private normalizeNumber(value: any): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
   }
 
   // Helper method to get image URL from chiTietSanPhamId
@@ -309,6 +323,204 @@ export class CounterSalesComponent implements OnInit {
     this.refreshVoucherSuggestions();
     this.loadPendingInvoices();
     this.loadProvinces();
+  }
+
+  private getVariantMeta(chiTietSanPhamId: number): {
+    colorLabel?: string;
+    colorCode?: string;
+    sizeLabel?: string;
+  } {
+    const variant =
+      this.availableProducts.find((p) => p.id === chiTietSanPhamId) ||
+      this.pagedProducts.find((p) => p.id === chiTietSanPhamId);
+    if (variant) {
+      return {
+        colorLabel: variant.colorName || variant.color || '',
+        colorCode: variant.colorCode || variant.color || '',
+        sizeLabel: variant.ram || variant.size || '',
+      };
+    }
+    const raw = this.variantRawMap[chiTietSanPhamId];
+    if (raw) {
+      return {
+        colorLabel: raw.mauSacTen || raw.mau_sac_ten || '',
+        colorCode: raw.mauSacMa || raw.mau_sac_ma || '',
+        sizeLabel: raw.kichThuocTen || raw.kich_thuoc_ten || '',
+      };
+    }
+    return { colorLabel: '', colorCode: '', sizeLabel: '' };
+  }
+
+  private mapCartItemFromPending(item: GioHangChoItem): UICartItem {
+    const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
+    const variantMeta = this.getVariantMeta(item.chiTietSanPhamId);
+    return {
+      productId: item.chiTietSanPhamId,
+      productCode: '',
+      productName: item.tenSanPham || '',
+      category: '',
+      quantity: item.soLuong,
+      unitPrice: item.donGia,
+      totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
+      discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
+      discountAmount: item.giamGia || 0,
+      stockQuantity: 0,
+      imageUrl,
+      gioHangChoId: item.id,
+      colorLabel: item.mauSac || variantMeta.colorLabel || '',
+      colorCode: variantMeta.colorCode || '',
+      sizeLabel: item.kichThuoc || variantMeta.sizeLabel || '',
+    };
+  }
+
+  private getVariantStock(variantId: number): number {
+    if (!variantId) return 0;
+    const variant =
+      this.availableProducts.find((p) => p.id === variantId) ||
+      this.pagedProducts.find((p) => p.id === variantId);
+    if (variant) {
+      return Number(variant.stock ?? 0);
+    }
+    const raw = this.variantRawMap[variantId];
+    if (raw) {
+      return Number(raw.soLuongTon ?? raw.so_luong_ton ?? 0);
+    }
+    return 0;
+  }
+
+  private adjustVariantStock(variantId: number, delta: number): void {
+    if (!variantId || delta === 0) {
+      return;
+    }
+    // Lưu stock ban đầu trước khi cập nhật local
+    const originalStockBeforeUpdate =
+      this.productOriginalStock[variantId] ??
+      this.availableProducts.find((p) => p?.id === variantId)?.stock ??
+      0;
+    this.updateLocalVariantStock(variantId, delta);
+    // Tính stock mới từ stock ban đầu + delta
+    const newStock = Math.max(0, Number(originalStockBeforeUpdate) + delta);
+    this.updateVariantStockInDb(variantId, newStock);
+  }
+
+  private updateLocalVariantStock(variantId: number, delta: number): void {
+    const apply = (list?: any[]) => {
+      if (!Array.isArray(list)) return;
+      const product = list.find((p) => p?.id === variantId);
+      if (product) {
+        const nextStock = Math.max(0, Number(product.stock ?? 0) + delta);
+        product.stock = nextStock;
+      }
+    };
+    apply(this.availableProducts);
+    apply(this.filteredProducts);
+    apply(this.pagedProducts);
+
+    const current = Number(this.productOriginalStock[variantId] ?? 0);
+    this.productOriginalStock[variantId] = Math.max(0, current + delta);
+
+    const raw = this.variantRawMap[variantId];
+    if (raw) {
+      const newRawStock = Math.max(0, Number(raw.soLuongTon ?? raw.so_luong_ton ?? 0) + delta);
+      raw.soLuongTon = newRawStock;
+      raw.so_luong_ton = newRawStock;
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  private updateVariantStockInDb(variantId: number, newStock: number): void {
+    const raw = this.variantRawMap[variantId];
+    if (raw) {
+      this.performVariantStockUpdate(raw, variantId, newStock);
+      return;
+    }
+
+    this.chiTietApi.getById(variantId).subscribe({
+      next: (detail) => {
+        const normalized = (detail as any)?.data || detail;
+        if (normalized) {
+          this.variantRawMap[variantId] = normalized;
+          this.performVariantStockUpdate(normalized, variantId, newStock);
+        }
+      },
+      error: (error) => {
+        console.error('Không thể lấy chi tiết sản phẩm để cập nhật tồn kho', error);
+      },
+    });
+  }
+
+  private performVariantStockUpdate(detail: any, variantId: number, newStock: number): void {
+    // newStock đã được tính từ stock ban đầu + delta, không cần tính lại
+
+    const sanPhamId = this.normalizeNumber(detail?.sanPhamId ?? detail?.san_pham_id);
+    const kichThuocId = this.normalizeNumber(detail?.kichThuocId ?? detail?.kich_thuoc_id);
+    const mauSacId = this.normalizeNumber(detail?.mauSacId ?? detail?.mau_sac_id);
+
+    if (!sanPhamId || !kichThuocId || !mauSacId) {
+      console.warn('Thiếu thông tin để cập nhật tồn kho cho biến thể', detail);
+      return;
+    }
+
+    const payload: ChiTietSanPhamRequest = {
+      sanPhamId,
+      kichThuocId,
+      mauSacId,
+      trongLuongId: this.normalizeNumber(detail?.trongLuongId ?? detail?.trong_luong_id),
+      trongLuongTen: detail?.trongLuongTen ?? detail?.trong_luong_ten ?? null,
+      giaBan: String(detail?.giaBan ?? detail?.gia_ban ?? '0'),
+      soLuongTon: String(newStock),
+      trangThai: detail?.trangThai !== false,
+      anhSanPham: detail?.anhSanPham ?? detail?.anh_san_pham ?? null,
+    };
+
+    this.chiTietApi.update(variantId, payload).subscribe({
+      next: () => {
+        // Sau khi cập nhật DB thành công, reload lại stock từ DB để đồng bộ
+        this.reloadVariantStockFromDb(variantId);
+      },
+      error: (error) => {
+        console.error('Cập nhật tồn kho thất bại', error);
+        // Nếu cập nhật thất bại, reload lại từ DB để đảm bảo đồng bộ
+        this.reloadVariantStockFromDb(variantId);
+      },
+    });
+  }
+
+  private reloadVariantStockFromDb(variantId: number): void {
+    // Reload stock từ DB để đảm bảo đồng bộ với trang quản lý sản phẩm
+    this.chiTietApi.getById(variantId).subscribe({
+      next: (response) => {
+        const detail = (response as any)?.data || response;
+        if (!detail) return;
+
+        const dbStock = Number(detail?.soLuongTon ?? detail?.so_luong_ton ?? 0);
+
+        // Cập nhật variantRawMap với dữ liệu mới từ DB
+        this.variantRawMap[variantId] = { ...detail };
+
+        // Cập nhật productOriginalStock với stock mới từ DB
+        this.productOriginalStock[variantId] = dbStock;
+
+        // Cập nhật stock trong các danh sách local
+        const updateStockInList = (list?: any[]) => {
+          if (!Array.isArray(list)) return;
+          const product = list.find((p) => p?.id === variantId);
+          if (product) {
+            product.stock = dbStock;
+          }
+        };
+
+        updateStockInList(this.availableProducts);
+        updateStockInList(this.filteredProducts);
+        updateStockInList(this.pagedProducts);
+
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Không thể reload stock từ DB', error);
+      },
+    });
   }
 
   isPayButtonDisabled(): boolean {
@@ -425,6 +637,7 @@ export class CounterSalesComponent implements OnInit {
         const raw = Array.isArray(rows) ? rows : rows?.data || rows?.content || [];
         this.chiTietSanPhamIdToProductId = {};
         this.chiTietImageUrl = {};
+        this.variantRawMap = {};
 
         const variants = (raw || []).map((r: any) => {
           // Lấy trongLuongTen từ DB - không dùng trongLuongId
@@ -439,6 +652,10 @@ export class CounterSalesComponent implements OnInit {
           }
           if (chiTietId && variantImage) {
             this.chiTietImageUrl[chiTietId] = variantImage;
+          }
+
+          if (chiTietId) {
+            this.variantRawMap[chiTietId] = { ...r };
           }
 
           return {
@@ -523,7 +740,6 @@ export class CounterSalesComponent implements OnInit {
         this.filteredProducts = [...this.availableProducts];
         this.productPage = 1;
         this.updateProductPagination();
-        this.applyCartStockReservations();
       },
       error: (err) => {
         this.availableProducts = [];
@@ -681,23 +897,9 @@ export class CounterSalesComponent implements OnInit {
         this.currentHoaDonChoId = hoaDonCho.id || null;
         this.activePendingInvoiceId = hoaDonCho.id || null;
         // Convert GioHangChoItem[] to CartItem[]
-        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
-          const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
-          return {
-            productId: item.chiTietSanPhamId,
-            productCode: '',
-            productName: item.tenSanPham || '',
-            category: '',
-            quantity: item.soLuong,
-            unitPrice: item.donGia,
-            totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
-            discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
-            discountAmount: item.giamGia || 0,
-            stockQuantity: 0,
-            imageUrl: imageUrl,
-            gioHangChoId: item.id, // Store gioHangChoId for deletion
-          };
-        });
+        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) =>
+          this.mapCartItemFromPending(item)
+        );
         this.calculateCartTotal();
         // Enable adding products to cart when loading pending invoice
         this.isInvoiceCreated = true;
@@ -1193,6 +1395,12 @@ export class CounterSalesComponent implements OnInit {
       return;
     }
 
+    const currentStock = this.getVariantStock(product?.id);
+    if (currentStock <= 0) {
+      this.showToast('Sản phẩm đã hết hàng.', 'warning');
+      return;
+    }
+
     const itemRequest: GioHangChoItem = {
       chiTietSanPhamId: product.id,
       tenSanPham: product.name,
@@ -1205,27 +1413,13 @@ export class CounterSalesComponent implements OnInit {
     this.hoaDonChoService.addItemToCart(this.currentHoaDonChoId, itemRequest).subscribe({
       next: (hoaDonCho: HoaDonCho) => {
         // Update local cart from response
-        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
-          const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
-          return {
-            productId: item.chiTietSanPhamId,
-            productCode: '',
-            productName: item.tenSanPham || '',
-            category: '',
-            quantity: item.soLuong,
-            unitPrice: item.donGia,
-            totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
-            discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
-            discountAmount: item.giamGia || 0,
-            stockQuantity: 0,
-            imageUrl: imageUrl,
-            gioHangChoId: item.id, // Store gioHangChoId for deletion
-          };
-        });
+        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) =>
+          this.mapCartItemFromPending(item)
+        );
         this.calculateCartTotal();
         this.loadPendingInvoices();
-        // Reload product list to update stock quantity
-        this.loadAvailableProducts();
+        // Adjust stock: trừ 1 sản phẩm
+        this.adjustVariantStock(product.id, -1);
         this.showToast('Đã thêm sản phẩm vào giỏ hàng', 'success');
       },
       error: (err) => {
@@ -1261,7 +1455,11 @@ export class CounterSalesComponent implements OnInit {
             (item) => item.chiTietSanPhamId === productId
           );
           if (gioHangItem && gioHangItem.id) {
-            this.removeCartItem(gioHangItem.id);
+            this.removeCartItem(
+              gioHangItem.id,
+              gioHangItem.chiTietSanPhamId,
+              gioHangItem.soLuong || 0
+            );
           } else {
             this.showToast('Không tìm thấy ID giỏ hàng để xóa', 'error');
           }
@@ -1273,10 +1471,14 @@ export class CounterSalesComponent implements OnInit {
       return;
     }
 
-    this.removeCartItem(gioHangChoId);
+    this.removeCartItem(gioHangChoId, cartItem.productId, cartItem.quantity);
   }
 
-  private removeCartItem(gioHangChoId: number): void {
+  private removeCartItem(
+    gioHangChoId: number,
+    variantId?: number,
+    quantityToReturn: number = 0
+  ): void {
     if (!this.currentHoaDonChoId) return;
 
     this.hoaDonChoService.removeItemFromCart(this.currentHoaDonChoId, gioHangChoId).subscribe({
@@ -1285,29 +1487,17 @@ export class CounterSalesComponent implements OnInit {
         console.log('danhSachGioHang length:', hoaDonCho.danhSachGioHang?.length || 0);
 
         // Update local cart from response
-        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
-          const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
-          return {
-            productId: item.chiTietSanPhamId,
-            productCode: '',
-            productName: item.tenSanPham || '',
-            category: '',
-            quantity: item.soLuong,
-            unitPrice: item.donGia,
-            totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
-            discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
-            discountAmount: item.giamGia || 0,
-            stockQuantity: 0,
-            imageUrl: imageUrl,
-            gioHangChoId: item.id, // Store gioHangChoId for deletion
-          };
-        });
+        this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) =>
+          this.mapCartItemFromPending(item)
+        );
 
         console.log('Updated cart length:', this.cart.length);
         this.calculateCartTotal();
         this.loadPendingInvoices();
-        // Reload product list to update stock quantity
-        this.loadAvailableProducts();
+        // Adjust stock: trả lại số lượng đã thêm vào giỏ hàng
+        if (variantId && quantityToReturn > 0) {
+          this.adjustVariantStock(variantId, quantityToReturn);
+        }
         this.showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'success');
       },
       error: (err) => {
@@ -1339,6 +1529,19 @@ export class CounterSalesComponent implements OnInit {
     const cartItem = this.cart.find((item) => item.productId === productId);
     if (!cartItem) return;
 
+    const previousQty = cartItem.quantity;
+    if (finalQty === previousQty) {
+      return;
+    }
+    const diff = finalQty - previousQty;
+    if (diff > 0) {
+      const availableStock = this.getVariantStock(productId);
+      if (availableStock < diff) {
+        this.showToast(`Không đủ tồn kho. Chỉ còn ${availableStock} sản phẩm.`, 'warning');
+        return;
+      }
+    }
+
     const gioHangChoId = cartItem.gioHangChoId;
     if (!gioHangChoId) {
       // Fallback: try to reload pending invoice to get fresh data
@@ -1348,7 +1551,7 @@ export class CounterSalesComponent implements OnInit {
             (item) => item.chiTietSanPhamId === productId
           );
           if (gioHangItem && gioHangItem.id) {
-            this.updateCartItemQuantity(gioHangItem.id, finalQty);
+            this.updateCartItemQuantity(gioHangItem.id, finalQty, cartItem.productId, diff);
           } else {
             this.showToast('Không tìm thấy ID giỏ hàng để cập nhật', 'error');
           }
@@ -1360,10 +1563,15 @@ export class CounterSalesComponent implements OnInit {
       return;
     }
 
-    this.updateCartItemQuantity(gioHangChoId, finalQty);
+    this.updateCartItemQuantity(gioHangChoId, finalQty, cartItem.productId, diff);
   }
 
-  private updateCartItemQuantity(gioHangChoId: number, quantity: number): void {
+  private updateCartItemQuantity(
+    gioHangChoId: number,
+    quantity: number,
+    variantId: number,
+    diff: number
+  ): void {
     if (!this.currentHoaDonChoId) return;
 
     this.hoaDonChoService
@@ -1371,27 +1579,15 @@ export class CounterSalesComponent implements OnInit {
       .subscribe({
         next: (hoaDonCho: HoaDonCho) => {
           // Update local cart from response
-          this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) => {
-            const imageUrl = this.getImageUrlFromChiTietSanPhamId(item.chiTietSanPhamId);
-            return {
-              productId: item.chiTietSanPhamId,
-              productCode: '',
-              productName: item.tenSanPham || '',
-              category: '',
-              quantity: item.soLuong,
-              unitPrice: item.donGia,
-              totalPrice: item.thanhTien || item.donGia * item.soLuong - (item.giamGia || 0),
-              discount: item.giamGia ? (item.giamGia / (item.donGia * item.soLuong)) * 100 : 0,
-              discountAmount: item.giamGia || 0,
-              stockQuantity: 0,
-              imageUrl: imageUrl,
-              gioHangChoId: item.id, // Store gioHangChoId for future operations
-            };
-          });
+          this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) =>
+            this.mapCartItemFromPending(item)
+          );
           this.calculateCartTotal();
           this.loadPendingInvoices();
-          // Reload product list to update stock quantity
-          this.loadAvailableProducts();
+          // Adjust stock: trừ/cộng theo sự thay đổi số lượng
+          if (variantId && diff !== 0) {
+            this.adjustVariantStock(variantId, -diff);
+          }
           this.showToast('Đã cập nhật số lượng sản phẩm', 'success');
         },
         error: (err) => {
@@ -1436,51 +1632,20 @@ export class CounterSalesComponent implements OnInit {
       this.couponDiscount = Math.min(this.couponDiscount, base);
     }
     const afterDiscount = Math.max(0, this.cartSubtotal - this.cartDiscount - this.couponDiscount);
-    this.cartTaxAmount = afterDiscount * (this.cartTax / 100);
+    this.cartTaxAmount = 0; // Thuế đã được bỏ
     const normalizedShipping = this.isDelivery ? Math.max(0, Number(this.shippingFee) || 0) : 0;
     if (this.isDelivery) {
       this.shippingFee = normalizedShipping;
     }
     const shippingAmount = this.isDelivery ? normalizedShipping : 0;
-    this.cartTotal = afterDiscount + this.cartTaxAmount + shippingAmount;
+    this.cartTotal = afterDiscount + shippingAmount; // Loại bỏ thuế khỏi tổng
     this.refreshVoucherSuggestions();
-    this.applyCartStockReservations();
   }
 
   onShippingFeeChange(value: number | string): void {
     const parsed = Number(value);
     this.shippingFee = !isNaN(parsed) ? Math.max(0, parsed) : 0;
     this.calculateCartTotal();
-  }
-
-  private applyCartStockReservations(): void {
-    if (!Array.isArray(this.availableProducts) || this.availableProducts.length === 0) {
-      return;
-    }
-
-    const reservedMap = new Map<number, number>();
-    this.cart.forEach((item) => {
-      const current = reservedMap.get(item.productId) ?? 0;
-      reservedMap.set(item.productId, current + item.quantity);
-    });
-
-    this.availableProducts.forEach((product: any) => {
-      if (!product || product.id === undefined || product.id === null) {
-        return;
-      }
-      const original = this.productOriginalStock[product.id];
-      const baseStock =
-        original !== undefined && original !== null ? original : Number(product.stock ?? 0);
-      const reserved = reservedMap.get(product.id) ?? 0;
-      product.stock = Math.max(0, baseStock - reserved);
-    });
-
-    if (Array.isArray(this.filteredProducts)) {
-      this.filteredProducts = this.filteredProducts
-        .map((p) => ({ ...p }))
-        .filter((p) => Number(p.stock ?? 0) > 0);
-      this.updateProductPagination();
-    }
   }
 
   private refreshVoucherSuggestions(): void {
@@ -1613,11 +1778,12 @@ export class CounterSalesComponent implements OnInit {
 
     // Gọi BE tạo hóa đơn rồi điều hướng sang trang chi tiết
     // Khi thanh toán tại quầy, hóa đơn tự động hoàn thành (DA_GIAO_HANG) và không cần xác nhận
+    // Cho phép thanh toán mà không cần thông tin khách hàng
     const payload: any = {
       maHoaDon: this.generateSaleNumber().replace('CS', 'HD'),
-      khachHangId: this.newSale.customerId,
-      tenKhachHang: this.newSale.customerName,
-      soDienThoaiKhachHang: this.newSale.customerPhone,
+      khachHangId: this.newSale.customerId || null,
+      tenKhachHang: this.newSale.customerName || null,
+      soDienThoaiKhachHang: this.newSale.customerPhone || null,
       ngayTao: new Date().toISOString(),
       tongTien: Math.round(this.cartTotal),
       thanhTien: Math.round(this.cartTotal),
@@ -1658,9 +1824,9 @@ export class CounterSalesComponent implements OnInit {
         phuongXa: wardName,
         quanHuyen: districtName,
         tinhThanh: provinceName,
-        // Recipient info
-        tenNguoiNhan: this.newSale.customerName,
-        soDienThoaiNguoiNhan: this.newSale.customerPhone,
+        // Recipient info - có thể để null nếu không có thông tin khách hàng
+        tenNguoiNhan: this.newSale.customerName || null,
+        soDienThoaiNguoiNhan: this.newSale.customerPhone || null,
         // Note
         ghiChuGiaoHang: this.shippingNote,
         phiGiaoHang: Math.round(this.shippingFee),

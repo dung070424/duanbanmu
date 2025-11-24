@@ -56,6 +56,8 @@
                 <th>#</th>
                 <th>Ảnh</th>
                 <th>Tên sản phẩm</th>
+              <th>Màu sắc</th>
+              <th>Kích thước</th>
                 <th class="text-center">SL</th>
                 <th>Giá</th>
                 <th>Thành tiền</th>
@@ -76,6 +78,19 @@
                 </td>
                 <td>
                   <div class="fw-semibold">{{ item.productName }}</div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <span
+                      class="color-dot"
+                      *ngIf="item.colorCode"
+                      [style.background]="item.colorCode"
+                    ></span>
+                    <span>{{ item.colorLabel || '—' }}</span>
+                  </div>
+                </td>
+                <td>
+                  {{ item.sizeLabel || '—' }}
                 </td>
                 <td class="text-center">
                   <div class="qty">
@@ -281,11 +296,11 @@
             </div>
           </div>
           <div class="mb-2">
-            <label class="form-label">Tên khách hàng *</label>
+            <label class="form-label">Tên khách hàng</label>
             <input class="form-control" [(ngModel)]="newSale.customerName" />
           </div>
           <div class="mb-3">
-            <label class="form-label">Số điện thoại *</label>
+            <label class="form-label">Số điện thoại</label>
             <input class="form-control" [(ngModel)]="newSale.customerPhone" />
           </div>
           <button
@@ -331,10 +346,6 @@
           <div class="d-flex justify-content-between mb-1">
             <span>Giảm giá</span
             ><span class="text-danger">-{{ formatCurrency(cartDiscount) }}</span>
-          </div>
-          <div class="d-flex justify-content-between mb-2">
-            <span>Thuế ({{ cartTax }}%)</span>
-            <span>{{ formatCurrency(cartTaxAmount) }}</span>
           </div>
           <div class="mb-2" *ngIf="isDelivery">
             <div class="d-flex justify-content-between align-items-center">
