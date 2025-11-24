@@ -313,6 +313,8 @@ export class CounterSalesComponent implements OnInit {
 
   isPayButtonDisabled(): boolean {
     if (this.cart.length === 0) return true;
+    // Delivery orders are settled later, so keep the button enabled without cash validation
+    if (this.isDelivery) return false;
     if (this.checkoutPaymentMethod === 'cash') {
       const received = this.cashReceived;
       if (received === null || received === undefined) return true;
