@@ -658,7 +658,7 @@
           class="btn btn-outline-danger"
           (click)="openCancelInvoiceModal()"
           [disabled]="savingStatus"
-          *ngIf="invoice.trangThai !== 'DANG_GIAO_HANG'"
+          *ngIf="invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_XAC_NHAN'"
         >
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
           <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>Hủy

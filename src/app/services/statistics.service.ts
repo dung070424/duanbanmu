@@ -21,6 +21,8 @@ export interface PeriodStatisticsDTO {
   period: string;           // Loại khoảng thời gian: "day", "week", "month", "year"
   actualRevenue?: number;    // Tổng thanhTien của các hóa đơn đã thanh toán
   debtRevenue?: number;      // Công nợ = doanhThu - actualRevenue
+  tongTien?: number;         // Tổng tiền (tongTien)
+  tienGiamGia?: number;      // Tiền giảm giá (tienGiamGia)
 }
 
 export interface WeeklyRevenueDTO {
@@ -105,7 +107,7 @@ export class StatisticsService {
     );
   }
 
-  getBestSellingProductsByPeriod(period: 'day' | 'week' | 'month' | 'year', limit: number = 5): Observable<{ data: BestSellingProductDTO[], total: number, period: string }> {
+  getBestSellingProductsByPeriod(period: 'day' | 'week' | 'month' | 'quarter' | 'year', limit: number = 5): Observable<{ data: BestSellingProductDTO[], total: number, period: string }> {
     let params = new HttpParams()
       .set('period', period)
       .set('limit', limit.toString());
@@ -152,7 +154,7 @@ export class StatisticsService {
     );
   }
 
-  getPeriodStatistics(period: 'day' | 'week' | 'month' | 'year'): Observable<PeriodStatisticsDTO> {
+  getPeriodStatistics(period: 'day' | 'week' | 'month' | 'quarter' | 'year'): Observable<PeriodStatisticsDTO> {
     const fullUrl = `${this.apiUrl}/period?period=${period}`;
     console.log('📡 [StatisticsService] Calling Period Statistics API:', fullUrl);
     
@@ -240,7 +242,7 @@ export class StatisticsService {
     );
   }
 
-  getOrderStatusStatistics(period: 'day' | 'week' | 'month' | 'year' = 'month'): Observable<{ data: OrderStatusStatisticsDTO[], total: number, period: string }> {
+  getOrderStatusStatistics(period: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'month'): Observable<{ data: OrderStatusStatisticsDTO[], total: number, period: string }> {
     const fullUrl = `${this.apiUrl}/order-status?period=${period}`;
     console.log('📡 [StatisticsService] Calling Order Status Statistics API:', fullUrl);
     
