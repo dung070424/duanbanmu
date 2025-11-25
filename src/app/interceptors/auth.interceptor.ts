@@ -33,10 +33,22 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         // Xử lý lỗi 401 (Unauthorized) - token hết hạn hoặc không hợp lệ
         if (error.status === 401) {
           console.error('❌ 401 Unauthorized - Invalid or expired token');
-          // Chỉ logout và redirect nếu không đang ở trang auth
-          if (!currentUrl.includes('/login') && !currentUrl.includes('/register')) {
+          // Chỉ logout và redirect nếu không đang ở trang auth hoặc shop (public pages)
+          const isPublicPage = currentUrl.includes('/login') || 
+                               currentUrl.includes('/register') || 
+                               currentUrl.includes('/shop') ||
+                               currentUrl === '/' ||
+                               currentUrl === '';
+          
+          if (!isPublicPage) {
+            // Chỉ logout nếu đang ở trang được bảo vệ
             authService.logout();
             router.navigate(['/login']);
+          } else {
+            // Nếu đang ở trang public, chỉ clear token nhưng không redirect
+            // Để user có thể tiếp tục sử dụng trang public
+            console.log('ℹ️ 401 on public page, clearing auth but not redirecting');
+            authService.logout();
           }
         }
         // Xử lý lỗi 403 (Forbidden) - không có quyền

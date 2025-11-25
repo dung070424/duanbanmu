@@ -21,6 +21,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isShopPage = false; // Trang shop (customer website)
   showAdminLayout = false; // Không hiển thị admin layout mặc định, sẽ được cập nhật dựa trên route
   private routerSubscription: Subscription = new Subscription();
+  private initialPathname: string = ''; // Lưu pathname ban đầu khi component init
 
   constructor(
     public router: Router, 
@@ -29,28 +30,58 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Kiểm tra route hiện tại để xác định layout ngay từ đầu
-    // Nếu URL là '/' (root), sẽ được redirect đến '/shop', nên set isShopPage = true ngay từ đầu
-    const currentUrl = this.router.url || window.location.pathname;
-    if (currentUrl === '/' || currentUrl === '') {
+    // QUAN TRỌNG: Khi refresh trang, cần đợi router sẵn sàng
+    // Lấy URL từ window.location.pathname trước (luôn có sẵn)
+    const pathname = window.location.pathname;
+    this.initialPathname = pathname; // Lưu pathname ban đầu
+    console.log('🔍 AppComponent ngOnInit - Pathname:', pathname);
+    console.log('🔍 AppComponent ngOnInit - Router URL:', this.router.url);
+    
+    // QUAN TRỌNG: Set layout flags ngay lập tức dựa trên URL hiện tại
+    // Điều này đảm bảo view được hiển thị đúng ngay từ đầu, không bị flash hoặc nhảy
+    if (pathname === '/' || pathname === '') {
       // Nếu là root path, giả định sẽ redirect đến /shop
       this.isShopPage = true;
       this.isLoginPage = false;
       this.showAdminLayout = false;
+      console.log('🔍 Root path detected, setting shop layout');
     } else {
-      this.updateLayoutFlags(currentUrl);
+      // QUAN TRỌNG: Cập nhật layout flags dựa trên URL thực tế
+      // Điều này đảm bảo khi refresh trang admin, layout được set đúng ngay từ đầu
+      this.updateLayoutFlags(pathname);
     }
+    
+    // Force change detection để đảm bảo view được cập nhật ngay
+    this.cdr.detectChanges();
 
     // Lắng nghe NavigationEnd để cập nhật layout flags sau khi navigation hoàn tất
-    // Sử dụng NavigationEnd thay vì NavigationStart để đảm bảo redirect đã hoàn tất
+    // QUAN TRỌNG: Chỉ cập nhật nếu URL thực sự thay đổi (user navigate), không phải khi refresh
     this.routerSubscription.add(
       this.router.events
         .pipe(filter((event) => event instanceof NavigationEnd))
         .subscribe((event: NavigationEnd) => {
           // Sử dụng urlAfterRedirects để lấy URL sau khi redirect (nếu có)
-          // Điều này đảm bảo layout flags được cập nhật đúng với URL cuối cùng
           const finalUrl = event.urlAfterRedirects || event.url;
-          this.updateLayoutFlags(finalUrl);
+          const normalizedFinalUrl = finalUrl.split('?')[0].split('#')[0];
+          const normalizedInitialUrl = this.initialPathname.split('?')[0].split('#')[0];
+          
+          console.log('🔍 NavigationEnd - Final URL:', normalizedFinalUrl);
+          console.log('🔍 NavigationEnd - Initial Pathname:', normalizedInitialUrl);
+          console.log('🔍 NavigationEnd - URL After Redirects:', event.urlAfterRedirects);
+          
+          // QUAN TRỌNG: Khi refresh trang, URL không thay đổi
+          // Chỉ cập nhật layout flags nếu URL thực sự thay đổi (user navigate)
+          // Điều này tránh việc reset layout flags khi refresh trang admin
+          if (normalizedFinalUrl !== normalizedInitialUrl) {
+            console.log('🔍 NavigationEnd - URL changed (user navigation), updating layout flags');
+            this.updateLayoutFlags(normalizedFinalUrl);
+            // Cập nhật initialPathname để lần sau so sánh đúng
+            this.initialPathname = normalizedFinalUrl;
+          } else {
+            console.log('🔍 NavigationEnd - URL unchanged (page refresh), keeping current layout flags');
+            // Khi refresh, chỉ đảm bảo layout flags vẫn đúng với URL hiện tại
+            // Không cần update vì đã set đúng trong ngOnInit
+          }
         })
     );
   }
@@ -58,6 +89,8 @@ export class AppComponent implements OnInit, OnDestroy {
   updateLayoutFlags(url: string): void {
     // Normalize URL - loại bỏ query params và hash
     const normalizedUrl = url.split('?')[0].split('#')[0];
+    
+    console.log('🔍 updateLayoutFlags called with URL:', normalizedUrl);
     
     // Trang login, register, forgot-password (Admin/Staff) - không có sidebar/header
     this.isLoginPage = normalizedUrl === '/login' || normalizedUrl === '/register' || normalizedUrl === '/forgot-password';
@@ -78,15 +111,17 @@ export class AppComponent implements OnInit, OnDestroy {
     this.isShopPage = isShopRoute || isCustomerWebsiteRoute;
 
     // Hiển thị admin layout nếu không phải login/shop/customer website pages
+    // QUAN TRỌNG: Mặc định là admin layout nếu không phải các trang đặc biệt
     this.showAdminLayout = !this.isLoginPage && !this.isShopPage;
 
-    console.log('updateLayoutFlags:', { 
+    console.log('✅ updateLayoutFlags result:', { 
       url: normalizedUrl, 
       isLoginPage: this.isLoginPage, 
       isShopPage: this.isShopPage, 
       showAdminLayout: this.showAdminLayout,
       isShopRoute,
-      isCustomerWebsiteRoute
+      isCustomerWebsiteRoute,
+      layoutType: this.getLayoutType()
     });
     
     // Force change detection để đảm bảo view được cập nhật ngay lập tức
