@@ -44,7 +44,7 @@ export class CartComponent implements OnInit {
 
   constructor(
     private hoaDonChoService: HoaDonChoService,
-    private authService: AuthService,
+    public authService: AuthService, // Đổi thành public để dùng trong template
     private router: Router,
     private location: Location,
     private cdr: ChangeDetectorRef,
@@ -449,6 +449,23 @@ export class CartComponent implements OnInit {
       console.log('🛒 proceedToCheckout - No cartId, navigating to checkout (will load from localStorage)');
       this.router.navigate(['/shop/checkout']);
     }
+  }
+
+  /**
+   * Xem lịch sử đơn hàng
+   */
+  viewOrderHistory(): void {
+    // Kiểm tra đăng nhập
+    if (!this.authService.isLoggedIn()) {
+      // Nếu chưa đăng nhập, redirect đến trang đăng nhập với returnUrl
+      this.router.navigate(['/shop/login'], {
+        queryParams: { returnUrl: '/customer/orders' }
+      });
+      return;
+    }
+    
+    // Navigate đến trang lịch sử đơn hàng
+    this.router.navigate(['/customer/orders']);
   }
 
   /**
