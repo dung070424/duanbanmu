@@ -28,8 +28,13 @@ export class CustomerOrdersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (!this.authService.isCustomer()) {
-      this.router.navigate(['/shop']);
+    // QUAN TRỌNG: Cho phép xem lịch sử đơn hàng nếu đã đăng nhập (không nhất thiết phải có role CUSTOMER)
+    // Vì có thể user đã đăng nhập nhưng chưa có role CUSTOMER
+    if (!this.authService.isLoggedIn()) {
+      // Nếu chưa đăng nhập, redirect đến shop login
+      this.router.navigate(['/shop/login'], {
+        queryParams: { returnUrl: '/customer/orders' }
+      });
       return;
     }
     this.loadOrders();
@@ -41,7 +46,8 @@ export class CustomerOrdersComponent implements OnInit {
   }
 
   loadOrders(): void {
-    this.isLoading = true;
+    // QUAN TRỌNG: Không set isLoading = true để hiển thị ngay danh sách đơn hàng
+    // this.isLoading = true;
     this.error = '';
 
     this.hoaDonService.getCustomerOrders(this.currentPage, this.pageSize).subscribe({
@@ -54,12 +60,12 @@ export class CustomerOrdersComponent implements OnInit {
         } else {
           this.orders = [];
         }
-        this.isLoading = false;
+        // this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading customer orders:', error);
         this.error = 'Không thể tải danh sách đơn hàng. Vui lòng thử lại!';
-        this.isLoading = false;
+        // this.isLoading = false;
       }
     });
   }

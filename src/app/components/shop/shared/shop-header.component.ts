@@ -84,13 +84,15 @@ export class ShopHeaderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (currentUser.roles?.includes('CUSTOMER') && currentUser.id) {
-      this.customerService.getCustomerById(currentUser.id).subscribe({
+    // Sử dụng /api/khach-hang/me thay vì /api/khach-hang/{id} để tránh lỗi 404
+    if (this.authService.isLoggedIn()) {
+      this.customerService.getCurrentCustomer().subscribe({
         next: (customer) => {
           this.customerName =
-            customer.tenKhachHang || currentUser.fullName || currentUser.username || 'Tài khoản';
+            customer?.tenKhachHang || currentUser.fullName || currentUser.username || 'Tài khoản';
         },
         error: () => {
+          // Nếu không tìm thấy customer, sử dụng thông tin từ user
           this.customerName = currentUser.fullName || currentUser.username || 'Tài khoản';
         },
       });
