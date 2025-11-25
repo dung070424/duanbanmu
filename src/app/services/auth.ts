@@ -22,19 +22,40 @@ export class AuthService {
   }
 
   private checkAuthStatus(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const token = localStorage.getItem('authToken');
-      const user = localStorage.getItem('currentUser');
+    if (typeof window !== 'undefined') {
+      // Kiểm tra cả localStorage và sessionStorage
+      // Ưu tiên localStorage (rememberMe = true), sau đó sessionStorage (rememberMe = false)
+      let token: string | null = null;
+      let user: string | null = null;
+      
+      // Thử lấy từ localStorage trước
+      if (window.localStorage) {
+        token = localStorage.getItem('authToken');
+        user = localStorage.getItem('currentUser');
+      }
+      
+      // Nếu không có trong localStorage, thử sessionStorage
+      if ((!token || !user) && window.sessionStorage) {
+        const sessionToken = sessionStorage.getItem('authToken');
+        const sessionUser = sessionStorage.getItem('currentUser');
+        if (sessionToken && sessionUser) {
+          token = sessionToken;
+          user = sessionUser;
+        }
+      }
 
       if (token && user) {
         try {
           const userObj = JSON.parse(user);
           this.isAuthenticatedSubject.next(true);
           this.currentUserSubject.next(userObj);
+          console.log('✅ Authentication state restored from storage');
         } catch (e) {
           console.error('Error parsing user data:', e);
           this.clearAuthData();
         }
+      } else {
+        console.log('ℹ️ No authentication data found in storage');
       }
     }
   }
