@@ -10,20 +10,21 @@
       {{ error }}
     </div>
 
-    <!-- Loading state đã tắt để hiển thị ngay danh sách đơn hàng -->
-    <!-- <div *ngIf="isLoading" class="loading">
+    <!-- Loading state -->
+    <div *ngIf="isLoading" class="loading">
       <div class="spinner"></div>
       <p>Đang tải đơn hàng...</p>
-    </div> -->
+    </div>
 
-    <div *ngIf="orders.length === 0 && !error" class="no-orders">
+    <!-- Chỉ hiển thị "Chưa có đơn hàng" khi KHÔNG đang load và KHÔNG có lỗi và KHÔNG có đơn hàng -->
+    <div *ngIf="!isLoading && orders.length === 0 && !error" class="no-orders">
       <i class="fas fa-box-open"></i>
       <h3>Chưa có đơn hàng nào</h3>
       <p>Bạn chưa có đơn hàng nào. Hãy <a routerLink="/shop">mua sắm ngay</a>!</p>
     </div>
 
     <div *ngIf="orders.length > 0" class="orders-list">
-      <div *ngFor="let order of orders" class="order-card">
+      <div *ngFor="let order of orders" [id]="'order-' + order.id" class="order-card">
         <div class="order-header">
           <div class="order-info">
             <h3>Mã đơn hàng: {{ order.maHoaDon }}</h3>

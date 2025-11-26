@@ -187,8 +187,25 @@
       <div class="status-label">{{ getStatusLabel(invoice.trangThai) }}</div>
     </div>
 
-    <!-- Form xác nhận hóa đơn (chỉ hiển thị khi trạng thái là Chờ Xác Nhận) -->
-    <div class="confirm-invoice-section" *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN'">
+    <!-- Nút hủy đơn hàng cho khách hàng (chỉ hiển thị khi trạng thái là CHO_XAC_NHAN) -->
+    <div class="customer-cancel-section" *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN' && authService.hasRole('CUSTOMER')">
+      
+      <div class="d-flex justify-content-end">
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-lg"
+          (click)="cancelOrderByCustomer()"
+          [disabled]="savingStatus"
+        >
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>
+          {{ savingStatus ? 'Đang xử lý...' : 'Hủy đơn hàng' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Form xác nhận hóa đơn (chỉ hiển thị khi trạng thái là Chờ Xác Nhận và user là ADMIN/STAFF) -->
+    <div class="confirm-invoice-section" *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
       <div class="status-update-card">
         <div class="status-update-header">
           <h5 class="mb-0">
@@ -347,8 +364,8 @@
       </div>
     </div>
 
-    <!-- Status Update Control (chỉ hiển thị khi KHÔNG phải Đã Xác Nhận, KHÔNG phải Chờ Xác Nhận, KHÔNG phải Đang Vận Chuyển, KHÔNG phải Đã Giao Hàng, và KHÔNG phải Hủy) -->
-    <div class="status-update-control" *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'">
+    <!-- Status Update Control (chỉ hiển thị khi KHÔNG phải Đã Xác Nhận, KHÔNG phải Chờ Xác Nhận, KHÔNG phải Đang Vận Chuyển, KHÔNG phải Đã Giao Hàng, và KHÔNG phải Hủy - CHỈ cho ADMIN/STAFF) -->
+    <div class="status-update-control" *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
       <div class="status-update-card">
         <div class="status-update-header">
 
@@ -623,7 +640,7 @@
         <button
           type="button"
           class="btn btn-outline-secondary"
-          *ngIf="!isEditMode"
+          *ngIf="!isEditMode && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))"
           (click)="startPendingInvoiceEdit()"
           [disabled]="savingStatus"
         >
@@ -632,6 +649,7 @@
         <button
           type="button"
           class="btn btn-outline-danger"
+          *ngIf="authService.hasRole('ADMIN') || authService.hasRole('STAFF')"
           (click)="openCancelInvoiceModal()"
           [disabled]="savingStatus"
         >
@@ -641,6 +659,7 @@
         <button
           type="button"
           class="btn btn-success"
+          *ngIf="authService.hasRole('ADMIN') || authService.hasRole('STAFF')"
           (click)="submitConfirmInvoice()"
           [disabled]="savingStatus"
         >
@@ -651,7 +670,7 @@
       </div>
       <div
         class="d-flex justify-content-end gap-3"
-        *ngIf="invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'"
+        *ngIf="invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))"
       >
         <button
           type="button"
@@ -680,8 +699,8 @@
         </button>
       </div>
     </div>
-    <!-- Edit Mode -->
-    <div *ngIf="invoice?.trangThai === 'CHO_XAC_NHAN' && isEditMode && editingInvoice" class="edit-section" id="edit-section">
+    <!-- Edit Mode (chỉ cho ADMIN/STAFF) -->
+    <div *ngIf="invoice?.trangThai === 'CHO_XAC_NHAN' && isEditMode && editingInvoice && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))" class="edit-section" id="edit-section">
       <h3>Cập nhật thông tin hóa đơn</h3>
       <div class="edit-form">
         <div class="row">

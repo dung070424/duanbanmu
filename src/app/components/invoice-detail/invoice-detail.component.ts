@@ -481,7 +481,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         //           3. Mảng rỗng nếu không có gì
 
         // QUAN TRỌNG: Ưu tiên map từ danhSachChiTiet (backend) để đảm bảo dữ liệu mới nhất
-        if (invoice.danhSachChiTiet && invoice.danhSachChiTiet.length > 0) {
+        console.log('🔍 Checking invoice data structure:', {
+          hasDanhSachChiTiet: !!invoice.danhSachChiTiet,
+          danhSachChiTietLength: invoice.danhSachChiTiet?.length || 0,
+          hasDanhSachSanPham: !!invoice.danhSachSanPham,
+          danhSachSanPhamLength: invoice.danhSachSanPham?.length || 0,
+          invoiceKeys: Object.keys(invoice)
+        });
+
+        if (invoice.danhSachChiTiet && Array.isArray(invoice.danhSachChiTiet) && invoice.danhSachChiTiet.length > 0) {
           console.log('📦 Mapping danhSachChiTiet to danhSachSanPham, count:', invoice.danhSachChiTiet.length);
           invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => {
             // Đảm bảo parse đúng các giá trị số (có thể là string hoặc number từ backend)
@@ -524,7 +532,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           if (invoice.danhSachSanPham.length > 0) {
             console.log('📦 Sample mapped product:', invoice.danhSachSanPham[0]);
           }
-        } else if (invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0) {
+        } else if (invoice.danhSachSanPham && Array.isArray(invoice.danhSachSanPham) && invoice.danhSachSanPham.length > 0) {
           // Nếu không có danhSachChiTiet nhưng đã có danhSachSanPham (đã được map trong service)
           console.log('📦 Using existing danhSachSanPham, count:', invoice.danhSachSanPham.length);
           // Đảm bảo các giá trị số được parse đúng
@@ -535,9 +543,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             giamGia: typeof item.giamGia === 'string' ? parseFloat(item.giamGia) : Number(item.giamGia || 0),
             thanhTien: typeof item.thanhTien === 'string' ? parseFloat(item.thanhTien) : Number(item.thanhTien || 0)
           }));
+          console.log('✅ Processed existing danhSachSanPham, count:', invoice.danhSachSanPham.length);
         } else {
-          // Nếu không có cả hai, set mảng rỗng
-          console.warn('⚠️ No danhSachChiTiet or danhSachSanPham found, setting empty array');
+          // Nếu không có cả hai, set mảng rỗng và log warning
+          console.warn('⚠️ No danhSachChiTiet or danhSachSanPham found in invoice response');
+          console.warn('⚠️ Invoice data:', {
+            id: invoice.id,
+            maHoaDon: invoice.maHoaDon,
+            keys: Object.keys(invoice),
+            danhSachChiTiet: invoice.danhSachChiTiet,
+            danhSachSanPham: invoice.danhSachSanPham
+          });
           invoice.danhSachSanPham = [];
         }
 
@@ -564,8 +580,21 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           maHoaDon: this.invoice?.maHoaDon,
           danhSachChiTiet: invoice.danhSachChiTiet?.length || 0,
           danhSachSanPham: this.invoice?.danhSachSanPham?.length || 0,
-          products: this.invoice?.danhSachSanPham || []
+          products: this.invoice?.danhSachSanPham || [],
+          isArray: Array.isArray(this.invoice?.danhSachSanPham)
         });
+
+        // Debug: Log toàn bộ cấu trúc invoice để kiểm tra
+        if (this.invoice && (!this.invoice.danhSachSanPham || this.invoice.danhSachSanPham.length === 0)) {
+          console.error('❌ CRITICAL: danhSachSanPham is empty or missing!');
+          console.error('❌ Invoice structure:', {
+            id: this.invoice?.id,
+            maHoaDon: this.invoice?.maHoaDon,
+            allKeys: this.invoice ? Object.keys(this.invoice) : [],
+            danhSachChiTiet: invoice.danhSachChiTiet,
+            danhSachSanPham: this.invoice?.danhSachSanPham
+          });
+        }
 
         // Force UI update để đảm bảo danh sách sản phẩm được hiển thị
         this.cdr.detectChanges();
@@ -3104,6 +3133,63 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.savingStatus = false;
         const errorMessage = error.error?.message || error.error || error.message || 'Vui lòng thử lại';
         this.showToast('Lỗi khi cập nhật trạng thái: ' + errorMessage, 'error');
+      }
+    });
+  }
+
+  /**
+   * Khách hàng hủy đơn hàng (chỉ khi trạng thái là CHO_XAC_NHAN)
+   */
+  cancelOrderByCustomer(): void {
+    if (!this.invoice || !this.invoice.id) {
+      this.showToast('Không tìm thấy đơn hàng', 'error');
+      return;
+    }
+
+    // Chỉ cho phép hủy khi trạng thái là CHO_XAC_NHAN
+    if (this.invoice.trangThai !== 'CHO_XAC_NHAN') {
+      this.showToast('Chỉ có thể hủy đơn hàng khi đang chờ xác nhận', 'warning');
+      return;
+    }
+
+    // Xác nhận với khách hàng
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng sản phẩm sẽ được hoàn lại vào kho.')) {
+      return;
+    }
+
+    this.savingStatus = true;
+    console.log('🔄 Customer cancelling order:', this.invoice.id);
+
+    // Gọi API cập nhật trạng thái thành DA_HUY
+    // Backend sẽ tự động hoàn lại stock cho đơn hàng online
+    this.hoaDonService.updateTrangThaiHoaDon(this.invoice.id, 'DA_HUY').subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Order cancelled successfully by customer:', updatedInvoice);
+        this.savingStatus = false;
+
+        // Cập nhật invoice với dữ liệu mới
+        this.invoice = updatedInvoice;
+
+        // Hiển thị thông báo thành công
+        this.showToast('Đã hủy đơn hàng thành công. Số lượng sản phẩm đã được hoàn lại vào kho.', 'success');
+
+        // Reload lại invoice detail để cập nhật UI
+        setTimeout(() => {
+          this.loadInvoiceDetail();
+        }, 1000);
+      },
+      error: (error) => {
+        console.error('❌ Error cancelling order:', error);
+        this.savingStatus = false;
+
+        let errorMessage = 'Không thể hủy đơn hàng. Vui lòng thử lại!';
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        this.showToast(errorMessage, 'error');
       }
     });
   }

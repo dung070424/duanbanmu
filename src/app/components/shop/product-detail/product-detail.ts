@@ -9,6 +9,7 @@ import {
 } from '../../../services/chi-tiet-san-pham-api.service';
 import { HoaDonChoService, GioHangChoItem } from '../../../services/hoa-don-cho.service';
 import { AuthService } from '../../../services/auth';
+import { CustomerService } from '../../../services/customer.service';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
 import { ShopFooterComponent } from '../shared/shop-footer.component';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
@@ -48,6 +49,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     private chiTietSanPhamApiService: ChiTietSanPhamApiService,
     private hoaDonChoService: HoaDonChoService,
     private authService: AuthService,
+    private customerService: CustomerService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -282,6 +284,10 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       localStorage.setItem('temp_cart', JSON.stringify(tempCart));
       // Force change detection sau khi cập nhật localStorage
       this.cdr.detectChanges();
+      
+      // Phát sự kiện để header component cập nhật
+      window.dispatchEvent(new Event('cartUpdated'));
+      
       alert(`Đã thêm "${this.product.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
       return;
     }
@@ -311,6 +317,10 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         next: () => {
           // Force change detection sau khi thêm vào giỏ hàng thành công
           this.cdr.detectChanges();
+          
+          // Phát sự kiện để header component cập nhật
+          window.dispatchEvent(new Event('cartUpdated'));
+          
           alert(`Đã thêm "${this.product!.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
         },
         error: (error) => {
@@ -330,39 +340,105 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   getOrCreateCart(): Promise<number | null> {
     return new Promise((resolve) => {
       const currentUser = this.authService.getCurrentUser();
-      const savedCartId = localStorage.getItem('current_cart_id');
 
-      if (savedCartId && currentUser) {
-        this.hoaDonChoService.getHoaDonChoById(parseInt(savedCartId)).subscribe({
-          next: (cart) => {
-            if (cart && cart.trangThai === 'DANG_CHO') {
-              resolve(cart.id!);
+      // Nếu user đã đăng nhập, lấy khachHangId từ customer service
+      if (currentUser?.id && this.authService.isLoggedIn()) {
+        // Lấy thông tin customer để có khachHangId
+        this.customerService.getCurrentCustomer().subscribe({
+          next: (customer) => {
+            const khachHangId = customer?.id ?? null; // Convert undefined to null
+            if (!khachHangId) {
+              console.warn('⚠️ Customer ID not found, user may be newly registered');
+              // Nếu user mới đăng ký chưa có KhachHang, tạo cart không có khachHangId
+              // Backend sẽ tự động tạo KhachHang khi cần
+              console.log('📦 Creating cart without khachHangId (will be set later)');
+              this.createNewCart(resolve);
+              return;
+            }
+
+            console.log('✅ Got khachHangId:', khachHangId);
+            
+            // Kiểm tra cart đã lưu trong localStorage
+            const savedCartId = localStorage.getItem('current_cart_id');
+            if (savedCartId) {
+              this.hoaDonChoService.getHoaDonChoById(parseInt(savedCartId)).subscribe({
+                next: (cart) => {
+                  if (cart && cart.trangThai === 'DANG_CHO' && cart.khachHangId === khachHangId) {
+                    console.log('✅ Using existing cart from localStorage:', cart.id);
+                    resolve(cart.id!);
+                  } else {
+                    localStorage.removeItem('current_cart_id');
+                    // Tìm giỏ hàng theo khachHangId
+                    this.findOrCreateCartByKhachHangId(resolve, khachHangId);
+                  }
+                },
+                error: () => {
+                  localStorage.removeItem('current_cart_id');
+                  this.findOrCreateCartByKhachHangId(resolve, khachHangId);
+                },
+              });
             } else {
-              localStorage.removeItem('current_cart_id');
+              // Tìm giỏ hàng theo khachHangId
+              this.findOrCreateCartByKhachHangId(resolve, khachHangId);
+            }
+          },
+          error: (error) => {
+            console.error('Error getting customer info:', error);
+            // Nếu lỗi 404, có thể là user mới đăng ký chưa có KhachHang
+            if (error.status === 404) {
+              console.log('⚠️ Customer not found (404), creating cart without khachHangId');
+              // Tạo cart không có khachHangId, backend sẽ tự động tạo KhachHang khi cần
+              this.createNewCart(resolve);
+            } else {
+              console.error('❌ Unexpected error getting customer:', error);
+              // Không block user, vẫn cho phép tạo cart
               this.createNewCart(resolve);
             }
           },
-          error: () => {
-            localStorage.removeItem('current_cart_id');
-            this.createNewCart(resolve);
-          },
         });
       } else {
+        // Chưa đăng nhập
         this.createNewCart(resolve);
       }
     });
   }
 
-  createNewCart(resolve: (value: number | null) => void): void {
-    const customerId = this.authService.getCurrentUser()?.id;
-    const maHoaDonCho = `HDC${Date.now()}`;
+  private findOrCreateCartByKhachHangId(resolve: (value: number | null) => void, khachHangId: number): void {
+    this.hoaDonChoService.getHoaDonChoByKhachHangId(khachHangId).subscribe({
+      next: (carts) => {
+        // Tìm giỏ hàng đang chờ (trạng thái DANG_CHO)
+        const activeCart = carts.find((c) => c.trangThai === 'DANG_CHO');
+        if (activeCart && activeCart.id) {
+          console.log('✅ Found existing cart for customer:', activeCart.id);
+          localStorage.setItem('current_cart_id', activeCart.id.toString());
+          resolve(activeCart.id);
+        } else {
+          // Không có giỏ hàng đang chờ, tạo mới
+          console.log('📦 No active cart found, creating new cart for khachHangId:', khachHangId);
+          this.createNewCartWithKhachHangId(resolve, khachHangId);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading cart by khachHangId:', error);
+        // Nếu lỗi, thử tạo mới
+        this.createNewCartWithKhachHangId(resolve, khachHangId);
+      },
+    });
+  }
 
+  createNewCart(resolve: (value: number | null) => void): void {
+    // Tạo mã hóa đơn chờ unique: HDC + timestamp + random number
+    const maHoaDonCho = `HDC${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newCart: Partial<any> = {
       maHoaDonCho: maHoaDonCho,
-      khachHangId: customerId || undefined,
+      khachHangId: undefined, // Chưa đăng nhập
+      nhanVienId: undefined, // QUAN TRỌNG: Web bán online KHÔNG set nhanVienId (phải null)
       trangThai: 'DANG_CHO',
       danhSachGioHang: [],
     };
+    
+    console.log('📦 Creating new cart (not logged in)');
+    console.log('   - maHoaDonCho:', maHoaDonCho);
 
     this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
       next: (cart) => {
@@ -371,6 +447,40 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       },
       error: (error) => {
         console.error('Error creating cart:', error);
+        resolve(null);
+      },
+    });
+  }
+
+  createNewCartWithKhachHangId(resolve: (value: number | null) => void, khachHangId: number): void {
+    // Tạo mã hóa đơn chờ unique: HDC + timestamp + random number
+    const maHoaDonCho = `HDC${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newCart: Partial<any> = {
+      maHoaDonCho: maHoaDonCho,
+      khachHangId: khachHangId,
+      nhanVienId: undefined, // QUAN TRỌNG: Web bán online KHÔNG set nhanVienId (phải null)
+      trangThai: 'DANG_CHO',
+      danhSachGioHang: [],
+    };
+
+    console.log('📦 Creating new cart with khachHangId:', khachHangId);
+    console.log('   - maHoaDonCho:', maHoaDonCho);
+
+    this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
+      next: (cart) => {
+        if (cart && cart.id) {
+          console.log('✅ Cart created successfully:', cart.id);
+          localStorage.setItem('current_cart_id', cart.id.toString());
+          resolve(cart.id);
+        } else {
+          console.error('❌ Cart created but no ID returned');
+          resolve(null);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error creating cart:', error);
+        const errorMsg = error.error?.message || error.message || 'Không thể tạo giỏ hàng';
+        alert(`Lỗi: ${errorMsg}`);
         resolve(null);
       },
     });
