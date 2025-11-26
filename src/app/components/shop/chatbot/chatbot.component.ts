@@ -19,6 +19,8 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   @ViewChild('messagesContainer', { static: false }) messagesContainer!: ElementRef;
   @ViewChild('messageInput', { static: false }) messageInput!: ElementRef;
 
+  private readonly GUEST_CHAT_ID_KEY = 'tdk_guest_chat_id';
+
   isOpen = false;
   isLoading = false;
   isSendingMessage = false; // Tách riêng trạng thái đang gửi tin nhắn
@@ -27,6 +29,8 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   newMessage = '';
   khachHangId: number | null = null;
   customerName: string = '';
+  isGuestSession = false;
+  autoScrollEnabled = true;
   private pollingSubscription?: Subscription;
   private conversationSubscription?: Subscription;
 
@@ -38,10 +42,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Kiểm tra xem khách hàng đã đăng nhập chưa
-    if (this.authService.isLoggedIn()) {
-      this.loadCustomerInfo();
-    }
+    this.initializeCustomerContext();
   }
 
   ngOnDestroy(): void {
@@ -50,6 +51,15 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     }
     if (this.conversationSubscription) {
       this.conversationSubscription.unsubscribe();
+    }
+  }
+
+  private initializeCustomerContext(): void {
+    if (this.authService.isLoggedIn()) {
+      this.isGuestSession = false;
+      this.loadCustomerInfo();
+    } else {
+      this.initializeGuestSession();
     }
   }
 
@@ -82,31 +92,22 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   toggleChatbot(): void {
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
-      // Nếu chưa có khách hàng ID, load lại
-      if (!this.khachHangId && this.authService.isLoggedIn()) {
-        this.loadCustomerInfo();
+      this.autoScrollEnabled = true;
+      // Đảm bảo có danh tính khách hàng trước khi load conversation
+      if (!this.khachHangId) {
+        this.initializeCustomerContext();
       }
-      // Load conversation khi mở (nếu có khachHangId)
+
       if (this.khachHangId) {
         this.loadConversation();
-      } else if (this.authService.isLoggedIn()) {
-        // Nếu đã đăng nhập nhưng chưa có khachHangId, load customer info
-        this.loadCustomerInfo();
-      } else {
-        // Hiển thị thông báo yêu cầu đăng nhập
-        this.messages = [{
-          id: 0,
-          loaiNguoiGui: 'CHATBOT',
-          noiDung: 'Xin chào! Để sử dụng chatbot, vui lòng đăng nhập.',
-          thoiGianGui: new Date().toISOString(),
-          tuDongTraLoi: true
-        }];
       }
+
       // Focus vào input sau khi mở (đợi một chút để đảm bảo DOM đã render)
       setTimeout(() => {
         if (this.messageInput && this.messageInput.nativeElement) {
           this.messageInput.nativeElement.focus();
         }
+        this.scrollToBottom(true);
       }, 300);
     } else {
       // Dừng polling khi đóng
@@ -417,13 +418,28 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   /**
    * Scroll đến tin nhắn cuối cùng
    */
-  scrollToBottom(): void {
+  scrollToBottom(force: boolean = false): void {
+    if (!force && !this.autoScrollEnabled) {
+      return;
+    }
     setTimeout(() => {
       if (this.messagesContainer) {
         const element = this.messagesContainer.nativeElement;
         element.scrollTop = element.scrollHeight;
+        if (force) {
+          this.autoScrollEnabled = true;
+        }
       }
     }, 100);
+  }
+
+  onMessagesScroll(): void {
+    if (!this.messagesContainer) {
+      return;
+    }
+    const element = this.messagesContainer.nativeElement;
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    this.autoScrollEnabled = distanceFromBottom <= 80;
   }
 
   /**
@@ -507,6 +523,37 @@ export class ChatbotComponent implements OnInit, OnDestroy {
       .replace(/\p{Diacritic}/gu, '')
       .replace(/\s+/g, '')
       .toLowerCase();
+  }
+
+  /**
+   * Tạo mã khách tạm (guest) và lưu localStorage để chat không cần đăng nhập
+   */
+  private initializeGuestSession(): void {
+    this.isGuestSession = true;
+    this.customerName = 'Khách vãng lai';
+    const guestId = this.getOrCreateGuestId();
+    if (guestId) {
+      this.khachHangId = guestId;
+    }
+  }
+
+  private getOrCreateGuestId(): number | null {
+    if (typeof window === 'undefined' || !window?.localStorage) {
+      return null;
+    }
+
+    const existing = window.localStorage.getItem(this.GUEST_CHAT_ID_KEY);
+    if (existing) {
+      const parsed = Number(existing);
+      if (!isNaN(parsed)) {
+        return parsed;
+      }
+    }
+
+    // Sử dụng ID âm để tránh đụng với ID khách hàng thực tế trong DB
+    const newGuestId = -Math.abs(Date.now());
+    window.localStorage.setItem(this.GUEST_CHAT_ID_KEY, newGuestId.toString());
+    return newGuestId;
   }
 }
 
