@@ -972,49 +972,142 @@ export class CheckoutComponent implements OnInit {
     // Lấy danh sách sản phẩm từ cart hoặc tempCart
     let cartItems: any[] = [];
     if (this.isTempCart && this.tempCart && this.tempCart.length > 0) {
-      cartItems = this.tempCart.map((item: any) => ({
-        chiTietSanPhamId: item.chiTietSanPhamId,
-        tenSanPham: item.productName || '',
-        soLuong: item.quantity || 1,
-        donGia: item.price || 0,
-        giamGia: 0,
-        thanhTien: item.totalItemPrice || item.price * (item.quantity || 1),
-      }));
+      cartItems = this.tempCart
+        .filter((item: any) => item.chiTietSanPhamId != null) // Lọc bỏ items không có chiTietSanPhamId
+        .map((item: any) => {
+          const chiTietSanPhamId = item.chiTietSanPhamId || item.productId;
+          const soLuong = item.quantity || 1;
+          const donGia = parseFloat(item.price) || 0;
+          const giamGia = 0;
+          const thanhTien = item.totalItemPrice || (donGia * soLuong - giamGia);
+          
+          if (!chiTietSanPhamId) {
+            console.error('❌ Cart item missing chiTietSanPhamId:', item);
+            return null;
+          }
+          
+          return {
+            chiTietSanPhamId: chiTietSanPhamId,
+            tenSanPham: item.productName || '',
+            soLuong: soLuong,
+            donGia: donGia,
+            giamGia: giamGia,
+            thanhTien: thanhTien,
+          };
+        })
+        .filter((item: any) => item != null); // Lọc bỏ null items
     } else if (this.cart && this.cart.danhSachGioHang) {
-      cartItems = this.cart.danhSachGioHang.map((item) => ({
-        chiTietSanPhamId: item.chiTietSanPhamId,
-        tenSanPham: item.tenSanPham || '',
-        soLuong: item.soLuong || 1,
-        donGia: item.donGia || 0,
-        giamGia: item.giamGia || 0,
-        thanhTien: item.thanhTien || item.donGia * (item.soLuong || 1) - (item.giamGia || 0),
-      }));
+      cartItems = this.cart.danhSachGioHang
+        .filter((item: any) => item.chiTietSanPhamId != null) // Lọc bỏ items không có chiTietSanPhamId
+        .map((item) => {
+          const chiTietSanPhamId = item.chiTietSanPhamId;
+          const soLuong = item.soLuong || 1;
+          const donGia = parseFloat(String(item.donGia)) || 0;
+          const giamGia = parseFloat(String(item.giamGia)) || 0;
+          const thanhTien = parseFloat(String(item.thanhTien)) || (donGia * soLuong - giamGia);
+          
+          if (!chiTietSanPhamId) {
+            console.error('❌ Cart item missing chiTietSanPhamId:', item);
+            return null;
+          }
+          
+          return {
+            chiTietSanPhamId: chiTietSanPhamId,
+            tenSanPham: item.tenSanPham || '',
+            soLuong: soLuong,
+            donGia: donGia,
+            giamGia: giamGia,
+            thanhTien: thanhTien,
+          };
+        })
+        .filter((item: any) => item != null); // Lọc bỏ null items
     }
 
     if (cartItems.length === 0) {
-      alert('Giỏ hàng của bạn đang trống!');
+      alert('Giỏ hàng của bạn đang trống hoặc không có sản phẩm hợp lệ!');
       this.isSubmitting = false;
       return;
     }
+    
+    // Validate tất cả items đều có đầy đủ thông tin
+    const invalidItems = cartItems.filter((item: any) => 
+      !item.chiTietSanPhamId || 
+      !item.soLuong || 
+      item.soLuong <= 0 || 
+      !item.donGia || 
+      item.donGia <= 0
+    );
+    
+    if (invalidItems.length > 0) {
+      console.error('❌ Invalid cart items:', invalidItems);
+      alert('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!');
+      this.isSubmitting = false;
+      return;
+    }
+    
+    console.log('✅ Validated cart items:', cartItems.length);
 
-    // QUAN TRỌNG: Kiểm tra tồn kho và tính lại tổng tiền trước khi tạo hóa đơn
-    // Tạm thời bỏ qua validation để test nhanh
-    // this.validateStockAndRecalculate().then((validated) => {
-    //   if (!validated) {
-    //     this.isSubmitting = false;
-    //     return;
-    //   }
+    // QUAN TRỌNG: Nếu đã đăng nhập, lấy khachHangId từ customer service
+    if (currentUser?.id && this.authService.isLoggedIn()) {
+      this.customerService.getCurrentCustomer().subscribe({
+        next: (customer) => {
+          const khachHangId = customer?.id ?? null; // Convert undefined to null
+          console.log('✅ Got khachHangId from customer service:', khachHangId);
+          this.createInvoiceWithKhachHangId(khachHangId, cartItems, currentUser);
+        },
+        error: (error) => {
+          console.error('❌ Error getting customer info:', error);
+          // Nếu lỗi 404, có thể là user mới đăng ký chưa có KhachHang
+          // Backend sẽ tự động tạo khi tạo đơn hàng
+          if (error.status === 404) {
+            console.log('⚠️ Customer not found (404), backend will create on order creation');
+          }
+          // Fallback: tạo đơn hàng không có khachHangId (backend sẽ tìm theo email/phone hoặc tạo mới)
+          this.createInvoiceWithKhachHangId(null, cartItems, currentUser);
+        },
+      });
+    } else {
+      // Chưa đăng nhập, tạo đơn hàng không có khachHangId
+      this.createInvoiceWithKhachHangId(null, cartItems, currentUser);
+    }
+  }
 
+  /**
+   * Tạo hóa đơn với khachHangId đã biết
+   */
+  private createInvoiceWithKhachHangId(khachHangId: number | null, cartItems: any[], currentUser: any): void {
+    // QUAN TRỌNG: Nếu không có khachHangId, phải validate đầy đủ thông tin khách hàng
+    if (!khachHangId) {
+      const tenKhachHang = `${this.billingInfo?.firstName || ''} ${this.billingInfo?.lastName || ''}`.trim();
+      const emailKhachHang = this.billingInfo?.email || '';
+      const soDienThoaiKhachHang = this.billingInfo?.phone || '';
+      
+      if (!tenKhachHang || tenKhachHang === '') {
+        alert('Vui lòng nhập tên khách hàng!');
+        this.isSubmitting = false;
+        return;
+      }
+      if (!emailKhachHang || emailKhachHang === '') {
+        alert('Vui lòng nhập email khách hàng!');
+        this.isSubmitting = false;
+        return;
+      }
+      if (!soDienThoaiKhachHang || soDienThoaiKhachHang === '') {
+        alert('Vui lòng nhập số điện thoại khách hàng!');
+        this.isSubmitting = false;
+        return;
+      }
+    }
+    
     // Tạo hóa đơn từ HoaDonCho hoặc tempCart
     // QUAN TRỌNG: Không set nhanVienId để đánh dấu đơn hàng online (nhanVienId = null = Online)
     // Backend sẽ tự động map nhanVienId = null thành viTriBanHang = "Online"
-    // CHO PHÉP khachHangId = null để test không cần đăng nhập
     const hoaDonData: any = {
-      maHoaDon: `HD${Date.now()}`,
-      khachHangId: currentUser?.id || null, // Cho phép null để test
+      maHoaDon: `HD${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      khachHangId: khachHangId, // Đã lấy từ customer service
       tenKhachHang: `${this.billingInfo?.firstName || ''} ${
         this.billingInfo?.lastName || ''
-      }`.trim(),
+      }`.trim() || (currentUser?.name || 'Khách hàng'),
       soDienThoaiKhachHang: this.billingInfo?.phone || '',
       emailKhachHang: this.billingInfo?.email || '',
       diaChiChiTiet: this.billingInfo?.address || '',
@@ -1053,14 +1146,52 @@ export class CheckoutComponent implements OnInit {
         : transferNote;
     }
 
+    // Validate dữ liệu trước khi gửi
+    if (!hoaDonData.danhSachChiTiet || hoaDonData.danhSachChiTiet.length === 0) {
+      console.error('❌ Cannot create invoice: cartItems is empty');
+      alert('Giỏ hàng của bạn đang trống!');
+      this.isSubmitting = false;
+      return;
+    }
+    
+    // Validate từng item trong danhSachChiTiet
+    const invalidItems = hoaDonData.danhSachChiTiet.filter((item: any) => 
+      !item.chiTietSanPhamId || 
+      !item.soLuong || 
+      item.soLuong <= 0
+    );
+    
+    if (invalidItems.length > 0) {
+      console.error('❌ Cannot create invoice: invalid items found', invalidItems);
+      alert('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!');
+      this.isSubmitting = false;
+      return;
+    }
+    
+    // Validate tổng tiền
+    if (!hoaDonData.tongTien || hoaDonData.tongTien <= 0) {
+      console.error('❌ Cannot create invoice: tongTien is invalid', hoaDonData.tongTien);
+      alert('Tổng tiền không hợp lệ. Vui lòng kiểm tra lại!');
+      this.isSubmitting = false;
+      return;
+    }
+    
     // Tạo hóa đơn
     console.log('📤 Creating invoice from cart:', {
       cartId: this.cartId,
       cartItems: this.cart?.danhSachGioHang?.length || 0,
-      hoaDonData: {
-        ...hoaDonData,
-        danhSachChiTiet: hoaDonData.danhSachChiTiet?.length || 0,
-      },
+      khachHangId: hoaDonData.khachHangId,
+      tenKhachHang: hoaDonData.tenKhachHang,
+      emailKhachHang: hoaDonData.emailKhachHang,
+      soDienThoaiKhachHang: hoaDonData.soDienThoaiKhachHang,
+      danhSachChiTietCount: hoaDonData.danhSachChiTiet?.length || 0,
+      tongTien: hoaDonData.tongTien,
+      thanhTien: hoaDonData.thanhTien,
+    });
+    
+    // Log chi tiết từng item để debug
+    hoaDonData.danhSachChiTiet.forEach((item: any, index: number) => {
+      console.log(`   - Item ${index + 1}: chiTietSanPhamId=${item.chiTietSanPhamId}, soLuong=${item.soLuong}, donGia=${item.donGia}`);
     });
 
     this.hoaDonService.createHoaDon(hoaDonData).subscribe({
@@ -1082,6 +1213,8 @@ export class CheckoutComponent implements OnInit {
               localStorage.removeItem('current_cart_id');
               // Xóa giỏ hàng tạm nếu có
               localStorage.removeItem('temp_cart');
+              // Trigger cart updated event để update cart count
+              window.dispatchEvent(new Event('cartUpdated'));
             },
             error: (err) => {
               console.error('Error deleting cart:', err);
@@ -1091,17 +1224,28 @@ export class CheckoutComponent implements OnInit {
         } else {
           // Xóa giỏ hàng tạm nếu không có cartId
           localStorage.removeItem('temp_cart');
+          // Trigger cart updated event để update cart count
+          window.dispatchEvent(new Event('cartUpdated'));
         }
 
-        // Lưu hoá đơn đã tạo để hiển thị chi tiết
+        // Lưu hoá đơn đã tạo (để backup nếu cần)
         this.createdInvoice = hoaDon;
-
-        // Hiển thị chi tiết hoá đơn
-        this.showInvoiceDetails = true;
         this.isSubmitting = false;
 
-        // Force change detection để hiển thị invoice details ngay lập tức
-        this.cdr.detectChanges();
+        console.log('✅ Order created successfully, redirecting to order history...');
+
+        // Chuyển sang trang lịch sử đơn hàng với order ID vừa tạo
+        // Kiểm tra nếu user đã đăng nhập
+        if (this.authService.isLoggedIn()) {
+          // Navigate đến trang lịch sử đơn hàng với query param để highlight đơn hàng vừa tạo
+          this.router.navigate(['/customer/orders'], {
+            queryParams: { newOrderId: hoaDon.id }
+          });
+        } else {
+          // Nếu chưa đăng nhập, vẫn redirect nhưng không có query param
+          // (trường hợp này ít xảy ra vì thường đã đăng nhập khi đặt hàng)
+          this.router.navigate(['/customer/orders']);
+        }
       },
       error: (err) => {
         console.error('❌ Error creating invoice:', err);

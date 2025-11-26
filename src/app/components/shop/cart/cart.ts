@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HoaDonChoService, HoaDonCho, GioHangChoItem } from '../../../services/hoa-don-cho.service';
 import { AuthService } from '../../../services/auth';
+import { CustomerService } from '../../../services/customer.service';
 import { ColorApiService, ColorResponse } from '../../../services/color-api.service';
 import { SizeApiService, SizeResponse } from '../../../services/size-api.service';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
@@ -45,6 +46,7 @@ export class CartComponent implements OnInit {
   constructor(
     private hoaDonChoService: HoaDonChoService,
     public authService: AuthService, // Đổi thành public để dùng trong template
+    private customerService: CustomerService,
     private router: Router,
     private location: Location,
     private cdr: ChangeDetectorRef,
@@ -109,92 +111,113 @@ export class CartComponent implements OnInit {
     this.error = '';
     this.isTempCart = false;
 
-    // Lấy hoặc tạo HoaDonCho cho khách hàng
-    const customerId = this.authService.getCurrentUser()?.id;
-    console.log('🛒 loadCart - customerId:', customerId);
-    
-    if (!customerId) {
+    // Kiểm tra đăng nhập
+    if (!this.authService.isLoggedIn()) {
       // Nếu chưa đăng nhập, load giỏ hàng tạm
-      console.log('⚠️ loadCart - No customerId, loading temp cart');
+      console.log('⚠️ loadCart - User not logged in, loading temp cart');
       this.loadTempCart();
       return;
     }
 
-    // Nếu đã đăng nhập, lấy cart của khách hàng từ DB
-    console.log('🛒 loadCart - Fetching cart from DB for customerId:', customerId);
-    this.hoaDonChoService.getHoaDonChoByKhachHangId(customerId).subscribe({
-      next: (carts) => {
-        console.log('✅ loadCart - Received carts from DB:', carts);
-        console.log('   - carts length:', carts?.length || 0);
+    // Lấy khachHangId từ customer service
+    console.log('🛒 loadCart - Getting khachHangId from customer service...');
+    this.customerService.getCurrentCustomer().subscribe({
+      next: (customer) => {
+        const khachHangId = customer?.id ?? null;
+        console.log('✅ loadCart - Got khachHangId:', khachHangId);
         
-        if (carts && carts.length > 0) {
-          // Lấy cart đầu tiên có trạng thái DANG_CHO
-          const activeCart = carts.find(c => c.trangThai === 'DANG_CHO') || carts[0];
-          console.log('✅ loadCart - Active cart:', activeCart);
-          console.log('   - cart items count:', activeCart.danhSachGioHang?.length || 0);
-          
-          // QUAN TRỌNG: Nếu cart DB trống nhưng có temp_cart, ưu tiên hiển thị temp_cart
-          if (!activeCart.danhSachGioHang || activeCart.danhSachGioHang.length === 0) {
-            const tempCartData = localStorage.getItem('temp_cart');
-            if (tempCartData) {
-              try {
-                const tempCart = JSON.parse(tempCartData);
-                if (tempCart && tempCart.length > 0) {
-                  console.log('⚠️ loadCart - DB cart is empty but temp_cart has items, loading temp_cart');
-                  this.loadTempCart();
-                  return;
-                }
-              } catch (e) {
-                console.error('Error parsing temp_cart:', e);
-              }
-            }
-          }
-          
-          this.currentHoaDonChoId = activeCart.id!;
-          this.cart = activeCart;
-          this.isTempCart = false; // Đảm bảo flag đúng
-          // Update cartItems cache ngay để hiển thị
-          this.updateCartItemsCache();
-          // Force change detection để Angular render ngay
-          this.cdr.detectChanges();
-          console.log('✅ loadCart - Updated cartItems from DB, length:', this.cartItems.length);
-          this.isLoading = false; // Đã tắt loading
-        } else {
-          console.log('⚠️ loadCart - No carts found in DB');
-          // Kiểm tra xem có temp_cart không
-          const tempCartData = localStorage.getItem('temp_cart');
-          if (tempCartData) {
-            try {
-              const tempCart = JSON.parse(tempCartData);
-              if (tempCart && tempCart.length > 0) {
-                console.log('⚠️ loadCart - No DB cart but temp_cart has items, loading temp_cart');
-                this.loadTempCart();
-                return;
-              }
-            } catch (e) {
-              console.error('Error parsing temp_cart:', e);
-            }
-          }
-          console.log('⚠️ loadCart - Creating new cart');
-          this.createNewCart();
-          this.isLoading = false; // Đã tắt loading
+        if (!khachHangId) {
+          console.warn('⚠️ loadCart - No khachHangId found, loading temp cart');
+          this.loadTempCart();
+          return;
         }
+
+        // Lấy cart của khách hàng từ DB (chỉ cart ONLINE - nhanVienId = null)
+        console.log('🛒 loadCart - Fetching ONLINE cart from DB for khachHangId:', khachHangId);
+        this.hoaDonChoService.getHoaDonChoByKhachHangId(khachHangId).subscribe({
+          next: (carts) => {
+            console.log('✅ loadCart - Received carts from DB:', carts);
+            console.log('   - carts length:', carts?.length || 0);
+            
+            if (carts && carts.length > 0) {
+              // Lấy cart đầu tiên có trạng thái DANG_CHO
+              const activeCart = carts.find(c => c.trangThai === 'DANG_CHO') || carts[0];
+              console.log('✅ loadCart - Active cart:', activeCart);
+              console.log('   - cart items count:', activeCart.danhSachGioHang?.length || 0);
+              
+              // QUAN TRỌNG: Nếu cart DB trống nhưng có temp_cart, ưu tiên hiển thị temp_cart
+              if (!activeCart.danhSachGioHang || activeCart.danhSachGioHang.length === 0) {
+                const tempCartData = localStorage.getItem('temp_cart');
+                if (tempCartData) {
+                  try {
+                    const tempCart = JSON.parse(tempCartData);
+                    if (tempCart && tempCart.length > 0) {
+                      console.log('⚠️ loadCart - DB cart is empty but temp_cart has items, loading temp_cart');
+                      this.loadTempCart();
+                      return;
+                    }
+                  } catch (e) {
+                    console.error('Error parsing temp_cart:', e);
+                  }
+                }
+              }
+              
+              this.currentHoaDonChoId = activeCart.id!;
+              this.cart = activeCart;
+              this.isTempCart = false; // Đảm bảo flag đúng
+              // Update cartItems cache ngay để hiển thị
+              this.updateCartItemsCache();
+              // Force change detection để Angular render ngay
+              this.cdr.detectChanges();
+              console.log('✅ loadCart - Updated cartItems from DB, length:', this.cartItems.length);
+              this.isLoading = false; // Đã tắt loading
+            } else {
+              console.log('⚠️ loadCart - No carts found in DB');
+              // Kiểm tra xem có temp_cart không
+              const tempCartData = localStorage.getItem('temp_cart');
+              if (tempCartData) {
+                try {
+                  const tempCart = JSON.parse(tempCartData);
+                  if (tempCart && tempCart.length > 0) {
+                    console.log('⚠️ loadCart - No DB cart but temp_cart has items, loading temp_cart');
+                    this.loadTempCart();
+                    return;
+                  }
+                } catch (e) {
+                  console.error('Error parsing temp_cart:', e);
+                }
+              }
+              console.log('⚠️ loadCart - Creating new cart');
+              this.createNewCart();
+              this.isLoading = false; // Đã tắt loading
+            }
+          },
+          error: (error) => {
+            // Xử lý lỗi một cách graceful
+            if (error.status === 0 || error.status === undefined) {
+              // Connection refused - backend không khả dụng, fallback to temp cart
+              console.warn('⚠️ Backend không khả dụng, sử dụng giỏ hàng tạm');
+              this.loadTempCart();
+            } else {
+              console.error('❌ Error loading cart:', error);
+              console.error('   - Status:', error.status);
+              console.error('   - Message:', error.message);
+              this.error = 'Không thể tải giỏ hàng. Vui lòng thử lại!';
+              // Fallback: thử load temp cart nếu có
+              console.log('⚠️ loadCart - Error occurred, falling back to temp_cart');
+              this.loadTempCart();
+            }
+          }
+        });
       },
       error: (error) => {
-        // Xử lý lỗi một cách graceful
-        if (error.status === 0 || error.status === undefined) {
-          // Connection refused - backend không khả dụng, fallback to temp cart
-          console.warn('⚠️ Backend không khả dụng, sử dụng giỏ hàng tạm');
-          this.loadTempCart();
-        } else {
-          console.error('❌ Error loading cart:', error);
-          console.error('   - Status:', error.status);
-          console.error('   - Message:', error.message);
-          this.error = 'Không thể tải giỏ hàng. Vui lòng thử lại!';
-          // Fallback: thử load temp cart nếu có
-          console.log('⚠️ loadCart - Error occurred, falling back to temp_cart');
-          this.loadTempCart();
+        console.error('❌ Error getting customer info in loadCart:', error);
+        // Nếu lỗi 404, có thể là user mới đăng ký chưa có KhachHang
+        if (error.status === 404) {
+          console.log('⚠️ Customer not found (404), loading temp cart');
         }
+        // Fallback: load temp cart
+        this.loadTempCart();
       }
     });
   }
@@ -281,26 +304,67 @@ export class CartComponent implements OnInit {
   }
 
   createNewCart(): void {
-    const customerId = this.authService.getCurrentUser()?.id;
-    const maHoaDonCho = `HDC${Date.now()}`;
+    // Tạo mã hóa đơn chờ unique: HDC + timestamp + random number
+    const maHoaDonCho = `HDC${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    const currentUser = this.authService.getCurrentUser();
+    
+    // Nếu đã đăng nhập, lấy khachHangId từ customer service
+    if (currentUser?.id && this.authService.isLoggedIn()) {
+      this.customerService.getCurrentCustomer().subscribe({
+        next: (customer) => {
+          const khachHangId = customer?.id ?? null;
+          console.log('✅ Got khachHangId from customer service:', khachHangId);
+          this.createCartWithKhachHangId(maHoaDonCho, khachHangId);
+        },
+        error: (error) => {
+          console.error('❌ Error getting customer info:', error);
+          // Nếu lỗi 404, có thể là user mới đăng ký chưa có KhachHang
+          if (error.status === 404) {
+            console.log('⚠️ Customer not found (404), creating cart without khachHangId');
+          }
+          // Fallback: tạo cart không có khachHangId
+          this.createCartWithKhachHangId(maHoaDonCho, null);
+        },
+      });
+    } else {
+      // Chưa đăng nhập, tạo cart không có khachHangId
+      this.createCartWithKhachHangId(maHoaDonCho, null);
+    }
+  }
+
+  private createCartWithKhachHangId(maHoaDonCho: string, khachHangId: number | null): void {
     const newCart: Partial<HoaDonCho> = {
       maHoaDonCho: maHoaDonCho,
-      khachHangId: customerId || undefined,
+      khachHangId: khachHangId ?? undefined,
+      nhanVienId: undefined, // QUAN TRỌNG: Web bán online KHÔNG set nhanVienId (phải null)
       trangThai: 'DANG_CHO',
       danhSachGioHang: []
     };
 
+    console.log('📦 Creating new cart');
+    console.log('   - maHoaDonCho:', maHoaDonCho);
+    console.log('   - khachHangId:', khachHangId);
+
     this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
       next: (cart) => {
+        console.log('✅ Cart created successfully:', cart.id);
         this.cart = cart;
         this.currentHoaDonChoId = cart.id!;
         localStorage.setItem('current_cart_id', cart.id!.toString());
         this.updateCartItemsCache();
+        this.error = ''; // Clear any previous errors
       },
       error: (error) => {
-        console.error('Error creating cart:', error);
-        this.error = 'Không thể tạo giỏ hàng. Vui lòng thử lại!';
+        console.error('❌ Error creating cart:', error);
+        const errorMsg = error.error?.error || error.error?.message || error.message || 'Không thể tạo giỏ hàng. Vui lòng thử lại!';
+        this.error = errorMsg;
+        console.error('   - Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          url: error.url,
+          error: error.error
+        });
       }
     });
   }
@@ -482,40 +546,62 @@ export class CartComponent implements OnInit {
       return;
     }
 
-    this.hoaDonChoService.getHoaDonChoByKhachHangId(currentUser.id).subscribe({
-      next: (carts) => {
-        let cartId: number;
+    // Lấy khachHangId từ customer service
+    this.customerService.getCurrentCustomer().subscribe({
+      next: (customer) => {
+        const khachHangId = customer?.id ?? null;
+        console.log('✅ Got khachHangId for merge:', khachHangId);
         
-        if (carts && carts.length > 0) {
-          const activeCart = carts.find(c => c.trangThai === 'DANG_CHO') || carts[0];
-          cartId = activeCart.id!;
-        } else {
-          // Tạo giỏ hàng mới
-          const maHoaDonCho = `HDC${Date.now()}`;
-          const newCart: Partial<HoaDonCho> = {
-            maHoaDonCho: maHoaDonCho,
-            khachHangId: currentUser.id,
-            trangThai: 'DANG_CHO',
-            danhSachGioHang: []
-          };
-          
-          this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
-            next: (cart) => {
-              if (cart.id) {
-                this.mergeItemsToCart(cart.id);
-              }
-            },
-            error: (error) => {
-              console.error('Error creating cart for merge:', error);
-            }
-          });
+        if (!khachHangId) {
+          console.warn('⚠️ No khachHangId found, cannot merge to DB cart');
           return;
         }
 
-        this.mergeItemsToCart(cartId);
+        this.hoaDonChoService.getHoaDonChoByKhachHangId(khachHangId).subscribe({
+          next: (carts) => {
+            let cartId: number;
+            
+            if (carts && carts.length > 0) {
+              const activeCart = carts.find(c => c.trangThai === 'DANG_CHO') || carts[0];
+              cartId = activeCart.id!;
+            } else {
+              // Tạo giỏ hàng mới với mã unique
+              const maHoaDonCho = `HDC${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              const newCart: Partial<HoaDonCho> = {
+                maHoaDonCho: maHoaDonCho,
+                khachHangId: khachHangId,
+                nhanVienId: undefined, // QUAN TRỌNG: Web bán online KHÔNG set nhanVienId (phải null)
+                trangThai: 'DANG_CHO',
+                danhSachGioHang: []
+              };
+              
+              this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
+                next: (cart) => {
+                  if (cart.id) {
+                    this.mergeItemsToCart(cart.id);
+                  }
+                },
+                error: (error) => {
+                  console.error('❌ Error creating cart for merge:', error);
+                  const errorMsg = error.error?.error || error.error?.message || error.message;
+                  console.error('   - Error details:', errorMsg);
+                }
+              });
+              return;
+            }
+
+            this.mergeItemsToCart(cartId);
+          },
+          error: (error) => {
+            console.error('❌ Error loading cart for merge:', error);
+          }
+        });
       },
       error: (error) => {
-        console.error('Error loading cart for merge:', error);
+        console.error('❌ Error getting customer info for merge:', error);
+        if (error.status === 404) {
+          console.log('⚠️ Customer not found (404), cannot merge to DB cart');
+        }
       }
     });
   }
