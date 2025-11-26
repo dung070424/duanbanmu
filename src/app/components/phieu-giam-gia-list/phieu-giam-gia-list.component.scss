@@ -927,6 +927,10 @@
           gap: 20px;
           margin-bottom: 20px;
 
+          &.single-column {
+            grid-template-columns: 1fr;
+          }
+
           &:last-child {
             margin-bottom: 0;
           }

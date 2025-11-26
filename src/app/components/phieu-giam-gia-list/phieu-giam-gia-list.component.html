@@ -128,8 +128,8 @@
               <div class="code-date">{{ formatDate(phieu.ngayBatDau) }}</div>
             </td>
             <td class="phieu-value">
-              <div class="value-amount">{{ formatCurrency(phieu.giaTriGiam) }}</div>
-              <div class="min-order">Đơn tối thiểu: {{ formatCurrency(phieu.giaTriToiThieu) }}</div>
+              <div class="value-amount">{{ formatGiaTri(phieu) }}</div>
+              <div class="min-order">Đơn tối thiểu: {{ formatDonToiThieu(phieu) }}</div>
             </td>
             <td>{{ phieu.soLuongDung }}</td>
             <td>
@@ -298,7 +298,7 @@
                 {{ getEditFieldError('giaTriGiam') }}
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" *ngIf="editForm.loaiPhieuGiamGia">
               <label>Giá trị tối thiểu</label>
               <div class="input-group">
                 <input
@@ -318,8 +318,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="form-row" [ngClass]="{'single-column': !editForm.loaiPhieuGiamGia}">
+            <div class="form-group" *ngIf="editForm.loaiPhieuGiamGia">
               <label>Số tiền tối đa</label>
               <div class="input-group">
                 <input
@@ -406,6 +406,9 @@
                 class="form-control"
                 [class.is-invalid]="hasEditFieldError('ngayBatDau')"
                 name="ngayBatDau"
+                required
+                [attr.min]="minStartDate"
+                [attr.max]="editForm.ngayKetThuc || null"
                 (blur)="onEditFieldBlur('ngayBatDau')"
                 (change)="onEditDateChange()"
               />
@@ -421,6 +424,8 @@
                 class="form-control"
                 [class.is-invalid]="hasEditFieldError('ngayKetThuc')"
                 name="ngayKetThuc"
+                required
+                [attr.min]="editForm.ngayBatDau || null"
                 (blur)="onEditFieldBlur('ngayKetThuc')"
                 (change)="onEditDateChange()"
               />
