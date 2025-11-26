@@ -576,10 +576,18 @@ $text-light: #6c757d;
     justify-content: center;
     margin-bottom: 20px;
     transition: all 0.3s ease;
+    position: relative;
     
     i {
-      font-size: 2rem;
+      font-size: 2.5rem;
       color: $white;
+      display: inline-block;
+      line-height: 1;
+      font-style: normal;
+      font-weight: 900;
+      text-rendering: auto;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     // Status colors
@@ -591,6 +599,11 @@ $text-light: #6c757d;
     &.status-icon-confirmed {
       background: linear-gradient(135deg, $info-color, #5dade2);
       box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+
+    &.status-icon-shipping {
+      background: linear-gradient(135deg, #007bff, #5dade2);
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
     }
 
     &.status-icon-delivered {
@@ -618,6 +631,19 @@ $text-light: #6c757d;
     font-weight: 600;
     color: $text-dark;
     text-align: center;
+  }
+
+  .btn-back-status {
+    min-width: 120px;
+    padding: 8px 16px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
   }
 }
 
