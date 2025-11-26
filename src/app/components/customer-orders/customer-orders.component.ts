@@ -136,7 +136,7 @@ export class CustomerOrdersComponent implements OnInit {
   }
 
   cancelOrder(orderId: number): void {
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?hả')) {
       return;
     }
 

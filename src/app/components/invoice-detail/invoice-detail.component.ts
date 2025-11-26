@@ -3153,16 +3153,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Xác nhận với khách hàng
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng sản phẩm sẽ được hoàn lại vào kho.')) {
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này? ')) {
       return;
     }
 
     this.savingStatus = true;
     console.log('🔄 Customer cancelling order:', this.invoice.id);
 
-    // Gọi API cập nhật trạng thái thành DA_HUY
+    // Gọi API riêng cho khách hàng hủy đơn hàng
+    // Endpoint: /api/customer/orders/{id}/cancel
     // Backend sẽ tự động hoàn lại stock cho đơn hàng online
-    this.hoaDonService.updateTrangThaiHoaDon(this.invoice.id, 'DA_HUY').subscribe({
+    this.hoaDonService.cancelCustomerOrder(this.invoice.id).subscribe({
       next: (updatedInvoice) => {
         console.log('✅ Order cancelled successfully by customer:', updatedInvoice);
         this.savingStatus = false;
@@ -3185,8 +3186,19 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         let errorMessage = 'Không thể hủy đơn hàng. Vui lòng thử lại!';
         if (error.error?.message) {
           errorMessage = error.error.message;
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
         } else if (error.message) {
           errorMessage = error.message;
+        }
+
+        // Xử lý các lỗi cụ thể
+        if (error.status === 403) {
+          errorMessage = 'Bạn không có quyền hủy đơn hàng này';
+        } else if (error.status === 401) {
+          errorMessage = 'Bạn cần đăng nhập để hủy đơn hàng';
+        } else if (error.status === 404) {
+          errorMessage = 'Không tìm thấy đơn hàng';
         }
 
         this.showToast(errorMessage, 'error');
