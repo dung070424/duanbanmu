@@ -370,9 +370,15 @@ export class HoaDonService {
     return this.http.post<any>(`${this.apiUrl}/sample-data`, {});
   }
 
-  // Get detailed invoice information
-  getHoaDonDetail(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+  // Get detailed invoice information with product details
+  // QUAN TRỌNG: Method này cần được backend hỗ trợ để trả về danhSachChiTiet cho TẤT CẢ các trạng thái
+  getHoaDonDetail(id: number, includeChiTiet: boolean = true): Observable<any> {
+    let url = `${this.apiUrl}/${id}`;
+    // Nếu cần load chi tiết, thêm query param (nếu backend hỗ trợ)
+    if (includeChiTiet) {
+      url += '?includeChiTiet=true';
+    }
+    return this.http.get<any>(url).pipe(
       map((response: any) => {
         console.log('📦 getHoaDonDetail - Raw response from backend:', {
           id: response.id,

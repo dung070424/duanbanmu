@@ -46,6 +46,13 @@
           <a routerLink="/shop/products" routerLinkActive="active">Sản phẩm</a>
           <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
           <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
+          <a 
+            routerLink="/customer/orders" 
+            routerLinkActive="active"
+            *ngIf="authService.isLoggedIn()"
+          >
+            Đơn hàng của tôi
+          </a>
         </nav>
         <div class="header-actions">
           <button class="icon-btn" routerLink="/shop/products">

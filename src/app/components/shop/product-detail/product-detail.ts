@@ -41,6 +41,10 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   // Image gallery (nếu có nhiều ảnh)
   productImages: string[] = [];
 
+  // Suggested products
+  suggestedProducts: SanPhamResponse[] = [];
+  loadingSuggestedProducts = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -111,6 +115,9 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
         // Load product variants (chi tiết sản phẩm) - không block UI
         this.loadProductVariants(productId);
+        
+        // Load suggested products
+        this.loadSuggestedProducts(productId);
       },
       error: (err) => {
         console.error('❌ loadProduct - Error loading product:', err);
@@ -682,5 +689,50 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     if (!value) return false;
     const cleaned = value.replace(/\s+/g, '');
     return cleaned.length > 40 && /^[A-Za-z0-9+/]+=*$/.test(cleaned);
+  }
+
+  loadSuggestedProducts(currentProductId: number): void {
+    this.loadingSuggestedProducts = true;
+    this.productApiService
+      .search({
+        trangThai: true,
+        page: 0,
+        size: 12, // Lấy 12 sản phẩm để hiển thị
+        useCustomerEndpoint: true,
+      })
+      .subscribe({
+        next: (response) => {
+          // Lọc bỏ sản phẩm hiện tại và chỉ lấy sản phẩm đang hoạt động
+          this.suggestedProducts = response.content
+            .filter((p) => p.trangThai === true && p.id !== currentProductId)
+            .slice(0, 8); // Hiển thị tối đa 8 sản phẩm gợi ý
+          this.loadingSuggestedProducts = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error loading suggested products:', error);
+          this.suggestedProducts = [];
+          this.loadingSuggestedProducts = false;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  getProductImageUrl(product: SanPhamResponse): string {
+    if (!product.anhSanPham) {
+      return 'https://via.placeholder.com/200x200?text=No+Image';
+    }
+    const trimmed = product.anhSanPham.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+    return `/${trimmed}`;
+  }
+
+  viewProductDetail(productId: number): void {
+    this.router.navigate(['/shop/product', productId]);
   }
 }

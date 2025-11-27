@@ -53,6 +53,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   featuredProducts: SanPhamResponse[] = [];
   bestPriceProducts: SanPhamResponse[] = [];
   categories: Category[] = [];
+  brandStripProducts: string[] = []; // Tên sản phẩm cho brand strip
 
   activeTab: 'best-selling' | 'featured' | 'best-price' = 'best-selling';
   searchKeyword = '';
@@ -92,6 +93,7 @@ export class ShopComponent implements OnInit, OnDestroy {
     // this.loadProducts();
     // this.loadBestSellingProducts();
     // this.loadCategories();
+    this.loadBrandStripProducts(); // Load tên sản phẩm cho brand strip
     this.updateCartCount();
 
     // Load thông tin khách hàng nếu đã login
@@ -250,6 +252,57 @@ export class ShopComponent implements OnInit, OnDestroy {
           this.bestPriceProducts = [];
 
           // Force change detection
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  loadBrandStripProducts(): void {
+    this.productApiService
+      .search({
+        trangThai: true,
+        page: 0,
+        size: 50, // Lấy nhiều sản phẩm để có đủ cho brand strip
+        useCustomerEndpoint: true,
+      })
+      .subscribe({
+        next: (response) => {
+          const activeProducts = response.content.filter((p) => p.trangThai === true);
+          // Lấy tên sản phẩm, loại bỏ trùng lặp và giới hạn số lượng
+          const uniqueNames = Array.from(
+            new Set(activeProducts.map((p) => p.tenSanPham).filter(Boolean))
+          ).slice(0, 20); // Lấy tối đa 20 tên sản phẩm
+          
+          // Tạo danh sách để hiển thị (lặp lại để tạo hiệu ứng marquee)
+          this.brandStripProducts = [...uniqueNames, ...uniqueNames];
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          // Fallback: dùng tên mặc định nếu không load được
+          if (error.status === 0 || error.status === undefined) {
+            this.brandStripProducts = [
+              'Royal Helmet',
+              'Asia Company',
+              'TDK Carbon Lab',
+              'Urban Moto',
+              'Royal Helmet',
+              'Asia Company',
+              'TDK Carbon Lab',
+              'Urban Moto',
+            ];
+          } else {
+            console.error('Error loading brand strip products:', error);
+            this.brandStripProducts = [
+              'Royal Helmet',
+              'Asia Company',
+              'TDK Carbon Lab',
+              'Urban Moto',
+              'Royal Helmet',
+              'Asia Company',
+              'TDK Carbon Lab',
+              'Urban Moto',
+            ];
+          }
           this.cdr.detectChanges();
         },
       });

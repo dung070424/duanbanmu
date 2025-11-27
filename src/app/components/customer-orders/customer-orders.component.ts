@@ -1,14 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { HoaDonService } from '../../services/hoa-don.service';
 import { HoaDonDTO } from '../../interfaces/hoa-don.interface';
 import { AuthService } from '../../services/auth';
+import { ShopHeaderComponent } from '../shop/shared/shop-header.component';
+import { ShopFooterComponent } from '../shop/shared/shop-footer.component';
 
 @Component({
   selector: 'app-customer-orders',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ShopHeaderComponent, ShopFooterComponent],
   templateUrl: './customer-orders.component.html',
   styleUrls: ['./customer-orders.component.scss']
 })
@@ -26,6 +28,7 @@ export class CustomerOrdersComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private activatedRoute: ActivatedRoute,
+    private location: Location,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -196,6 +199,14 @@ export class CustomerOrdersComponent implements OnInit {
 
   canCancel(order: HoaDonDTO): boolean {
     return order.trangThai === 'CHO_XAC_NHAN';
+  }
+
+  goBack(): void {
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/shop']);
+    }
   }
 
   /**

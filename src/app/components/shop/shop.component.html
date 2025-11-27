@@ -84,14 +84,11 @@
   <div class="brand-strip">
     <div class="container">
       <div class="brand-track">
-        <span>Royal Helmet</span>
-        <span>Asia Company</span>
-        <span>TDK Carbon Lab</span>
-        <span>Urban Moto</span>
-        <span>Royal Helmet</span>
-        <span>Asia Company</span>
-        <span>TDK Carbon Lab</span>
-        <span>Urban Moto</span>
+        <span *ngFor="let productName of brandStripProducts">{{ productName }}</span>
+        <span *ngIf="brandStripProducts.length === 0">Royal Helmet</span>
+        <span *ngIf="brandStripProducts.length === 0">Asia Company</span>
+        <span *ngIf="brandStripProducts.length === 0">TDK Carbon Lab</span>
+        <span *ngIf="brandStripProducts.length === 0">Urban Moto</span>
       </div>
     </div>
   </div>
