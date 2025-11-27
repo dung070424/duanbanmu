@@ -10,18 +10,19 @@
       {{ error }}
     </div>
 
-    <div *ngIf="isLoading" class="loading">
+    <!-- Loading state đã tắt để hiển thị ngay danh sách đơn hàng -->
+    <!-- <div *ngIf="isLoading" class="loading">
       <div class="spinner"></div>
       <p>Đang tải đơn hàng...</p>
-    </div>
+    </div> -->
 
-    <div *ngIf="!isLoading && orders.length === 0 && !error" class="no-orders">
+    <div *ngIf="orders.length === 0 && !error" class="no-orders">
       <i class="fas fa-box-open"></i>
       <h3>Chưa có đơn hàng nào</h3>
       <p>Bạn chưa có đơn hàng nào. Hãy <a routerLink="/shop">mua sắm ngay</a>!</p>
     </div>
 
-    <div *ngIf="!isLoading && orders.length > 0" class="orders-list">
+    <div *ngIf="orders.length > 0" class="orders-list">
       <div *ngFor="let order of orders" class="order-card">
         <div class="order-header">
           <div class="order-info">
@@ -43,6 +44,51 @@
         </div>
 
         <div class="order-body">
+          <!-- Danh sách sản phẩm -->
+          <div class="order-products" *ngIf="order.danhSachSanPham && order.danhSachSanPham.length > 0">
+            <h4><i class="fas fa-box"></i> Sản phẩm trong đơn hàng:</h4>
+            <div class="products-list">
+              <div *ngFor="let product of order.danhSachSanPham" class="product-item">
+                <div class="product-info">
+                  <img 
+                    *ngIf="product.anhSanPham" 
+                    [src]="product.anhSanPham" 
+                    [alt]="product.tenSanPham"
+                    class="product-image"
+                  />
+                  <div class="product-details">
+                    <h5>{{ product.tenSanPham || 'N/A' }}</h5>
+                    <p class="product-meta" *ngIf="product.mauSac || product.kichThuoc">
+                      <span *ngIf="product.mauSac">Màu: {{ product.mauSac }}</span>
+                      <span *ngIf="product.kichThuoc"> | Size: {{ product.kichThuoc }}</span>
+                    </p>
+                    <p class="product-code" *ngIf="product.maSanPham">
+                      Mã: {{ product.maSanPham }}
+                    </p>
+                  </div>
+                </div>
+                <div class="product-quantity">
+                  <span class="quantity">x{{ product.soLuong || 1 }}</span>
+                </div>
+                <div class="product-price">
+                  {{ formatCurrency(product.thanhTien || (product.donGia * (product.soLuong || 1))) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Địa chỉ giao hàng -->
+          <div class="order-delivery" *ngIf="order.diaChiChiTiet || order.diaChiKhachHang">
+            <h4><i class="fas fa-map-marker-alt"></i> Địa chỉ giao hàng:</h4>
+            <p class="delivery-address">
+              <span *ngIf="order.diaChiChiTiet">{{ order.diaChiChiTiet }}</span>
+              <span *ngIf="order.phuongXa">, {{ order.phuongXa }}</span>
+              <span *ngIf="order.quanHuyen">, {{ order.quanHuyen }}</span>
+              <span *ngIf="order.tinhThanh">, {{ order.tinhThanh }}</span>
+              <span *ngIf="!order.diaChiChiTiet && order.diaChiKhachHang">{{ order.diaChiKhachHang }}</span>
+            </p>
+          </div>
+
           <div class="order-summary">
             <div class="summary-item">
               <span class="label">Số lượng sản phẩm:</span>
@@ -82,7 +128,7 @@
     </div>
 
     <!-- Pagination -->
-    <div *ngIf="!isLoading && orders.length > 0 && totalPages > 1" class="pagination">
+    <div *ngIf="orders.length > 0 && totalPages > 1" class="pagination">
       <button 
         class="btn-page" 
         [disabled]="currentPage === 0"

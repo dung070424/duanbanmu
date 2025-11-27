@@ -8,6 +8,13 @@
         <button class="btn-back" (click)="goBack()" type="button">
           <i class="fas fa-arrow-left"></i> Quay lại
         </button>
+        <button 
+          *ngIf="authService.isLoggedIn()" 
+          class="btn-order-history" 
+          (click)="viewOrderHistory()"
+          type="button">
+          <i class="fas fa-history"></i> Lịch sử đơn hàng
+        </button>
       </nav>
 
       <div class="page-header">
