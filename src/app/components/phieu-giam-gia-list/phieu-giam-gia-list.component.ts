@@ -77,6 +77,7 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
   currentPage = 1;
   itemsPerPage = 5; // Hiển thị 5 dòng mỗi trang
   totalItems = 0;
+  minStartDate = this.getTodayISODate();
 
   ngOnInit() {
     this.loadPhieuGiamGiaList();
@@ -146,6 +147,18 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
     if (this.editForm.ngayBatDau && this.editForm.ngayKetThuc) {
       this.editForm.trangThai = this.calculateTrangThaiBasedOnTime(this.editForm.ngayBatDau, this.editForm.ngayKetThuc);
     }
+    
+    // Đánh dấu các trường liên quan đã được tương tác để hiển thị lỗi ngay
+    this.editTouchedFields.add('ngayBatDau');
+    this.editTouchedFields.add('ngayKetThuc');
+    this.validateEditForm();
+  }
+
+  private getTodayISODate(): string {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const local = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+    return local.toISOString().split('T')[0];
   }
 
   loadPhieuGiamGiaList() {
@@ -552,6 +565,24 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
       style: 'currency',
       currency: 'VND',
     }).format(amount);
+  }
+
+  formatGiaTri(phieu: PhieuGiamGiaResponse): string {
+    if (phieu.loaiPhieuGiamGia) {
+      // Phiếu giảm theo tiền mặt
+      return this.formatCurrency(phieu.giaTriGiam);
+    }
+
+    const percentageValue = new Intl.NumberFormat('vi-VN', {
+      maximumFractionDigits: 2,
+    }).format(phieu.giaTriGiam);
+
+    return `${percentageValue} %`;
+  }
+
+  formatDonToiThieu(phieu: PhieuGiamGiaResponse): string {
+    const minOrder = phieu.hoaDonToiThieu ?? phieu.giaTriToiThieu ?? 0;
+    return this.formatCurrency(minOrder);
   }
 
   formatDate(dateString: string): string {
@@ -966,18 +997,22 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
     }
 
     // Giá trị tối thiểu validation
-    if (this.editForm.giaTriToiThieu < 0) {
-      this.editValidationErrors['giaTriToiThieu'] = 'Giá trị tối thiểu không được âm';
-      isValid = false;
-    } else if (this.editForm.giaTriToiThieu > this.editForm.giaTriGiam) {
-      this.editValidationErrors['giaTriToiThieu'] = 'Giá trị tối thiểu không được lớn hơn giá trị giảm';
-      isValid = false;
+    if (this.editForm.loaiPhieuGiamGia) {
+      if (this.editForm.giaTriToiThieu < 0) {
+        this.editValidationErrors['giaTriToiThieu'] = 'Giá trị tối thiểu không được âm';
+        isValid = false;
+      } else if (this.editForm.giaTriToiThieu > this.editForm.giaTriGiam) {
+        this.editValidationErrors['giaTriToiThieu'] = 'Giá trị tối thiểu không được lớn hơn giá trị giảm';
+        isValid = false;
+      }
     }
 
-    // Số tiền tối đa validation
-    if (this.editForm.soTienToiDa < 0) {
-      this.editValidationErrors['soTienToiDa'] = 'Số tiền tối đa không được âm';
-      isValid = false;
+    // Số tiền tối đa validation (chỉ áp dụng cho phiếu tiền mặt)
+    if (this.editForm.loaiPhieuGiamGia) {
+      if (this.editForm.soTienToiDa < 0) {
+        this.editValidationErrors['soTienToiDa'] = 'Số tiền tối đa không được âm';
+        isValid = false;
+      }
     }
 
     // Hóa đơn tối thiểu validation
@@ -996,6 +1031,15 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
     if (!this.editForm.ngayBatDau) {
       this.editValidationErrors['ngayBatDau'] = 'Ngày bắt đầu không được để trống';
       isValid = false;
+    } else {
+      const startDate = new Date(this.editForm.ngayBatDau);
+      startDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (startDate < today) {
+        this.editValidationErrors['ngayBatDau'] = 'Ngày bắt đầu không được trước ngày hiện tại';
+        isValid = false;
+      }
     }
 
     // Ngày kết thúc validation
@@ -1008,6 +1052,8 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
     if (this.editForm.ngayBatDau && this.editForm.ngayKetThuc) {
       const startDate = new Date(this.editForm.ngayBatDau);
       const endDate = new Date(this.editForm.ngayKetThuc);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
       
       if (startDate >= endDate) {
         this.editValidationErrors['ngayKetThuc'] = 'Ngày kết thúc phải sau ngày bắt đầu';

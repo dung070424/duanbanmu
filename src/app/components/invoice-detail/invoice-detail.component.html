@@ -1,6 +1,6 @@
 <div class="invoice-detail-container">
-  <!-- Breadcrumb -->
-  <nav class="breadcrumb-nav">
+  <!-- Breadcrumb - Hidden -->
+  <!-- <nav class="breadcrumb-nav">
     <ol class="breadcrumb">
       <li class="breadcrumb-item">
         <a routerLink="/shop"><i class="fas fa-home"></i> Trang chủ</a>
@@ -19,7 +19,7 @@
     <button class="btn-back" (click)="goBack()" type="button">
       <i class="fas fa-arrow-left"></i> Quay lại
     </button>
-  </nav>
+  </nav> -->
 
   <!-- Header -->
   <div class="detail-header">
@@ -27,6 +27,13 @@
       <h2> Chi tiết hóa đơn</h2>
     </div>
     <div class="header-right">
+      <button
+        class="btn btn-outline-secondary me-2"
+        (click)="goBack()"
+        type="button"
+      >
+        <i class="fas fa-arrow-left me-2"></i>Quay lại
+      </button>
       <!-- Chỉ hiển thị button In hóa đơn khi trạng thái là Đã Giao Hàng (Đã Hoàn Thành) -->
       <button
         class="btn btn-outline-primary"
@@ -179,8 +186,8 @@
       (statusChange)="onStatusChangeFromTimeline($event)">
     </app-invoice-status-timeline>
 
-    <!-- Single Status Icon Display (hiển thị khi trạng thái KHÔNG phải Đang Giao Hàng) -->
-    <div class="single-status-display" *ngIf="invoice && invoice.trangThai !== 'DANG_GIAO_HANG'">
+    <!-- Single Status Icon Display (hiển thị cho tất cả trạng thái) -->
+    <div class="single-status-display" *ngIf="invoice">
       <div class="status-icon-wrapper" [ngClass]="getSingleStatusIconClass(invoice.trangThai)">
         <i [ngClass]="getSingleStatusIcon(invoice.trangThai)"></i>
       </div>
@@ -739,7 +746,7 @@
                 <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
                 <option value="DA_XAC_NHAN">Đã xác nhận</option>
                 <option value="DANG_GIAO_HANG">Đang giao hàng</option>
-                <option value="DA_GIAO_HANG">Đã giao hàng</option>
+                <option value="DA_GIAO_HANG">Đã Hoàn Thành</option>
                 <option value="HUY">Hủy</option>
               </select>
             </div>

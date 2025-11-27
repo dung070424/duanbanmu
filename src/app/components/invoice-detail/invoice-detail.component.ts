@@ -72,9 +72,9 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   // Status mapping - 5 giai đoạn như trong hình ảnh
   statusSteps = [
     { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận', iconClass: 'fas fa-clock', color: '#ffc107', description: 'Đơn hàng đang chờ xác nhận' },
-    { key: 'DA_XAC_NHAN', label: 'Đã xác nhận', iconClass: 'fas fa-check-circle', color: '#17a2b8', description: 'Đơn hàng đã được xác nhận' },
+    { key: 'DA_XAC_NHAN', label: 'Đã xác nhận', iconClass: 'fas fa-clipboard-check', color: '#17a2b8', description: 'Đơn hàng đã được xác nhận' },
     { key: 'DANG_GIAO_HANG', label: 'Đang giao hàng', iconClass: 'fas fa-truck', color: '#007bff', description: 'Đơn hàng đang được giao' },
-    { key: 'DA_GIAO_HANG', label: 'Đã giao hàng', iconClass: 'fas fa-box-open', color: '#28a745', description: 'Đơn hàng đã giao thành công' },
+    { key: 'DA_GIAO_HANG', label: 'Đã Hoàn Thành', iconClass: 'fas fa-box-open', color: '#28a745', description: 'Đơn hàng đã giao thành công' },
     { key: 'HUY', label: 'Hủy', iconClass: 'fas fa-times-circle', color: '#dc3545', description: 'Đơn hàng đã bị hủy' }
   ];
 
@@ -1756,7 +1756,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       'CHO_XAC_NHAN': 'Chờ xác nhận',
       'DA_XAC_NHAN': 'Đã xác nhận',
       'DANG_GIAO_HANG': 'Đang giao hàng',
-      'DA_GIAO_HANG': 'Đã giao hàng',
+      'DA_GIAO_HANG': 'Đã Hoàn Thành',
       'DA_HUY': 'Đã hủy'
     };
     return statusMap[status] || status;
@@ -2951,12 +2951,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
    */
   getSingleStatusIcon(status: string): string {
     const statusMap: { [key: string]: string } = {
-      'CHO_XAC_NHAN': 'fa-solid fa-hourglass-half',
-      'DA_XAC_NHAN': 'fa-solid fa-circle-check',
-      'DA_GIAO_HANG': 'fa-solid fa-box-open',
-      'HUY': 'fa-solid fa-times-circle'
+      'CHO_XAC_NHAN': 'fas fa-clock',
+      'DA_XAC_NHAN': 'fas fa-clipboard-check',
+      'DANG_GIAO_HANG': 'fas fa-truck',
+      'DA_GIAO_HANG': 'fas fa-check-double',
+      'HUY': 'fas fa-times-circle',
+      'DA_HUY': 'fas fa-times-circle'
     };
-    return statusMap[status] || 'fa-solid fa-question-circle';
+    return statusMap[status] || 'fas fa-question-circle';
   }
 
   /**
@@ -2966,8 +2968,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     const statusClassMap: { [key: string]: string } = {
       'CHO_XAC_NHAN': 'status-icon-pending',
       'DA_XAC_NHAN': 'status-icon-confirmed',
+      'DANG_GIAO_HANG': 'status-icon-shipping',
       'DA_GIAO_HANG': 'status-icon-delivered',
-      'HUY': 'status-icon-cancelled'
+      'HUY': 'status-icon-cancelled',
+      'DA_HUY': 'status-icon-cancelled'
     };
     return statusClassMap[status] || 'status-icon-unknown';
   }
@@ -2977,7 +2981,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       'CHO_XAC_NHAN': 'Chờ xác nhận',
       'DA_XAC_NHAN': 'Đã xác nhận',
       'DANG_GIAO_HANG': 'Đang giao hàng',
-      'DA_GIAO_HANG': 'Đã giao hàng',
+      'DA_GIAO_HANG': 'Đã Hoàn Thành',
       'HUY': 'Hủy'
     };
     return statusMap[status] || status;
