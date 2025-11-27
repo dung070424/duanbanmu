@@ -39,7 +39,7 @@
     </div>
 
     <!-- Chatbot Messages -->
-    <div class="chatbot-messages" #messagesContainer>
+    <div class="chatbot-messages" #messagesContainer (scroll)="onMessagesScroll()">
       <!-- Loading chỉ hiển thị khi đang load lần đầu và chưa có messages -->
       <div *ngIf="isLoading && messages.length === 0 && !khachHangId" class="loading-message">
         <div class="spinner"></div>
@@ -96,22 +96,17 @@
           [(ngModel)]="newMessage"
           (keypress)="onKeyPress($event)"
           placeholder="Nhập tin nhắn của bạn..."
-          [disabled]="!khachHangId || isSendingMessage"
-          [title]="!khachHangId ? 'Vui lòng đăng nhập để sử dụng chatbot' : ''"
+          [disabled]="isSendingMessage"
         />
         <button 
           class="chatbot-send-btn"
           (click)="sendMessage()"
-          [disabled]="!newMessage.trim() || !khachHangId || isSendingMessage"
+          [disabled]="!newMessage.trim() || isSendingMessage"
           aria-label="Gửi tin nhắn"
         >
           <i class="fas fa-paper-plane"></i>
         </button>
       </div>
-      <p class="chatbot-hint" *ngIf="!khachHangId">
-        <i class="fas fa-info-circle"></i>
-        Vui lòng <a routerLink="/shop/login">đăng nhập</a> để sử dụng chatbot
-      </p>
     </div>
   </div>
 </div>
