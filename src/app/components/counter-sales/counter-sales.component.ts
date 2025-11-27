@@ -23,6 +23,7 @@ import provincesData from 'sub-vn/json_data/provinces.json';
 import districtsData from 'sub-vn/json_data/districts.json';
 import wardsData from 'sub-vn/json_data/wards.json';
 import { DiaChiKhachHangService } from '../../services/dia-chi-khach-hang.service';
+import { GHNService } from '../../services/ghn.service';
 
 type UICartItem = CartItem & {
   imageUrl?: string;
@@ -302,6 +303,10 @@ export class CounterSalesComponent implements OnInit {
     return Math.max(0, received - this.cartTotal);
   }
 
+  // GHTK shipping fee calculation
+  isCalculatingShippingFee: boolean = false;
+  shippingFeeAutoCalculated: boolean = false;
+
   constructor(
     private http: HttpClient,
     private productApi: ProductApiService,
@@ -312,7 +317,8 @@ export class CounterSalesComponent implements OnInit {
     private hoaDonChoService: HoaDonChoService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private diaChiKhachHangService: DiaChiKhachHangService
+    private diaChiKhachHangService: DiaChiKhachHangService,
+    private ghnService: GHNService
   ) {}
 
   ngOnInit(): void {
@@ -2049,6 +2055,277 @@ export class CounterSalesComponent implements OnInit {
     const detail = this.addressDetail || '';
     const parts = [detail, ward, district, province].filter((x) => x && x.trim().length > 0);
     this.shippingAddress = parts.join(', ');
+
+    // Tự động tính phí vận chuyển khi có đủ thông tin địa chỉ
+    if (this.isDelivery && province && district) {
+      this.calculateShippingFeeAuto();
+    }
+  }
+
+  /**
+   * Tự động tính phí vận chuyển từ GHTK API
+   */
+  calculateShippingFeeAuto(): void {
+    if (!this.isDelivery) {
+      console.log('⚠️ Delivery mode is OFF, skip calculating shipping fee');
+      return;
+    }
+
+    const province = this.provinces.find((p) => p.code === this.selectedProvinceCode)?.name || '';
+    const district = this.districts.find((d) => d.code === this.selectedDistrictCode)?.name || '';
+    const ward = this.wards.find((w) => w.code === this.selectedWardCode)?.name || '';
+
+    console.log('🚚 Calculating shipping fee for:', { province, district, ward });
+
+    // Cần có ít nhất tỉnh và quận/huyện
+    if (!province || !district) {
+      console.log('⚠️ Missing province or district, skip calculating shipping fee');
+      return;
+    }
+
+    // Tính trọng lượng từ giỏ hàng (mặc định mỗi sản phẩm 500g nếu không có thông tin)
+    const totalWeight =
+      this.cart.reduce((sum, item) => {
+        // Có thể lấy trọng lượng từ sản phẩm nếu có, mặc định 500g
+        return sum + item.quantity * 500; // 500g mỗi sản phẩm
+      }, 0) || 1000; // Tối thiểu 1kg
+
+    // Giá trị đơn hàng
+    const orderValue = this.cartSubtotal - this.cartDiscount - this.couponDiscount;
+
+    this.isCalculatingShippingFee = true;
+
+    // Lấy district_id từ district code (tạm thời sử dụng code, backend sẽ xử lý mapping)
+    const districtId = this.getDistrictIdForGHN(this.selectedDistrictCode);
+    const wardCode = this.selectedWardCode || undefined;
+
+    console.log('🚚 GHN Request:', {
+      province,
+      district,
+      districtId,
+      ward: wardCode,
+      weight: totalWeight,
+      value: Math.round(orderValue),
+    });
+
+    // Gọi API GHN để tính phí
+    this.ghnService
+      .calculateShippingFeeViaBackend({
+        from_district_id: 1442, // Quận Ba Đình, Hà Nội (mặc định)
+        to_district_id: districtId,
+        to_ward_code: wardCode,
+        weight: totalWeight,
+        length: 20, // cm
+        width: 20, // cm
+        height: 20, // cm
+        insurance_value: Math.round(orderValue),
+      })
+      .subscribe({
+        next: (response: any) => {
+          this.isCalculatingShippingFee = false;
+          console.log('🚚 GHN Response:', response);
+          console.log('🚚 Province:', province);
+          console.log('🚚 District:', district);
+
+          let fee = 0;
+          let success = false;
+
+          // Xử lý response từ GHN API
+          if (response && response.code === 200 && response.data) {
+            // Format: { code: 200, data: { total: 30000, ... } }
+            fee = Number(response.data.total) || 0;
+            success = true;
+            console.log('✅ Parsed fee from response.data.total:', fee);
+          } else if (response && response.data && typeof response.data === 'number') {
+            // Format: { data: 30000 }
+            fee = Number(response.data);
+            success = true;
+            console.log('✅ Parsed fee from response.data:', fee);
+          } else {
+            console.warn('⚠️ Could not parse fee from response, using default calculation');
+          }
+
+          if (success && fee > 0) {
+            this.shippingFee = fee;
+            this.shippingFeeAutoCalculated = true;
+            this.calculateCartTotal();
+            console.log('💰 Final shipping fee:', this.shippingFee);
+            this.showToast(`Phí vận chuyển: ${this.formatCurrency(this.shippingFee)}`, 'success');
+          } else {
+            // Nếu không parse được, tính phí mặc định
+            console.log('⚠️ Using default fee calculation');
+            this.calculateDefaultShippingFee(province, district, totalWeight);
+          }
+        },
+        error: (error) => {
+          this.isCalculatingShippingFee = false;
+          console.error('❌ Lỗi tính phí vận chuyển:', error);
+          // Tính phí mặc định khi có lỗi
+          this.calculateDefaultShippingFee(province, district, totalWeight);
+        },
+      });
+  }
+
+  /**
+   * Tính phí vận chuyển mặc định khi API không khả dụng
+   * Phân loại theo vùng miền để tính phí chính xác hơn
+   */
+  private calculateDefaultShippingFee(province: string, district: string, weight: number): void {
+    console.log('💰 Calculating default shipping fee:', { province, district, weight });
+    // Tính phí cơ bản theo vùng miền
+    let fee = this.getBaseFeeByRegion(province);
+    console.log('💰 Base fee by region:', fee);
+
+    // Điều chỉnh theo trọng lượng (mỗi 500g thêm 5,000 VND)
+    const weightKg = weight / 1000;
+    if (weightKg > 1) {
+      fee += Math.ceil((weightKg - 1) / 0.5) * 5000;
+    }
+
+    this.shippingFee = fee;
+    this.shippingFeeAutoCalculated = true;
+    this.calculateCartTotal();
+    this.showToast(
+      `Phí vận chuyển (ước tính): ${this.formatCurrency(this.shippingFee)}`,
+      'success'
+    );
+  }
+
+  /**
+   * Tính phí cơ bản dựa trên vùng miền
+   * Địa chỉ gửi mặc định: Hà Nội
+   */
+  private getBaseFeeByRegion(province: string): number {
+    if (!province) {
+      return 30000; // Mặc định
+    }
+
+    // Cùng tỉnh/thành phố với Hà Nội
+    if (province.includes('Hà Nội')) {
+      return 25000; // 25,000 VND - nội thành
+    }
+
+    // Các tỉnh/thành phố miền Bắc (gần Hà Nội)
+    const mienBac = [
+      'Hải Phòng',
+      'Hưng Yên',
+      'Hải Dương',
+      'Bắc Ninh',
+      'Vĩnh Phúc',
+      'Thái Nguyên',
+      'Bắc Giang',
+      'Quảng Ninh',
+      'Hà Nam',
+      'Nam Định',
+      'Thái Bình',
+      'Ninh Bình',
+      'Phú Thọ',
+      'Tuyên Quang',
+      'Yên Bái',
+      'Lào Cai',
+      'Lạng Sơn',
+      'Cao Bằng',
+      'Bắc Kạn',
+      'Hòa Bình',
+      'Sơn La',
+      'Điện Biên',
+      'Lai Châu',
+    ];
+
+    if (mienBac.some((tinh) => province.includes(tinh))) {
+      console.log('📍 Miền Bắc detected, returning 35,000');
+      return 35000; // 35,000 VND - miền Bắc
+    }
+
+    // Các tỉnh/thành phố miền Nam (gần TP.HCM) - KIỂM TRA TRƯỚC để tránh conflict với "Bình Thuận"
+    // Kiểm tra TP.HCM trước (có nhiều cách viết)
+    const provinceLower = province.toLowerCase();
+    if (
+      provinceLower.includes('hồ chí minh') ||
+      provinceLower.includes('tp.hcm') ||
+      provinceLower.includes('tp hcm') ||
+      provinceLower.includes('ho chi minh')
+    ) {
+      console.log('📍 TP.HCM detected, returning 60,000');
+      return 60000; // 60,000 VND - miền Nam
+    }
+
+    // Danh sách các tỉnh miền Nam - kiểm tra trước miền Trung để tránh conflict
+    const mienNamGan = [
+      'Bình Dương',
+      'Đồng Nai',
+      'Bà Rịa - Vũng Tàu',
+      'Bà Rịa-Vũng Tàu',
+      'Tây Ninh',
+      'Bình Phước',
+      'Long An',
+      'Tiền Giang',
+      'Bến Tre',
+      'Trà Vinh',
+      'Vĩnh Long',
+      'Đồng Tháp',
+      'An Giang',
+      'Kiên Giang',
+      'Cần Thơ',
+      'Hậu Giang',
+      'Sóc Trăng',
+      'Bạc Liêu',
+      'Cà Mau',
+    ];
+
+    if (mienNamGan.some((tinh) => province.includes(tinh))) {
+      console.log('📍 Miền Nam detected, returning 60,000');
+      return 60000; // 60,000 VND - miền Nam
+    }
+
+    // Các tỉnh/thành phố Tây Nguyên
+    const tayNguyen = ['Kon Tum', 'Gia Lai', 'Đắk Lắk', 'Đắk Nông', 'Lâm Đồng'];
+
+    if (tayNguyen.some((tinh) => province.includes(tinh))) {
+      console.log('📍 Tây Nguyên detected, returning 55,000');
+      return 55000; // 55,000 VND - Tây Nguyên
+    }
+
+    // Các tỉnh/thành phố miền Trung - KIỂM TRA SAU miền Nam
+    const mienTrung = [
+      'Thanh Hóa',
+      'Nghệ An',
+      'Hà Tĩnh',
+      'Quảng Bình',
+      'Quảng Trị',
+      'Thừa Thiên Huế',
+      'Đà Nẵng',
+      'Quảng Nam',
+      'Quảng Ngãi',
+      'Bình Định',
+      'Phú Yên',
+      'Khánh Hòa',
+      'Ninh Thuận',
+      'Bình Thuận',
+    ];
+
+    if (mienTrung.some((tinh) => province.includes(tinh))) {
+      console.log('📍 Miền Trung detected, returning 50,000');
+      return 50000; // 50,000 VND - miền Trung
+    }
+
+    // Các tỉnh/thành phố miền Nam xa hơn hoặc không xác định
+    console.log('📍 Unknown province, returning 70,000 (xa nhất)');
+    return 70000; // 70,000 VND - các tỉnh xa nhất
+  }
+
+  /**
+   * Lấy district_id cho GHN từ district code
+   * Tạm thời sử dụng code trực tiếp (parseInt), backend sẽ xử lý mapping chính xác
+   */
+  private getDistrictIdForGHN(districtCode: string): number {
+    if (!districtCode) {
+      return 0;
+    }
+    // Tạm thời sử dụng code trực tiếp, backend sẽ xử lý mapping
+    // Hoặc có thể gọi API master-data của GHN để lấy district_id
+    const districtId = parseInt(districtCode, 10);
+    return isNaN(districtId) ? 0 : districtId;
   }
 
   // Load customer's default (or first) address when available and delivery enabled
@@ -2056,8 +2333,19 @@ export class CounterSalesComponent implements OnInit {
     if (this.isDelivery) {
       this.tryLoadCustomerDefaultAddress();
       this.showToast('Đã bật chế độ bàn giao hàng. Vui lòng chọn địa chỉ giao.', 'success');
+      // Tự động tính phí nếu đã có địa chỉ
+      setTimeout(() => {
+        const province =
+          this.provinces.find((p) => p.code === this.selectedProvinceCode)?.name || '';
+        const district =
+          this.districts.find((d) => d.code === this.selectedDistrictCode)?.name || '';
+        if (province && district) {
+          this.calculateShippingFeeAuto();
+        }
+      }, 500);
     } else {
       this.shippingFee = 0;
+      this.shippingFeeAutoCalculated = false;
       this.showToast('Đã tắt chế độ bàn giao hàng.', 'success');
     }
     this.calculateCartTotal();
@@ -2090,11 +2378,18 @@ export class CounterSalesComponent implements OnInit {
   onSelectSavedAddress(): void {
     if (!this.selectedSavedAddressId || this.selectedSavedAddressId === 'new') {
       this.customerSavedAddress = null;
+      this.shippingFeeAutoCalculated = false;
       return;
     }
     const addr = this.customerAddresses.find((a) => String(a.id) === this.selectedSavedAddressId);
     if (addr) {
       this.applyAddressFromSaved(addr);
+      // Tự động tính phí vận chuyển sau khi áp dụng địa chỉ
+      setTimeout(() => {
+        if (this.isDelivery && addr.tinhThanh && addr.quanHuyen) {
+          this.calculateShippingFeeAuto();
+        }
+      }, 100);
     }
   }
 
@@ -2120,6 +2415,12 @@ export class CounterSalesComponent implements OnInit {
         }
         this.addressDetail = def?.diaChiChiTiet || '';
         this.composeShippingAddress();
+        // Tính phí vận chuyển sau khi áp dụng địa chỉ
+        setTimeout(() => {
+          if (this.isDelivery && def?.tinhThanh && def?.quanHuyen) {
+            this.calculateShippingFeeAuto();
+          }
+        }, 200);
       }
     } catch {}
   }

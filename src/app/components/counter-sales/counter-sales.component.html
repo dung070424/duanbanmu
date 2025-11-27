@@ -56,8 +56,8 @@
                 <th>#</th>
                 <th>Ảnh</th>
                 <th>Tên sản phẩm</th>
-              <th>Màu sắc</th>
-              <th>Kích thước</th>
+                <th>Màu sắc</th>
+                <th>Kích thước</th>
                 <th class="text-center">SL</th>
                 <th>Giá</th>
                 <th>Thành tiền</th>
@@ -357,15 +357,135 @@
                   type="number"
                   min="0"
                   [ngModel]="shippingFee"
-                  (ngModelChange)="onShippingFeeChange($event)"
+                  (ngModelChange)="onShippingFeeChange($event); shippingFeeAutoCalculated = false"
+                  [disabled]="isCalculatingShippingFee"
                   placeholder="0"
                 />
+                <span class="input-group-text" *ngIf="isCalculatingShippingFee">
+                  <span
+                    class="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                </span>
               </div>
             </div>
             <div class="text-muted small text-end mt-1">
-              {{ formatCurrency(shippingFee) }}
+              <span *ngIf="isCalculatingShippingFee" class="text-info">Đang tính phí...</span>
+              <span
+                *ngIf="!isCalculatingShippingFee && shippingFeeAutoCalculated"
+                class="text-success"
+              >
+                {{ formatCurrency(shippingFee) }} (Tự động)
+              </span>
+              <span *ngIf="!isCalculatingShippingFee && !shippingFeeAutoCalculated">
+                {{ formatCurrency(shippingFee) }}
+              </span>
             </div>
           </div>
+
+          <!-- Saved address selector when customer has multiple addresses -->
+          <div *ngIf="isDelivery && customerAddresses.length > 0" class="mb-3">
+            <div class="saved-address-card">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <label class="form-label mb-0">Địa chỉ đã lưu</label>
+                  <div class="text-muted small">Chọn địa chỉ giao nhanh hoặc thêm địa chỉ mới</div>
+                </div>
+                <span class="badge bg-light text-dark">
+                  {{ customerAddresses.length }} địa chỉ
+                </span>
+              </div>
+              <div class="input-group input-group-sm saved-address-select">
+                <span class="input-group-text">
+                  <i class="bi bi-geo-alt"></i>
+                </span>
+                <select
+                  class="form-select"
+                  [(ngModel)]="selectedSavedAddressId"
+                  (change)="onSelectSavedAddress()"
+                >
+                  <option [ngValue]="''">-- Chọn địa chỉ --</option>
+                  <option *ngFor="let a of customerAddresses" [ngValue]="a.id + ''">
+                    {{ a.diaChiChiTiet }}, {{ a.phuongXa }}, {{ a.quanHuyen }}, {{ a.tinhThanh }}
+                  </option>
+                  <option [ngValue]="'new'">+ Nhập địa chỉ mới</option>
+                </select>
+              </div>
+              <div
+                class="selected-address-preview mt-2"
+                *ngIf="customerSavedAddress && selectedSavedAddressId !== 'new'"
+              >
+                <div class="fw-semibold text-primary">Địa chỉ giao hàng</div>
+                <div class="text-dark">
+                  {{ customerSavedAddress }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery address (when customer has no saved address or choose new) -->
+          <div *ngIf="shouldShowShippingAddress()" class="mb-2">
+            <div class="text-muted small mb-1">
+              Khách hàng chưa có địa chỉ lưu sẵn. Vui lòng nhập địa chỉ giao hàng:
+            </div>
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Tỉnh/Thành</label>
+                <select
+                  class="form-select"
+                  [(ngModel)]="selectedProvinceCode"
+                  (change)="onProvinceChange()"
+                >
+                  <option [ngValue]="''">-- Chọn tỉnh/thành --</option>
+                  <option *ngFor="let p of provinces" [ngValue]="p.code">{{ p.name }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Quận/Huyện</label>
+                <select
+                  class="form-select"
+                  [(ngModel)]="selectedDistrictCode"
+                  (change)="onDistrictChange()"
+                >
+                  <option [ngValue]="''">-- Chọn quận/huyện --</option>
+                  <option *ngFor="let d of districts" [ngValue]="d.code">{{ d.name }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Phường/Xã</label>
+                <select
+                  class="form-select"
+                  [(ngModel)]="selectedWardCode"
+                  (change)="onWardChange()"
+                >
+                  <option [ngValue]="''">-- Chọn phường/xã --</option>
+                  <option *ngFor="let w of wards" [ngValue]="w.code">{{ w.name }}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Địa chỉ chi tiết</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  [(ngModel)]="addressDetail"
+                  (input)="composeShippingAddress()"
+                  placeholder="Số nhà, đường, toà nhà..."
+                />
+              </div>
+            </div>
+            <div class="form-text mt-1">
+              Địa chỉ đầy đủ: <b>{{ shippingAddress || '—' }}</b>
+            </div>
+            <label class="form-label mb-1 mt-2">Ghi chú giao hàng (tuỳ chọn)</label>
+            <input
+              class="form-control"
+              type="text"
+              [(ngModel)]="shippingNote"
+              placeholder="Ghi chú cho shipper"
+            />
+          </div>
+
           <!-- Coupon select -->
           <div class="mb-2">
             <label class="form-label">Mã giảm giá</label>
@@ -505,108 +625,6 @@
               <div class="text-muted small">Bấm "Thanh toán" để hiển thị mã QR chuyển khoản.</div>
             </div>
           </ng-container>
-
-          <!-- Saved address selector when customer has multiple addresses -->
-          <div *ngIf="isDelivery && customerAddresses.length > 0" class="mb-3">
-            <div class="saved-address-card">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                  <label class="form-label mb-0">Địa chỉ đã lưu</label>
-                  <div class="text-muted small">Chọn địa chỉ giao nhanh hoặc thêm địa chỉ mới</div>
-                </div>
-                <span class="badge bg-light text-dark">
-                  {{ customerAddresses.length }} địa chỉ
-                </span>
-              </div>
-              <div class="input-group input-group-sm saved-address-select">
-                <span class="input-group-text">
-                  <i class="bi bi-geo-alt"></i>
-                </span>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedSavedAddressId"
-                  (change)="onSelectSavedAddress()"
-                >
-                  <option [ngValue]="''">-- Chọn địa chỉ --</option>
-                  <option *ngFor="let a of customerAddresses" [ngValue]="a.id + ''">
-                    {{ a.diaChiChiTiet }}, {{ a.phuongXa }}, {{ a.quanHuyen }}, {{ a.tinhThanh }}
-                  </option>
-                  <option [ngValue]="'new'">+ Nhập địa chỉ mới</option>
-                </select>
-              </div>
-              <div
-                class="selected-address-preview mt-2"
-                *ngIf="customerSavedAddress && selectedSavedAddressId !== 'new'"
-              >
-                <div class="fw-semibold text-primary">Địa chỉ giao hàng</div>
-                <div class="text-dark">
-                  {{ customerSavedAddress }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Delivery address (when customer has no saved address or choose new) -->
-          <div *ngIf="shouldShowShippingAddress()" class="mb-2">
-            <div class="text-muted small mb-1">
-              Khách hàng chưa có địa chỉ lưu sẵn. Vui lòng nhập địa chỉ giao hàng:
-            </div>
-            <div class="row g-2">
-              <div class="col-12 col-md-6">
-                <label class="form-label mb-1">Tỉnh/Thành</label>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedProvinceCode"
-                  (change)="onProvinceChange()"
-                >
-                  <option [ngValue]="''">-- Chọn tỉnh/thành --</option>
-                  <option *ngFor="let p of provinces" [ngValue]="p.code">{{ p.name }}</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label mb-1">Quận/Huyện</label>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedDistrictCode"
-                  (change)="onDistrictChange()"
-                >
-                  <option [ngValue]="''">-- Chọn quận/huyện --</option>
-                  <option *ngFor="let d of districts" [ngValue]="d.code">{{ d.name }}</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label mb-1">Phường/Xã</label>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedWardCode"
-                  (change)="onWardChange()"
-                >
-                  <option [ngValue]="''">-- Chọn phường/xã --</option>
-                  <option *ngFor="let w of wards" [ngValue]="w.code">{{ w.name }}</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label mb-1">Địa chỉ chi tiết</label>
-                <input
-                  class="form-control"
-                  type="text"
-                  [(ngModel)]="addressDetail"
-                  (input)="composeShippingAddress()"
-                  placeholder="Số nhà, đường, toà nhà..."
-                />
-              </div>
-            </div>
-            <div class="form-text mt-1">
-              Địa chỉ đầy đủ: <b>{{ shippingAddress || '—' }}</b>
-            </div>
-            <label class="form-label mb-1 mt-2">Ghi chú giao hàng (tuỳ chọn)</label>
-            <input
-              class="form-control"
-              type="text"
-              [(ngModel)]="shippingNote"
-              placeholder="Ghi chú cho shipper"
-            />
-          </div>
 
           <button
             class="btn btn-primary w-100 mt-3"
