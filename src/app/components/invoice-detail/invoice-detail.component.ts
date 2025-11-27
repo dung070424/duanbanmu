@@ -622,6 +622,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }
 
+        // QUAN TRỌNG: Luôn load product details để đảm bảo danh sách sản phẩm được hiển thị cho tất cả trạng thái
+        // Gọi loadProductDetails() để đảm bảo dữ liệu sản phẩm được load đầy đủ từ API
+        console.log('🔄 Loading product details for all statuses...');
+        this.loadProductDetails();
+
         // Force UI update
         this.cdr.detectChanges();
         console.log('🔄 Invoice detail UI updated');
@@ -656,21 +661,37 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   /**
    * Load product details for the invoice
+   * QUAN TRỌNG: Method này được gọi cho TẤT CẢ các trạng thái để đảm bảo danh sách sản phẩm luôn được hiển thị
    */
   private loadProductDetails(): void {
     console.log('🔄 Loading product details for invoice:', this.invoiceId);
     if (!this.invoiceId) {
+      console.warn('⚠️ No invoiceId, skipping product details load');
+      return;
+    }
+
+    // Nếu invoice chưa được load, đợi một chút rồi thử lại
+    if (!this.invoice) {
+      console.log('⏳ Invoice not loaded yet, will retry after invoice is loaded');
+      setTimeout(() => {
+        if (this.invoice) {
+          this.loadProductDetails();
+        }
+      }, 500);
       return;
     }
 
     this.hoaDonService.getHoaDonDetail(this.invoiceId).subscribe({
       next: (detailData: any) => {
-        console.log('📦 Chi tiết hóa đơn loaded:', detailData);
+        console.log('📦 Chi tiết hóa đơn loaded for product details:', detailData);
+        console.log('📦 Current invoice status:', this.invoice?.trangThai);
 
         // Backend trả về danhSachChiTiet, cần map sang danhSachSanPham cho frontend
         const danhSachChiTiet = Array.isArray(detailData?.danhSachChiTiet)
           ? detailData.danhSachChiTiet
           : (Array.isArray(detailData?.danhSachSanPham) ? detailData.danhSachSanPham : []);
+
+        console.log('📦 danhSachChiTiet length:', danhSachChiTiet.length);
 
         // Map danhSachChiTiet sang danhSachSanPham format - mapping đầy đủ tất cả các trường
         const danhSachSanPham = danhSachChiTiet.map((item: any) => {
@@ -735,7 +756,61 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         }
 
         if (danhSachSanPham.length === 0) {
-          console.log('📦 No products found for this invoice');
+          console.warn('⚠️ No products found in danhSachChiTiet, but soLuongSanPham might be > 0');
+          console.warn('⚠️ Invoice data:', {
+            id: detailData?.id,
+            maHoaDon: detailData?.maHoaDon,
+            soLuongSanPham: detailData?.soLuongSanPham || this.invoice?.soLuongSanPham,
+            danhSachChiTiet: detailData?.danhSachChiTiet,
+            trangThai: detailData?.trangThai || this.invoice?.trangThai
+          });
+          
+          // QUAN TRỌNG: Nếu soLuongSanPham > 0 nhưng danhSachChiTiet rỗng, 
+          // có thể backend chưa load chi tiết. Thử gọi lại API với force load chi tiết
+          if ((detailData?.soLuongSanPham || this.invoice?.soLuongSanPham || 0) > 0) {
+            console.log('🔄 soLuongSanPham > 0 but danhSachChiTiet is empty, trying to reload...');
+            // Thử gọi lại API sau 1 giây để xem có load được không
+            setTimeout(() => {
+              this.hoaDonService.getHoaDonDetail(this.invoiceId).subscribe({
+                next: (retryData: any) => {
+                  console.log('🔄 Retry load product details:', retryData);
+                  if (retryData.danhSachChiTiet && retryData.danhSachChiTiet.length > 0) {
+                    // Nếu lần này có dữ liệu, map lại
+                    const retryDanhSachSanPham = retryData.danhSachChiTiet.map((item: any) => ({
+                      id: item.id || null,
+                      chiTietSanPhamId: item.chiTietSanPhamId || null,
+                      sanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
+                      tenSanPham: item.tenSanPham || 'Chưa có tên',
+                      maSanPham: item.maSanPham || '',
+                      soLuong: typeof item.soLuong === 'string' ? parseInt(item.soLuong, 10) : Number(item.soLuong || 0),
+                      donGia: typeof item.donGia === 'string' ? parseFloat(item.donGia) : Number(item.donGia || 0),
+                      thanhTien: typeof item.thanhTien === 'string' ? parseFloat(item.thanhTien) : Number(item.thanhTien || 0),
+                      giamGia: typeof item.giamGia === 'string' ? parseFloat(item.giamGia) : Number(item.giamGia || 0),
+                      mauSac: item.mauSac || item.mauSacTen || '',
+                      kichThuoc: item.kichThuoc || item.kichThuocTen || '',
+                      nhaSanXuat: item.nhaSanXuat || item.nhaSanXuatTen || '',
+                      anhSanPham: item.anhSanPham || item.anhSanPhamUrl || '',
+                      danhMuc: item.danhMuc || item.loaiMuBaoHiemTen || item.loaiMuBaoHiem || '',
+                      thuongHieu: item.thuongHieu || '',
+                      ghiChu: item.ghiChu || ''
+                    }));
+                    
+                    if (this.invoice) {
+                      this.invoice.danhSachSanPham = retryDanhSachSanPham;
+                      this.invoice.soLuongSanPham = retryDanhSachSanPham.length;
+                      console.log('✅ Retry successful, loaded', retryDanhSachSanPham.length, 'products');
+                      this.cdr.detectChanges();
+                    }
+                  } else {
+                    console.error('❌ Retry failed: danhSachChiTiet still empty. Backend may not be loading product details for this status.');
+                  }
+                },
+                error: (retryError) => {
+                  console.error('❌ Retry load failed:', retryError);
+                }
+              });
+            }, 1000);
+          }
         } else {
           console.log('✅ Products loaded from API:', danhSachSanPham.length, 'items');
         }
@@ -995,6 +1070,24 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Kiểm tra quyền: chỉ admin/nhân viên mới được sửa
+    if (!this.authService.hasRole('ADMIN') && !this.authService.hasRole('STAFF')) {
+      this.showToast('Chỉ admin/nhân viên mới được chỉnh sửa đơn hàng.', 'warning');
+      return;
+    }
+
+    // Kiểm tra nếu là đơn hàng online (nhanVienId = null)
+    const isOnlineOrder = !this.invoice.nhanVienId || this.invoice.nhanVienId === null;
+    if (isOnlineOrder) {
+      // Kiểm tra xem đơn hàng đã được chỉnh sửa chưa (dựa trên activity logs hoặc flag)
+      // TODO: Backend cần thêm field hasBeenEdited hoặc kiểm tra activity logs
+      // Tạm thời kiểm tra qua activity logs nếu có
+      if (this.invoice.ghiChu && this.invoice.ghiChu.includes('[ĐÃ CHỈNH SỬA]')) {
+        this.showToast('Đơn hàng online chỉ được chỉnh sửa 1 lần. Đơn hàng này đã được chỉnh sửa trước đó.', 'warning');
+        return;
+      }
+    }
+
     if (this.invoice.trangThai !== 'CHO_XAC_NHAN') {
       this.showToast('Chỉ hóa đơn ở trạng thái chờ xác nhận mới được chỉnh sửa.', 'warning');
       return;
@@ -1034,6 +1127,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   async saveChanges(): Promise<void> {
     if (this.editingInvoice && this.invoiceId) {
+      // Kiểm tra nếu là đơn hàng online và đã được chỉnh sửa
+      const isOnlineOrder = !this.invoice?.nhanVienId || this.invoice.nhanVienId === null;
+      if (isOnlineOrder && this.invoice?.ghiChu && this.invoice.ghiChu.includes('[ĐÃ CHỈNH SỬA]')) {
+        this.showToast('Đơn hàng online chỉ được chỉnh sửa 1 lần.', 'warning');
+        return;
+      }
+
       // Validation
       if (!this.editingInvoice.tenKhachHang || this.editingInvoice.tenKhachHang.trim() === '') {
         this.showToast('Vui lòng nhập tên khách hàng!', 'warning');
@@ -1060,6 +1160,41 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.editingInvoice.khachHangId = customerId;
         }
 
+        // Kiểm tra thay đổi địa chỉ và phí ship
+        const originalAddress = this.invoice 
+          ? `${this.invoice.tinhThanh || ''}_${this.invoice.quanHuyen || ''}_${this.invoice.phuongXa || ''}_${this.invoice.diaChiChiTiet || ''}`
+          : '';
+        const newAddress = `${this.editingInvoice.tinhThanh || ''}_${this.editingInvoice.quanHuyen || ''}_${this.editingInvoice.phuongXa || ''}_${this.editingInvoice.diaChiChiTiet || ''}`;
+        const addressChanged = originalAddress !== newAddress;
+        
+        const originalShippingFee = this.invoice?.phiGiaoHang || 0;
+        const newShippingFee = this.editingInvoice.phiGiaoHang || 0;
+        const shippingFeeChanged = originalShippingFee !== newShippingFee;
+        const shippingFeeDifference = newShippingFee - originalShippingFee;
+
+        // Nếu địa chỉ hoặc phí ship thay đổi, hiển thị thông báo
+        if (addressChanged || shippingFeeChanged) {
+          let message = 'Địa chỉ giao hàng hoặc phí ship đã thay đổi.\n\n';
+          if (shippingFeeChanged) {
+            if (shippingFeeDifference > 0) {
+              message += `Phí ship tăng: +${this.formatCurrency(shippingFeeDifference)}\n`;
+              message += 'Khách hàng cần thanh toán thêm phụ phí này.';
+            } else if (shippingFeeDifference < 0) {
+              message += `Phí ship giảm: ${this.formatCurrency(shippingFeeDifference)}\n`;
+              message += 'Cần hoàn trả số tiền này cho khách hàng.';
+            }
+          }
+          
+          if (!confirm(message + '\n\nBạn có muốn tiếp tục cập nhật?')) {
+            // Reset button state
+            if (saveButton) {
+              saveButton.disabled = false;
+              saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+            }
+            return;
+          }
+        }
+
         // Chuẩn hóa dữ liệu trước khi gửi
         const invoiceData = {
           ...this.editingInvoice,
@@ -1074,6 +1209,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         };
 
         console.log('Sending invoice data:', invoiceData);
+
+        // Đánh dấu đơn hàng đã được chỉnh sửa nếu là đơn hàng online
+        const isOnlineOrder = !this.invoice?.nhanVienId || this.invoice.nhanVienId === null;
+        if (isOnlineOrder) {
+          // Thêm ghi chú đánh dấu đã chỉnh sửa
+          const editNote = '[ĐÃ CHỈNH SỬA]';
+          if (!invoiceData.ghiChu || !invoiceData.ghiChu.includes(editNote)) {
+            invoiceData.ghiChu = invoiceData.ghiChu 
+              ? `${editNote} ${invoiceData.ghiChu}` 
+              : editNote;
+          }
+        }
 
         this.hoaDonService.updateHoaDonNew(this.invoiceId, invoiceData).subscribe({
           next: (updatedInvoice: any) => {
@@ -3174,8 +3321,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         // Cập nhật invoice với dữ liệu mới
         this.invoice = updatedInvoice;
 
-        // Hiển thị thông báo thành công
-        this.showToast('Đã hủy đơn hàng thành công. Số lượng sản phẩm đã được hoàn lại vào kho.', 'success');
+        // Hiển thị thông báo thành công với thông tin hoàn tiền
+        // Backend sẽ tự động xử lý hoàn tiền nếu đơn hàng đã thanh toán
+        const refundMessage = this.invoice.phuongThucThanhToan === 'transfer' && this.invoice.ngayThanhToan
+          ? 'Đã hủy đơn hàng thành công. Số lượng sản phẩm đã được hoàn lại vào kho. Tiền sẽ được hoàn trả trong vòng 3-5 ngày làm việc.'
+          : 'Đã hủy đơn hàng thành công. Số lượng sản phẩm đã được hoàn lại vào kho.';
+        this.showToast(refundMessage, 'success');
 
         // Reload lại invoice detail để cập nhật UI
         setTimeout(() => {

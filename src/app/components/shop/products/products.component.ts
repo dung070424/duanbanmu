@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth';
@@ -52,6 +52,7 @@ export class ShopProductsComponent implements OnInit {
     private chiTietSanPhamService: ChiTietSanPhamApiService,
     private router: Router,
     private route: ActivatedRoute,
+    private location: Location,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -295,5 +296,13 @@ export class ShopProductsComponent implements OnInit {
     if (!value) return false;
     const cleaned = value.replace(/\s+/g, '');
     return cleaned.length > 40 && /^[A-Za-z0-9+/]+=*$/.test(cleaned);
+  }
+
+  goBack(): void {
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/shop']);
+    }
   }
 }

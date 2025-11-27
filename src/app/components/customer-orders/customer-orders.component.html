@@ -1,9 +1,19 @@
 <div class="customer-orders-container">
-  <div class="container">
-    <div class="page-header">
-      <h1><i class="fas fa-shopping-bag"></i> Đơn hàng của tôi</h1>
-      <p>Xem và quản lý các đơn hàng của bạn</p>
-    </div>
+  <app-shop-header></app-shop-header>
+
+  <main class="customer-orders-main">
+    <div class="container">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb-nav">
+        <button class="btn-back" (click)="goBack()" type="button">
+          <i class="fas fa-arrow-left"></i> Quay lại
+        </button>
+      </nav>
+
+      <div class="page-header">
+        <h1><i class="fas fa-shopping-bag"></i> Đơn hàng của tôi</h1>
+        <p>Xem và quản lý các đơn hàng của bạn</p>
+      </div>
 
     <div *ngIf="error" class="error-message">
       <i class="fas fa-exclamation-circle"></i>
@@ -151,6 +161,9 @@
         Sau <i class="fas fa-chevron-right"></i>
       </button>
     </div>
-  </div>
+    </div>
+  </main>
+
+  <app-shop-footer></app-shop-footer>
 </div>
 

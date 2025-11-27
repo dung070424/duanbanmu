@@ -343,6 +343,61 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           });
         }
         
+        // ✅ QUAN TRỌNG: Map danhSachChiTiet sang danhSachSanPham cho TẤT CẢ các trạng thái
+        // Đảm bảo danh sách sản phẩm được hiển thị cho mọi hóa đơn, không chỉ "Chờ xác nhận"
+        this.paginatedInvoices = this.paginatedInvoices.map((invoice: any) => {
+          // Nếu đã có danhSachSanPham và không rỗng, giữ nguyên
+          if (invoice.danhSachSanPham && Array.isArray(invoice.danhSachSanPham) && invoice.danhSachSanPham.length > 0) {
+            return invoice;
+          }
+
+          // Nếu có danhSachChiTiet, map sang danhSachSanPham
+          if (invoice.danhSachChiTiet && Array.isArray(invoice.danhSachChiTiet) && invoice.danhSachChiTiet.length > 0) {
+            console.log(`📦 Mapping danhSachChiTiet to danhSachSanPham for invoice ${invoice.maHoaDon} (status: ${invoice.trangThai})`);
+            invoice.danhSachSanPham = invoice.danhSachChiTiet.map((item: any) => {
+              const donGia = item.donGia
+                ? (typeof item.donGia === 'string' ? parseFloat(item.donGia) : Number(item.donGia))
+                : 0;
+              const soLuong = item.soLuong
+                ? (typeof item.soLuong === 'string' ? parseInt(item.soLuong, 10) : Number(item.soLuong))
+                : 0;
+              const giamGia = item.giamGia
+                ? (typeof item.giamGia === 'string' ? parseFloat(item.giamGia) : Number(item.giamGia))
+                : 0;
+              const thanhTien = item.thanhTien
+                ? (typeof item.thanhTien === 'string' ? parseFloat(item.thanhTien) : Number(item.thanhTien))
+                : (donGia * soLuong - giamGia);
+
+              return {
+                id: item.id || null,
+                chiTietSanPhamId: item.chiTietSanPhamId || null,
+                sanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
+                tenSanPham: item.tenSanPham || 'Chưa có tên',
+                maSanPham: item.maSanPham || '',
+                soLuong: soLuong,
+                donGia: donGia,
+                thanhTien: thanhTien,
+                giamGia: giamGia,
+                // Thông tin sản phẩm chi tiết
+                mauSac: item.mauSac || item.mauSacTen || '',
+                kichThuoc: item.kichThuoc || item.kichThuocTen || '',
+                nhaSanXuat: item.nhaSanXuat || item.nhaSanXuatTen || '',
+                anhSanPham: item.anhSanPham || item.anhSanPhamUrl || '',
+                // Các trường bổ sung
+                danhMuc: item.danhMuc || item.loaiMuBaoHiemTen || item.loaiMuBaoHiem || '',
+                thuongHieu: item.thuongHieu || '',
+                ghiChu: item.ghiChu || ''
+              };
+            });
+            console.log(`✅ Mapped ${invoice.danhSachSanPham.length} products for invoice ${invoice.maHoaDon}`);
+          } else {
+            // Nếu không có cả danhSachChiTiet và danhSachSanPham, set mảng rỗng
+            invoice.danhSachSanPham = [];
+          }
+
+          return invoice;
+        });
+
         // ✅ QUAN TRỌNG: Tin tưởng backend - gán trực tiếp không filter lại
         // Backend đã xử lý tất cả filters (status, search, date, payment, etc.)
         // Frontend chỉ cần hiển thị chính xác những gì backend trả về

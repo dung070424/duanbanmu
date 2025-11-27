@@ -1,12 +1,55 @@
 .customer-orders-container {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 20px 0;
+
+  .customer-orders-main {
+    padding: 20px 0;
+  }
 
   .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+  }
+
+  // Breadcrumb Navigation
+  .breadcrumb-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      color: #111827;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+      &:hover {
+        background: #f4a11a;
+        border-color: #f4a11a;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(244, 161, 26, 0.2);
+      }
+
+      i {
+        font-size: 12px;
+      }
+    }
   }
 
   .page-header {
