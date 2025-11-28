@@ -49,6 +49,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             // Để user có thể tiếp tục sử dụng trang public
             console.log('ℹ️ 401 on public page, clearing auth but not redirecting');
             authService.logout();
+            
+            // QUAN TRỌNG: Nếu đang ở trang checkout và chưa đăng nhập, redirect về trang chủ
+            if (currentUrl.includes('/shop/checkout')) {
+              console.log('🛒 401 on checkout page, redirecting to shop home');
+              router.navigate(['/shop']);
+            }
           }
         }
         // Xử lý lỗi 403 (Forbidden) - không có quyền

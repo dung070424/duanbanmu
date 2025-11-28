@@ -136,12 +136,24 @@ export class HoaDonService {
   getHoaDonById(id: number): Observable<HoaDonDTO> {
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
       map((response: any) => {
+        console.log('📦 getHoaDonById - Raw response from backend:', {
+          id: response.id,
+          maHoaDon: response.maHoaDon,
+          trangThai: response.trangThai,
+          soLuongSanPham: response.soLuongSanPham,
+          danhSachChiTiet: response.danhSachChiTiet ? response.danhSachChiTiet.length : 0,
+          hasDanhSachChiTiet: !!response.danhSachChiTiet,
+          isArray: Array.isArray(response.danhSachChiTiet)
+        });
+        
         // QUAN TRỌNG: Giữ lại danhSachChiTiet gốc từ backend để có thể dùng khi update
         // Lưu danhSachChiTiet gốc trước khi map
         const originalDanhSachChiTiet = response.danhSachChiTiet ? [...response.danhSachChiTiet] : null;
         
-        // Map danhSachChiTiet từ backend sang danhSachSanPham cho frontend
-        if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet)) {
+        // QUAN TRỌNG: Map danhSachChiTiet từ backend sang danhSachSanPham cho frontend
+        // Luôn map cho TẤT CẢ các trạng thái, không chỉ CHO_XAC_NHAN
+        if (response.danhSachChiTiet && Array.isArray(response.danhSachChiTiet) && response.danhSachChiTiet.length > 0) {
+          console.log('✅ Mapping danhSachChiTiet to danhSachSanPham, count:', response.danhSachChiTiet.length);
           response.danhSachSanPham = response.danhSachChiTiet.map((item: any) => ({
             id: item.id,
             chiTietSanPhamId: item.chiTietSanPhamId,
@@ -157,7 +169,9 @@ export class HoaDonService {
             anhSanPham: item.anhSanPham,
             sanPhamId: item.chiTietSanPhamId // Map chiTietSanPhamId to sanPhamId for compatibility
           }));
+          console.log('✅ Mapped danhSachSanPham, count:', response.danhSachSanPham.length);
         } else {
+          console.warn('⚠️ No danhSachChiTiet found in response for invoice ID:', id, 'status:', response.trangThai, 'soLuongSanPham:', response.soLuongSanPham);
           response.danhSachSanPham = [];
         }
         
@@ -427,14 +441,27 @@ export class HoaDonService {
           console.log('✅ Mapped danhSachSanPham, count:', response.danhSachSanPham.length);
           console.log('📦 Sample mapped product:', response.danhSachSanPham[0]);
         } else {
-          console.warn('⚠️ No danhSachChiTiet found in response or empty array');
+          console.error('❌ CRITICAL: No danhSachChiTiet found in response!', {
+            invoiceId: id,
+            status: response.trangThai,
+            soLuongSanPham: response.soLuongSanPham,
+            danhSachChiTiet: response.danhSachChiTiet,
+            danhSachChiTietType: typeof response.danhSachChiTiet,
+            isArray: Array.isArray(response.danhSachChiTiet),
+            responseKeys: Object.keys(response),
+            fullResponse: JSON.stringify(response, null, 2)
+          });
           response.danhSachSanPham = [];
         }
         
+        // QUAN TRỌNG: Luôn set danhSachChiTiet trong response, kể cả khi empty
         // Giữ lại danhSachChiTiet gốc trong response để có thể dùng khi update
         // (ép kiểu để TypeScript không báo lỗi vì HoaDonDTO không có field này)
         if (originalDanhSachChiTiet) {
           (response as any).danhSachChiTiet = originalDanhSachChiTiet;
+        } else {
+          // Nếu không có, set empty array để frontend có thể xử lý
+          (response as any).danhSachChiTiet = [];
         }
         
         console.log('✅ getHoaDonDetail - Final response:', {
