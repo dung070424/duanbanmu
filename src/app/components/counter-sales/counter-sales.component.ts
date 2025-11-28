@@ -1645,6 +1645,7 @@ export class CounterSalesComponent implements OnInit {
     }
     const shippingAmount = this.isDelivery ? normalizedShipping : 0;
     this.cartTotal = afterDiscount + shippingAmount; // Loại bỏ thuế khỏi tổng
+    // ✅ Refresh voucher suggestions để cập nhật danh sách (nhưng không tự động áp dụng voucher tốt nhất nếu đã chọn voucher khác)
     this.refreshVoucherSuggestions();
   }
 
@@ -1697,12 +1698,28 @@ export class CounterSalesComponent implements OnInit {
     // Chỉ hiển thị một số phiếu giảm giá đầu tiên (giới hạn để view không bị dài)
     this.displayedVouchers = usable.slice(0, this.maxDisplayedVouchers);
 
+    // ✅ SỬA: Chỉ tự động áp dụng voucher tốt nhất khi CHƯA có voucher nào được chọn
+    // Không tự động thay đổi nếu người dùng đã chọn voucher khác
     const topVoucher = this.bestVoucher;
     if (topVoucher) {
-      if (!this.appliedCoupon || this.appliedCoupon.code !== topVoucher.code) {
-        this.applyCouponFromSuggestion(topVoucher);
+      // Chỉ tự động áp dụng nếu chưa có voucher nào được chọn
+      if (!this.appliedCoupon) {
+        this.appliedCoupon = topVoucher;
+        this.couponCode = topVoucher.code;
+      } else {
+        // Nếu đã có voucher được chọn, kiểm tra xem voucher đó còn hợp lệ không
+        const currentVoucherStillValid = usable.some((v) => v.code === this.appliedCoupon?.code);
+        // Nếu voucher đang chọn không còn trong danh sách hợp lệ, xóa nó
+        if (!currentVoucherStillValid) {
+          this.removeCoupon();
+          // Sau khi xóa, tự động áp dụng voucher tốt nhất
+          this.appliedCoupon = topVoucher;
+          this.couponCode = topVoucher.code;
+        }
+        // Nếu voucher đang chọn vẫn hợp lệ, giữ nguyên lựa chọn của người dùng
       }
     } else if (this.appliedCoupon) {
+      // Nếu không còn voucher nào hợp lệ, xóa voucher đang chọn
       this.removeCoupon();
     }
   }
