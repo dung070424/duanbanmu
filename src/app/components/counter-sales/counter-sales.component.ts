@@ -1207,17 +1207,84 @@ export class CounterSalesComponent implements OnInit {
   }
 
   private mapVoucher(v: any) {
-    return {
+    // ✅ SỬA: Xử lý đúng loại giảm giá theo format từ backend
+    // loaiPhieuGiamGia: boolean (true = Tiền mặt/FIXED, false = Phần trăm/PERCENT)
+    // hoặc có thể là string: 'PHAN_TRAM', 'TIEN_MAT', 'PERCENT', 'FIXED'
+    let voucherType: 'PERCENT' | 'FIXED' = 'PERCENT';
+
+    // Kiểm tra loaiPhieuGiamGia (boolean)
+    if (v.loaiPhieuGiamGia !== undefined && v.loaiPhieuGiamGia !== null) {
+      // Nếu là boolean: true = Tiền mặt (FIXED), false = Phần trăm (PERCENT)
+      if (typeof v.loaiPhieuGiamGia === 'boolean') {
+        voucherType = v.loaiPhieuGiamGia ? 'FIXED' : 'PERCENT';
+        console.log(
+          `🎫 Mapping voucher ${v.code ?? v.maPhieu}: loaiPhieuGiamGia=${
+            v.loaiPhieuGiamGia
+          } (boolean) → type=${voucherType}`
+        );
+      } else {
+        // Nếu là string, check các giá trị có thể
+        const typeStr = String(v.loaiPhieuGiamGia).toUpperCase();
+        if (typeStr === 'TIEN_MAT' || typeStr === 'FIXED' || typeStr === 'CASH') {
+          voucherType = 'FIXED';
+        } else if (typeStr === 'PHAN_TRAM' || typeStr === 'PERCENT' || typeStr === 'PERCENTAGE') {
+          voucherType = 'PERCENT';
+        }
+        console.log(
+          `🎫 Mapping voucher ${
+            v.code ?? v.maPhieu
+          }: loaiPhieuGiamGia="${typeStr}" (string) → type=${voucherType}`
+        );
+      }
+    } else if (v.type !== undefined && v.type !== null) {
+      // Fallback: check field 'type'
+      const typeStr = String(v.type).toUpperCase();
+      if (typeStr === 'FIXED' || typeStr === 'CASH' || typeStr === 'TIEN_MAT') {
+        voucherType = 'FIXED';
+      } else if (typeStr === 'PERCENT' || typeStr === 'PERCENTAGE' || typeStr === 'PHAN_TRAM') {
+        voucherType = 'PERCENT';
+      }
+      console.log(
+        `🎫 Mapping voucher ${v.code ?? v.maPhieu}: type="${typeStr}" → type=${voucherType}`
+      );
+    } else if (v.loaiGiam || v.kieuGiam) {
+      // Fallback: check các field khác
+      const typeStr = String(v.loaiGiam ?? v.kieuGiam).toUpperCase();
+      if (typeStr === 'FIXED' || typeStr === 'CASH' || typeStr === 'TIEN_MAT') {
+        voucherType = 'FIXED';
+      } else {
+        voucherType = 'PERCENT';
+      }
+      console.log(
+        `🎫 Mapping voucher ${
+          v.code ?? v.maPhieu
+        }: loaiGiam/kieuGiam="${typeStr}" → type=${voucherType}`
+      );
+    } else {
+      console.log(
+        `🎫 Mapping voucher ${v.code ?? v.maPhieu}: No type info found, defaulting to PERCENT`
+      );
+    }
+
+    // Map các giá trị
+    const rawValue = Number(v.value ?? v.giaTri ?? v.giaTriGiam ?? 0);
+    let rawMaxDiscount = v.maxDiscount ?? v.giamToiDa ?? v.soTienToiDa ?? undefined;
+
+    // Chuyển đổi maxDiscount sang number nếu có
+    if (rawMaxDiscount !== undefined && rawMaxDiscount !== null) {
+      rawMaxDiscount = Number(rawMaxDiscount);
+      // Nếu maxDiscount <= 0, coi như không có giới hạn
+      if (rawMaxDiscount <= 0) {
+        rawMaxDiscount = undefined;
+      }
+    }
+
+    const mapped = {
       id: v.id ?? v.voucherId ?? 0,
       code: v.code ?? v.maPhieu ?? v.ma ?? '',
-      type:
-        (v.type ?? v.loaiPhieuGiamGia ?? v.loaiGiam ?? v.kieuGiam ?? 'PERCENT')
-          .toString()
-          .toUpperCase() === 'PERCENT'
-          ? 'PERCENT'
-          : 'FIXED',
-      value: Number(v.value ?? v.giaTri ?? v.giaTriGiam ?? 0),
-      maxDiscount: v.maxDiscount ?? v.giamToiDa ?? v.soTienToiDa ?? undefined,
+      type: voucherType,
+      value: rawValue,
+      maxDiscount: rawMaxDiscount,
       minOrder:
         v.minOrder ?? v.dieuKienToiThieu ?? v.hoaDonToiThieu ?? v.giaTriToiThieu ?? undefined,
     } as {
@@ -1228,6 +1295,37 @@ export class CounterSalesComponent implements OnInit {
       maxDiscount?: number;
       minOrder?: number;
     };
+
+    // ✅ Kiểm tra hợp lý: Nếu voucher PERCENT và maxDiscount quá nhỏ,
+    // có thể là lỗi dữ liệu, không nên áp dụng maxDiscount
+    if (mapped.type === 'PERCENT' && mapped.maxDiscount !== undefined) {
+      // Nếu maxDiscount quá nhỏ (< 1000 VND), có thể là lỗi dữ liệu
+      // Ví dụ: voucher 50% nhưng maxDiscount = 50 (có thể là lỗi, nên là 5000000)
+      // Hoặc nếu maxDiscount nhỏ hơn value (phần trăm), cũng có thể là lỗi
+      if (mapped.maxDiscount < 1000 || mapped.maxDiscount < mapped.value) {
+        console.warn(
+          `⚠️ Voucher ${mapped.code}: maxDiscount (${mapped.maxDiscount}) quá nhỏ so với voucher ${mapped.value}%, có thể là lỗi dữ liệu. Bỏ qua maxDiscount.`
+        );
+        mapped.maxDiscount = undefined;
+      }
+    }
+
+    console.log(`🎫 Mapped voucher:`, {
+      code: mapped.code,
+      type: mapped.type,
+      value: mapped.value,
+      maxDiscount: mapped.maxDiscount,
+      minOrder: mapped.minOrder,
+      rawData: {
+        loaiPhieuGiamGia: v.loaiPhieuGiamGia,
+        giaTriGiam: v.giaTriGiam,
+        soTienToiDa: v.soTienToiDa,
+        maxDiscount: v.maxDiscount,
+        giamToiDa: v.giamToiDa,
+      },
+    });
+
+    return mapped;
   }
 
   filterSales(): void {
@@ -1622,20 +1720,61 @@ export class CounterSalesComponent implements OnInit {
     this.couponDiscount = 0;
     if (this.appliedCoupon) {
       const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
+      console.log('💰 calculateCartTotal - Applied coupon:', {
+        code: this.appliedCoupon.code,
+        type: this.appliedCoupon.type,
+        value: this.appliedCoupon.value,
+        maxDiscount: this.appliedCoupon.maxDiscount,
+        minOrder: this.appliedCoupon.minOrder,
+        base: base,
+      });
+
       if (this.appliedCoupon.minOrder && base < this.appliedCoupon.minOrder) {
+        console.log('⚠️ Base amount is less than minOrder, discount = 0');
         this.couponDiscount = 0;
       } else if (this.appliedCoupon.type === 'PERCENT') {
-        this.couponDiscount = (base * this.appliedCoupon.value) / 100;
+        // Tính discount theo phần trăm
+        const percentDiscount = (base * this.appliedCoupon.value) / 100;
+        console.log(
+          `💰 PERCENT calculation: (${base} * ${this.appliedCoupon.value}) / 100 = ${percentDiscount}`
+        );
+
+        // Chỉ áp dụng maxDiscount nếu có, lớn hơn 0, và hợp lý (>= 1000 VND)
+        // Nếu maxDiscount quá nhỏ (< 1000), có thể là lỗi dữ liệu, bỏ qua
         if (
           this.appliedCoupon.maxDiscount !== undefined &&
-          this.appliedCoupon.maxDiscount !== null
+          this.appliedCoupon.maxDiscount !== null &&
+          this.appliedCoupon.maxDiscount > 0 &&
+          this.appliedCoupon.maxDiscount >= 1000
         ) {
-          this.couponDiscount = Math.min(this.couponDiscount, this.appliedCoupon.maxDiscount);
+          this.couponDiscount = Math.min(percentDiscount, this.appliedCoupon.maxDiscount);
+          console.log(
+            `💰 Applied maxDiscount: ${this.appliedCoupon.maxDiscount}, final discount = ${this.couponDiscount}`
+          );
+        } else {
+          this.couponDiscount = percentDiscount;
+          if (
+            this.appliedCoupon.maxDiscount !== undefined &&
+            this.appliedCoupon.maxDiscount !== null &&
+            this.appliedCoupon.maxDiscount > 0 &&
+            this.appliedCoupon.maxDiscount < 1000
+          ) {
+            console.warn(
+              `⚠️ maxDiscount (${this.appliedCoupon.maxDiscount}) quá nhỏ, bỏ qua và tính theo phần trăm: ${this.couponDiscount}`
+            );
+          } else {
+            console.log(`💰 No maxDiscount limit, discount = ${this.couponDiscount}`);
+          }
         }
       } else {
+        // FIXED: giảm giá cố định
         this.couponDiscount = this.appliedCoupon.value;
+        console.log(`💰 FIXED discount: ${this.couponDiscount}`);
       }
+
+      // Đảm bảo không vượt quá base
       this.couponDiscount = Math.min(this.couponDiscount, base);
+      console.log(`💰 Final couponDiscount (after capping to base): ${this.couponDiscount}`);
     }
     const afterDiscount = Math.max(0, this.cartSubtotal - this.cartDiscount - this.couponDiscount);
     this.cartTaxAmount = 0; // Thuế đã được bỏ
@@ -1659,11 +1798,17 @@ export class CounterSalesComponent implements OnInit {
     const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
     const customerId = this.newSale.customerId;
     const collected: any[] = [];
+
+    console.log('🔄 Refreshing voucher suggestions, base:', base, 'customerId:', customerId);
+
     // lấy mã chung đang hoạt động
     this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
       next: (res: any) => {
         const general = (res?.data || res?.content || res || []) as any[];
+        console.log('📋 Received active vouchers from API:', general.length, 'items');
+        console.log('📋 First voucher sample:', general[0]);
         collected.push(...general);
+
         if (customerId) {
           // lấy toàn bộ mã cá nhân rồi lọc theo khách hàng hiện tại
           this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
@@ -1672,26 +1817,61 @@ export class CounterSalesComponent implements OnInit {
               const personal = (Array.isArray(raw) ? raw : [])
                 .filter((r: any) => (r?.khachHangId ?? r?.khachHang?.id) === customerId)
                 .map((r: any) => r?.phieuGiamGia || r?.voucher || r);
+              console.log(
+                '📋 Personal vouchers for customer',
+                customerId,
+                ':',
+                personal.length,
+                'items'
+              );
               this.computeVoucherLists([...collected, ...personal], base);
             },
-            error: () => this.computeVoucherLists(collected, base),
+            error: () => {
+              console.log('⚠️ Error loading personal vouchers, using general vouchers only');
+              this.computeVoucherLists(collected, base);
+            },
           });
         } else {
           this.computeVoucherLists(collected, base);
         }
       },
-      error: () => this.computeVoucherLists([], base),
+      error: (err) => {
+        console.error('❌ Error loading active vouchers:', err);
+        this.computeVoucherLists([], base);
+      },
     });
   }
 
   private computeVoucherLists(raw: any[], base: number): void {
+    console.log('🔄 computeVoucherLists - Raw vouchers:', raw.length, 'items, base:', base);
+
     const mapped = (raw || [])
       .map((v) => this.mapVoucher(v))
       .filter((m) => m && (!m.minOrder || base >= m.minOrder));
+
+    console.log('🔄 After mapping and filtering:', mapped.length, 'vouchers');
+    console.log(
+      '🔄 Mapped vouchers:',
+      mapped.map((v) => ({ code: v.code, type: v.type, value: v.value }))
+    );
+
     const usable = mapped
-      .map((m) => ({ ...m, discount: this.computeVoucherDiscount(m, base) }))
+      .map((m) => {
+        const discount = this.computeVoucherDiscount(m, base);
+        console.log(
+          `💰 Voucher ${m.code} (${m.type}): value=${m.value}, discount=${discount}, base=${base}`
+        );
+        return { ...m, discount };
+      })
       .filter((x) => x.discount > 0)
       .sort((a, b) => b.discount - a.discount);
+
+    console.log('✅ Usable vouchers after discount calculation:', usable.length, 'items');
+    console.log(
+      '✅ Usable vouchers:',
+      usable.map((v) => ({ code: v.code, type: v.type, value: v.value, discount: v.discount }))
+    );
+
     this.bestVoucher = usable[0] || null;
     this.alternativeVouchers = usable.slice(1, 5);
     this.allVouchers = usable; // flat, sorted desc
@@ -1725,12 +1905,35 @@ export class CounterSalesComponent implements OnInit {
   }
 
   private computeVoucherDiscount(v: any, base: number): number {
+    console.log(`💰 computeVoucherDiscount - Voucher:`, {
+      code: v.code,
+      type: v.type,
+      value: v.value,
+      maxDiscount: v.maxDiscount,
+      base: base,
+    });
+
     if (v.type === 'PERCENT') {
+      // Tính discount theo phần trăm
       let d = (base * v.value) / 100;
-      if (v.maxDiscount !== undefined && v.maxDiscount !== null) d = Math.min(d, v.maxDiscount);
-      return Math.min(d, base);
+      console.log(`💰 PERCENT: (${base} * ${v.value}) / 100 = ${d}`);
+
+      // Áp dụng giới hạn tối đa nếu có
+      if (v.maxDiscount !== undefined && v.maxDiscount !== null && v.maxDiscount > 0) {
+        d = Math.min(d, v.maxDiscount);
+        console.log(`💰 Applied maxDiscount: ${v.maxDiscount}, final = ${d}`);
+      }
+
+      // Đảm bảo không vượt quá base
+      d = Math.min(d, base);
+      console.log(`💰 Final PERCENT discount: ${d}`);
+      return d;
+    } else {
+      // FIXED: giảm giá cố định
+      const d = Math.min(v.value, base);
+      console.log(`💰 FIXED discount: ${d}`);
+      return d;
     }
-    return Math.min(v.value, base);
   }
 
   processSale(): void {

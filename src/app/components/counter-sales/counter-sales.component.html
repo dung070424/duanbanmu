@@ -523,7 +523,10 @@
                     <div class="voucher-body">
                       <div class="discount-row">
                         <span class="tag">Giảm:</span>
-                        <span class="value">-{{ formatCurrency(v.discount) }}</span>
+                        <span class="value" *ngIf="v.type === 'PERCENT'"> -{{ v.value }}% </span>
+                        <span class="value" *ngIf="v.type === 'FIXED'">
+                          -{{ formatCurrency(v.discount) }}
+                        </span>
                       </div>
                       <div class="extra" *ngIf="v.expiry || v.expiredAt">
                         Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
@@ -753,7 +756,10 @@
           <div class="voucher-body">
             <div class="discount-row">
               <span class="tag">Giảm:</span>
-              <span class="value">-{{ formatCurrency(v.discount) }}</span>
+              <span class="value" *ngIf="v.type === 'PERCENT'"> -{{ v.value }}% </span>
+              <span class="value" *ngIf="v.type === 'FIXED'">
+                -{{ formatCurrency(v.discount) }}
+              </span>
             </div>
             <div class="extra" *ngIf="v.expiry || v.expiredAt">
               Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
