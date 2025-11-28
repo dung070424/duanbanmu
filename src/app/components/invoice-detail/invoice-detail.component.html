@@ -739,18 +739,7 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-md-6">
-            <div class="form-group">
-              <label>Trạng thái:</label>
-              <select class="form-control" [(ngModel)]="editingInvoice.trangThai">
-                <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
-                <option value="DA_XAC_NHAN">Đã xác nhận</option>
-                <option value="DANG_GIAO_HANG">Đang giao hàng</option>
-                <option value="DA_GIAO_HANG">Đã Hoàn Thành</option>
-                <option value="HUY">Hủy</option>
-              </select>
-            </div>
-          </div>
+
           <div class="col-md-6">
             <div class="form-group">
               <label>Ghi chú:</label>
@@ -896,6 +885,14 @@
           ></textarea>
           <small class="text-muted">Vui lòng nhập lý do hủy để lưu trữ thông tin.</small>
         </div>
+
+        <!-- Thông tin hoàn tiền (nếu đơn hàng đã thanh toán) -->
+        <div *ngIf="invoice?.ngayThanhToan" class="alert alert-info mb-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Lưu ý:</strong> Đơn hàng này đã thanh toán. Sau khi hủy, hệ thống sẽ tự động xử lý hoàn tiền.
+          <br>
+          <small>Số tiền sẽ được hoàn trả: <strong>{{ formatCurrency(invoice?.thanhTien || 0) }} ₫</strong></small>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeCancelInvoiceModal()" [disabled]="savingStatus">
@@ -913,3 +910,131 @@
 <div class="modal-backdrop fade" [class.show]="showCancelInvoiceModal"
      [style.display]="showCancelInvoiceModal ? 'block' : 'none'"
      (click)="closeCancelInvoiceModal()"></div>
+
+<!-- Modal Điều chỉnh Phí Ship -->
+<div class="modal fade" [class.show]="showShippingFeeAdjustmentModal" [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'"
+     id="shippingFeeAdjustmentModal" tabindex="-1" role="dialog"
+     [attr.aria-hidden]="!showShippingFeeAdjustmentModal">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bg-info text-white' : 'bg-warning'">
+        <h5 class="modal-title">
+          <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-counterclockwise' : 'bi-arrow-up-circle'" class="me-2"></i>
+          {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Hoàn Phí Ship' : 'Tăng Phụ Phí Ship' }}
+        </h5>
+        <button type="button" class="btn-close" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'btn-close-white' : ''" 
+                (click)="closeShippingFeeAdjustmentModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'alert-info' : 'alert-warning'">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong *ngIf="shippingFeeAdjustmentData.adjustmentType === 'REFUND'">Hoàn phí ship:</strong>
+          <strong *ngIf="shippingFeeAdjustmentData.adjustmentType === 'SURCHARGE'">Tăng phụ phí ship:</strong>
+          <br>
+          <span>Phí ship cũ: <strong>{{ formatCurrency(shippingFeeAdjustmentData.oldShippingFee) }} ₫</strong></span>
+          <br>
+          <span>Phí ship mới: <strong>{{ formatCurrency(shippingFeeAdjustmentData.newShippingFee) }} ₫</strong></span>
+          <br>
+          <span *ngIf="shippingFeeAdjustmentData.adjustmentType === 'REFUND'">
+            Số tiền hoàn lại: <strong class="text-success">{{ formatCurrency(shippingFeeAdjustmentData.adjustmentAmount) }} ₫</strong>
+          </span>
+          <span *ngIf="shippingFeeAdjustmentData.adjustmentType === 'SURCHARGE'">
+            Số tiền tăng thêm: <strong class="text-danger">+{{ formatCurrency(shippingFeeAdjustmentData.adjustmentAmount) }} ₫</strong>
+          </span>
+        </div>
+
+        <div class="mb-3">
+          <label for="adjustmentReason" class="form-label required">
+            <i class="bi bi-pencil-square me-2"></i>Lý do điều chỉnh <span class="text-danger">*</span>
+          </label>
+          <textarea
+            class="form-control"
+            id="adjustmentReason"
+            rows="3"
+            [(ngModel)]="shippingFeeAdjustmentData.reason"
+            name="adjustmentReason"
+            placeholder="Vui lòng nhập lý do điều chỉnh phí ship..."
+            required
+            [disabled]="savingStatus"
+          ></textarea>
+        </div>
+
+        <!-- Form hoàn tiền (chỉ hiển thị khi là REFUND) -->
+        <div *ngIf="shippingFeeAdjustmentData.adjustmentType === 'REFUND'" class="refund-section">
+          <h6 class="mb-3"><i class="bi bi-bank me-2"></i>Thông tin hoàn tiền</h6>
+          
+          <div class="mb-3">
+            <label for="refundMethod" class="form-label">Phương thức hoàn tiền</label>
+            <select
+              class="form-control"
+              id="refundMethod"
+              [(ngModel)]="shippingFeeAdjustmentData.refundMethod"
+              name="refundMethod"
+              [disabled]="savingStatus"
+            >
+              <option value="original_method">Theo phương thức thanh toán gốc</option>
+              <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+              <option value="cash">Tiền mặt</option>
+            </select>
+          </div>
+
+          <div *ngIf="shippingFeeAdjustmentData.refundMethod === 'bank_transfer'" class="bank-info-section">
+            <div class="mb-3">
+              <label for="bankAccount" class="form-label">Số tài khoản ngân hàng</label>
+              <input
+                type="text"
+                class="form-control"
+                id="bankAccount"
+                [(ngModel)]="shippingFeeAdjustmentData.bankAccount"
+                name="bankAccount"
+                placeholder="Nhập số tài khoản..."
+                [disabled]="savingStatus"
+              />
+            </div>
+            <div class="mb-3">
+              <label for="bankName" class="form-label">Tên ngân hàng</label>
+              <input
+                type="text"
+                class="form-control"
+                id="bankName"
+                [(ngModel)]="shippingFeeAdjustmentData.bankName"
+                name="bankName"
+                placeholder="Nhập tên ngân hàng..."
+                [disabled]="savingStatus"
+              />
+            </div>
+            <div class="mb-3">
+              <label for="accountHolder" class="form-label">Chủ tài khoản</label>
+              <input
+                type="text"
+                class="form-control"
+                id="accountHolder"
+                [(ngModel)]="shippingFeeAdjustmentData.accountHolder"
+                name="accountHolder"
+                placeholder="Nhập tên chủ tài khoản..."
+                [disabled]="savingStatus"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeShippingFeeAdjustmentModal()" [disabled]="savingStatus">
+          <i class="bi bi-x-circle me-2"></i>Hủy
+        </button>
+        <button type="button" class="btn" 
+                [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'btn-info' : 'btn-warning'"
+                (click)="processShippingFeeAdjustment()" 
+                [disabled]="savingStatus || !shippingFeeAdjustmentData.reason || shippingFeeAdjustmentData.reason.trim().length === 0">
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-check-circle' : 'bi-arrow-up-circle'" 
+             class="me-2" *ngIf="!savingStatus"></i>
+          {{ savingStatus ? 'Đang xử lý...' : (shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Xác nhận hoàn phí' : 'Xác nhận tăng phụ phí') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="showShippingFeeAdjustmentModal"
+     [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'"
+     (click)="closeShippingFeeAdjustmentModal()"></div>

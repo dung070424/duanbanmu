@@ -298,6 +298,41 @@ export class HoaDonService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
+  /**
+   * Hoàn tiền khi hủy đơn hàng
+   * @param id Invoice ID
+   * @param refundRequest Thông tin hoàn tiền
+   */
+  refundInvoice(id: number, refundRequest: {
+    refundAmount?: number;
+    refundReason: string;
+    refundMethod?: string;
+    bankAccount?: string;
+    bankName?: string;
+    accountHolder?: string;
+  }): Observable<HoaDonDTO> {
+    return this.http.post<HoaDonDTO>(`${this.apiUrl}/${id}/refund`, refundRequest);
+  }
+
+  /**
+   * Điều chỉnh phí ship (hoàn phí hoặc tăng phụ phí)
+   * @param id Invoice ID
+   * @param adjustmentRequest Thông tin điều chỉnh
+   */
+  adjustShippingFee(id: number, adjustmentRequest: {
+    newShippingFee: number;
+    oldShippingFee: number;
+    adjustmentType: 'REFUND' | 'SURCHARGE';
+    adjustmentAmount: number;
+    reason: string;
+    refundMethod?: string;
+    bankAccount?: string;
+    bankName?: string;
+    accountHolder?: string;
+  }): Observable<HoaDonDTO> {
+    return this.http.post<HoaDonDTO>(`${this.apiUrl}/${id}/adjust-shipping-fee`, adjustmentRequest);
+  }
+
   updateTrangThaiHoaDonNew(id: number, trangThai: string): Observable<HoaDonDTO> {
     let params = new HttpParams();
     params = params.append('trangThai', trangThai);
