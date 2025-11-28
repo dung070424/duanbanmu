@@ -15,6 +15,7 @@ export interface GHNShippingFeeRequest {
   insurance_value?: number; // Giá trị đơn hàng (VND)
   service_type_id?: number; // ID loại dịch vụ (optional)
   coupon?: string; // Mã giảm giá (optional)
+  province?: string; // ✅ Tỉnh/thành phố nhận (để tính phí mặc định)
 }
 
 export interface GHNShippingFeeResponse {
@@ -83,6 +84,3 @@ export class GHNService {
     );
   }
 }
-
-
-

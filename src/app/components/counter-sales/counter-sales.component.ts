@@ -2329,6 +2329,7 @@ export class CounterSalesComponent implements OnInit {
     });
 
     // Gọi API GHN để tính phí
+    // ✅ Thêm province vào request để backend có thể tính phí mặc định nếu cần
     this.ghnService
       .calculateShippingFeeViaBackend({
         from_district_id: 1442, // Quận Ba Đình, Hà Nội (mặc định)
@@ -2339,6 +2340,7 @@ export class CounterSalesComponent implements OnInit {
         width: 20, // cm
         height: 20, // cm
         insurance_value: Math.round(orderValue),
+        province: province, // ✅ Thêm province để backend tính phí mặc định
       })
       .subscribe({
         next: (response: any) => {
@@ -2366,11 +2368,25 @@ export class CounterSalesComponent implements OnInit {
           }
 
           if (success && fee > 0) {
-            this.shippingFee = fee;
-            this.shippingFeeAutoCalculated = true;
-            this.calculateCartTotal();
-            console.log('💰 Final shipping fee:', this.shippingFee);
-            this.showToast(`Phí vận chuyển: ${this.formatCurrency(this.shippingFee)}`, 'success');
+            // ✅ Kiểm tra xem phí từ API có hợp lý không
+            // Nếu phí quá thấp (30,000 VND) cho địa chỉ xa, có thể là giá trị mặc định không đúng
+            // Tính phí mặc định để so sánh
+            const expectedFee = this.getBaseFeeByRegion(province);
+            console.log('💰 Fee from API:', fee, 'Expected fee by region:', expectedFee);
+
+            // Nếu phí từ API quá thấp so với phí dự kiến (chênh lệch > 20,000), dùng phí mặc định
+            if (fee < expectedFee - 20000) {
+              console.warn(
+                `⚠️ API fee (${fee}) seems too low for ${province}, using default calculation (${expectedFee})`
+              );
+              this.calculateDefaultShippingFee(province, district, totalWeight);
+            } else {
+              this.shippingFee = fee;
+              this.shippingFeeAutoCalculated = true;
+              this.calculateCartTotal();
+              console.log('💰 Final shipping fee from API:', this.shippingFee);
+              this.showToast(`Phí vận chuyển: ${this.formatCurrency(this.shippingFee)}`, 'success');
+            }
           } else {
             // Nếu không parse được, tính phí mặc định
             console.log('⚠️ Using default fee calculation');
@@ -2425,36 +2441,48 @@ export class CounterSalesComponent implements OnInit {
       return 25000; // 25,000 VND - nội thành
     }
 
-    // Các tỉnh/thành phố miền Bắc (gần Hà Nội)
-    const mienBac = [
+    // ✅ Miền Bắc - Phân loại theo khoảng cách từ Hà Nội
+    // Các tỉnh gần Hà Nội (30-50km): phí thấp
+    const mienBacGan = ['Hưng Yên', 'Hải Dương', 'Bắc Ninh', 'Vĩnh Phúc', 'Hà Nam', 'Bắc Giang'];
+
+    if (mienBacGan.some((tinh) => province.includes(tinh))) {
+      console.log(`📍 ${province} - Miền Bắc gần, returning 30,000`);
+      return 30000; // 30,000 VND - miền Bắc gần
+    }
+
+    // Các tỉnh trung bình (50-150km): phí trung bình
+    const mienBacTrungBinh = [
       'Hải Phòng',
-      'Hưng Yên',
-      'Hải Dương',
-      'Bắc Ninh',
-      'Vĩnh Phúc',
       'Thái Nguyên',
-      'Bắc Giang',
       'Quảng Ninh',
-      'Hà Nam',
       'Nam Định',
       'Thái Bình',
       'Ninh Bình',
       'Phú Thọ',
       'Tuyên Quang',
       'Yên Bái',
+      'Hòa Bình',
+    ];
+
+    if (mienBacTrungBinh.some((tinh) => province.includes(tinh))) {
+      console.log(`📍 ${province} - Miền Bắc trung bình, returning 40,000`);
+      return 40000; // 40,000 VND - miền Bắc trung bình
+    }
+
+    // Các tỉnh xa Hà Nội (150km+): phí cao
+    const mienBacXa = [
       'Lào Cai',
       'Lạng Sơn',
       'Cao Bằng',
       'Bắc Kạn',
-      'Hòa Bình',
       'Sơn La',
       'Điện Biên',
       'Lai Châu',
     ];
 
-    if (mienBac.some((tinh) => province.includes(tinh))) {
-      console.log('📍 Miền Bắc detected, returning 35,000');
-      return 35000; // 35,000 VND - miền Bắc
+    if (mienBacXa.some((tinh) => province.includes(tinh))) {
+      console.log(`📍 ${province} - Miền Bắc xa, returning 50,000`);
+      return 50000; // 50,000 VND - miền Bắc xa
     }
 
     // Các tỉnh/thành phố miền Nam (gần TP.HCM) - KIỂM TRA TRƯỚC để tránh conflict với "Bình Thuận"
@@ -2493,27 +2521,31 @@ export class CounterSalesComponent implements OnInit {
       'Cà Mau',
     ];
 
+    // ✅ Miền Nam - Phân loại theo khoảng cách từ Hà Nội
+    // Miền Nam gần TP.HCM (1000-1200km từ Hà Nội): phí cao
     if (mienNamGan.some((tinh) => province.includes(tinh))) {
-      console.log('📍 Miền Nam detected, returning 60,000');
-      return 60000; // 60,000 VND - miền Nam
+      console.log(`📍 ${province} - Miền Nam gần, returning 70,000`);
+      return 70000; // 70,000 VND - miền Nam gần
     }
 
-    // Các tỉnh/thành phố Tây Nguyên
-    const tayNguyen = ['Kon Tum', 'Gia Lai', 'Đắk Lắk', 'Đắk Nông', 'Lâm Đồng'];
-
-    if (tayNguyen.some((tinh) => province.includes(tinh))) {
-      console.log('📍 Tây Nguyên detected, returning 55,000');
-      return 55000; // 55,000 VND - Tây Nguyên
-    }
-
-    // Các tỉnh/thành phố miền Trung - KIỂM TRA SAU miền Nam
-    const mienTrung = [
+    // ✅ Miền Trung - Phân loại theo khoảng cách từ Hà Nội
+    // Miền Trung gần (300-500km): phí trung bình
+    const mienTrungGan = [
       'Thanh Hóa',
       'Nghệ An',
       'Hà Tĩnh',
       'Quảng Bình',
       'Quảng Trị',
       'Thừa Thiên Huế',
+    ];
+
+    if (mienTrungGan.some((tinh) => province.includes(tinh))) {
+      console.log(`📍 ${province} - Miền Trung gần, returning 50,000`);
+      return 50000; // 50,000 VND - miền Trung gần
+    }
+
+    // Miền Trung xa (500-800km): phí cao hơn
+    const mienTrungXa = [
       'Đà Nẵng',
       'Quảng Nam',
       'Quảng Ngãi',
@@ -2524,14 +2556,22 @@ export class CounterSalesComponent implements OnInit {
       'Bình Thuận',
     ];
 
-    if (mienTrung.some((tinh) => province.includes(tinh))) {
-      console.log('📍 Miền Trung detected, returning 50,000');
-      return 50000; // 50,000 VND - miền Trung
+    if (mienTrungXa.some((tinh) => province.includes(tinh))) {
+      console.log(`📍 ${province} - Miền Trung xa, returning 60,000`);
+      return 60000; // 60,000 VND - miền Trung xa
     }
 
-    // Các tỉnh/thành phố miền Nam xa hơn hoặc không xác định
-    console.log('📍 Unknown province, returning 70,000 (xa nhất)');
-    return 70000; // 70,000 VND - các tỉnh xa nhất
+    // ✅ Tây Nguyên - Xa Hà Nội (800-1000km)
+    const tayNguyen = ['Kon Tum', 'Gia Lai', 'Đắk Lắk', 'Đắk Nông', 'Lâm Đồng'];
+
+    if (tayNguyen.some((tinh) => province.includes(tinh))) {
+      console.log(`📍 ${province} - Tây Nguyên, returning 65,000`);
+      return 65000; // 65,000 VND - Tây Nguyên
+    }
+
+    // Các tỉnh/thành phố miền Nam xa nhất hoặc không xác định
+    console.log(`📍 ${province} - Unknown/Xa nhất, returning 80,000`);
+    return 80000; // 80,000 VND - các tỉnh xa nhất
   }
 
   /**
