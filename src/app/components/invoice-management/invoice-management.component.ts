@@ -732,8 +732,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   onPageChange(page: number): void {
-    if (page >= 1 && page <= Math.ceil(this.totalItems / this.itemsPerPage)) {
-      this.currentPage = page;
+    // Validate page number
+    const maxPage = Math.max(1, Math.ceil(this.totalItems / this.itemsPerPage));
+    const validPage = Math.max(1, Math.min(page, maxPage));
+    
+    if (validPage !== this.currentPage) {
+      this.currentPage = validPage;
       this.loadHoaDon();
     }
   }

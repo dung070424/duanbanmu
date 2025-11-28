@@ -64,6 +64,31 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   showCancelInvoiceModal: boolean = false;
   cancelInvoiceNote: string = '';
 
+  // Refund properties
+  showRefundModal: boolean = false;
+  refundData = {
+    refundAmount: 0,
+    refundReason: '',
+    refundMethod: 'original_method' as 'original_method' | 'bank_transfer' | 'cash',
+    bankAccount: '',
+    bankName: '',
+    accountHolder: ''
+  };
+  
+  // Shipping fee adjustment properties
+  showShippingFeeAdjustmentModal: boolean = false;
+  shippingFeeAdjustmentData = {
+    newShippingFee: 0,
+    oldShippingFee: 0,
+    adjustmentType: 'REFUND' as 'REFUND' | 'SURCHARGE',
+    adjustmentAmount: 0,
+    reason: '',
+    refundMethod: 'original_method' as 'original_method' | 'bank_transfer' | 'cash',
+    bankAccount: '',
+    bankName: '',
+    accountHolder: ''
+  };
+
   // Auto-refreshhhh
   private destroy$ = new Subject<void>();
   private refreshInterval = interval(5000); // 5 seconds
@@ -1172,31 +1197,43 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         const shippingFeeChanged = originalShippingFee !== newShippingFee;
         const shippingFeeDifference = newShippingFee - originalShippingFee;
 
-        // Nếu địa chỉ hoặc phí ship thay đổi, hiển thị thông báo
+        // Nếu địa chỉ hoặc phí ship thay đổi, hiển thị modal điều chỉnh phí ship
         if (addressChanged || shippingFeeChanged) {
-          let message = 'Địa chỉ giao hàng hoặc phí ship đã thay đổi.\n\n';
           if (shippingFeeChanged) {
-            if (shippingFeeDifference > 0) {
-              message += `Phí ship tăng: +${this.formatCurrency(shippingFeeDifference)}\n`;
-              message += 'Khách hàng cần thanh toán thêm phụ phí này.';
-            } else if (shippingFeeDifference < 0) {
-              message += `Phí ship giảm: ${this.formatCurrency(shippingFeeDifference)}\n`;
-              message += 'Cần hoàn trả số tiền này cho khách hàng.';
-            }
-          }
-          
-          if (!confirm(message + '\n\nBạn có muốn tiếp tục cập nhật?')) {
-            // Reset button state
+            // Mở modal điều chỉnh phí ship
+            this.shippingFeeAdjustmentData = {
+              newShippingFee: newShippingFee,
+              oldShippingFee: originalShippingFee,
+              adjustmentType: shippingFeeDifference > 0 ? 'SURCHARGE' : 'REFUND',
+              adjustmentAmount: Math.abs(shippingFeeDifference),
+              reason: addressChanged ? 'Thay đổi địa chỉ giao hàng' : 'Điều chỉnh phí ship',
+              refundMethod: 'original_method',
+              bankAccount: '',
+              bankName: '',
+              accountHolder: ''
+            };
+            this.showShippingFeeAdjustmentModal = true;
+            
+            // Reset button state và return - sẽ tiếp tục trong modal
             if (saveButton) {
               saveButton.disabled = false;
               saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
             }
             return;
+          } else if (addressChanged) {
+            // Chỉ thay đổi địa chỉ, không thay đổi phí ship
+            if (!confirm('Địa chỉ giao hàng đã thay đổi.\n\nBạn có muốn tiếp tục cập nhật?')) {
+              if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+              }
+              return;
+            }
           }
         }
 
         // Chuẩn hóa dữ liệu trước khi gửi
-        const invoiceData = {
+        const invoiceData: any = {
           ...this.editingInvoice,
           tongTien: this.editingInvoice.tongTien ? Number(this.editingInvoice.tongTien) : 0,
           tienGiamGia: this.editingInvoice.tienGiamGia ? Number(this.editingInvoice.tienGiamGia) : 0,
@@ -1205,10 +1242,49 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           khachHangId: this.editingInvoice.khachHangId ? Number(this.editingInvoice.khachHangId) : undefined,
           // Chuẩn hóa định dạng ngày tháng
           ngayThanhToan: this.editingInvoice.ngayThanhToan ? this.formatDateTimeForAPI(this.editingInvoice.ngayThanhToan) : undefined,
-          ngayTao: this.editingInvoice.ngayTao ? this.formatDateTimeForAPI(this.editingInvoice.ngayTao) : undefined
+          ngayTao: this.editingInvoice.ngayTao ? this.formatDateTimeForAPI(this.editingInvoice.ngayTao) : undefined,
+          // QUAN TRỌNG: Không gửi danhSachSanPham, chỉ gửi danhSachChiTiet
+          danhSachSanPham: undefined
         };
 
-        console.log('Sending invoice data:', invoiceData);
+        // Map danhSachSanPham (frontend) sang danhSachChiTiet (backend) cho update
+        // Ưu tiên sử dụng selectedProductsForUpdate nếu có, nếu không thì dùng editingInvoice.danhSachSanPham
+        const productsToMap = this.selectedProductsForUpdate.length > 0
+          ? this.selectedProductsForUpdate
+          : (this.editingInvoice.danhSachSanPham || []);
+
+        if (productsToMap.length > 0) {
+          invoiceData.danhSachChiTiet = productsToMap.map((product: any) => ({
+            chiTietSanPhamId: product.chiTietSanPhamId || product.id, // QUAN TRỌNG: chiTietSanPhamId cho backend
+            soLuong: Number(product.soLuong) || 1,
+            donGia: product.donGia ? (typeof product.donGia === 'number' ? product.donGia : parseFloat(String(product.donGia))) : 0,
+            giamGia: product.giamGia ? (typeof product.giamGia === 'number' ? product.giamGia : parseFloat(String(product.giamGia))) : 0,
+            thanhTien: product.thanhTien ? (typeof product.thanhTien === 'number' ? product.thanhTien : parseFloat(String(product.thanhTien))) : ((product.donGia || 0) * (product.soLuong || 1))
+          }));
+          console.log('✅ Mapped danhSachChiTiet for saveChanges:', invoiceData.danhSachChiTiet);
+        } else {
+          // Nếu không có sản phẩm mới, giữ nguyên danhSachChiTiet từ invoice gốc
+          if ((this.invoice as any)?.danhSachChiTiet && (this.invoice as any).danhSachChiTiet.length > 0) {
+            invoiceData.danhSachChiTiet = (this.invoice as any).danhSachChiTiet.map((item: any) => ({
+              chiTietSanPhamId: item.chiTietSanPhamId || item.id,
+              soLuong: Number(item.soLuong) || 1,
+              donGia: item.donGia ? (typeof item.donGia === 'number' ? item.donGia : parseFloat(String(item.donGia))) : 0,
+              giamGia: item.giamGia ? (typeof item.giamGia === 'number' ? item.giamGia : parseFloat(String(item.giamGia))) : 0,
+              thanhTien: item.thanhTien ? (typeof item.thanhTien === 'number' ? item.thanhTien : parseFloat(String(item.thanhTien))) : ((item.donGia || 0) * (item.soLuong || 1))
+            }));
+            console.log('✅ Using original danhSachChiTiet from invoice:', invoiceData.danhSachChiTiet);
+          }
+        }
+
+        console.log('📤 Sending invoice data to API:', {
+          ...invoiceData,
+          danhSachChiTiet: invoiceData.danhSachChiTiet?.map((p: any) => ({
+            chiTietSanPhamId: p.chiTietSanPhamId,
+            soLuong: p.soLuong,
+            donGia: p.donGia,
+            thanhTien: p.thanhTien
+          })) || []
+        });
 
         // Đánh dấu đơn hàng đã được chỉnh sửa nếu là đơn hàng online
         const isOnlineOrder = !this.invoice?.nhanVienId || this.invoice.nhanVienId === null;
@@ -1222,12 +1298,67 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           }
         }
 
+        // Nếu phí ship thay đổi, gọi API điều chỉnh phí ship trước
+        if (shippingFeeChanged) {
+          const adjustmentRequest = {
+            newShippingFee: newShippingFee,
+            oldShippingFee: originalShippingFee,
+            adjustmentType: (shippingFeeDifference > 0 ? 'SURCHARGE' : 'REFUND') as 'REFUND' | 'SURCHARGE',
+            adjustmentAmount: Math.abs(shippingFeeDifference),
+            reason: this.shippingFeeAdjustmentData.reason || (addressChanged ? 'Thay đổi địa chỉ giao hàng' : 'Điều chỉnh phí ship'),
+            refundMethod: this.shippingFeeAdjustmentData.refundMethod || 'original_method',
+            bankAccount: this.shippingFeeAdjustmentData.bankAccount || '',
+            bankName: this.shippingFeeAdjustmentData.bankName || '',
+            accountHolder: this.shippingFeeAdjustmentData.accountHolder || ''
+          };
+          
+          this.hoaDonService.adjustShippingFee(this.invoiceId, adjustmentRequest).subscribe({
+            next: (adjustedInvoice) => {
+              console.log('✅ Shipping fee adjusted successfully:', adjustedInvoice);
+              // Tiếp tục cập nhật hóa đơn
+              this.continueUpdateInvoice(invoiceData, customerId || null, saveButton);
+            },
+            error: (adjustError) => {
+              console.error('❌ Error adjusting shipping fee:', adjustError);
+              this.showToast('Lỗi khi điều chỉnh phí ship: ' + (adjustError.error?.message || adjustError.message), 'error');
+              if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+              }
+            }
+          });
+        } else {
+          // Không thay đổi phí ship, cập nhật hóa đơn trực tiếp
+          this.continueUpdateInvoice(invoiceData, customerId || null, saveButton);
+        }
+      } catch (error) {
+        console.error('Error creating customer:', error);
+        this.showToast('Lỗi khi tạo khách hàng: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
+
+        // Reset button state
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+        }
+      }
+    }
+  }
+
+  /**
+   * Tiếp tục cập nhật hóa đơn sau khi điều chỉnh phí ship
+   */
+  private continueUpdateInvoice(invoiceData: any, customerId: number | null, saveButton: HTMLButtonElement | null): void {
         this.hoaDonService.updateHoaDonNew(this.invoiceId, invoiceData).subscribe({
           next: (updatedInvoice: any) => {
             this.invoice = updatedInvoice;
             this.isEditMode = false;
             this.editingInvoice = null;
             this.startAutoRefresh(); // Resume auto-refresh
+
+        // Đóng modal điều chỉnh phí ship nếu đang mở
+        if (this.showShippingFeeAdjustmentModal) {
+          this.closeShippingFeeAdjustmentModal();
+        }
 
             // Reload customer information
             if (customerId) {
@@ -1248,17 +1379,81 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             }
           }
         });
-      } catch (error) {
-        console.error('Error creating customer:', error);
-        this.showToast('Lỗi khi tạo khách hàng: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
+  }
 
-        // Reset button state
-        if (saveButton) {
-          saveButton.disabled = false;
-          saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
-        }
-      }
+  /**
+   * Mở modal điều chỉnh phí ship
+   */
+  openShippingFeeAdjustmentModal(): void {
+    this.showShippingFeeAdjustmentModal = true;
+  }
+
+  /**
+   * Đóng modal điều chỉnh phí ship
+   */
+  closeShippingFeeAdjustmentModal(): void {
+    this.showShippingFeeAdjustmentModal = false;
+    // Reset data
+    this.shippingFeeAdjustmentData = {
+      newShippingFee: 0,
+      oldShippingFee: 0,
+      adjustmentType: 'REFUND',
+      adjustmentAmount: 0,
+      reason: '',
+      refundMethod: 'original_method',
+      bankAccount: '',
+      bankName: '',
+      accountHolder: ''
+    };
+  }
+
+  /**
+   * Xử lý điều chỉnh phí ship
+   */
+  processShippingFeeAdjustment(): void {
+    if (!this.invoice || !this.invoice.id) {
+      this.showToast('Không tìm thấy hóa đơn', 'error');
+      return;
     }
+
+    if (!this.shippingFeeAdjustmentData.reason || this.shippingFeeAdjustmentData.reason.trim().length === 0) {
+      this.showToast('Vui lòng nhập lý do điều chỉnh', 'warning');
+      return;
+    }
+
+    this.savingStatus = true;
+
+    const adjustmentRequest = {
+      newShippingFee: this.shippingFeeAdjustmentData.newShippingFee,
+      oldShippingFee: this.shippingFeeAdjustmentData.oldShippingFee,
+      adjustmentType: this.shippingFeeAdjustmentData.adjustmentType,
+      adjustmentAmount: this.shippingFeeAdjustmentData.adjustmentAmount,
+      reason: this.shippingFeeAdjustmentData.reason.trim(),
+      refundMethod: this.shippingFeeAdjustmentData.refundMethod,
+      bankAccount: this.shippingFeeAdjustmentData.bankAccount || '',
+      bankName: this.shippingFeeAdjustmentData.bankName || '',
+      accountHolder: this.shippingFeeAdjustmentData.accountHolder || ''
+    };
+
+    this.hoaDonService.adjustShippingFee(this.invoice.id, adjustmentRequest).subscribe({
+      next: (updatedInvoice) => {
+        console.log('✅ Shipping fee adjusted successfully:', updatedInvoice);
+        this.savingStatus = false;
+        this.closeShippingFeeAdjustmentModal();
+        
+        const message = this.shippingFeeAdjustmentData.adjustmentType === 'REFUND'
+          ? `Đã hoàn phí ship thành công. Số tiền ${this.formatCurrency(this.shippingFeeAdjustmentData.adjustmentAmount)} ₫ sẽ được hoàn trả trong vòng 3-5 ngày làm việc.`
+          : `Đã tăng phụ phí ship thành công. Khách hàng cần thanh toán thêm ${this.formatCurrency(this.shippingFeeAdjustmentData.adjustmentAmount)} ₫.`;
+        
+        this.showToast(message, 'success');
+        this.loadInvoiceDetail();
+      },
+      error: (error) => {
+        console.error('❌ Error adjusting shipping fee:', error);
+        this.savingStatus = false;
+        this.showToast('Lỗi khi điều chỉnh phí ship: ' + (error.error?.message || error.message), 'error');
+      }
+    });
   }
 
   async createCustomerIfNotExists(customerName: string): Promise<number> {
@@ -2914,16 +3109,22 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (this.editingInvoice) {
       this.editingInvoice.danhSachSanPham = this.selectedProductsForUpdate.map(p => ({
         id: p.id, // ID của sản phẩm
-        sanPhamId: p.id, // ID của sản phẩm
+        sanPhamId: p.sanPhamId || p.id, // ID của SanPham gốc
+        chiTietSanPhamId: p.chiTietSanPhamId || p.id, // QUAN TRỌNG: chiTietSanPhamId cho backend
         tenSanPham: p.tenSanPham,
-        soLuong: p.soLuong,
-        donGia: p.donGia || p.giaBan,
-        thanhTien: p.thanhTien || (p.soLuong * (p.donGia || p.giaBan)),
-        maSanPham: p.maSanPham,
-        danhMuc: p.danhMuc,
-        thuongHieu: p.thuongHieu,
-        soLuongTon: p.soLuongTon,
-        trangThai: p.trangThai
+        soLuong: p.soLuong || 1,
+        donGia: p.donGia || p.giaBan || 0,
+        thanhTien: p.thanhTien || ((p.soLuong || 1) * (p.donGia || p.giaBan || 0)),
+        maSanPham: p.maSanPham || '',
+        danhMuc: p.danhMuc || '',
+        thuongHieu: p.thuongHieu || '',
+        soLuongTon: p.soLuongTon || 0,
+        trangThai: p.trangThai || 'ACTIVE',
+        // Thông tin chi tiết sản phẩm
+        kichThuoc: p.kichThuoc || '',
+        mauSac: p.mauSac || '',
+        trongLuong: p.trongLuong || '',
+        anhSanPham: p.anhSanPham || ''
       }));
 
       // Cập nhật số lượng sản phẩm
@@ -3522,19 +3723,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             return null;
           }
 
+          // QUAN TRỌNG: Chỉ gửi các field cần thiết cho backend
+          // Backend chỉ cần: chiTietSanPhamId, soLuong, donGia, giamGia, thanhTien
           return {
-            id: item.id || null,
+            id: item.id || null, // ID của HoaDonChiTiet (nếu có - để update existing item)
             chiTietSanPhamId: chiTietSanPhamId, // Bắt buộc phải có và là số hợp lệ
-            tenSanPham: item.tenSanPham || '',
-            maSanPham: item.maSanPham || '',
-            soLuong: item.soLuong ? Number(item.soLuong) : 0,
+            soLuong: item.soLuong ? Number(item.soLuong) : 1, // Bắt buộc phải > 0
             donGia: item.donGia != null ? Number(item.donGia) : 0,
-            thanhTien: item.thanhTien != null ? Number(item.thanhTien) : 0,
             giamGia: item.giamGia != null ? Number(item.giamGia) : 0,
-            mauSac: item.mauSac || '',
-            kichThuoc: item.kichThuoc || '',
-            nhaSanXuat: item.nhaSanXuat || '',
-            anhSanPham: item.anhSanPham || ''
+            thanhTien: item.thanhTien != null ? Number(item.thanhTien) : ((item.donGia || 0) * (item.soLuong || 1))
+            // Các field khác (tenSanPham, maSanPham, mauSac, etc.) không cần gửi vì backend sẽ load từ ChiTietSanPham
           };
         })
         .filter((item: any) => item != null && item.chiTietSanPhamId != null && !isNaN(item.chiTietSanPhamId));
@@ -3782,24 +3980,56 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.hoaDonService.updateHoaDonNew(this.invoice.id, finalUpdateData).subscribe({
+        // Bước 1: Cập nhật trạng thái thành HUY
+        this.hoaDonService.updateTrangThaiHoaDon(this.invoice.id, 'HUY').subscribe({
           next: (updatedInvoice) => {
-            console.log('✅ Invoice cancelled successfully with note:', updatedInvoice);
-            this.savingStatus = false;
-
-            // Đóng modal
-            this.closeCancelInvoiceModal();
-
-            // Hiển thị thông báo thành công
-            this.showToast('Đã hủy hóa đơn thành công.', 'success');
-
-            // Reload invoice để cập nhật UI
+            console.log('✅ Invoice status updated to HUY:', updatedInvoice);
+            
+            // Bước 2: Nếu đơn hàng đã thanh toán, xử lý hoàn tiền
+            if (currentInvoice.ngayThanhToan) {
+              console.log('💰 Processing refund for paid invoice...');
+              const refundRequest = {
+                refundAmount: Number(currentInvoice.thanhTien),
+                refundReason: cancelNote || 'Hủy đơn hàng',
+                refundMethod: 'original_method' as const
+              };
+              
+              if (!this.invoice || !this.invoice.id) {
+                this.savingStatus = false;
+                this.showToast('Không tìm thấy hóa đơn', 'error');
+                return;
+              }
+              
+              this.hoaDonService.refundInvoice(this.invoice.id, refundRequest).subscribe({
+                next: (refundedInvoice) => {
+                  console.log('✅ Refund processed successfully:', refundedInvoice);
+                  this.savingStatus = false;
+                  this.closeCancelInvoiceModal();
+                  this.showToast('Đã hủy hóa đơn và xử lý hoàn tiền thành công. Số tiền sẽ được hoàn trả trong vòng 3-5 ngày làm việc.', 'success');
             this.loadInvoiceDetail();
-
-            // Quay lại trang quản lý hóa đơn sau 2 giây
             setTimeout(() => {
               this.router.navigate(['/invoices']);
             }, 2000);
+                },
+                error: (refundError) => {
+                  console.error('❌ Error processing refund:', refundError);
+                  // Vẫn hiển thị thành công vì đơn hàng đã được hủy
+                  this.savingStatus = false;
+                  this.closeCancelInvoiceModal();
+                  this.showToast('Đã hủy hóa đơn thành công. Lưu ý: Có thể cần xử lý hoàn tiền thủ công.', 'warning');
+                  this.loadInvoiceDetail();
+                }
+              });
+            } else {
+              // Đơn hàng chưa thanh toán, không cần hoàn tiền
+              this.savingStatus = false;
+              this.closeCancelInvoiceModal();
+              this.showToast('Đã hủy hóa đơn thành công. Số lượng sản phẩm đã được hoàn lại vào kho.', 'success');
+              this.loadInvoiceDetail();
+              setTimeout(() => {
+                this.router.navigate(['/invoices']);
+              }, 2000);
+            }
           },
           error: (error) => {
             console.error('❌ Error cancelling invoice:', error);
