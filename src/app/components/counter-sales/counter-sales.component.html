@@ -349,7 +349,16 @@
           </div>
           <div class="mb-2" *ngIf="isDelivery">
             <div class="d-flex justify-content-between align-items-center">
-              <span>Phí giao hàng</span>
+              <div class="d-flex align-items-center gap-2">
+                <img
+                  src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                  alt="Giao Hàng Tiết Kiệm"
+                  class="shipping-logo"
+                  style="height: 36px; width: auto"
+                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
+                />
+                <span>Phí giao hàng</span>
+              </div>
               <div class="input-group input-group-sm shipping-fee-group">
                 <span class="input-group-text">₫</span>
                 <input
