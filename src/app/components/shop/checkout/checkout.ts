@@ -1242,9 +1242,11 @@ export class CheckoutComponent implements OnInit {
             queryParams: { newOrderId: hoaDon.id }
           });
         } else {
-          // Nếu chưa đăng nhập, vẫn redirect nhưng không có query param
-          // (trường hợp này ít xảy ra vì thường đã đăng nhập khi đặt hàng)
-          this.router.navigate(['/customer/orders']);
+          // QUAN TRỌNG: Nếu chưa đăng nhập, redirect về trang chủ thay vì /customer/orders
+          // (vì /customer/orders có guard yêu cầu đăng nhập và sẽ redirect đến login)
+          console.log('ℹ️ User not logged in, redirecting to shop home after order creation');
+          alert(`Đơn hàng đã được tạo thành công!\nMã đơn hàng: ${hoaDon.maHoaDon}\n`);
+          this.router.navigate(['/shop']);
         }
       },
       error: (err) => {
@@ -1256,6 +1258,14 @@ export class CheckoutComponent implements OnInit {
           err.message ||
           'Không thể tạo đơn hàng. Vui lòng thử lại!';
         this.error = errorMsg;
+
+        // QUAN TRỌNG: Nếu lỗi 401 (Unauthorized) và chưa đăng nhập, redirect về trang chủ
+        if (err.status === 401 && !this.authService.isLoggedIn()) {
+          console.log('🛒 401 error on checkout, redirecting to shop home');
+          alert('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại!');
+          this.router.navigate(['/shop']);
+          return;
+        }
 
         // Force change detection
         this.cdr.detectChanges();
