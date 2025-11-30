@@ -81,6 +81,14 @@ export class PhieuGiamGiaService {
     );
   }
 
+  // Lấy phiếu giảm giá công khai (đang hoạt động VÀ không có trong bảng phieu_giam_gia_ca_nhan)
+  getPublicActivePhieuGiamGia(): Observable<ApiResponse<PhieuGiamGiaResponse[]>> {
+    return this.http.get<ApiResponse<PhieuGiamGiaResponse[]>>(
+      `${this.API_BASE_URL}/phieu-giam-gia/public/active`,
+      { headers: this.getHeaders() }
+    );
+  }
+
   // Tìm kiếm phiếu giảm giá
   searchPhieuGiamGia(keyword: string): Observable<ApiResponse<PhieuGiamGiaResponse[]>> {
     return this.http.get<ApiResponse<PhieuGiamGiaResponse[]>>(

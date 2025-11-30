@@ -309,7 +309,7 @@
               </div>
             </div>
 
-            <div class="row">
+            <!-- <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
                   <label class="form-label required">Phí giao hàng (VNĐ) *</label>
@@ -325,47 +325,14 @@
                       required
                     />
                   </div>
-                  <small class="text-muted">Mặc định: 30.000đ</small>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Người chịu phí *</label>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="radio"
-                      name="nguoiChiuPhi"
-                      id="nguoiGui"
-                      value="nguoi_gui"
-                      [(ngModel)]="confirmInvoiceData.nguoiChiuPhi"
-                      checked
-                    />
-                    <label class="form-check-label" for="nguoiGui">
-                      Người gửi (Shop chịu phí)
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="radio"
-                      name="nguoiChiuPhi"
-                      id="nguoiNhan"
-                      value="nguoi_nhan"
-                      [(ngModel)]="confirmInvoiceData.nguoiChiuPhi"
-                    />
-                    <label class="form-check-label" for="nguoiNhan">
-                      Người nhận (Khách hàng chịu phí)
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </div> -->
 
-            <div class="alert alert-warning" *ngIf="confirmInvoiceData.nguoiChiuPhi === 'nguoi_nhan'">
+            <!-- <div class="alert alert-warning" *ngIf="confirmInvoiceData.nguoiChiuPhi === 'nguoi_nhan'">
               <i class="bi bi-exclamation-triangle me-2"></i>
               Phí giao hàng sẽ được tính vào tổng tiền của khách hàng.
-            </div>
+            </div> -->
           </form>
         </div>
       </div>
@@ -513,10 +480,6 @@
             <span class="value">{{ invoice.ngayDuKienGiao ? formatDate(invoice.ngayDuKienGiao) : 'Chưa cập nhật' }}</span>
           </div>
           <div class="info-row">
-            <span class="label">Người chịu phí</span>
-            <span class="value">{{ invoice.nguoiChiuPhi === 'nguoi_nhan' ? 'Khách hàng' : 'Cửa hàng' }}</span>
-          </div>
-          <div class="info-row">
             <span class="label">Phí giao hàng</span>
             <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }} ₫</span>
           </div>
@@ -548,7 +511,7 @@
           </div>
           <div class="info-row total">
             <span class="label">Thành tiền</span>
-            <span class="value">{{ formatCurrency(getTotalAmountWithShipping()) }} ₫</span>
+            <span class="value">{{ formatCurrency(invoice.thanhTien || 0) }} ₫</span>
           </div>
         </div>
       </article>
@@ -634,7 +597,7 @@
         </div>
         <div class="summary-row total">
           <span>Thành tiền</span>
-          <strong>{{ formatCurrency(getTotalAmountWithShipping()) }} ₫</strong>
+          <strong>{{ formatCurrency(invoice.thanhTien || 0) }} ₫</strong>
         </div>
       </div>
     </section>
@@ -738,8 +701,155 @@
             </div>
           </div>
         </div>
+        
+        <!-- Địa chỉ giao hàng -->
         <div class="row">
+          <div class="col-md-12">
+            <h5 class="mt-3 mb-3"><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng</h5>
+          </div>
+        </div>
 
+        <!-- Chọn địa chỉ đã lưu (nếu có) -->
+        <div class="row" *ngIf="customerAddresses.length > 0">
+          <div class="col-md-12">
+            <div class="form-group">
+              <label>Chọn địa chỉ đã lưu:</label>
+              <select
+                class="form-control"
+                [(ngModel)]="selectedSavedAddressId"
+                (change)="onSelectSavedAddress()"
+              >
+                <option [ngValue]="''">-- Chọn địa chỉ --</option>
+                <option *ngFor="let addr of customerAddresses" [ngValue]="addr.id + ''">
+                  {{ addr.diaChi }}, {{ addr.phuongXa }}, {{ addr.quanHuyen }}, {{ addr.tinhThanh }}
+                </option>
+                <option [ngValue]="'new'">+ Nhập địa chỉ mới</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row" *ngIf="selectedSavedAddressId === '' || selectedSavedAddressId === 'new' || customerAddresses.length === 0">
+          <div class="col-md-12">
+            <div class="form-group">
+              <label>Địa chỉ chi tiết:</label>
+              <textarea class="form-control" [(ngModel)]="editingInvoice.diaChiChiTiet" rows="2" placeholder="Số nhà, tên đường..."></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Vietnam Address Dropdowns -->
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Tỉnh/Thành phố <span class="text-danger">*</span></label>
+              <select
+                class="form-control"
+                name="province"
+                [(ngModel)]="selectedProvince"
+                (change)="onProvinceChange(selectedProvince)"
+                required
+              >
+                <option value="" disabled>Chọn tỉnh/thành phố</option>
+                <option 
+                  *ngFor="let province of provinces" 
+                  [value]="province.code"
+                >
+                  {{ province.name }}
+                </option>
+              </select>
+              <div *ngIf="loadingProvinces" class="text-muted small mt-1">
+                <i class="fas fa-spinner fa-spin"></i> Đang tải...
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Quận/Huyện <span class="text-danger">*</span></label>
+              <select
+                class="form-control"
+                name="district"
+                [(ngModel)]="selectedDistrict"
+                (change)="onDistrictChange(selectedDistrict)"
+                [disabled]="!selectedProvince || loadingDistricts"
+                required
+              >
+                <option value="" disabled>Chọn quận/huyện</option>
+                <option 
+                  *ngFor="let district of districts" 
+                  [value]="district.code"
+                >
+                  {{ district.name }}
+                </option>
+              </select>
+              <div *ngIf="loadingDistricts" class="text-muted small mt-1">
+                <i class="fas fa-spinner fa-spin"></i> Đang tải...
+              </div>
+              <div *ngIf="!selectedProvince && !loadingDistricts" class="text-muted small mt-1">
+                Vui lòng chọn tỉnh/thành phố trước
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Phường/Xã <span class="text-danger">*</span></label>
+              <select
+                class="form-control"
+                name="ward"
+                [(ngModel)]="selectedWard"
+                (change)="onWardChange(selectedWard)"
+                [disabled]="!selectedDistrict || loadingWards"
+                required
+              >
+                <option value="" disabled>Chọn phường/xã</option>
+                <option 
+                  *ngFor="let ward of wards" 
+                  [value]="ward.code"
+                >
+                  {{ ward.name }}
+                </option>
+              </select>
+              <div *ngIf="loadingWards" class="text-muted small mt-1">
+                <i class="fas fa-spinner fa-spin"></i> Đang tải...
+              </div>
+              <div *ngIf="!selectedDistrict && !loadingWards" class="text-muted small mt-1">
+                Vui lòng chọn quận/huyện trước
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phí ship tự động -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Phí giao hàng:</label>
+              <div class="input-group">
+                <span class="input-group-text">₫</span>
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  [(ngModel)]="editingInvoice.phiGiaoHang" 
+                  min="0"
+                  [disabled]="calculatingShippingFee"
+                >
+                <span *ngIf="calculatingShippingFee" class="input-group-text">
+                  <i class="fas fa-spinner fa-spin"></i>
+                </span>
+              </div>
+              <small class="text-muted" *ngIf="calculatingShippingFee">
+                <i class="fas fa-spinner fa-spin"></i> Đang tính phí ship tự động...
+              </small>
+              <small class="text-info" *ngIf="!calculatingShippingFee && editingInvoice?.tinhThanh && editingInvoice?.quanHuyen">
+                <i class="fas fa-info-circle"></i> Phí ship sẽ được tính tự động khi bạn chọn địa chỉ
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
           <div class="col-md-6">
             <div class="form-group">
               <label>Ghi chú:</label>

@@ -161,16 +161,32 @@
     }
   }
 
-// Product Detail Main
+// Product Detail Main - Modern Design
 .product-detail {
     background: white;
-    border-radius: 24px;
-    padding: 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-xl);
+    padding: 3rem;
+    box-shadow: var(--shadow-lg);
+    border: 2px solid var(--gray-100);
     position: relative;
     z-index: 10;
     min-height: 400px;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    }
+
+    @media (max-width: 768px) {
+      padding: 2rem 1.5rem;
+      border-radius: var(--radius-lg);
+    }
   }
 
   .product-main {

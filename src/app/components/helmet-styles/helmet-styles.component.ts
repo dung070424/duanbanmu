@@ -6,6 +6,7 @@ import {
   HelmetStyleResponse,
   PageResponse,
 } from '../../services/helmet-style-api.service';
+import { AuthService } from '../../services/auth';
 
 interface HelmetStyleVM {
   id: number;
@@ -46,11 +47,20 @@ export class HelmetStylesComponent implements OnInit {
   // Make Math available in template
   Math = Math;
 
+  // Check if user is admin (only admin can add/edit/delete)
+  isAdmin = false;
+
   trackById(index: number, item: HelmetStyleVM): number {
     return item.id;
   }
 
-  constructor(private api: HelmetStyleApiService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private api: HelmetStyleApiService,
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
+  ) {
+    this.isAdmin = this.authService.hasRole('ADMIN');
+  }
 
   ngOnInit() {
     this.fetch();

@@ -47,6 +47,7 @@ import { NewsComponent } from './components/shop/news/news.component';
 import { ContactComponent } from './components/shop/contact/contact.component';
 import { ShopProductsComponent } from './components/shop/products/products.component';
 import { CaLamManagementComponent } from './components/ca-lam-management/ca-lam-management.component';
+import { RefundFormComponent } from './components/refund-form/refund-form.component';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -67,6 +68,9 @@ export const routes: Routes = [
   { path: 'shop/news', component: NewsComponent },
   { path: 'shop/contact', component: ContactComponent },
   { path: 'shop', component: ShopComponent },
+
+  // Refund form - public access (không cần đăng nhập)
+  { path: 'refund', component: RefundFormComponent },
 
   // Customer routes
   {
@@ -185,7 +189,8 @@ export const routes: Routes = [
   {
     path: 'products/helmet-styles',
     component: HelmetStylesComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN', 'STAFF'] },
   },
   {
     path: 'products/sizes',
@@ -247,7 +252,7 @@ export const routes: Routes = [
     path: 'ca-lam',
     component: CaLamManagementComponent,
     canActivate: [AuthGuard, roleGuard],
-    data: { roles: ['ADMIN'] },
+    data: { roles: ['ADMIN', 'STAFF'] },
   },
 
   { path: '**', redirectTo: '/dashboard' },
