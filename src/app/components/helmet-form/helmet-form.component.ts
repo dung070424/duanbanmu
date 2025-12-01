@@ -172,6 +172,57 @@ export class HelmetFormComponent implements OnInit {
     return Number.isFinite(n) ? n : fallback;
   }
 
+  /**
+   * Chặn nhập ký tự không hợp lệ cho các ô số (trọng lượng, giá bán, số lượng).
+   * - Không cho nhập số âm (dấu -)
+   * - Không cho nhập chữ cái, ký tự đặc biệt
+   * - Chỉ cho phép các phím: 0-9, Backspace, Delete, mũi tên, Tab, Home, End
+   */
+  onNumericKeyDown(event: KeyboardEvent): void {
+    const allowedControlKeys = [
+      'Backspace',
+      'Tab',
+      'ArrowLeft',
+      'ArrowRight',
+      'Delete',
+      'Home',
+      'End',
+    ];
+
+    // Cho phép phím điều khiển, copy/paste với Ctrl/Command
+    if (allowedControlKeys.includes(event.key) || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    // Chặn dấu âm và cộng
+    if (event.key === '-' || event.key === '+') {
+      event.preventDefault();
+      return;
+    }
+
+    // Chỉ cho phép số 0-9
+    if (!/^[0-9]$/.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  /**
+   * Chuẩn hóa lại giá trị trọng lượng khi blur:
+   * - Nếu nhập âm hoặc không phải số → reset rỗng
+   * - Nếu hợp lệ → lưu lại dạng chuỗi số không âm
+   */
+  onTrongLuongChangeRow(index: number, value: any): void {
+    if (!this.helmetVersions || !this.helmetVersions[index]) return;
+    const n = this.toNumberSafe(value, 0);
+
+    if (!Number.isFinite(n) || n < 0) {
+      this.helmetVersions[index].trongLuongTen = '';
+      return;
+    }
+
+    this.helmetVersions[index].trongLuongTen = n === 0 ? '' : String(n);
+  }
+
   constructor(
     private productApi: ProductApiService,
     private cdr: ChangeDetectorRef,
@@ -788,17 +839,37 @@ export class HelmetFormComponent implements OnInit {
     });
   }
   onQuantityChangeAll() {
+    // Không cho phép số lượng chung âm
+    if (this.quantityAll < 0) {
+      this.quantityAll = 0;
+    }
     this.helmetVersions.forEach((v) => {
       v.soLuongTon = this.quantityAll ? String(this.quantityAll) : '';
     });
   }
   onPriceChangeRow(index: number, value: any) {
-    const val = value !== undefined && value !== null ? String(value).trim() : '';
-    this.helmetVersions[index].giaBan = val;
+    if (!this.helmetVersions || !this.helmetVersions[index]) return;
+    const n = this.toNumberSafe(value, 0);
+
+    // Chặn số âm và giá trị không phải số
+    if (!Number.isFinite(n) || n < 0) {
+      this.helmetVersions[index].giaBan = '';
+      return;
+    }
+
+    this.helmetVersions[index].giaBan = n === 0 ? '' : String(n);
   }
   onQuantityChangeRow(index: number, value: any) {
-    const val = value !== undefined && value !== null ? String(value).trim() : '';
-    this.helmetVersions[index].soLuongTon = val;
+    if (!this.helmetVersions || !this.helmetVersions[index]) return;
+    // Số lượng luôn là số nguyên không âm
+    const n = Math.floor(this.toNumberSafe(value, 0));
+
+    if (!Number.isFinite(n) || n < 0) {
+      this.helmetVersions[index].soLuongTon = '';
+      return;
+    }
+
+    this.helmetVersions[index].soLuongTon = n === 0 ? '' : String(n);
   }
   removeVariant(index: number) {
     const v = this.helmetVersions[index];
@@ -810,7 +881,7 @@ export class HelmetFormComponent implements OnInit {
 
   castVersionNumber(index: number, field: 'giaBan' | 'soLuongTon') {
     if (!this.helmetVersions || !this.helmetVersions[index]) return;
-    // No-op: giữ nguyên chuỗi người dùng nhập
+    // Đã validate ở onPriceChangeRow / onQuantityChangeRow nên không cần xử lý thêm
     return;
   }
 
@@ -822,6 +893,23 @@ export class HelmetFormComponent implements OnInit {
       this.helmetVersions.length === 0
     )
       return false;
+
+    // Bắt buộc chọn đầy đủ các thuộc tính sản phẩm giống như phần Nhà sản xuất
+    const requiredAttributeIds = [
+      this.newProduct.loaiMuBaoHiemId,
+      this.newProduct.nhaSanXuatId,
+      this.newProduct.chatLieuVoId,
+      this.newProduct.xuatXuId,
+      this.newProduct.kieuDangMuId,
+      this.newProduct.congNgheAnToanId,
+    ];
+    const hasMissingAttribute = requiredAttributeIds.some(
+      (val) => !val || !Number.isInteger(Number(val)) || Number(val) <= 0
+    );
+    if (hasMissingAttribute) {
+      return false;
+    }
+
     // Chỉ cần có kích thước; giá và số lượng để dạng chuỗi (không bắt buộc ràng số)
     for (const [i, v] of this.helmetVersions.entries()) {
       if (!v.kichThuocId) {
@@ -838,7 +926,25 @@ export class HelmetFormComponent implements OnInit {
   }
 
   requestCreate() {
-    // Hiển thị modal xác nhận trước khi thêm mới
+    // Nếu form chưa hợp lệ thì đánh dấu tất cả field bắt buộc là "touched" để hiện lỗi
+    if (!this.isFormValid()) {
+      // Thông báo lỗi cho phần biến thể nếu chưa có
+      if (this.helmetVersions.length === 0) {
+        this.versionError = 'Bạn cần tạo ít nhất một phiên bản cho sản phẩm!';
+      }
+      // Đánh dấu các trường bắt buộc để hiện validate dưới dropdown/input
+      this.touchedFields.add('code');
+      this.touchedFields.add('name');
+      this.touchedFields.add('loaiMuBaoHiemId');
+      this.touchedFields.add('nhaSanXuatId');
+      this.touchedFields.add('chatLieuVoId');
+      this.touchedFields.add('xuatXuId');
+      this.touchedFields.add('kieuDangMuId');
+      this.touchedFields.add('congNgheAnToanId');
+      return;
+    }
+
+    // Form hợp lệ → hiển thị modal xác nhận trước khi thêm mới
     this.showConfirmCreate = true;
   }
 
@@ -930,11 +1036,11 @@ export class HelmetFormComponent implements OnInit {
             mauSacId: Number(v.mauSacId),
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
-             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+            giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
             soLuongTon:
               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-             trangThai: true,
-             anhSanPham: v.anhSanPham || null,
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
           };
           this.helmetVersionApi.create(versionPayload).subscribe({
             next: () => {
@@ -1032,10 +1138,10 @@ export class HelmetFormComponent implements OnInit {
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
-             soLuongTon:
-               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-             trangThai: true,
-             anhSanPham: v.anhSanPham || null,
+            soLuongTon:
+              v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
           };
           if (v.id) {
             this.helmetVersionApi.update(v.id, versionPayload).subscribe();
