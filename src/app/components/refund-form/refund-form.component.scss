@@ -1,0 +1,75 @@
+.refund-form-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem 0;
+
+  .card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+
+    .card-header {
+      border: none;
+      padding: 1.5rem;
+      font-weight: 600;
+    }
+
+    .card-body {
+      background: #fff;
+    }
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+
+    &:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    &:disabled {
+      background-color: #e9ecef;
+      opacity: 1;
+    }
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .alert {
+    border-radius: 8px;
+    border: none;
+  }
+
+  .text-danger {
+    color: #dc3545 !important;
+  }
+}
+
+
+

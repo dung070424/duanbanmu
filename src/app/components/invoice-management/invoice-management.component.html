@@ -1362,38 +1362,6 @@
                 <small class="text-muted">Mặc định: 30.000đ</small>
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label required">Người chịu phí *</label>
-                <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="nguoiChiuPhi"
-                    id="nguoiGui"
-                    value="nguoi_gui"
-                    [(ngModel)]="confirmInvoiceData.nguoiChiuPhi"
-                    checked
-                  />
-                  <label class="form-check-label" for="nguoiGui">
-                    Người gửi (Shop chịu phí)
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="nguoiChiuPhi"
-                    id="nguoiNhan"
-                    value="nguoi_nhan"
-                    [(ngModel)]="confirmInvoiceData.nguoiChiuPhi"
-                  />
-                  <label class="form-check-label" for="nguoiNhan">
-                    Người nhận (Khách hàng chịu phí)
-                  </label>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div class="alert alert-warning" *ngIf="confirmInvoiceData.nguoiChiuPhi === 'nguoi_nhan'">

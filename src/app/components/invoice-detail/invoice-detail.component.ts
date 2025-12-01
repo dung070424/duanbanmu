@@ -8,6 +8,12 @@ import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../services
 import { CustomerAddressService } from '../../services/customer-address.service';
 import { EmployeeService } from '../../services/employee.service';
 import { AuthService } from '../../services/auth';
+import { GHNService } from '../../services/ghn.service';
+import { VietnamAddressService, Province, District, Ward } from '../../services/vietnam-address.service';
+import provincesData from 'sub-vn/json_data/provinces.json';
+import districtsData from 'sub-vn/json_data/districts.json';
+import wardsData from 'sub-vn/json_data/wards.json';
+import { KhachHangService } from '../../services/khach-hang.service';
 import { CustomerAddress } from '../../interfaces/customer-address.interface';
 import { HoaDonDTO } from '../../interfaces/hoa-don.interface';
 import { Subject, interval, takeUntil, firstValueFrom, Subscription, timeout, catchError, of } from 'rxjs';
@@ -56,7 +62,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     chieuDai: null as number | null,
     chieuRong: null as number | null,
     chieuCao: null as number | null,
-    phiGiaoHang: 30000,
+    phiGiaoHang: 0,
     nguoiChiuPhi: 'nguoi_gui' as 'nguoi_gui' | 'nguoi_nhan',
   };
 
@@ -89,9 +95,24 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     accountHolder: ''
   };
 
-  // Auto-refreshhhh
+  // Vietnam Address properties
+  provinces: Province[] = [];
+  districts: District[] = [];
+  wards: Ward[] = [];
+  selectedProvince: string = '';
+  selectedDistrict: string = '';
+  selectedWard: string = '';
+  loadingProvinces: boolean = false;
+  loadingDistricts: boolean = false;
+  loadingWards: boolean = false;
+  calculatingShippingFee: boolean = false;
+
+  // Selected saved address
+  selectedSavedAddressId: string = '';
+
+  // Auto-refresh - Cập nhật liên tục từ DB
   private destroy$ = new Subject<void>();
-  private refreshInterval = interval(5000); // 5 seconds
+  private refreshInterval = interval(2000); // 2 giây để cập nhật liên tục
   private autoRefreshSub?: Subscription;
 
   // Status mapping - 5 giai đoạn như trong hình ảnh
@@ -112,7 +133,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private cdr: ChangeDetectorRef,
     private productApi: ProductApiService,
-    private chiTietSanPhamService: ChiTietSanPhamApiService
+    private chiTietSanPhamService: ChiTietSanPhamApiService,
+    private ghnService: GHNService,
+    private vietnamAddressService: VietnamAddressService,
+    private khachHangService: KhachHangService
   ) {}
 
   /**
@@ -295,7 +319,150 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Xử lý khi chọn địa chỉ đã lưu từ dropdown
+   */
+  onSelectSavedAddress(): void {
+    if (!this.selectedSavedAddressId || this.selectedSavedAddressId === 'new') {
+      // Reset địa chỉ khi chọn "Nhập địa chỉ mới"
+      this.selectedProvince = '';
+      this.selectedDistrict = '';
+      this.selectedWard = '';
+      if (this.editingInvoice) {
+        this.editingInvoice.diaChiChiTiet = '';
+        this.editingInvoice.tinhThanh = '';
+        this.editingInvoice.quanHuyen = '';
+        this.editingInvoice.phuongXa = '';
+      }
+      this.districts = [];
+      this.wards = [];
+      return;
+    }
+
+    const addr = this.customerAddresses.find((a) => String(a.id) === this.selectedSavedAddressId);
+    if (addr) {
+      this.applyAddressFromSaved(addr);
+      // Tự động tính phí vận chuyển sau khi áp dụng địa chỉ
+      setTimeout(() => {
+        if (addr.tinhThanh && addr.quanHuyen) {
+          this.calculateShippingFeeForAddress(addr.tinhThanh, addr.quanHuyen);
+        }
+      }, 200);
+    }
+  }
+
+  /**
+   * Áp dụng địa chỉ đã lưu vào form chỉnh sửa
+   */
+  private applyAddressFromSaved(addr: CustomerAddress): void {
+    if (!this.editingInvoice) return;
+
+    console.log('📍 Applying saved address:', addr);
+
+    // Cập nhật địa chỉ chi tiết
+    this.editingInvoice.diaChiChiTiet = addr.diaChi || '';
+    this.editingInvoice.tinhThanh = addr.tinhThanh || '';
+    this.editingInvoice.quanHuyen = addr.quanHuyen || '';
+    this.editingInvoice.phuongXa = addr.phuongXa || '';
+
+    // Map names back to codes for selectors
+    try {
+      const province = this.provinces.find((p) => p.name === addr.tinhThanh);
+      if (province) {
+        this.selectedProvince = province.code;
+        this.onProvinceChange(province.code);
+        
+        // Đợi districts load xong rồi mới set district
+        setTimeout(() => {
+          const district = this.districts.find((d) => d.name === addr.quanHuyen);
+          if (district) {
+            this.selectedDistrict = district.code;
+            this.onDistrictChange(district.code);
+            
+            // Đợi wards load xong rồi mới set ward
+            setTimeout(() => {
+              const ward = this.wards.find((w) => w.name === addr.phuongXa);
+              if (ward) {
+                this.selectedWard = ward.code;
+                this.onWardChange(ward.code);
+              }
+            }, 300);
+          }
+        }, 300);
+      }
+    } catch (error) {
+      console.error('❌ Error applying saved address:', error);
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Tính phí ship cho địa chỉ đã chọn
+   */
+  private calculateShippingFeeForAddress(tinhThanh: string, quanHuyen: string): void {
+    if (!this.editingInvoice || !tinhThanh || !quanHuyen) return;
+
+    this.calculatingShippingFee = true;
+    
+    // Tìm district code từ district name
+    const district = this.districts.find((d) => d.name === quanHuyen);
+    if (!district) {
+      console.warn('⚠️ District not found for shipping fee calculation');
+      this.calculatingShippingFee = false;
+      return;
+    }
+
+    const districtId = this.getDistrictIdForGHN(district.code);
+    
+    // Tính phí ship qua GHN API
+    this.ghnService.calculateShippingFeeViaBackend({
+      from_district_id: 1442, // Quận Ba Đình, Hà Nội (mặc định)
+      to_district_id: districtId,
+      to_ward_code: this.selectedWard || undefined,
+      weight: 1000, // Mặc định 1kg
+      length: 20,
+      width: 20,
+      height: 20,
+      insurance_value: Math.round(this.editingInvoice.tongTien || 0),
+      province: tinhThanh
+    }).subscribe({
+      next: (response: any) => {
+        this.calculatingShippingFee = false;
+        let fee = 0;
+
+        if (response && response.code === 200 && response.data) {
+          fee = Number(response.data.total) || 0;
+        } else if (response && response.data && typeof response.data === 'number') {
+          fee = Number(response.data);
+        }
+
+        if (fee > 0) {
+          this.editingInvoice!.phiGiaoHang = fee;
+          this.showToast(`Phí vận chuyển: ${this.formatCurrency(fee)}`, 'success');
+        } else {
+          // Dùng phí mặc định
+          this.editingInvoice!.phiGiaoHang = 0;
+          this.showToast('Không thể tính phí ship, vui lòng nhập thủ công', 'info');
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.calculatingShippingFee = false;
+        console.error('❌ Lỗi tính phí vận chuyển:', error);
+        // Không set phí mặc định khi có lỗi, để người dùng nhập thủ công
+        if (this.editingInvoice) {
+          this.editingInvoice.phiGiaoHang = 0;
+        }
+        this.showToast('Không thể tính phí ship, vui lòng nhập thủ công', 'info');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   ngOnInit(): void {
+    // Load provinces ngay khi component khởi tạo
+    this.loadProvinces();
     console.log('🔍 InvoiceDetailComponent initialized');
     this.route.params.subscribe(params => {
       const idParam = params['id'];
@@ -397,7 +564,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.stopAutoRefresh();
     this.autoRefreshSub = this.refreshInterval.subscribe(() => {
       if (!this.isEditMode) {
+        // Cập nhật liên tục từ DB: Load invoice detail và customer info
         this.loadInvoiceDetail();
+        
+        // Cũng reload customer info nếu có khachHangId
+        if (this.invoice?.khachHangId) {
+          this.loadCustomerInfo(this.invoice.khachHangId);
+        }
       }
     });
   }
@@ -410,16 +583,21 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   loadInvoiceDetail(): void {
-    console.log('🔄 Loading invoice detail for ID:', this.invoiceId);
+    console.log('🔄 Loading invoice detail from DB for ID:', this.invoiceId);
     console.log('🔑 Current auth token:', this.authService.getToken() ? 'Present' : 'Missing');
     console.log('👤 Current user:', this.authService.getCurrentUser());
     console.log('✅ Is logged in:', this.authService.isLoggedIn());
 
     this.error = '';
 
+    // ✅ QUAN TRỌNG: Load dữ liệu trực tiếp từ DB (không cache)
     this.hoaDonService.getHoaDonDetail(this.invoiceId).subscribe({
       next: (invoice) => {
-        console.log('✅ Invoice loaded from server:', invoice);
+        console.log('✅ Invoice loaded from DB:', invoice);
+        console.log('💰 phiGiaoHang from DB:', invoice.phiGiaoHang);
+        console.log('💰 thanhTien from DB:', invoice.thanhTien);
+        console.log('💰 tongTien from DB:', invoice.tongTien);
+        console.log('💰 tienGiamGia from DB:', invoice.tienGiamGia);
 
         // Map danhSachChiTiet sang danhSachSanPham nếu chưa có
         if (invoice.danhSachChiTiet && invoice.danhSachChiTiet.length > 0 && (!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0)) {
@@ -587,18 +765,46 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           invoice.danhSachSanPham = [];
         }
 
+        // QUAN TRỌNG: Đảm bảo phiGiaoHang và thanhTien được parse đúng
+        if (invoice.phiGiaoHang !== undefined && invoice.phiGiaoHang !== null) {
+          invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string' 
+            ? parseFloat(invoice.phiGiaoHang) 
+            : Number(invoice.phiGiaoHang);
+        }
+        if (invoice.thanhTien !== undefined && invoice.thanhTien !== null) {
+          invoice.thanhTien = typeof invoice.thanhTien === 'string' 
+            ? parseFloat(invoice.thanhTien) 
+            : Number(invoice.thanhTien);
+        }
+
         console.log('💰 Invoice financial data:', {
           tongTien: invoice.tongTien,
           tienGiamGia: invoice.tienGiamGia,
           thanhTien: invoice.thanhTien,
           phiGiaoHang: invoice.phiGiaoHang,
-          nguoiChiuPhi: invoice.nguoiChiuPhi
+          nguoiChiuPhi: invoice.nguoiChiuPhi,
+          tinhThanh: invoice.tinhThanh,
+          quanHuyen: invoice.quanHuyen,
+          phuongXa: invoice.phuongXa,
+          diaChiChiTiet: invoice.diaChiChiTiet
         });
 
-        this.invoice = invoice;
+        // Tạo object mới để trigger change detection - QUAN TRỌNG để UI cập nhật
+        this.invoice = { ...invoice };
         this.originalStatus = invoice.trangThai; // Lưu trạng thái ban đầu
         this.statusChanged = false; // Reset flag
         this.selectedStatus = ''; // Reset selected status
+        
+        // Force change detection để đảm bảo UI cập nhật ngay lập tức
+        this.cdr.detectChanges();
+        
+        console.log('✅ Invoice object updated in component:', {
+          id: this.invoice?.id,
+          phiGiaoHang: this.invoice?.phiGiaoHang,
+          thanhTien: this.invoice?.thanhTien,
+          tinhThanh: this.invoice?.tinhThanh,
+          quanHuyen: this.invoice?.quanHuyen
+        });
 
         console.log('✅ Invoice loaded:', {
           id: this.invoice?.id,
@@ -1121,6 +1327,31 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.isEditMode = true;
     this.editingInvoice = { ...this.invoice };
     this.stopAutoRefresh();
+    
+    // Load provinces và địa chỉ khi vào edit mode
+    this.loadProvinces();
+    
+    // Load customer addresses nếu có khách hàng
+    if (this.invoice?.khachHangId) {
+      this.loadCustomerAddresses();
+    }
+    
+    // Nếu đã có địa chỉ, load districts và wards tương ứng
+    // Đợi provinces load xong rồi mới tìm province code
+    setTimeout(() => {
+      if (this.editingInvoice?.tinhThanh && this.provinces.length > 0) {
+        console.log('📍 Loading address from invoice:', this.editingInvoice.tinhThanh);
+        this.findProvinceCodeAndLoadDistricts(this.editingInvoice.tinhThanh);
+      } else if (this.editingInvoice?.tinhThanh && this.provinces.length === 0) {
+        // Nếu provinces chưa load xong, đợi thêm
+        console.log('⏳ Provinces not loaded yet, waiting...');
+        setTimeout(() => {
+          if (this.provinces.length > 0 && this.editingInvoice?.tinhThanh) {
+            this.findProvinceCodeAndLoadDistricts(this.editingInvoice.tinhThanh);
+          }
+        }, 1000);
+      }
+    }, 1000); // Tăng thời gian đợi để đảm bảo provinces đã load xong
   }
 
   cancelEdit(): void {
@@ -1193,14 +1424,59 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         const addressChanged = originalAddress !== newAddress;
         
         const originalShippingFee = this.invoice?.phiGiaoHang || 0;
-        const newShippingFee = this.editingInvoice.phiGiaoHang || 0;
+        let newShippingFee = this.editingInvoice.phiGiaoHang || 0;
+        
+        // Nếu địa chỉ thay đổi, tự động tính lại phí ship bằng GHN API
+        if (addressChanged && this.editingInvoice.tinhThanh && this.editingInvoice.quanHuyen) {
+          console.log('📍 Address changed, calculating new shipping fee via GHN API...');
+          
+          // Tính phí ship mới bằng GHN API
+          const ghnRequest = {
+            province: this.editingInvoice.tinhThanh,
+            to_district_id: 0, // Sẽ được tính từ tên quận/huyện
+            to_ward_code: '', // Optional
+            weight: this.invoice?.khoiLuong ? Math.round(this.invoice.khoiLuong * 1000) : 1000, // Convert kg to gram
+            length: this.invoice?.chieuDai || 20,
+            width: this.invoice?.chieuRong || 20,
+            height: this.invoice?.chieuCao || 20,
+            insurance_value: this.invoice?.tongTien || 0
+          };
+          
+          this.ghnService.calculateShippingFeeViaBackend(ghnRequest).subscribe({
+            next: (ghnResponse) => {
+              console.log('✅ GHN API response:', ghnResponse);
+              if (ghnResponse && ghnResponse.code === 200 && ghnResponse.data) {
+                newShippingFee = ghnResponse.data.total || 0;
+                if (this.editingInvoice) {
+                  this.editingInvoice.phiGiaoHang = newShippingFee;
+                  console.log('💰 Updated editingInvoice.phiGiaoHang to:', newShippingFee);
+                }
+                console.log('💰 New shipping fee calculated:', newShippingFee);
+                
+                // Tiếp tục xử lý với phí ship mới
+                this.processShippingFeeAfterCalculation(originalShippingFee, newShippingFee, addressChanged, saveButton, customerId || null);
+              } else {
+                console.warn('⚠️ GHN API returned error, using default fee');
+                // Nếu GHN API lỗi, sử dụng phí ship hiện tại hoặc mặc định
+                this.processShippingFeeAfterCalculation(originalShippingFee, newShippingFee, addressChanged, saveButton, customerId || null);
+              }
+            },
+            error: (ghnError) => {
+              console.error('❌ Error calling GHN API:', ghnError);
+              // Nếu GHN API lỗi, tiếp tục với phí ship hiện tại
+              this.processShippingFeeAfterCalculation(originalShippingFee, newShippingFee, addressChanged, saveButton, customerId || null);
+            }
+          });
+          
+          return; // Return để chờ GHN API response
+        }
+        
+        // Nếu không thay đổi địa chỉ, xử lý bình thường
         const shippingFeeChanged = originalShippingFee !== newShippingFee;
         const shippingFeeDifference = newShippingFee - originalShippingFee;
 
-        // Nếu địa chỉ hoặc phí ship thay đổi, hiển thị modal điều chỉnh phí ship
-        if (addressChanged || shippingFeeChanged) {
+        // Nếu phí ship thay đổi, hiển thị modal điều chỉnh phí ship
           if (shippingFeeChanged) {
-            // Mở modal điều chỉnh phí ship
             this.shippingFeeAdjustmentData = {
               newShippingFee: newShippingFee,
               oldShippingFee: originalShippingFee,
@@ -1220,32 +1496,149 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
             }
             return;
-          } else if (addressChanged) {
-            // Chỉ thay đổi địa chỉ, không thay đổi phí ship
-            if (!confirm('Địa chỉ giao hàng đã thay đổi.\n\nBạn có muốn tiếp tục cập nhật?')) {
+        }
+        
+        // Nếu chỉ thay đổi địa chỉ nhưng phí ship không đổi, tiếp tục cập nhật
+        if (addressChanged && !shippingFeeChanged) {
+          if (!confirm('Địa chỉ giao hàng đã thay đổi nhưng phí ship không đổi.\n\nBạn có muốn tiếp tục cập nhật?')) {
               if (saveButton) {
                 saveButton.disabled = false;
                 saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
               }
               return;
             }
+        }
+
+        // Đảm bảo giá trị từ dropdown được map vào editingInvoice trước khi save
+        if (this.selectedProvince) {
+          const province = this.provinces.find(p => p.code === this.selectedProvince);
+          if (province && this.editingInvoice) {
+            this.editingInvoice.tinhThanh = province.name;
+          }
+        }
+        if (this.selectedDistrict) {
+          const district = this.districts.find(d => d.code === this.selectedDistrict);
+          if (district && this.editingInvoice) {
+            this.editingInvoice.quanHuyen = district.name;
+          }
+        }
+        if (this.selectedWard) {
+          const ward = this.wards.find(w => w.code === this.selectedWard);
+          if (ward && this.editingInvoice) {
+            this.editingInvoice.phuongXa = ward.name;
           }
         }
 
-        // Chuẩn hóa dữ liệu trước khi gửi
+        // So sánh với dữ liệu gốc để chỉ gửi các trường đã thay đổi
         const invoiceData: any = {
-          ...this.editingInvoice,
-          tongTien: this.editingInvoice.tongTien ? Number(this.editingInvoice.tongTien) : 0,
-          tienGiamGia: this.editingInvoice.tienGiamGia ? Number(this.editingInvoice.tienGiamGia) : 0,
-          thanhTien: this.editingInvoice.thanhTien ? Number(this.editingInvoice.thanhTien) : 0,
-          nhanVienId: this.editingInvoice.nhanVienId ? Number(this.editingInvoice.nhanVienId) : undefined,
+          maHoaDon: this.editingInvoice.maHoaDon, // Luôn cần có
           khachHangId: this.editingInvoice.khachHangId ? Number(this.editingInvoice.khachHangId) : undefined,
-          // Chuẩn hóa định dạng ngày tháng
-          ngayThanhToan: this.editingInvoice.ngayThanhToan ? this.formatDateTimeForAPI(this.editingInvoice.ngayThanhToan) : undefined,
-          ngayTao: this.editingInvoice.ngayTao ? this.formatDateTimeForAPI(this.editingInvoice.ngayTao) : undefined,
-          // QUAN TRỌNG: Không gửi danhSachSanPham, chỉ gửi danhSachChiTiet
-          danhSachSanPham: undefined
         };
+
+        // Chỉ thêm các trường đã thay đổi so với invoice gốc
+        if (this.invoice) {
+          // Thông tin khách hàng
+          if (this.editingInvoice.tenKhachHang !== this.invoice.tenKhachHang) {
+            invoiceData.tenKhachHang = this.editingInvoice.tenKhachHang;
+          }
+          if (this.editingInvoice.emailKhachHang !== this.invoice.emailKhachHang) {
+            invoiceData.emailKhachHang = this.editingInvoice.emailKhachHang;
+          }
+          if (this.editingInvoice.soDienThoaiKhachHang !== this.invoice.soDienThoaiKhachHang) {
+            invoiceData.soDienThoaiKhachHang = this.editingInvoice.soDienThoaiKhachHang;
+          }
+
+          // Địa chỉ
+          if (this.editingInvoice.diaChiChiTiet !== this.invoice.diaChiChiTiet) {
+            invoiceData.diaChiChiTiet = this.editingInvoice.diaChiChiTiet;
+          }
+          if (this.editingInvoice.tinhThanh !== this.invoice.tinhThanh) {
+            invoiceData.tinhThanh = this.editingInvoice.tinhThanh;
+          }
+          if (this.editingInvoice.quanHuyen !== this.invoice.quanHuyen) {
+            invoiceData.quanHuyen = this.editingInvoice.quanHuyen;
+          }
+          if (this.editingInvoice.phuongXa !== this.invoice.phuongXa) {
+            invoiceData.phuongXa = this.editingInvoice.phuongXa;
+          }
+
+          // Tiền
+          const newTongTien = this.editingInvoice.tongTien ? Number(this.editingInvoice.tongTien) : 0;
+          const oldTongTien = this.invoice.tongTien ? Number(this.invoice.tongTien) : 0;
+          if (newTongTien !== oldTongTien) {
+            invoiceData.tongTien = newTongTien;
+          }
+
+          const newTienGiamGia = this.editingInvoice.tienGiamGia ? Number(this.editingInvoice.tienGiamGia) : 0;
+          const oldTienGiamGia = this.invoice.tienGiamGia ? Number(this.invoice.tienGiamGia) : 0;
+          if (newTienGiamGia !== oldTienGiamGia) {
+            invoiceData.tienGiamGia = newTienGiamGia;
+          }
+
+          const newThanhTien = this.editingInvoice.thanhTien ? Number(this.editingInvoice.thanhTien) : 0;
+          const oldThanhTien = this.invoice.thanhTien ? Number(this.invoice.thanhTien) : 0;
+          if (newThanhTien !== oldThanhTien) {
+            invoiceData.thanhTien = newThanhTien;
+          }
+
+          // Phí ship - QUAN TRỌNG: Luôn gửi phiGiaoHang nếu đã được tính lại từ GHN API hoặc có thay đổi
+          const newPhiGiaoHang = this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null 
+            ? Number(this.editingInvoice.phiGiaoHang) 
+            : (this.invoice?.phiGiaoHang || 0);
+          const oldPhiGiaoHang = this.invoice.phiGiaoHang !== undefined && this.invoice.phiGiaoHang !== null 
+            ? Number(this.invoice.phiGiaoHang) 
+            : 0;
+          // Luôn gửi phiGiaoHang nếu có thay đổi hoặc đã được tính lại (khi địa chỉ thay đổi)
+          if (newPhiGiaoHang !== oldPhiGiaoHang || addressChanged) {
+            invoiceData.phiGiaoHang = newPhiGiaoHang;
+            console.log('💰 Sending phiGiaoHang to backend:', newPhiGiaoHang, '(old:', oldPhiGiaoHang, ', addressChanged:', addressChanged, ')');
+          }
+
+          // Ghi chú
+          if (this.editingInvoice.ghiChu !== this.invoice.ghiChu) {
+            invoiceData.ghiChu = this.editingInvoice.ghiChu;
+          }
+
+          // Trạng thái
+          if (this.editingInvoice.trangThai !== this.invoice.trangThai) {
+            invoiceData.trangThai = this.editingInvoice.trangThai;
+          }
+
+          // Nhân viên
+          const newNhanVienId = this.editingInvoice.nhanVienId ? Number(this.editingInvoice.nhanVienId) : null;
+          const oldNhanVienId = this.invoice.nhanVienId ? Number(this.invoice.nhanVienId) : null;
+          if (newNhanVienId !== oldNhanVienId) {
+            invoiceData.nhanVienId = newNhanVienId;
+          }
+
+          // Phương thức thanh toán
+          if (this.editingInvoice.phuongThucThanhToan !== this.invoice.phuongThucThanhToan) {
+            invoiceData.phuongThucThanhToan = this.editingInvoice.phuongThucThanhToan;
+          }
+
+          // Ngày thanh toán
+          if (this.editingInvoice.ngayThanhToan !== this.invoice.ngayThanhToan) {
+            invoiceData.ngayThanhToan = this.editingInvoice.ngayThanhToan ? this.formatDateTimeForAPI(this.editingInvoice.ngayThanhToan) : undefined;
+          }
+        } else {
+          // Nếu không có invoice gốc, gửi tất cả dữ liệu
+          invoiceData.tenKhachHang = this.editingInvoice.tenKhachHang;
+          invoiceData.emailKhachHang = this.editingInvoice.emailKhachHang;
+          invoiceData.soDienThoaiKhachHang = this.editingInvoice.soDienThoaiKhachHang;
+          invoiceData.diaChiChiTiet = this.editingInvoice.diaChiChiTiet;
+          invoiceData.tinhThanh = this.editingInvoice.tinhThanh;
+          invoiceData.quanHuyen = this.editingInvoice.quanHuyen;
+          invoiceData.phuongXa = this.editingInvoice.phuongXa;
+          invoiceData.tongTien = this.editingInvoice.tongTien ? Number(this.editingInvoice.tongTien) : 0;
+          invoiceData.tienGiamGia = this.editingInvoice.tienGiamGia ? Number(this.editingInvoice.tienGiamGia) : 0;
+          invoiceData.thanhTien = this.editingInvoice.thanhTien ? Number(this.editingInvoice.thanhTien) : 0;
+          invoiceData.phiGiaoHang = this.editingInvoice.phiGiaoHang ? Number(this.editingInvoice.phiGiaoHang) : 0;
+          invoiceData.ghiChu = this.editingInvoice.ghiChu;
+          invoiceData.trangThai = this.editingInvoice.trangThai;
+          invoiceData.nhanVienId = this.editingInvoice.nhanVienId ? Number(this.editingInvoice.nhanVienId) : undefined;
+          invoiceData.phuongThucThanhToan = this.editingInvoice.phuongThucThanhToan;
+          invoiceData.ngayThanhToan = this.editingInvoice.ngayThanhToan ? this.formatDateTimeForAPI(this.editingInvoice.ngayThanhToan) : undefined;
+        }
 
         // Map danhSachSanPham (frontend) sang danhSachChiTiet (backend) cho update
         // Ưu tiên sử dụng selectedProductsForUpdate nếu có, nếu không thì dùng editingInvoice.danhSachSanPham
@@ -1276,8 +1669,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           }
         }
 
+        // ✅ QUAN TRỌNG: Đảm bảo phiGiaoHang luôn được gửi trong request (kể cả khi không thay đổi)
+        if (invoiceData.phiGiaoHang === undefined || invoiceData.phiGiaoHang === null) {
+          // Nếu không có trong invoiceData, lấy từ editingInvoice hoặc invoice hiện tại
+          invoiceData.phiGiaoHang = this.editingInvoice?.phiGiaoHang 
+            ? Number(this.editingInvoice.phiGiaoHang) 
+            : (this.invoice?.phiGiaoHang ? Number(this.invoice.phiGiaoHang) : 0);
+          console.log('💰 Added phiGiaoHang to invoiceData:', invoiceData.phiGiaoHang);
+        }
+
         console.log('📤 Sending invoice data to API:', {
           ...invoiceData,
+          phiGiaoHang: invoiceData.phiGiaoHang, // Log rõ ràng phiGiaoHang
           danhSachChiTiet: invoiceData.danhSachChiTiet?.map((p: any) => ({
             chiTietSanPhamId: p.chiTietSanPhamId,
             soLuong: p.soLuong,
@@ -1315,7 +1718,24 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.hoaDonService.adjustShippingFee(this.invoiceId, adjustmentRequest).subscribe({
             next: (adjustedInvoice) => {
               console.log('✅ Shipping fee adjusted successfully:', adjustedInvoice);
-              // Tiếp tục cập nhật hóa đơn
+              console.log('💰 Adjusted invoice phiGiaoHang:', adjustedInvoice.phiGiaoHang);
+              
+              // QUAN TRỌNG: Cập nhật phiGiaoHang trong invoiceData từ adjustedInvoice
+              if (adjustedInvoice.phiGiaoHang !== undefined && adjustedInvoice.phiGiaoHang !== null) {
+                invoiceData.phiGiaoHang = typeof adjustedInvoice.phiGiaoHang === 'string' 
+                  ? parseFloat(adjustedInvoice.phiGiaoHang) 
+                  : Number(adjustedInvoice.phiGiaoHang);
+                console.log('💰 Updated invoiceData.phiGiaoHang to:', invoiceData.phiGiaoHang);
+              }
+              
+              // Cập nhật thanhTien nếu có
+              if (adjustedInvoice.thanhTien !== undefined && adjustedInvoice.thanhTien !== null) {
+                invoiceData.thanhTien = typeof adjustedInvoice.thanhTien === 'string' 
+                  ? parseFloat(adjustedInvoice.thanhTien) 
+                  : Number(adjustedInvoice.thanhTien);
+              }
+              
+              // Tiếp tục cập nhật hóa đơn với phiGiaoHang mới
               this.continueUpdateInvoice(invoiceData, customerId || null, saveButton);
             },
             error: (adjustError) => {
@@ -1345,27 +1765,202 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Xử lý phí ship sau khi tính toán từ GHN API
+   */
+  private processShippingFeeAfterCalculation(
+    originalShippingFee: number,
+    newShippingFee: number,
+    addressChanged: boolean,
+    saveButton: HTMLButtonElement | null,
+    customerId: number | null
+  ): void {
+    const shippingFeeChanged = originalShippingFee !== newShippingFee;
+    const shippingFeeDifference = newShippingFee - originalShippingFee;
+
+    if (shippingFeeChanged) {
+      // Phí ship thay đổi, hiển thị modal điều chỉnh phí ship
+      this.shippingFeeAdjustmentData = {
+        newShippingFee: newShippingFee,
+        oldShippingFee: originalShippingFee,
+        adjustmentType: shippingFeeDifference > 0 ? 'SURCHARGE' : 'REFUND',
+        adjustmentAmount: Math.abs(shippingFeeDifference),
+        reason: addressChanged ? 'Thay đổi địa chỉ giao hàng - Tự động tính lại phí ship' : 'Điều chỉnh phí ship',
+        refundMethod: 'original_method',
+        bankAccount: '',
+        bankName: '',
+        accountHolder: ''
+      };
+      this.showShippingFeeAdjustmentModal = true;
+      
+      // Reset button state
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+      }
+    } else {
+      // Phí ship không đổi, tiếp tục cập nhật hóa đơn
+      this.continueSaveChanges(customerId, saveButton);
+    }
+  }
+
+  /**
+   * Tiếp tục lưu thay đổi sau khi xử lý phí ship
+   */
+  private continueSaveChanges(customerId: number | null, saveButton: HTMLButtonElement | null): void {
+    if (!this.editingInvoice || !this.invoiceId) {
+      return;
+    }
+
+    // Chuẩn hóa dữ liệu trước khi gửi
+    // QUAN TRỌNG: Đảm bảo phiGiaoHang luôn được gửi khi đã tính lại từ GHN API
+    const invoiceData: any = {
+      ...this.editingInvoice,
+      tongTien: this.editingInvoice.tongTien ? Number(this.editingInvoice.tongTien) : 0,
+      tienGiamGia: this.editingInvoice.tienGiamGia ? Number(this.editingInvoice.tienGiamGia) : 0,
+      thanhTien: this.editingInvoice.thanhTien ? Number(this.editingInvoice.thanhTien) : 0,
+      phiGiaoHang: this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null 
+        ? Number(this.editingInvoice.phiGiaoHang) 
+        : (this.invoice?.phiGiaoHang || 0),
+      nhanVienId: this.editingInvoice.nhanVienId ? Number(this.editingInvoice.nhanVienId) : undefined,
+      khachHangId: customerId || this.editingInvoice.khachHangId ? Number(customerId || this.editingInvoice.khachHangId) : undefined,
+      ngayThanhToan: this.editingInvoice.ngayThanhToan ? this.formatDateTimeForAPI(this.editingInvoice.ngayThanhToan) : undefined,
+      ngayTao: this.editingInvoice.ngayTao ? this.formatDateTimeForAPI(this.editingInvoice.ngayTao) : undefined,
+      danhSachSanPham: undefined
+    };
+
+    // Map danhSachSanPham sang danhSachChiTiet
+    const productsToMap = this.selectedProductsForUpdate.length > 0
+      ? this.selectedProductsForUpdate
+      : (this.editingInvoice.danhSachSanPham || []);
+
+    if (productsToMap.length > 0) {
+      invoiceData.danhSachChiTiet = productsToMap.map((product: any) => ({
+        chiTietSanPhamId: product.chiTietSanPhamId || product.id,
+        soLuong: Number(product.soLuong) || 1,
+        donGia: product.donGia ? (typeof product.donGia === 'number' ? product.donGia : parseFloat(String(product.donGia))) : 0,
+        giamGia: product.giamGia ? (typeof product.giamGia === 'number' ? product.giamGia : parseFloat(String(product.giamGia))) : 0,
+        thanhTien: product.thanhTien ? (typeof product.thanhTien === 'number' ? product.thanhTien : parseFloat(String(product.thanhTien))) : ((product.donGia || 0) * (product.soLuong || 1))
+      }));
+    } else if ((this.invoice as any)?.danhSachChiTiet && (this.invoice as any).danhSachChiTiet.length > 0) {
+      invoiceData.danhSachChiTiet = (this.invoice as any).danhSachChiTiet.map((item: any) => ({
+        chiTietSanPhamId: item.chiTietSanPhamId || item.id,
+        soLuong: Number(item.soLuong) || 1,
+        donGia: item.donGia ? (typeof item.donGia === 'number' ? item.donGia : parseFloat(String(item.donGia))) : 0,
+        giamGia: item.giamGia ? (typeof item.giamGia === 'number' ? item.giamGia : parseFloat(String(item.giamGia))) : 0,
+        thanhTien: item.thanhTien ? (typeof item.thanhTien === 'number' ? item.thanhTien : parseFloat(String(item.thanhTien))) : ((item.donGia || 0) * (item.soLuong || 1))
+      }));
+    }
+
+    // Đánh dấu đơn hàng đã được chỉnh sửa nếu là đơn hàng online
+    const isOnlineOrder = !this.invoice?.nhanVienId || this.invoice.nhanVienId === null;
+    if (isOnlineOrder) {
+      const editNote = '[ĐÃ CHỈNH SỬA]';
+      if (!invoiceData.ghiChu || !invoiceData.ghiChu.includes(editNote)) {
+        invoiceData.ghiChu = invoiceData.ghiChu 
+          ? `${editNote} ${invoiceData.ghiChu}` 
+          : editNote;
+      }
+    }
+
+    // Cập nhật hóa đơn
+    this.continueUpdateInvoice(invoiceData, customerId, saveButton);
+  }
+
+  /**
    * Tiếp tục cập nhật hóa đơn sau khi điều chỉnh phí ship
    */
   private continueUpdateInvoice(invoiceData: any, customerId: number | null, saveButton: HTMLButtonElement | null): void {
+        // ✅ QUAN TRỌNG: Log dữ liệu trước khi gửi request
+        console.log('📤 Sending update request with invoiceData:', {
+          id: this.invoiceId,
+          phiGiaoHang: invoiceData.phiGiaoHang,
+          tongTien: invoiceData.tongTien,
+          tienGiamGia: invoiceData.tienGiamGia,
+          thanhTien: invoiceData.thanhTien
+        });
+        
         this.hoaDonService.updateHoaDonNew(this.invoiceId, invoiceData).subscribe({
           next: (updatedInvoice: any) => {
-            this.invoice = updatedInvoice;
-            this.isEditMode = false;
-            this.editingInvoice = null;
-            this.startAutoRefresh(); // Resume auto-refresh
+            console.log('✅ Invoice updated successfully from API:', updatedInvoice);
+            console.log('💰 Updated shipping fee (phiGiaoHang) from API:', updatedInvoice.phiGiaoHang);
+            console.log('💰 Updated thanhTien from API:', updatedInvoice.thanhTien);
 
         // Đóng modal điều chỉnh phí ship nếu đang mở
         if (this.showShippingFeeAdjustmentModal) {
           this.closeShippingFeeAdjustmentModal();
         }
 
+            // Cập nhật invoice ngay lập tức với dữ liệu từ response để hiển thị ngay
+            if (updatedInvoice) {
+              // Đảm bảo phiGiaoHang được convert sang number
+              if (updatedInvoice.phiGiaoHang !== undefined && updatedInvoice.phiGiaoHang !== null) {
+                updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string' 
+                  ? parseFloat(updatedInvoice.phiGiaoHang) 
+                  : Number(updatedInvoice.phiGiaoHang);
+              }
+              
+              // Đảm bảo thanhTien cũng được cập nhật nếu phiGiaoHang thay đổi
+              if (updatedInvoice.thanhTien !== undefined && updatedInvoice.thanhTien !== null) {
+                updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string' 
+                  ? parseFloat(updatedInvoice.thanhTien) 
+                  : Number(updatedInvoice.thanhTien);
+              }
+              
+              // Cập nhật invoice object để hiển thị ngay
+              this.invoice = { ...updatedInvoice }; // Tạo object mới để trigger change detection
+              this.cdr.detectChanges();
+              
+              console.log('🔄 Updated invoice object immediately:', {
+                phiGiaoHang: updatedInvoice.phiGiaoHang,
+                thanhTien: updatedInvoice.thanhTien,
+                tinhThanh: updatedInvoice.tinhThanh,
+                quanHuyen: updatedInvoice.quanHuyen
+              });
+            }
+
+            // ✅ QUAN TRỌNG: Reload toàn bộ dữ liệu hóa đơn từ DB để đảm bảo hiển thị đúng
+            // Delay để đảm bảo backend đã lưu xong và commit transaction
+            setTimeout(() => {
+              console.log('🔄 Reloading invoice detail from DB after update...');
+              this.loadInvoiceDetail();
+              // Force change detection sau khi reload
+              setTimeout(() => {
+                this.cdr.detectChanges();
+                console.log('✅ Reloaded invoice detail from DB, phiGiaoHang:', this.invoice?.phiGiaoHang);
+                console.log('✅ Reloaded invoice detail from DB, thanhTien:', this.invoice?.thanhTien);
+              }, 200);
+            }, 1000); // Tăng delay để đảm bảo backend đã lưu xong và commit transaction
+
             // Reload customer information
             if (customerId) {
               this.loadCustomerInfo(customerId);
+            } else if (updatedInvoice?.khachHangId) {
+              this.loadCustomerInfo(updatedInvoice.khachHangId);
+            } else if (this.invoice?.khachHangId) {
+              this.loadCustomerInfo(this.invoice.khachHangId);
             }
 
+            // Thoát edit mode sau khi reload
+            setTimeout(() => {
+              this.isEditMode = false;
+              this.editingInvoice = null;
+              this.startAutoRefresh(); // Resume auto-refresh
             this.showToast('Cập nhật hóa đơn thành công!', 'success');
+              
+              // Force change detection một lần nữa để đảm bảo UI cập nhật
+              // Đảm bảo invoice object được cập nhật lại từ server
+              this.cdr.detectChanges();
+              
+              // ✅ QUAN TRỌNG: Reload lại một lần nữa từ DB để đảm bảo dữ liệu đồng bộ hoàn toàn
+              setTimeout(() => {
+                console.log('🔄 Final reload from DB to ensure data sync...');
+                this.loadInvoiceDetail();
+                setTimeout(() => {
+                  this.cdr.detectChanges();
+                  console.log('✅ Final reload completed, all data synced from DB');
+                }, 100);
+              }, 500);
+            }, 500);
           },
           error: (error: any) => {
             console.error('Error updating invoice:', error);
@@ -1438,6 +2033,34 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.hoaDonService.adjustShippingFee(this.invoice.id, adjustmentRequest).subscribe({
       next: (updatedInvoice) => {
         console.log('✅ Shipping fee adjusted successfully:', updatedInvoice);
+        console.log('💰 Updated shipping fee (phiGiaoHang):', updatedInvoice.phiGiaoHang);
+        
+        // Cập nhật invoice ngay lập tức với dữ liệu từ response để hiển thị ngay
+        if (updatedInvoice) {
+          // Đảm bảo phiGiaoHang được convert sang number
+          if (updatedInvoice.phiGiaoHang !== undefined && updatedInvoice.phiGiaoHang !== null) {
+            updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string' 
+              ? parseFloat(updatedInvoice.phiGiaoHang) 
+              : Number(updatedInvoice.phiGiaoHang);
+          }
+          
+          // Đảm bảo thanhTien cũng được cập nhật nếu phiGiaoHang thay đổi
+          if (updatedInvoice.thanhTien !== undefined && updatedInvoice.thanhTien !== null) {
+            updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string' 
+              ? parseFloat(updatedInvoice.thanhTien) 
+              : Number(updatedInvoice.thanhTien);
+          }
+          
+          // Cập nhật invoice object để hiển thị ngay (tạo object mới để trigger change detection)
+          this.invoice = { ...updatedInvoice };
+          this.cdr.detectChanges();
+          
+          console.log('🔄 Updated invoice object immediately after shipping fee adjustment:', {
+            phiGiaoHang: updatedInvoice.phiGiaoHang,
+            thanhTien: updatedInvoice.thanhTien
+          });
+        }
+        
         this.savingStatus = false;
         this.closeShippingFeeAdjustmentModal();
         
@@ -1446,7 +2069,19 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           : `Đã tăng phụ phí ship thành công. Khách hàng cần thanh toán thêm ${this.formatCurrency(this.shippingFeeAdjustmentData.adjustmentAmount)} ₫.`;
         
         this.showToast(message, 'success');
+        
+        // ✅ QUAN TRỌNG: Reload toàn bộ dữ liệu hóa đơn từ DB để đảm bảo hiển thị đúng
+        // Delay để đảm bảo backend đã lưu xong và commit transaction
+        setTimeout(() => {
+          console.log('🔄 Reloading invoice detail from DB after shipping fee adjustment...');
         this.loadInvoiceDetail();
+          // Force change detection sau khi reload
+          setTimeout(() => {
+            this.cdr.detectChanges();
+            console.log('✅ Reloaded invoice detail from DB after adjustment, phiGiaoHang:', this.invoice?.phiGiaoHang);
+            console.log('✅ Reloaded invoice detail from DB after adjustment, thanhTien:', this.invoice?.thanhTien);
+          }, 200);
+        }, 1000); // Tăng delay để đảm bảo backend đã lưu xong và commit transaction
       },
       error: (error) => {
         console.error('❌ Error adjusting shipping fee:', error);
@@ -1466,11 +2101,29 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             console.log('Customer found:', customers[0]);
             resolve(customers[0].id);
           } else {
-            // Customer doesn't exist, create new one
+            // Customer doesn't exist, create new one with unique email and phone
+            const baseEmail = `${customerName.toLowerCase().replace(/\s+/g, '')}@example.com`;
+            
+            // Lấy số điện thoại từ form nếu có, nếu không thì tạo unique
+            let phoneNumber = '';
+            if (this.editingInvoice?.soDienThoaiKhachHang && 
+                this.editingInvoice.soDienThoaiKhachHang.trim() !== '' &&
+                this.editingInvoice.soDienThoaiKhachHang.trim() !== 'Chưa có') {
+              phoneNumber = this.editingInvoice.soDienThoaiKhachHang.trim();
+            } else {
+              // Tạo số điện thoại unique bằng cách thêm timestamp
+              const timestamp = Date.now();
+              phoneNumber = `TEMP_${timestamp}`;
+            }
+            
+            this.generateUniqueEmail(baseEmail).then((uniqueEmail) => {
+              // ✅ BỎ QUA VALIDATE SỐ ĐIỆN THOẠI - Tạo khách hàng trực tiếp không cần check
+              // (Theo yêu cầu: bỏ qua validate số điện thoại đã tồn tại)
+              
             const newCustomer = {
               tenKhachHang: customerName,
-              email: `${customerName.toLowerCase().replace(/\s+/g, '')}@example.com`,
-              soDienThoai: 'Chưa có',
+                email: uniqueEmail,
+                soDienThoai: phoneNumber,
               gioiTinh: true,
               ngaySinh: new Date().toISOString().split('T')[0],
               diemTichLuy: 0,
@@ -1485,14 +2138,64 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               },
               error: (error) => {
                 console.error('Error creating customer:', error);
+                  // Nếu lỗi do email trùng, thử lại với email unique mới
+                  if (error.error?.message && error.error.message.includes('Email đã tồn tại')) {
+                    this.generateUniqueEmail(baseEmail).then((newUniqueEmail) => {
+                      newCustomer.email = newUniqueEmail;
+                      this.hoaDonService.createCustomer(newCustomer).subscribe({
+                        next: (retryCustomer) => {
+                          console.log('New customer created with unique email:', retryCustomer);
+                          resolve(retryCustomer.id);
+                        },
+                        error: (retryError) => {
+                          console.error('Error creating customer (retry):', retryError);
+                          reject(retryError);
+                        }
+                      });
+                    });
+                  } else {
                 reject(error);
+                  }
               }
+              });
+            }).catch((emailError) => {
+              console.error('Error generating unique email:', emailError);
+              reject(emailError);
             });
           }
         },
         error: (error) => {
           console.error('Error searching customer:', error);
           reject(error);
+        }
+      });
+    });
+  }
+
+  private async generateUniqueEmail(baseEmail: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      // First check if base email exists
+      this.khachHangService.checkEmailExists(baseEmail).subscribe({
+        next: (exists) => {
+          if (!exists) {
+            // Email is available, use it
+            resolve(baseEmail);
+          } else {
+            // Email exists, generate unique one with timestamp
+            const timestamp = Date.now();
+            const [localPart, domain] = baseEmail.split('@');
+            const uniqueEmail = `${localPart}_${timestamp}@${domain}`;
+            console.log(`Email ${baseEmail} exists, using unique: ${uniqueEmail}`);
+            resolve(uniqueEmail);
+          }
+        },
+        error: (error) => {
+          // If check fails, use timestamp to make it unique anyway
+          console.warn('Could not check email existence, using timestamp:', error);
+          const timestamp = Date.now();
+          const [localPart, domain] = baseEmail.split('@');
+          const uniqueEmail = `${localPart}_${timestamp}@${domain}`;
+          resolve(uniqueEmail);
         }
       });
     });
@@ -2014,6 +2717,22 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     return 'text-warning';
   }
 
+  /**
+   * Chuyển đổi district code sang district ID cho GHN API
+   * GHN API yêu cầu district_id (số) thay vì district code (string)
+   * Tạm thời sử dụng district code như một số (parseInt)
+   */
+  private getDistrictIdForGHN(districtCode: string): number {
+    // Nếu district code là số, parse nó
+    const parsed = parseInt(districtCode, 10);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+    // Nếu không parse được, trả về giá trị mặc định (1442 - Quận Ba Đình, Hà Nội)
+    console.warn(`⚠️ Could not parse district code ${districtCode}, using default district ID 1442`);
+    return 1442;
+  }
+
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -2178,6 +2897,394 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       // Trigger change detection để cập nhật UI
       this.cdr.detectChanges();
     }
+  }
+
+  /**
+   * Load danh sách tỉnh/thành phố
+   */
+  loadProvinces(): void {
+    // Nếu đã load rồi thì không load lại
+    if (this.provinces.length > 0) {
+      console.log('✅ Provinces already loaded:', this.provinces.length);
+      // Nếu đang trong edit mode và có địa chỉ, load districts
+      if (this.isEditMode && this.editingInvoice?.tinhThanh) {
+        setTimeout(() => {
+          this.findProvinceCodeAndLoadDistricts(this.editingInvoice?.tinhThanh || '');
+        }, 100);
+      }
+      return;
+    }
+
+    this.loadingProvinces = true;
+    console.log('🔄 Loading provinces from local data...');
+    
+    try {
+      // Sử dụng dữ liệu local từ sub-vn package thay vì gọi API
+      this.provinces = provincesData as any as Array<{ code: string; name: string }>;
+      this.loadingProvinces = false;
+      console.log('✅ Loaded provinces from local data:', this.provinces.length);
+      this.cdr.detectChanges();
+      
+      // Nếu đang trong edit mode và có địa chỉ, load districts sau khi provinces load xong
+      if (this.isEditMode && this.editingInvoice?.tinhThanh) {
+        setTimeout(() => {
+          this.findProvinceCodeAndLoadDistricts(this.editingInvoice?.tinhThanh || '');
+        }, 100);
+      }
+    } catch (error) {
+      console.error('❌ Error loading provinces from local data:', error);
+      // Fallback: thử gọi API nếu local data không có
+      this.vietnamAddressService.getProvinces().subscribe({
+        next: (provinces) => {
+          this.provinces = provinces || [];
+          this.loadingProvinces = false;
+          console.log('✅ Loaded provinces from API (fallback):', this.provinces.length);
+          this.cdr.detectChanges();
+          
+          if (this.isEditMode && this.editingInvoice?.tinhThanh) {
+            setTimeout(() => {
+              this.findProvinceCodeAndLoadDistricts(this.editingInvoice?.tinhThanh || '');
+            }, 100);
+          }
+        },
+        error: (apiError) => {
+          console.error('❌ Error loading provinces from API:', apiError);
+          this.loadingProvinces = false;
+          this.provinces = [];
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  /**
+   * Tìm province code từ tên tỉnh và load districts
+   */
+  findProvinceCodeAndLoadDistricts(provinceName: string): void {
+    if (!provinceName || provinceName.trim() === '') {
+      console.warn('⚠️ Province name is empty');
+      return;
+    }
+
+    console.log('🔍 Finding province code for:', provinceName);
+    console.log('   Available provinces:', this.provinces.length);
+    
+    // Tìm province với nhiều cách matching
+    const province = this.provinces.find(p => {
+      const pName = p.name.trim().toLowerCase();
+      const searchName = provinceName.trim().toLowerCase();
+      return pName === searchName || 
+             pName.includes(searchName) || 
+             searchName.includes(pName) ||
+             pName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+    });
+    
+    if (province) {
+      console.log('✅ Found province:', province);
+      this.selectedProvince = province.code;
+      if (this.editingInvoice) {
+        this.editingInvoice.tinhThanh = province.name;
+      }
+      this.loadDistrictsByProvince(province.code);
+      
+      // Nếu đã có quận/huyện, tìm và load wards
+      if (this.editingInvoice?.quanHuyen) {
+        // Đợi districts load xong
+        setTimeout(() => {
+          const district = this.districts.find(d => {
+            const dName = d.name.trim().toLowerCase();
+            const searchName = (this.editingInvoice?.quanHuyen || '').trim().toLowerCase();
+            return dName === searchName || 
+                   dName.includes(searchName) || 
+                   searchName.includes(dName) ||
+                   dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+          });
+          if (district) {
+            console.log('✅ Found district:', district);
+            this.selectedDistrict = district.code;
+            if (this.editingInvoice) {
+              this.editingInvoice.quanHuyen = district.name;
+            }
+            this.loadWardsByDistrict(district.code);
+            
+            // Nếu đã có phường/xã, tìm và set selectedWard
+            if (this.editingInvoice?.phuongXa) {
+              setTimeout(() => {
+                const ward = this.wards.find(w => {
+                  const wName = w.name.trim().toLowerCase();
+                  const searchName = (this.editingInvoice?.phuongXa || '').trim().toLowerCase();
+                  return wName === searchName || 
+                         wName.includes(searchName) || 
+                         searchName.includes(wName) ||
+                         wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+                });
+                if (ward) {
+                  console.log('✅ Found ward:', ward);
+                  this.selectedWard = ward.code;
+                  if (this.editingInvoice) {
+                    this.editingInvoice.phuongXa = ward.name;
+                  }
+                }
+                this.cdr.detectChanges();
+              }, 500);
+            } else {
+              this.cdr.detectChanges();
+            }
+          } else {
+            console.warn('⚠️ District not found:', this.editingInvoice?.quanHuyen);
+            this.cdr.detectChanges();
+          }
+        }, 500);
+      } else {
+        this.cdr.detectChanges();
+      }
+    } else {
+      console.warn('⚠️ Province not found:', provinceName);
+      console.log('   Available provinces:', this.provinces.map(p => p.name).slice(0, 10));
+    }
+  }
+
+  /**
+   * Load danh sách quận/huyện theo tỉnh
+   */
+  loadDistrictsByProvince(provinceCode: string): void {
+    if (!provinceCode || provinceCode === '') {
+      this.districts = [];
+      this.wards = [];
+      this.selectedDistrict = '';
+      this.selectedWard = '';
+      return;
+    }
+
+    console.log('🔄 Loading districts for province code:', provinceCode);
+    this.loadingDistricts = true;
+    this.districts = [];
+    this.wards = [];
+    this.selectedDistrict = '';
+    this.selectedWard = '';
+
+    try {
+      // Sử dụng dữ liệu local từ sub-vn package
+      const allDistricts = districtsData as any as Array<{
+        code: string;
+        name: string;
+        province_code: string;
+      }>;
+      this.districts = allDistricts.filter((d) => d.province_code === provinceCode);
+      this.loadingDistricts = false;
+      console.log('✅ Loaded districts from local data:', this.districts.length);
+      
+      // Nếu đã có quận/huyện trong editingInvoice, tìm và load wards
+      if (this.editingInvoice?.quanHuyen) {
+        const district = this.districts.find(d => {
+          const dName = d.name.trim().toLowerCase();
+          const searchName = (this.editingInvoice?.quanHuyen || '').trim().toLowerCase();
+          return dName === searchName || 
+                 dName.includes(searchName) || 
+                 searchName.includes(dName) ||
+                 dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+        });
+        if (district) {
+          this.selectedDistrict = district.code;
+          this.loadWardsByDistrict(district.code);
+        }
+      }
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('❌ Error loading districts from local data:', error);
+      // Fallback: thử gọi API
+      this.vietnamAddressService.getDistrictsByProvince(provinceCode).subscribe({
+        next: (districts) => {
+          this.districts = districts || [];
+          this.loadingDistricts = false;
+          console.log('✅ Loaded districts from API (fallback):', this.districts.length);
+          
+          if (this.editingInvoice?.quanHuyen) {
+            const district = districts.find(d => d.name === this.editingInvoice?.quanHuyen);
+            if (district) {
+              this.selectedDistrict = district.code;
+              this.loadWardsByDistrict(district.code);
+            }
+          }
+          this.cdr.detectChanges();
+        },
+        error: (apiError) => {
+          console.error('❌ Error loading districts from API:', apiError);
+          this.loadingDistricts = false;
+          this.districts = [];
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  /**
+   * Load danh sách phường/xã theo quận/huyện
+   */
+  loadWardsByDistrict(districtCode: string): void {
+    if (!districtCode || districtCode === '') {
+      this.wards = [];
+      this.selectedWard = '';
+      return;
+    }
+
+    console.log('🔄 Loading wards for district code:', districtCode);
+    this.loadingWards = true;
+    this.wards = [];
+    this.selectedWard = '';
+
+    try {
+      // Sử dụng dữ liệu local từ sub-vn package
+      const allWards = wardsData as any as Array<{
+        code: string;
+        name: string;
+        district_code: string;
+      }>;
+      this.wards = allWards.filter((w) => w.district_code === districtCode);
+      this.loadingWards = false;
+      console.log('✅ Loaded wards from local data:', this.wards.length);
+      
+      // Nếu đã có phường/xã trong editingInvoice, tìm và set selectedWard
+      if (this.editingInvoice?.phuongXa) {
+        const ward = this.wards.find(w => {
+          const wName = w.name.trim().toLowerCase();
+          const searchName = (this.editingInvoice?.phuongXa || '').trim().toLowerCase();
+          return wName === searchName || 
+                 wName.includes(searchName) || 
+                 searchName.includes(wName) ||
+                 wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+        });
+        if (ward) {
+          this.selectedWard = ward.code;
+        }
+      }
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('❌ Error loading wards from local data:', error);
+      // Fallback: thử gọi API
+      this.vietnamAddressService.getWardsByDistrict(districtCode).subscribe({
+        next: (wards) => {
+          this.wards = wards || [];
+          this.loadingWards = false;
+          console.log('✅ Loaded wards from API (fallback):', this.wards.length);
+          
+          if (this.editingInvoice?.phuongXa) {
+            const ward = wards.find(w => w.name === this.editingInvoice?.phuongXa);
+            if (ward) {
+              this.selectedWard = ward.code;
+            }
+          }
+          this.cdr.detectChanges();
+        },
+        error: (apiError) => {
+          console.error('❌ Error loading wards from API:', apiError);
+          this.loadingWards = false;
+          this.wards = [];
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  /**
+   * Xử lý khi chọn tỉnh/thành phố
+   */
+  onProvinceChange(provinceCode: string): void {
+    const province = this.provinces.find(p => p.code === provinceCode);
+    if (province && this.editingInvoice) {
+      this.editingInvoice.tinhThanh = province.name;
+      this.selectedProvince = provinceCode;
+      this.loadDistrictsByProvince(provinceCode);
+      
+      // Reset district và ward
+      this.editingInvoice.quanHuyen = '';
+      this.editingInvoice.phuongXa = '';
+      this.selectedDistrict = '';
+      this.selectedWard = '';
+      
+      // Tự động tính lại phí ship
+      this.calculateShippingFeeOnAddressChange();
+    }
+  }
+
+  /**
+   * Xử lý khi chọn quận/huyện
+   */
+  onDistrictChange(districtCode: string): void {
+    const district = this.districts.find(d => d.code === districtCode);
+    if (district && this.editingInvoice) {
+      this.editingInvoice.quanHuyen = district.name;
+      this.selectedDistrict = districtCode;
+      this.loadWardsByDistrict(districtCode);
+      
+      // Reset ward
+      this.editingInvoice.phuongXa = '';
+      this.selectedWard = '';
+      
+      // Tự động tính lại phí ship
+      this.calculateShippingFeeOnAddressChange();
+    }
+  }
+
+  /**
+   * Xử lý khi chọn phường/xã
+   */
+  onWardChange(wardCode: string): void {
+    const ward = this.wards.find(w => w.code === wardCode);
+    if (ward && this.editingInvoice) {
+      this.editingInvoice.phuongXa = ward.name;
+      this.selectedWard = wardCode;
+      
+      // Tự động tính lại phí ship
+      this.calculateShippingFeeOnAddressChange();
+    }
+  }
+
+  /**
+   * Tự động tính lại phí ship khi địa chỉ thay đổi
+   */
+  calculateShippingFeeOnAddressChange(): void {
+    if (!this.editingInvoice || !this.editingInvoice.tinhThanh || !this.editingInvoice.quanHuyen) {
+      return;
+    }
+
+    this.calculatingShippingFee = true;
+    console.log('🚚 Calculating shipping fee for new address...');
+
+    const ghnRequest = {
+      province: this.editingInvoice.tinhThanh,
+      to_district_id: 0, // Sẽ được tính từ tên quận/huyện
+      to_ward_code: this.selectedWard || '',
+      weight: this.invoice?.khoiLuong ? Math.round(this.invoice.khoiLuong * 1000) : 1000,
+      length: this.invoice?.chieuDai || 20,
+      width: this.invoice?.chieuRong || 20,
+      height: this.invoice?.chieuCao || 20,
+      insurance_value: this.invoice?.tongTien || 0
+    };
+
+    this.ghnService.calculateShippingFeeViaBackend(ghnRequest).subscribe({
+      next: (ghnResponse) => {
+        console.log('✅ GHN API response:', ghnResponse);
+        this.calculatingShippingFee = false;
+        
+        if (ghnResponse && ghnResponse.code === 200 && ghnResponse.data) {
+          const newShippingFee = ghnResponse.data.total || 0;
+          if (this.editingInvoice) {
+            this.editingInvoice.phiGiaoHang = newShippingFee;
+          }
+          console.log('💰 New shipping fee calculated:', newShippingFee);
+          this.showToast(`Phí ship mới: ${this.formatCurrency(newShippingFee)} ₫`, 'success');
+        } else {
+          console.warn('⚠️ GHN API returned error');
+          this.showToast('Không thể tính phí ship tự động. Vui lòng nhập thủ công.', 'warning');
+        }
+      },
+      error: (ghnError) => {
+        console.error('❌ Error calling GHN API:', ghnError);
+        this.calculatingShippingFee = false;
+        this.showToast('Không thể tính phí ship tự động. Vui lòng nhập thủ công.', 'warning');
+      }
+    });
   }
 
   /**
@@ -3560,7 +4667,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       chieuDai: null,
       chieuRong: null,
       chieuCao: null,
-      phiGiaoHang: 30000,
+      phiGiaoHang: 0,
       nguoiChiuPhi: 'nguoi_gui',
     };
   }

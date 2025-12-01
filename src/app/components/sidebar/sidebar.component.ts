@@ -199,7 +199,17 @@ export class SidebarComponent implements OnInit {
       hasSubmenu: false,
       isExpanded: false,
       submenu: [],
-      roles: ['ADMIN'], // Chỉ ADMIN
+      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
+    },
+    {
+      icon: 'bi-shield-check',
+      label: 'Sản phẩm mũ bảo hiểm',
+      route: '/products/helmet-styles',
+      active: false,
+      hasSubmenu: false,
+      isExpanded: false,
+      submenu: [],
+      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF (chỉ xem)
     },
   ];
 

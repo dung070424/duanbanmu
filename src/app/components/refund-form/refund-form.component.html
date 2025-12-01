@@ -1,0 +1,150 @@
+<div class="refund-form-container">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+          <div class="card-header bg-primary text-white text-center">
+            <h3 class="mb-0">
+              <i class="fas fa-money-bill-wave me-2"></i>
+              Yêu cầu hoàn tiền
+            </h3>
+          </div>
+          <div class="card-body p-4">
+            <!-- Success Message -->
+            <div *ngIf="submitted" class="alert alert-success" role="alert">
+              <h5 class="alert-heading">
+                <i class="fas fa-check-circle me-2"></i>
+                Gửi thông tin thành công!
+              </h5>
+              <p class="mb-0">{{ successMessage }}</p>
+              <hr>
+              <p class="mb-0">
+                <button class="btn btn-primary" (click)="goToShop()">
+                  <i class="fas fa-home me-2"></i>Về trang chủ
+                </button>
+              </p>
+            </div>
+
+            <!-- Form -->
+            <form *ngIf="!submitted" (ngSubmit)="submitRefundInfo()">
+              <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Lưu ý:</strong> Vui lòng điền đầy đủ thông tin tài khoản ngân hàng để chúng tôi có thể hoàn tiền cho bạn.
+                Tiền sẽ được hoàn trả trong vòng 3-5 ngày làm việc sau khi nhận được thông tin.
+              </div>
+
+              <!-- Error Message -->
+              <div *ngIf="error" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                {{ error }}
+              </div>
+
+              <!-- Mã hóa đơn -->
+              <div class="mb-3">
+                <label for="invoiceCode" class="form-label">
+                  Mã hóa đơn <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="invoiceCode"
+                  [(ngModel)]="invoiceCode"
+                  name="invoiceCode"
+                  placeholder="Nhập mã hóa đơn"
+                  required
+                  [disabled]="isSubmitting"
+                />
+                <small class="text-muted">Mã hóa đơn đã được gửi trong email</small>
+              </div>
+
+              <!-- Số tài khoản -->
+              <div class="mb-3">
+                <label for="bankAccount" class="form-label">
+                  Số tài khoản ngân hàng <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="bankAccount"
+                  [(ngModel)]="bankAccount"
+                  name="bankAccount"
+                  placeholder="Nhập số tài khoản"
+                  required
+                  [disabled]="isSubmitting"
+                />
+              </div>
+
+              <!-- Tên ngân hàng -->
+              <div class="mb-3">
+                <label for="bankName" class="form-label">
+                  Tên ngân hàng <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="bankName"
+                  [(ngModel)]="bankName"
+                  name="bankName"
+                  placeholder="Ví dụ: Vietcombank, Techcombank, BIDV..."
+                  required
+                  [disabled]="isSubmitting"
+                />
+              </div>
+
+              <!-- Tên chủ tài khoản -->
+              <div class="mb-3">
+                <label for="accountHolder" class="form-label">
+                  Tên chủ tài khoản <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="accountHolder"
+                  [(ngModel)]="accountHolder"
+                  name="accountHolder"
+                  placeholder="Nhập tên chủ tài khoản (đúng như trong sổ tài khoản)"
+                  required
+                  [disabled]="isSubmitting"
+                />
+              </div>
+
+              <!-- Submit Button -->
+              <div class="d-grid gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-lg"
+                  [disabled]="isSubmitting"
+                >
+                  <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                  <i *ngIf="!isSubmitting" class="fas fa-paper-plane me-2"></i>
+                  {{ isSubmitting ? 'Đang gửi...' : 'Gửi thông tin' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="card mt-3">
+          <div class="card-body">
+            <h6 class="card-title">
+              <i class="fas fa-question-circle me-2"></i>
+              Thông tin liên hệ
+            </h6>
+            <p class="card-text mb-1">
+              <i class="fas fa-envelope me-2"></i>
+              Email: support@tdkstore.com
+            </p>
+            <p class="card-text mb-0">
+              <i class="fas fa-phone me-2"></i>
+              Hotline: 0909 123 456
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

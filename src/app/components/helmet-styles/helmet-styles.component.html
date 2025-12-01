@@ -79,7 +79,7 @@
         <i class="bi bi-shield-check"></i>
         <h3>Danh sách kiểu dáng mũ</h3>
       </div>
-      <button class="add-btn" (click)="openAddModal()">
+      <button class="add-btn" (click)="openAddModal()" *ngIf="isAdmin">
         <i class="bi bi-plus-circle"></i>
         Thêm mới
       </button>
@@ -118,10 +118,10 @@
                 <button class="action-btn view-btn" (click)="view(i)" title="Xem chi tiết">
                   <i class="bi bi-eye"></i>
                 </button>
-                <button class="action-btn edit-btn" (click)="openEditModal(i)" title="Chỉnh sửa">
+                <button class="action-btn edit-btn" (click)="openEditModal(i)" title="Chỉnh sửa" *ngIf="isAdmin">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="action-btn delete-btn" (click)="delete(i)" title="Xóa">
+                <button class="action-btn delete-btn" (click)="delete(i)" title="Xóa" *ngIf="isAdmin">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>

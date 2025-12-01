@@ -174,20 +174,88 @@
                 type="text"
                 class="form-control"
                 [(ngModel)]="billingInfo.address"
+                (input)="onAddressDetailChange()"
                 placeholder="Địa chỉ"
                 required
               />
             </div>
 
-            <div class="form-group">
-              <label>Tỉnh / Thành phố *</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="billingInfo.city"
-                placeholder="Tỉnh / Thành phố"
-                required
-              />
+            <!-- Tỉnh/Thành phố, Quận/Huyện, Phường/Xã Dropdowns -->
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Tỉnh/Thành phố <span class="text-danger">*</span></label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="selectedProvinceCode"
+                    (change)="onProvinceChange()"
+                    name="province"
+                    [disabled]="loadingProvinces"
+                    required
+                  >
+                    <option [ngValue]="''">Chọn tỉnh/thành phố</option>
+                    <option *ngFor="let province of provinces" [ngValue]="province.code">
+                      {{ province.name }}
+                    </option>
+                  </select>
+                  <div *ngIf="loadingProvinces" class="text-muted small mt-1">
+                    <i class="fas fa-spinner fa-spin"></i> Đang tải...
+                  </div>
+                  <div *ngIf="!loadingProvinces && provinces.length === 0" class="text-danger small mt-1">
+                    <i class="fas fa-exclamation-triangle"></i> Không thể tải danh sách tỉnh/thành phố
+                  </div>
+                  <div *ngIf="!loadingProvinces && provinces.length > 0" class="text-success small mt-1">
+                    <i class="fas fa-check-circle"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Quận/Huyện <span class="text-danger">*</span></label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="selectedDistrictCode"
+                    (change)="onDistrictChange()"
+                    name="district"
+                    [disabled]="!selectedProvinceCode || loadingDistricts"
+                    required
+                  >
+                    <option [ngValue]="''">Chọn quận/huyện</option>
+                    <option *ngFor="let district of districts" [ngValue]="district.code">
+                      {{ district.name }}
+                    </option>
+                  </select>
+                  <div *ngIf="loadingDistricts" class="text-muted small mt-1">
+                    <i class="fas fa-spinner fa-spin"></i> Đang tải...
+                  </div>
+                  <div *ngIf="!selectedProvinceCode && !loadingDistricts" class="text-muted small mt-1">
+                    Vui lòng chọn tỉnh/thành phố trước
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Phường/Xã</label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="selectedWardCode"
+                    (change)="onWardChange()"
+                    name="ward"
+                    [disabled]="!selectedDistrictCode || loadingWards"
+                  >
+                    <option [ngValue]="''">Chọn phường/xã (tùy chọn)</option>
+                    <option *ngFor="let ward of wards" [ngValue]="ward.code">
+                      {{ ward.name }}
+                    </option>
+                  </select>
+                  <div *ngIf="loadingWards" class="text-muted small mt-1">
+                    <i class="fas fa-spinner fa-spin"></i> Đang tải...
+                  </div>
+                  <div *ngIf="!selectedDistrictCode && !loadingWards" class="text-muted small mt-1">
+                    Vui lòng chọn quận/huyện trước
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -224,9 +292,76 @@
           </div>
         </div>
 
-        <!-- Order Summary -->
-        <div class="checkout-sidebar">
-          <div class="order-summary">
+        <!-- Bottom Section: Payment Methods and Order Summary -->
+        <div class="checkout-bottom-section">
+          <!-- Payment Methods Column -->
+          <div class="checkout-payment-column">
+          <div class="payment-methods">
+            <h3>Phương thức thanh toán</h3>
+
+            <div class="payment-option">
+              <input
+                type="radio"
+                id="paymentCash"
+                name="paymentMethod"
+                value="cash"
+                [(ngModel)]="paymentMethod"
+              />
+              <label for="paymentCash">
+                <strong>Trả tiền mặt khi nhận hàng</strong>
+                <p>Trả tiền mặt khi giao hàng.</p>
+              </label>
+            </div>
+
+            <div class="payment-option">
+              <input
+                type="radio"
+                id="paymentTransfer"
+                name="paymentMethod"
+                value="transfer"
+                [(ngModel)]="paymentMethod"
+              />
+              <label for="paymentTransfer">
+                <strong>Chuyển khoản ngân hàng</strong>
+                <p>Chuyển khoản trực tiếp vào tài khoản ngân hàng của chúng tôi.</p>
+              </label>
+            </div>
+
+            <!-- Bank Transfer Info -->
+            <div *ngIf="paymentMethod === 'transfer'" class="bank-info">
+              <div class="bank-details">
+                <p><strong>Ngân hàng:</strong> {{ bankInfo.bankName }}</p>
+                <p><strong>Số tài khoản:</strong> {{ bankInfo.accountNumber }}</p>
+                <p><strong>Chủ tài khoản:</strong> {{ bankInfo.accountName }}</p>
+                <p><strong>Số tiền:</strong> {{ formatCurrency(getTotal()) }}</p>
+              </div>
+
+              <div class="bank-qr">
+                <img [src]="getBankTransferQrUrl()" alt="QR chuyển khoản" />
+                <span>Quét QR để thanh toán nhanh</span>
+              </div>
+
+              <div class="transaction-code">
+                <label>Mã giao dịch (tự động sinh):</label>
+                <div class="code-display">
+                  <input type="text" [value]="transactionCode" readonly class="code-input" />
+                  <button class="btn-copy" (click)="copyTransactionCode()" title="Sao chép mã">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+                <p class="code-note">
+                  <i class="fas fa-info-circle"></i>
+                  Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
+                  thanh toán.
+                </p>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Order Summary -->
+          <div class="checkout-sidebar">
+            <div class="order-summary">
             <h2>ĐƠN HÀNG CỦA BẠN</h2>
 
             <table class="order-table">
@@ -271,11 +406,25 @@
                   <td>{{ formatCurrency(getSubtotal()) }}</td>
                 </tr>
                 <tr>
-                  <td>Giao hàng</td>
-                  <td>Giao hàng miễn phí</td>
+                  <td>Phí vận chuyển</td>
+                  <td>
+                    <span *ngIf="isCalculatingShippingFee" class="text-muted">
+                      <i class="fas fa-spinner fa-spin"></i> Đang tính...
+                    </span>
+                    <span *ngIf="!isCalculatingShippingFee">
+                      {{ shippingFee > 0 ? formatCurrency(shippingFee) : 'Miễn phí' }}
+                    </span>
+                  </td>
                 </tr>
                 <tr *ngIf="couponDiscount > 0">
-                  <td>Giảm giá (mã)</td>
+                  <td>
+                    Giảm giá (mã)
+                    <div class="applied-coupons-list" *ngIf="appliedCoupons.length > 0">
+                      <small *ngFor="let c of appliedCoupons" class="coupon-badge">
+                        {{ c.code }}
+                      </small>
+                    </div>
+                  </td>
                   <td class="text-danger">-{{ formatCurrency(couponDiscount) }}</td>
                 </tr>
                 <tr class="total-row">
@@ -294,17 +443,29 @@
                 <span>Số lượng sản phẩm</span>
                 <strong>{{ getTotalItems() }}</strong>
               </div>
-              <div class="detail-line">
-                <span>Phương thức thanh toán</span>
-                <strong>{{
-                  paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt khi nhận hàng'
-                }}</strong>
-              </div>
             </div>
 
             <!-- Discount Code / Voucher -->
             <div class="voucher-section">
               <label class="form-label">Mã giảm giá</label>
+              <!-- ✅ Hiển thị danh sách phiếu đã chọn -->
+              <div class="applied-coupons-summary" *ngIf="appliedCoupons.length > 0">
+                <div class="applied-coupons-header">
+                  <strong>Đã chọn {{ appliedCoupons.length }} phiếu giảm giá:</strong>
+                  <button type="button" class="btn-remove-all" (click)="removeCoupon()" title="Bỏ tất cả">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div class="applied-coupons-list">
+                  <div *ngFor="let c of appliedCoupons" class="applied-coupon-item">
+                    <span class="coupon-code">{{ c.code }}</span>
+                    <span class="coupon-discount">-{{ formatCurrency(computeVoucherDiscount(c, getSubtotal() - getDiscount())) }}</span>
+                    <button type="button" class="btn-remove-single" (click)="removeCoupon(c.id)" title="Bỏ">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
               <div class="voucher-input-container">
                 <div class="voucher-input-row">
                   <input
@@ -317,15 +478,16 @@
                   <button
                     type="button"
                     class="btn-remove-coupon"
-                    *ngIf="appliedCoupon"
+                    *ngIf="appliedCoupons.length > 0"
                     (click)="removeCoupon()"
                   >
-                    Bỏ
+                    Bỏ tất cả ({{ appliedCoupons.length }})
                   </button>
                 </div>
               </div>
-              <div class="voucher-list-container" *ngIf="displayedVouchers.length > 0">
-                <div class="voucher-list">
+              <!-- ✅ Luôn hiển thị container để user thấy vùng phiếu giảm giá -->
+              <div class="voucher-list-container">
+                <div class="voucher-list" *ngIf="displayedVouchers.length > 0">
                   <div
                     class="voucher-card"
                     *ngFor="let v of displayedVouchers; let i = index"
@@ -350,13 +512,12 @@
                     <div class="voucher-actions">
                       <label class="form-check m-0">
                         <input
-                          type="radio"
+                          type="checkbox"
                           class="form-check-input"
-                          name="voucherChoice"
-                          [checked]="appliedCoupon?.code === v.code"
+                          [checked]="isCouponApplied(v.id)"
                           (change)="applyCouponFromSuggestion(v)"
                         />
-                        <span>Chọn</span>
+                        <span>{{ isCouponApplied(v.id) ? 'Đã chọn' : 'Chọn' }}</span>
                       </label>
                     </div>
                   </div>
@@ -370,71 +531,8 @@
                     {{ allVouchers.length - maxDisplayedVouchers }} phiếu giảm giá khác...
                   </button>
                 </div>
-                <div class="text-muted small text-center py-2" *ngIf="allVouchers.length === 0">
-                  Không có mã giảm giá phù hợp
-                </div>
-              </div>
-            </div>
-
-            <!-- Payment Methods -->
-            <div class="payment-methods">
-              <h3>Phương thức thanh toán</h3>
-
-              <div class="payment-option">
-                <input
-                  type="radio"
-                  id="paymentCash"
-                  name="paymentMethod"
-                  value="cash"
-                  [(ngModel)]="paymentMethod"
-                />
-                <label for="paymentCash">
-                  <strong>Trả tiền mặt khi nhận hàng</strong>
-                  <p>Trả tiền mặt khi giao hàng.</p>
-                </label>
-              </div>
-
-              <div class="payment-option">
-                <input
-                  type="radio"
-                  id="paymentTransfer"
-                  name="paymentMethod"
-                  value="transfer"
-                  [(ngModel)]="paymentMethod"
-                />
-                <label for="paymentTransfer">
-                  <strong>Chuyển khoản ngân hàng</strong>
-                  <p>Chuyển khoản trực tiếp vào tài khoản ngân hàng của chúng tôi.</p>
-                </label>
-              </div>
-
-              <!-- Bank Transfer Info -->
-              <div *ngIf="paymentMethod === 'transfer'" class="bank-info">
-                <div class="bank-details">
-                  <p><strong>Ngân hàng:</strong> {{ bankInfo.bankName }}</p>
-                  <p><strong>Số tài khoản:</strong> {{ bankInfo.accountNumber }}</p>
-                  <p><strong>Chủ tài khoản:</strong> {{ bankInfo.accountName }}</p>
-                  <p><strong>Số tiền:</strong> {{ formatCurrency(getTotal()) }}</p>
-                </div>
-
-                <div class="bank-qr">
-                  <img [src]="getBankTransferQrUrl()" alt="QR chuyển khoản" />
-                  <span>Quét QR để thanh toán nhanh</span>
-                </div>
-
-                <div class="transaction-code">
-                  <label>Mã giao dịch (tự động sinh):</label>
-                  <div class="code-display">
-                    <input type="text" [value]="transactionCode" readonly class="code-input" />
-                    <button class="btn-copy" (click)="copyTransactionCode()" title="Sao chép mã">
-                      <i class="fas fa-copy"></i>
-                    </button>
-                  </div>
-                  <p class="code-note">
-                    <i class="fas fa-info-circle"></i>
-                    Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
-                    thanh toán.
-                  </p>
+                <div class="text-muted small text-center py-2" *ngIf="allVouchers.length === 0 && displayedVouchers.length === 0">
+                  <i class="fas fa-info-circle"></i> Không có mã giảm giá phù hợp
                 </div>
               </div>
             </div>
@@ -447,10 +545,13 @@
               <i class="fas fa-shopping-bag"></i>
               {{ isSubmitting ? 'Đang xử lý...' : 'ĐẶT HÀNG' }}
             </button>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
+  </main>
 
     <!-- Order Confirmation Modal -->
     <div *ngIf="showOrderConfirmation && orderSummary" class="order-confirmation-modal">
@@ -544,8 +645,19 @@
               <span>-{{ formatCurrency(orderSummary.discount) }}</span>
             </div>
             <div *ngIf="orderSummary.couponDiscount > 0" class="total-row">
-              <span>Giảm giá (mã):</span>
+              <span>
+                Giảm giá (mã):
+                <div class="applied-coupons-list" *ngIf="orderSummary.appliedCoupons && orderSummary.appliedCoupons.length > 0">
+                  <small *ngFor="let c of orderSummary.appliedCoupons" class="coupon-badge">
+                    {{ c.code }}
+                  </small>
+                </div>
+              </span>
               <span class="text-danger">-{{ formatCurrency(orderSummary.couponDiscount) }}</span>
+            </div>
+            <div *ngIf="orderSummary.shippingFee > 0" class="total-row">
+              <span>Phí vận chuyển:</span>
+              <span>{{ formatCurrency(orderSummary.shippingFee) }}</span>
             </div>
             <div class="total-row total">
               <span><strong>Tổng cộng:</strong></span>
@@ -798,13 +910,12 @@
               <div class="voucher-actions">
                 <label class="form-check m-0">
                   <input
-                    type="radio"
+                    type="checkbox"
                     class="form-check-input"
-                    name="voucherChoiceModal"
-                    [checked]="appliedCoupon?.code === v.code"
-                    (change)="applyCouponFromSuggestion(v); closeVoucherModal()"
+                    [checked]="isCouponApplied(v.id)"
+                    (change)="applyCouponFromSuggestion(v)"
                   />
-                  <span>Chọn</span>
+                  <span>{{ isCouponApplied(v.id) ? 'Đã chọn' : 'Chọn' }}</span>
                 </label>
               </div>
             </div>
@@ -821,7 +932,6 @@
         </div>
       </div>
     </div>
-  </main>
 
   <app-shop-footer></app-shop-footer>
 

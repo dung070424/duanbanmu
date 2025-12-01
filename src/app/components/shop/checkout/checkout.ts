@@ -8,6 +8,11 @@ import { AuthService } from '../../../services/auth';
 import { CustomerAddressService } from '../../../services/customer-address.service';
 import { CustomerService } from '../../../services/customer.service';
 import { PhieuGiamGiaService } from '../../../services/phieu-giam-gia.service';
+import { GHNService } from '../../../services/ghn.service';
+import { VietnamAddressService, Province, District, Ward } from '../../../services/vietnam-address.service';
+import provincesData from 'sub-vn/json_data/provinces.json';
+import districtsData from 'sub-vn/json_data/districts.json';
+import wardsData from 'sub-vn/json_data/wards.json';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
 import { ShopFooterComponent } from '../shared/shop-footer.component';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
@@ -97,12 +102,37 @@ export class CheckoutComponent implements OnInit {
     maxDiscount?: number;
     minOrder?: number;
   } | null = null;
+  // ✅ Hỗ trợ nhiều phiếu giảm giá
+  appliedCoupons: Array<{
+    id: number;
+    code: string;
+    type: 'PERCENT' | 'FIXED';
+    value: number;
+    maxDiscount?: number;
+    minOrder?: number;
+  }> = [];
   couponDiscount: number = 0;
   displayedVouchers: any[] = [];
   allVouchers: any[] = [];
   maxDisplayedVouchers: number = 3;
   showVoucherModal: boolean = false;
   voucherModalSearchTerm: string = '';
+
+  // Shipping fee
+  shippingFee: number = 0; // Phí ship (mặc định 0, sẽ được tính tự động)
+  isCalculatingShippingFee: boolean = false; // Flag để hiển thị loading khi tính phí ship
+  DEFAULT_SHIPPING_FEE: number = 0; // Phí ship mặc định (0 = không có phí mặc định)
+
+  // Vietnam Address Dropdowns
+  provinces: Province[] = [];
+  districts: District[] = [];
+  wards: Ward[] = [];
+  selectedProvinceCode: string = '';
+  selectedDistrictCode: string = '';
+  selectedWardCode: string = '';
+  loadingProvinces: boolean = false;
+  loadingDistricts: boolean = false;
+  loadingWards: boolean = false;
 
   constructor(
     private hoaDonChoService: HoaDonChoService,
@@ -111,6 +141,8 @@ export class CheckoutComponent implements OnInit {
     private customerAddressService: CustomerAddressService,
     private customerService: CustomerService,
     private phieuGiamGiaService: PhieuGiamGiaService,
+    private ghnService: GHNService,
+    private vietnamAddressService: VietnamAddressService,
     private router: Router,
     private route: ActivatedRoute,
     private location: Location,
@@ -207,7 +239,15 @@ export class CheckoutComponent implements OnInit {
 
     // Generate transaction code
     this.generateTransactionCode();
-    this.refreshVoucherSuggestions();
+    
+    // Load danh sách tỉnh/thành phố
+    this.loadProvinces();
+    
+    // ✅ Gọi refreshVoucherSuggestions ngay cả khi chưa có cart
+    // để hiển thị phiếu giảm giá cho user
+    setTimeout(() => {
+      this.refreshVoucherSuggestions();
+    }, 500);
   }
 
   /**
@@ -269,6 +309,11 @@ export class CheckoutComponent implements OnInit {
             this.cart.danhSachGioHang?.length || 0
           );
 
+          // ✅ Refresh voucher suggestions sau khi cart đã load xong
+          setTimeout(() => {
+            this.refreshVoucherSuggestions();
+          }, 100);
+
           // Force change detection để hiển thị giỏ hàng ngay lập tức
           this.cdr.detectChanges();
         } else {
@@ -327,6 +372,11 @@ export class CheckoutComponent implements OnInit {
               '✅ loadCart - Cart loaded successfully, items:',
               cart.danhSachGioHang.length
             );
+
+            // ✅ Refresh voucher suggestions sau khi cart đã load xong
+            setTimeout(() => {
+              this.refreshVoucherSuggestions();
+            }, 100);
 
             // Force change detection để hiển thị giỏ hàng ngay lập tức
             this.cdr.detectChanges();
@@ -535,6 +585,61 @@ export class CheckoutComponent implements OnInit {
     if (address.tinhThanh) addressParts.push(address.tinhThanh);
     this.billingInfo.city = addressParts.join(', ') || '';
 
+    // Tìm và set dropdown values từ tên địa chỉ
+    if (address.tinhThanh && this.provinces.length > 0) {
+      const province = this.provinces.find(p => p.name === address.tinhThanh);
+      if (province) {
+        this.selectedProvinceCode = province.code;
+        this.loadDistrictsByProvince(province.code);
+        
+        // Đợi districts load xong rồi mới set district
+        setTimeout(() => {
+          if (address.quanHuyen && this.districts.length > 0) {
+            const district = this.districts.find(d => d.name === address.quanHuyen);
+            if (district) {
+              this.selectedDistrictCode = district.code;
+              this.loadWardsByDistrict(district.code);
+              
+              // Đợi wards load xong rồi mới set ward và tính phí ship
+              setTimeout(() => {
+                if (address.phuongXa && this.wards.length > 0) {
+                  const ward = this.wards.find(w => w.name === address.phuongXa);
+                  if (ward) {
+                    this.selectedWardCode = ward.code;
+                  }
+                }
+                
+                // Tính phí ship sau khi đã set xong tất cả dropdown values
+                console.log('🔄 Calculating shipping fee after loading address dropdowns...');
+                this.calculateShippingFeeAuto();
+                this.cdr.detectChanges();
+              }, 500);
+            } else {
+              // Nếu không tìm thấy district, vẫn tính phí ship với thông tin có
+              console.log('⚠️ District not found, calculating shipping fee with available info...');
+              this.calculateShippingFeeAuto();
+              this.cdr.detectChanges();
+            }
+          } else {
+            // Nếu không có district, vẫn tính phí ship với thông tin có
+            console.log('⚠️ No district info, calculating shipping fee with available info...');
+            this.calculateShippingFeeAuto();
+            this.cdr.detectChanges();
+          }
+        }, 500);
+      } else {
+        // Nếu không tìm thấy province, vẫn tính phí ship với thông tin có
+        console.log('⚠️ Province not found, calculating shipping fee with available info...');
+        this.calculateShippingFeeAuto();
+        this.cdr.detectChanges();
+      }
+    } else {
+      // Nếu không có provinces hoặc không có tinhThanh, vẫn tính phí ship với thông tin có
+      console.log('⚠️ No province info or provinces not loaded, calculating shipping fee with available info...');
+      this.calculateShippingFeeAuto();
+      this.cdr.detectChanges();
+    }
+
     // Số điện thoại từ địa chỉ (nếu có) hoặc giữ nguyên từ customer info
     if (address.soDienThoai) {
       this.billingInfo.phone = address.soDienThoai;
@@ -558,6 +663,9 @@ export class CheckoutComponent implements OnInit {
       phone: this.billingInfo.phone,
       firstName: this.billingInfo.firstName,
       lastName: this.billingInfo.lastName,
+      selectedProvinceCode: this.selectedProvinceCode,
+      selectedDistrictCode: this.selectedDistrictCode,
+      selectedWardCode: this.selectedWardCode,
     });
 
     // Force change detection để cập nhật form ngay lập tức
@@ -569,7 +677,12 @@ export class CheckoutComponent implements OnInit {
       const address = this.customerAddresses.find((a) => a.id === this.selectedAddressId);
       if (address) {
         this.loadAddressInfo(address);
+        // Tự động tính phí ship khi địa chỉ thay đổi
+        this.calculateShippingFeeAuto();
       }
+    } else {
+      // Nếu không chọn địa chỉ, tính phí ship từ thông tin form hiện tại
+      this.calculateShippingFeeAuto();
     }
 
     // Force change detection để cập nhật form ngay lập tức
@@ -645,6 +758,8 @@ export class CheckoutComponent implements OnInit {
         this.billingInfo.lastName = newAddress.tenNguoiNhan.split(' ').slice(1).join(' ') || '';
         // Hide form
         this.showAddAddressForm = false;
+        // Tự động tính phí ship khi lưu địa chỉ mới
+        this.calculateShippingFeeAuto();
 
         // Force change detection để cập nhật UI ngay lập tức
         this.cdr.detectChanges();
@@ -690,6 +805,8 @@ export class CheckoutComponent implements OnInit {
       subtotal: this.getSubtotal(),
       discount: this.getDiscount(),
       couponDiscount: this.couponDiscount,
+      appliedCoupons: [...this.appliedCoupons], // ✅ Danh sách phiếu giảm giá đã chọn
+      shippingFee: this.shippingFee,
       total: this.getTotal(),
       orderNotes: this.orderNotes,
     };
@@ -1111,15 +1228,20 @@ export class CheckoutComponent implements OnInit {
       soDienThoaiKhachHang: this.billingInfo?.phone || '',
       emailKhachHang: this.billingInfo?.email || '',
       diaChiChiTiet: this.billingInfo?.address || '',
-      tinhThanh:
-        this.billingInfo?.city && this.billingInfo.city.split(',').length > 2
+      // Ưu tiên lấy từ dropdown (chính xác hơn) để mapping đúng sang thông tin đơn hàng
+      tinhThanh: this.selectedProvinceCode
+        ? (this.provinces.find(p => p.code === this.selectedProvinceCode)?.name || '')
+        : (this.billingInfo?.city && this.billingInfo.city.split(',').length > 2
           ? this.billingInfo.city.split(',')[2]?.trim()
-          : this.billingInfo?.city || '',
-      quanHuyen:
-        this.billingInfo?.city && this.billingInfo.city.split(',').length > 1
+          : this.billingInfo?.city || ''),
+      quanHuyen: this.selectedDistrictCode
+        ? (this.districts.find(d => d.code === this.selectedDistrictCode)?.name || '')
+        : (this.billingInfo?.city && this.billingInfo.city.split(',').length > 1
           ? this.billingInfo.city.split(',')[1]?.trim()
-          : '',
-      phuongXa: this.billingInfo?.city?.split(',')[0]?.trim() || '',
+          : ''),
+      phuongXa: this.selectedWardCode
+        ? (this.wards.find(w => w.code === this.selectedWardCode)?.name || '')
+        : (this.billingInfo?.city?.split(',')[0]?.trim() || ''),
       ghiChu: this.orderNotes || '',
       trangThai: 'CHO_XAC_NHAN',
       // KHÔNG set nhanVienId - để null = Online order
@@ -1130,7 +1252,9 @@ export class CheckoutComponent implements OnInit {
       tongTien: this.getSubtotal(),
       thanhTien: this.getTotal(),
       tienGiamGia: (this.getDiscount() || 0) + (this.couponDiscount || 0),
-      phieuGiamGiaId: this.appliedCoupon?.id || null,
+      phiGiaoHang: this.shippingFee || 0, // Phí ship đã được tính tự động
+      phieuGiamGiaId: this.appliedCoupons.length > 0 ? this.appliedCoupons[0].id : (this.appliedCoupon?.id || null),
+      phieuGiamGiaIds: this.appliedCoupons.map(c => c.id), // ✅ Danh sách ID các phiếu giảm giá
       soLuongSanPham: this.getTotalItems(),
     };
 
@@ -1387,26 +1511,215 @@ export class CheckoutComponent implements OnInit {
     const discount = this.getDiscount();
     const base = Math.max(0, subtotal - discount);
 
-    // Tính coupon discount
+    // ✅ Tính coupon discount cho nhiều phiếu giảm giá
     this.couponDiscount = 0;
-    if (this.appliedCoupon) {
-      if (this.appliedCoupon.minOrder && base < this.appliedCoupon.minOrder) {
-        this.couponDiscount = 0;
-      } else if (this.appliedCoupon.type === 'PERCENT') {
-        this.couponDiscount = (base * this.appliedCoupon.value) / 100;
-        if (
-          this.appliedCoupon.maxDiscount !== undefined &&
-          this.appliedCoupon.maxDiscount !== null
-        ) {
-          this.couponDiscount = Math.min(this.couponDiscount, this.appliedCoupon.maxDiscount);
+    let remainingBase = base; // Số tiền còn lại sau mỗi lần giảm giá
+    
+    // Áp dụng từng phiếu giảm giá theo thứ tự
+    for (const coupon of this.appliedCoupons) {
+      if (coupon.minOrder && remainingBase < coupon.minOrder) {
+        continue; // Bỏ qua phiếu không đủ điều kiện
+      }
+      
+      let discount = 0;
+      if (coupon.type === 'PERCENT') {
+        discount = (remainingBase * coupon.value) / 100;
+        if (coupon.maxDiscount !== undefined && coupon.maxDiscount !== null) {
+          discount = Math.min(discount, coupon.maxDiscount);
         }
       } else {
-        this.couponDiscount = this.appliedCoupon.value;
+        discount = coupon.value;
       }
-      this.couponDiscount = Math.min(this.couponDiscount, base);
+      
+      // Đảm bảo không giảm quá số tiền còn lại
+      discount = Math.min(discount, remainingBase);
+      this.couponDiscount += discount;
+      remainingBase -= discount;
+      
+      // Nếu đã hết tiền để giảm, dừng lại
+      if (remainingBase <= 0) break;
+    }
+    
+    // Giữ tương thích với appliedCoupon cũ (nếu có)
+    if (this.appliedCoupon && !this.appliedCoupons.find(c => c.id === this.appliedCoupon!.id)) {
+      if (!this.appliedCoupon.minOrder || base >= this.appliedCoupon.minOrder) {
+        let discount = 0;
+        if (this.appliedCoupon.type === 'PERCENT') {
+          discount = (remainingBase * this.appliedCoupon.value) / 100;
+          if (this.appliedCoupon.maxDiscount !== undefined && this.appliedCoupon.maxDiscount !== null) {
+            discount = Math.min(discount, this.appliedCoupon.maxDiscount);
+          }
+        } else {
+          discount = this.appliedCoupon.value;
+        }
+        discount = Math.min(discount, remainingBase);
+        this.couponDiscount += discount;
+      }
     }
 
-    return Math.max(0, base - this.couponDiscount);
+    // Thêm phí ship vào tổng tiền
+    return Math.max(0, base - this.couponDiscount + this.shippingFee);
+  }
+
+  /**
+   * Tự động tính phí ship khi địa chỉ thay đổi
+   * - Nếu địa chỉ có thật (validate được qua GHN API) → tính theo API
+   * - Nếu địa chỉ không có thật (không validate được) → phí ship = 0
+   */
+  calculateShippingFeeAuto(): void {
+    // Lấy thông tin địa chỉ từ form hoặc địa chỉ đã chọn
+    let tinhThanh = '';
+    let quanHuyen = '';
+    let phuongXa = '';
+
+    if (this.selectedAddressId) {
+      const address = this.customerAddresses.find((a) => a.id === this.selectedAddressId);
+      if (address) {
+        tinhThanh = address.tinhThanh || '';
+        quanHuyen = address.quanHuyen || '';
+        phuongXa = address.phuongXa || '';
+      }
+    } else {
+      // Ưu tiên lấy từ dropdown (chính xác hơn)
+      if (this.selectedProvinceCode) {
+        const province = this.provinces.find(p => p.code === this.selectedProvinceCode);
+        if (province) {
+          tinhThanh = province.name;
+        }
+      }
+      if (this.selectedDistrictCode) {
+        const district = this.districts.find(d => d.code === this.selectedDistrictCode);
+        if (district) {
+          quanHuyen = district.name;
+        }
+      }
+      if (this.selectedWardCode) {
+        const ward = this.wards.find(w => w.code === this.selectedWardCode);
+        if (ward) {
+          phuongXa = ward.name;
+        }
+      }
+
+      // Fallback: Nếu không có từ dropdown, lấy từ form billingInfo.city
+      if (!tinhThanh) {
+        const cityParts = this.billingInfo.city ? this.billingInfo.city.split(',') : [];
+        if (cityParts.length >= 3) {
+          phuongXa = phuongXa || cityParts[0]?.trim() || '';
+          quanHuyen = quanHuyen || cityParts[1]?.trim() || '';
+          tinhThanh = tinhThanh || cityParts[2]?.trim() || '';
+        } else if (cityParts.length > 0) {
+          tinhThanh = tinhThanh || cityParts[cityParts.length - 1]?.trim() || '';
+        }
+      }
+    }
+
+    // Kiểm tra có đủ thông tin để tính phí ship không
+    if (!tinhThanh || tinhThanh.trim() === '') {
+      console.log('⚠️ Không có thông tin tỉnh/thành phố, sử dụng phí ship mặc định');
+      this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Kiểm tra có quận/huyện không (bắt buộc để tính phí ship chính xác)
+    if (!quanHuyen || quanHuyen.trim() === '') {
+      console.log('⚠️ Không có thông tin quận/huyện, sử dụng phí ship mặc định');
+      this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Tính trọng lượng từ giỏ hàng (mặc định mỗi sản phẩm 500g nếu không có thông tin)
+    const totalWeight = this.getTotalItems() * 500 || 1000; // Tối thiểu 1kg
+
+    // Giá trị đơn hàng
+    const orderValue = this.getSubtotal() - this.getDiscount();
+
+    this.isCalculatingShippingFee = true;
+    console.log('🚚 Calculating shipping fee for address:', { tinhThanh, quanHuyen, phuongXa });
+
+    // Tìm district_id từ district code để gửi cho GHN API
+    let districtId = 0;
+    if (this.selectedDistrictCode && quanHuyen) {
+      // Sử dụng district code trực tiếp (backend sẽ xử lý mapping)
+      const districtIdStr = this.selectedDistrictCode;
+      districtId = parseInt(districtIdStr, 10) || 0;
+      console.log('📍 Using district code for GHN API:', districtId, 'from district:', quanHuyen);
+    } else if (this.selectedAddressId) {
+      // Nếu đang chọn địa chỉ đã lưu nhưng chưa có district code, thử tìm lại
+      const address = this.customerAddresses.find((a) => a.id === this.selectedAddressId);
+      if (address && address.quanHuyen && this.districts.length > 0) {
+        const district = this.districts.find(d => d.name === address.quanHuyen);
+        if (district) {
+          this.selectedDistrictCode = district.code;
+          districtId = parseInt(district.code, 10) || 0;
+          console.log('📍 Found district code from address:', districtId);
+        }
+      }
+    }
+
+    // Gọi GHN API để tính phí ship
+    const ghnRequest = {
+      province: tinhThanh,
+      to_district_id: districtId || 0, // Backend sẽ xử lý mapping từ tên quận/huyện nếu districtId = 0
+      to_ward_code: phuongXa || undefined,
+      weight: totalWeight,
+      length: 20,
+      width: 20,
+      height: 20,
+      insurance_value: Math.round(orderValue),
+    };
+
+    this.ghnService.calculateShippingFeeViaBackend(ghnRequest).subscribe({
+      next: (ghnResponse) => {
+        console.log('✅ GHN API response:', ghnResponse);
+        this.isCalculatingShippingFee = false;
+
+        // Kiểm tra response từ GHN API
+        let newShippingFee = this.DEFAULT_SHIPPING_FEE;
+        
+        if (ghnResponse && ghnResponse.code === 200 && ghnResponse.data) {
+          // Kiểm tra nhiều format response
+          if (ghnResponse.data.total) {
+            newShippingFee = Number(ghnResponse.data.total) || this.DEFAULT_SHIPPING_FEE;
+          } else if (typeof ghnResponse.data === 'number') {
+            newShippingFee = Number(ghnResponse.data) || this.DEFAULT_SHIPPING_FEE;
+          }
+          
+          if (newShippingFee > 0) {
+            // Địa chỉ có thật, tính phí ship theo API
+            this.shippingFee = newShippingFee;
+            console.log('💰 Shipping fee calculated from GHN API:', this.shippingFee, 'VNĐ');
+          } else {
+            // Nếu API trả về giá trị không hợp lý, dùng mặc định
+            console.warn('⚠️ GHN API returned invalid fee, using default shipping fee');
+            this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+          }
+        } else {
+          // Không validate được địa chỉ hoặc API lỗi, sử dụng phí mặc định
+          console.warn('⚠️ Cannot validate address via GHN API, using default shipping fee');
+          this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+        }
+
+        // Force change detection để đảm bảo UI cập nhật ngay lập tức
+        console.log('🔄 Updated shipping fee to:', this.shippingFee, 'VNĐ');
+        console.log('🔄 Total will be:', this.getTotal(), 'VNĐ');
+        this.cdr.detectChanges();
+        
+        // Trigger change detection một lần nữa để đảm bảo UI được cập nhật
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        }, 100);
+      },
+      error: (ghnError) => {
+        console.error('❌ Error calling GHN API:', ghnError);
+        this.isCalculatingShippingFee = false;
+        // Lỗi API → sử dụng phí mặc định
+        console.warn('⚠️ GHN API error, using default shipping fee');
+        this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   getTotalItems(): number {
@@ -1417,6 +1730,273 @@ export class CheckoutComponent implements OnInit {
     return this.cart.danhSachGioHang.reduce((sum, item) => {
       return sum + (item.soLuong || 0);
     }, 0);
+  }
+
+  /**
+   * Load danh sách tỉnh/thành phố
+   */
+  loadProvinces(): void {
+    // Nếu đã load rồi thì không load lại
+    if (this.provinces.length > 0) {
+      console.log('✅ Provinces already loaded:', this.provinces.length);
+      return;
+    }
+
+    this.loadingProvinces = true;
+    console.log('🔄 Loading provinces from local data...');
+    
+    try {
+      // Sử dụng dữ liệu local từ sub-vn package thay vì gọi API
+      this.provinces = provincesData as any as Array<{ code: string; name: string }>;
+      this.loadingProvinces = false;
+      console.log('✅ Loaded provinces from local data:', this.provinces.length);
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('❌ Error loading provinces from local data:', error);
+      // Fallback: thử gọi API nếu local data không có
+      this.vietnamAddressService.getProvinces().subscribe({
+        next: (provinces) => {
+          this.provinces = provinces || [];
+          this.loadingProvinces = false;
+          console.log('✅ Loaded provinces from API (fallback):', this.provinces.length);
+          this.cdr.detectChanges();
+        },
+        error: (apiError) => {
+          console.error('❌ Error loading provinces from API:', apiError);
+          this.loadingProvinces = false;
+          this.provinces = [];
+          this.error = 'Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại sau.';
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  /**
+   * Load danh sách quận/huyện theo tỉnh
+   */
+  loadDistrictsByProvince(provinceCode: string): void {
+    if (!provinceCode || provinceCode === '') {
+      this.districts = [];
+      this.wards = [];
+      this.selectedDistrictCode = '';
+      this.selectedWardCode = '';
+      return;
+    }
+
+    console.log('🔄 Loading districts for province code:', provinceCode);
+    this.loadingDistricts = true;
+    this.districts = [];
+    this.wards = [];
+    this.selectedDistrictCode = '';
+    this.selectedWardCode = '';
+
+    try {
+      // Sử dụng dữ liệu local từ sub-vn package
+      const allDistricts = districtsData as any as Array<{
+        code: string;
+        name: string;
+        province_code: string;
+      }>;
+      this.districts = allDistricts.filter((d) => d.province_code === provinceCode);
+      this.loadingDistricts = false;
+      console.log('✅ Loaded districts from local data:', this.districts.length);
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('❌ Error loading districts from local data:', error);
+      // Fallback: thử gọi API
+      this.vietnamAddressService.getDistrictsByProvince(provinceCode).subscribe({
+        next: (districts) => {
+          this.districts = districts || [];
+          this.loadingDistricts = false;
+          console.log('✅ Loaded districts from API (fallback):', this.districts.length);
+          this.cdr.detectChanges();
+        },
+        error: (apiError) => {
+          console.error('❌ Error loading districts from API:', apiError);
+          this.loadingDistricts = false;
+          this.districts = [];
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  /**
+   * Load danh sách phường/xã theo quận/huyện
+   */
+  loadWardsByDistrict(districtCode: string): void {
+    if (!districtCode || districtCode === '') {
+      this.wards = [];
+      this.selectedWardCode = '';
+      return;
+    }
+
+    console.log('🔄 Loading wards for district code:', districtCode);
+    this.loadingWards = true;
+    this.wards = [];
+    this.selectedWardCode = '';
+
+    try {
+      // Sử dụng dữ liệu local từ sub-vn package
+      const allWards = wardsData as any as Array<{
+        code: string;
+        name: string;
+        district_code: string;
+      }>;
+      this.wards = allWards.filter((w) => w.district_code === districtCode);
+      this.loadingWards = false;
+      console.log('✅ Loaded wards from local data:', this.wards.length);
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('❌ Error loading wards from local data:', error);
+      // Fallback: thử gọi API
+      this.vietnamAddressService.getWardsByDistrict(districtCode).subscribe({
+        next: (wards) => {
+          this.wards = wards || [];
+          this.loadingWards = false;
+          console.log('✅ Loaded wards from API (fallback):', this.wards.length);
+          this.cdr.detectChanges();
+        },
+        error: (apiError) => {
+          console.error('❌ Error loading wards from API:', apiError);
+          this.loadingWards = false;
+          this.wards = [];
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  /**
+   * Xử lý khi chọn tỉnh/thành phố
+   */
+  onProvinceChange(): void {
+    console.log('📍 Province changed:', this.selectedProvinceCode);
+    
+    // Reset districts và wards khi chọn tỉnh mới
+    if (!this.selectedProvinceCode || this.selectedProvinceCode === '') {
+      this.districts = [];
+      this.wards = [];
+      this.selectedDistrictCode = '';
+      this.selectedWardCode = '';
+      // Reset phí ship về mặc định khi không có tỉnh
+      this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const province = this.provinces.find(p => p.code === this.selectedProvinceCode);
+    if (province) {
+      console.log('✅ Found province:', province.name);
+      
+      // Cập nhật billingInfo.city với tên tỉnh
+      const cityParts = this.billingInfo.city ? this.billingInfo.city.split(',') : [];
+      if (cityParts.length >= 2) {
+        // Giữ nguyên phường/xã và quận/huyện, chỉ cập nhật tỉnh
+        this.billingInfo.city = `${cityParts[0]?.trim() || ''}, ${cityParts[1]?.trim() || ''}, ${province.name}`.trim();
+      } else {
+        this.billingInfo.city = province.name;
+      }
+      
+      // Load districts
+      this.loadDistrictsByProvince(province.code);
+      
+      // Tính lại phí ship sau khi load districts (chỉ khi đã có quận/huyện)
+      if (this.selectedDistrictCode) {
+        setTimeout(() => {
+          this.calculateShippingFeeAuto();
+        }, 500);
+      } else {
+        // Nếu chưa có quận/huyện, reset về mặc định
+        this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+        this.cdr.detectChanges();
+      }
+    } else {
+      console.warn('⚠️ Province not found for code:', this.selectedProvinceCode);
+    }
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Xử lý khi chọn quận/huyện
+   */
+  onDistrictChange(): void {
+    console.log('📍 District changed:', this.selectedDistrictCode);
+    
+    // Reset wards khi chọn quận/huyện mới
+    if (!this.selectedDistrictCode || this.selectedDistrictCode === '') {
+      this.wards = [];
+      this.selectedWardCode = '';
+      // Reset phí ship về mặc định khi không có quận/huyện
+      this.shippingFee = this.DEFAULT_SHIPPING_FEE;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const district = this.districts.find(d => d.code === this.selectedDistrictCode);
+    if (district) {
+      console.log('✅ Found district:', district.name);
+      
+      // Cập nhật billingInfo.city với tên quận/huyện
+      const cityParts = this.billingInfo.city ? this.billingInfo.city.split(',') : [];
+      const province = this.provinces.find(p => p.code === this.selectedProvinceCode);
+      if (cityParts.length >= 1) {
+        // Giữ nguyên phường/xã, cập nhật quận/huyện và tỉnh
+        this.billingInfo.city = `${cityParts[0]?.trim() || ''}, ${district.name}, ${province?.name || ''}`.trim();
+      } else {
+        this.billingInfo.city = `${district.name}, ${province?.name || ''}`.trim();
+      }
+      
+      // Load wards
+      this.loadWardsByDistrict(district.code);
+      
+      // Tính lại phí ship ngay khi có đủ tỉnh và quận/huyện
+      if (this.selectedProvinceCode) {
+        setTimeout(() => {
+          console.log('🔄 Recalculating shipping fee after district change...');
+          this.calculateShippingFeeAuto();
+        }, 500);
+      }
+    } else {
+      console.warn('⚠️ District not found for code:', this.selectedDistrictCode);
+    }
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Xử lý khi chọn phường/xã
+   */
+  onWardChange(): void {
+    const ward = this.wards.find(w => w.code === this.selectedWardCode);
+    if (ward) {
+      // Cập nhật billingInfo.city với tên phường/xã
+      const district = this.districts.find(d => d.code === this.selectedDistrictCode);
+      const province = this.provinces.find(p => p.code === this.selectedProvinceCode);
+      this.billingInfo.city = `${ward.name}, ${district?.name || ''}, ${province?.name || ''}`.trim();
+      
+      // Tính lại phí ship sau khi có đủ thông tin (tỉnh và quận/huyện)
+      if (this.selectedProvinceCode && this.selectedDistrictCode) {
+        setTimeout(() => {
+          console.log('🔄 Recalculating shipping fee after ward change...');
+          this.calculateShippingFeeAuto();
+        }, 300);
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Xử lý khi người dùng nhập/thay đổi địa chỉ chi tiết
+   */
+  onAddressDetailChange(): void {
+    // Nếu đã có đủ thông tin tỉnh/quận, tính lại phí ship
+    if (this.selectedProvinceCode && this.selectedDistrictCode) {
+      // Debounce để tránh tính quá nhiều lần khi người dùng đang gõ
+      setTimeout(() => {
+        this.calculateShippingFeeAuto();
+      }, 500);
+    }
   }
 
   formatCurrency(amount: number): string {
@@ -1473,32 +2053,93 @@ export class CheckoutComponent implements OnInit {
 
   applyCouponFromSuggestion(v: any): void {
     const mapped = this.mapVoucher(v);
-    this.appliedCoupon = mapped;
-    this.couponCode = mapped.code;
+    // ✅ Kiểm tra xem phiếu đã được chọn chưa
+    const existingIndex = this.appliedCoupons.findIndex(c => c.id === mapped.id);
+    if (existingIndex >= 0) {
+      // Nếu đã chọn, bỏ chọn (toggle)
+      this.appliedCoupons.splice(existingIndex, 1);
+    } else {
+      // Nếu chưa chọn, thêm vào danh sách
+      this.appliedCoupons.push(mapped);
+    }
+    // Giữ tương thích với appliedCoupon cũ
+    this.appliedCoupon = this.appliedCoupons.length > 0 ? this.appliedCoupons[0] : null;
+    this.couponCode = '';
     this.cdr.detectChanges();
   }
 
-  removeCoupon(): void {
-    this.appliedCoupon = null;
-    this.couponCode = '';
+  removeCoupon(couponId?: number): void {
+    if (couponId !== undefined) {
+      // Xóa phiếu cụ thể
+      this.appliedCoupons = this.appliedCoupons.filter(c => c.id !== couponId);
+    } else {
+      // Xóa tất cả
+      this.appliedCoupons = [];
+      this.appliedCoupon = null;
+      this.couponCode = '';
+    }
     this.couponDiscount = 0;
     this.cdr.detectChanges();
   }
+  
+  isCouponApplied(couponId: number): boolean {
+    return this.appliedCoupons.some(c => c.id === couponId);
+  }
 
   private mapVoucher(v: any) {
-    return {
+    // ✅ Xử lý loaiPhieuGiamGia: Boolean - false = phần trăm, true = tiền mặt
+    let type: 'PERCENT' | 'FIXED' = 'PERCENT';
+    if (v.loaiPhieuGiamGia !== undefined) {
+      // Boolean: false = phần trăm (PERCENT), true = tiền mặt (FIXED)
+      type = v.loaiPhieuGiamGia === false ? 'PERCENT' : 'FIXED';
+    } else if (v.type !== undefined) {
+      // String hoặc number
+      const typeStr = String(v.type).toUpperCase();
+      type = typeStr === 'PERCENT' || typeStr === 'PHAN_TRAM' ? 'PERCENT' : 'FIXED';
+    } else if (v.loaiGiam !== undefined || v.kieuGiam !== undefined) {
+      const typeStr = String(v.loaiGiam ?? v.kieuGiam).toUpperCase();
+      type = typeStr === 'PERCENT' || typeStr === 'PHAN_TRAM' ? 'PERCENT' : 'FIXED';
+    }
+
+    // ✅ Xử lý giá trị giảm (giaTriGiam có thể là BigDecimal từ backend)
+    let value = 0;
+    if (v.giaTriGiam !== undefined && v.giaTriGiam !== null) {
+      value = typeof v.giaTriGiam === 'number' ? v.giaTriGiam : Number(v.giaTriGiam);
+    } else if (v.value !== undefined && v.value !== null) {
+      value = typeof v.value === 'number' ? v.value : Number(v.value);
+    } else if (v.giaTri !== undefined && v.giaTri !== null) {
+      value = typeof v.giaTri === 'number' ? v.giaTri : Number(v.giaTri);
+    }
+
+    // ✅ Xử lý số tiền tối đa (soTienToiDa có thể là BigDecimal)
+    let maxDiscount: number | undefined = undefined;
+    if (v.soTienToiDa !== undefined && v.soTienToiDa !== null) {
+      maxDiscount = typeof v.soTienToiDa === 'number' ? v.soTienToiDa : Number(v.soTienToiDa);
+    } else if (v.maxDiscount !== undefined && v.maxDiscount !== null) {
+      maxDiscount = typeof v.maxDiscount === 'number' ? v.maxDiscount : Number(v.maxDiscount);
+    } else if (v.giamToiDa !== undefined && v.giamToiDa !== null) {
+      maxDiscount = typeof v.giamToiDa === 'number' ? v.giamToiDa : Number(v.giamToiDa);
+    }
+
+    // ✅ Xử lý đơn tối thiểu (hoaDonToiThieu có thể là BigDecimal)
+    let minOrder: number | undefined = undefined;
+    if (v.hoaDonToiThieu !== undefined && v.hoaDonToiThieu !== null) {
+      minOrder = typeof v.hoaDonToiThieu === 'number' ? v.hoaDonToiThieu : Number(v.hoaDonToiThieu);
+    } else if (v.minOrder !== undefined && v.minOrder !== null) {
+      minOrder = typeof v.minOrder === 'number' ? v.minOrder : Number(v.minOrder);
+    } else if (v.dieuKienToiThieu !== undefined && v.dieuKienToiThieu !== null) {
+      minOrder = typeof v.dieuKienToiThieu === 'number' ? v.dieuKienToiThieu : Number(v.dieuKienToiThieu);
+    } else if (v.giaTriToiThieu !== undefined && v.giaTriToiThieu !== null) {
+      minOrder = typeof v.giaTriToiThieu === 'number' ? v.giaTriToiThieu : Number(v.giaTriToiThieu);
+    }
+
+    const mapped = {
       id: v.id ?? v.voucherId ?? 0,
       code: v.code ?? v.maPhieu ?? v.ma ?? '',
-      type:
-        (v.type ?? v.loaiPhieuGiamGia ?? v.loaiGiam ?? v.kieuGiam ?? 'PERCENT')
-          .toString()
-          .toUpperCase() === 'PERCENT'
-          ? 'PERCENT'
-          : 'FIXED',
-      value: Number(v.value ?? v.giaTri ?? v.giaTriGiam ?? 0),
-      maxDiscount: v.maxDiscount ?? v.giamToiDa ?? v.soTienToiDa ?? undefined,
-      minOrder:
-        v.minOrder ?? v.dieuKienToiThieu ?? v.hoaDonToiThieu ?? v.giaTriToiThieu ?? undefined,
+      type: type,
+      value: value,
+      maxDiscount: maxDiscount,
+      minOrder: minOrder,
     } as {
       id: number;
       code: string;
@@ -1507,53 +2148,203 @@ export class CheckoutComponent implements OnInit {
       maxDiscount?: number;
       minOrder?: number;
     };
+
+    console.log('🗺️ Mapped voucher:', mapped, 'from raw:', v);
+    return mapped;
   }
 
   private refreshVoucherSuggestions(): void {
-    const base = Math.max(0, this.getSubtotal() - this.getDiscount());
+    const subtotal = this.getSubtotal();
+    const discount = this.getDiscount();
+    const base = Math.max(0, subtotal - discount);
     const currentUser = this.authService.getCurrentUser();
     const customerId = currentUser?.id;
     const collected: any[] = [];
+    const voucherIds = new Set<number>(); // Để loại bỏ trùng lặp
 
-    // Lấy mã chung đang hoạt động
+    console.log('🔄 Refreshing voucher suggestions');
+    console.log('   - Subtotal:', subtotal);
+    console.log('   - Discount:', discount);
+    console.log('   - Base:', base);
+    console.log('   - CustomerId:', customerId);
+    console.log('   - Cart items:', this.isTempCart ? this.tempCart?.length : this.cart?.danhSachGioHang?.length);
+    
+    // Nếu base = 0, vẫn hiển thị phiếu để user biết có phiếu nào không
+    // (nhưng sẽ filter sau khi tính discount)
+
+    // ✅ Lấy TẤT CẢ phiếu đang hoạt động (bao gồm cả công khai và cá nhân)
+    // Sau đó frontend sẽ lọc: phiếu công khai hiển thị cho tất cả, phiếu cá nhân chỉ cho khách hàng có trong bảng
+    console.log('📡 Calling getActivePhieuGiamGia API...');
     this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
       next: (res: any) => {
-        const general = (res?.data || res?.content || res || []) as any[];
-        collected.push(...general);
+        console.log('✅ Active vouchers API response:', res);
+        // ApiResponse có structure: { success: true, data: [...], message: "..." }
+        let allActiveVouchers: any[] = [];
+        if (Array.isArray(res)) {
+          allActiveVouchers = res;
+        } else if (res?.data && Array.isArray(res.data)) {
+          allActiveVouchers = res.data;
+        } else if (res?.content && Array.isArray(res.content)) {
+          allActiveVouchers = res.content;
+        } else if (res?.success && res?.data && Array.isArray(res.data)) {
+          allActiveVouchers = res.data;
+        }
+        
+        console.log('📋 Extracted all active vouchers:', allActiveVouchers.length, allActiveVouchers);
+
+        // ✅ Lấy danh sách ID các phiếu cá nhân (nếu có đăng nhập)
         if (customerId) {
-          // Lấy toàn bộ mã cá nhân rồi lọc theo khách hàng hiện tại
           this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
             next: (pers: any) => {
-              const raw = pers?.data || pers?.content || pers || [];
-              const personal = (Array.isArray(raw) ? raw : [])
+              console.log('✅ Personal vouchers API response:', pers);
+              let raw: any[] = [];
+              if (Array.isArray(pers)) {
+                raw = pers;
+              } else if (pers?.data && Array.isArray(pers.data)) {
+                raw = pers.data;
+              } else if (pers?.content && Array.isArray(pers.content)) {
+                raw = pers.content;
+              } else if (pers?.success && pers?.data && Array.isArray(pers.data)) {
+                raw = pers.data;
+              }
+              
+              // Lấy danh sách ID các phiếu cá nhân của khách hàng này
+              const personalVoucherIds = new Set<number>();
+              raw
                 .filter((r: any) => (r?.khachHangId ?? r?.khachHang?.id) === customerId)
-                .map((r: any) => r?.phieuGiamGia || r?.voucher || r);
-              this.computeVoucherLists([...collected, ...personal], base);
+                .forEach((r: any) => {
+                  const voucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
+                  if (voucherId) {
+                    personalVoucherIds.add(voucherId);
+                  }
+                });
+              
+              console.log('📋 Personal voucher IDs for customer:', Array.from(personalVoucherIds));
+              
+              // ✅ Lọc phiếu để hiển thị:
+              // - Phiếu công khai: không có trong bảng phieu_giam_gia_ca_nhan HOẶC có nhưng không thuộc khách hàng này
+              // - Phiếu cá nhân: có trong bảng phieu_giam_gia_ca_nhan VÀ thuộc khách hàng này
+              const vouchersToShow = allActiveVouchers.filter((v: any) => {
+                const voucherId = v?.id;
+                if (!voucherId) return false;
+                
+                // Nếu phiếu có trong danh sách cá nhân của khách hàng này => hiển thị
+                if (personalVoucherIds.has(voucherId)) {
+                  console.log('✅ Voucher is personal for this customer:', v.code);
+                  return true;
+                }
+                
+                // Kiểm tra xem phiếu này có trong bảng phieu_giam_gia_ca_nhan không
+                const isInPersonalTable = raw.some((r: any) => {
+                  const rVoucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
+                  return rVoucherId === voucherId;
+                });
+                
+                // Nếu không có trong bảng => đây là phiếu công khai => hiển thị
+                if (!isInPersonalTable) {
+                  console.log('✅ Voucher is public (not in personal table):', v.code);
+                  return true;
+                }
+                
+                // Nếu có trong bảng nhưng không thuộc khách hàng này => cũng là công khai => hiển thị
+                // (vì có thể có nhiều khách hàng khác có phiếu này, nhưng nếu khách hàng này không có thì vẫn được xem như công khai)
+                console.log('✅ Voucher is in personal table but not for this customer (treating as public):', v.code);
+                return true;
+              });
+              
+              console.log('📦 Filtered vouchers to show:', vouchersToShow.length, vouchersToShow);
+              this.computeVoucherLists(vouchersToShow, base);
             },
-            error: () => this.computeVoucherLists(collected, base),
+            error: (err) => {
+              console.error('❌ Error loading personal vouchers:', err);
+              // Nếu lỗi khi lấy phiếu cá nhân, hiển thị tất cả phiếu đang hoạt động (coi như công khai)
+              console.log('⚠️ Fallback: showing all active vouchers as public');
+              this.computeVoucherLists(allActiveVouchers, base);
+            },
           });
         } else {
-          this.computeVoucherLists(collected, base);
+          // ✅ Khách hàng chưa đăng nhập: hiển thị tất cả phiếu đang hoạt động
+          // (Đơn giản hóa: coi tất cả phiếu đang hoạt động là công khai cho user chưa đăng nhập)
+          console.log('👤 Not logged in, showing all active vouchers as public');
+          this.computeVoucherLists(allActiveVouchers, base);
         }
       },
-      error: () => this.computeVoucherLists([], base),
+      error: (err) => {
+        console.error('❌ Error loading active vouchers:', err);
+        console.error('   - Error details:', {
+          status: err?.status,
+          statusText: err?.statusText,
+          message: err?.message,
+          error: err?.error
+        });
+        this.computeVoucherLists([], base);
+      },
     });
   }
 
   private computeVoucherLists(raw: any[], base: number): void {
+    console.log('🔧 Computing voucher lists, raw count:', raw.length, 'base:', base);
+    console.log('🔧 Raw vouchers:', raw);
+    
+    if (!raw || raw.length === 0) {
+      console.log('⚠️ No raw vouchers to process');
+      this.allVouchers = [];
+      this.displayedVouchers = [];
+      this.cdr.detectChanges();
+      return;
+    }
+    
     const mapped = (raw || [])
-      .map((v) => this.mapVoucher(v))
-      .filter((m) => m && (!m.minOrder || base >= m.minOrder));
+      .map((v) => {
+        const mapped = this.mapVoucher(v);
+        console.log('🗺️ Mapping voucher:', v, '->', mapped);
+        return mapped;
+      })
+      .filter((m) => {
+        if (!m) {
+          console.log('⚠️ Filtered out null/undefined voucher');
+          return false;
+        }
+        // Nếu base = 0, vẫn hiển thị phiếu (nhưng discount sẽ = 0)
+        // Chỉ filter theo minOrder nếu base > 0
+        if (base > 0 && m.minOrder && base < m.minOrder) {
+          console.log('⚠️ Filtered out voucher due to minOrder:', m.code, 'minOrder:', m.minOrder, 'base:', base);
+          return false;
+        }
+        return true;
+      });
+    console.log('📊 Mapped vouchers (after minOrder filter):', mapped.length, mapped);
+    
     const usable = mapped
-      .map((m) => ({ ...m, discount: this.computeVoucherDiscount(m, base) }))
-      .filter((x) => x.discount > 0)
+      .map((m) => {
+        const discount = this.computeVoucherDiscount(m, base);
+        const result = { ...m, discount };
+        console.log('💰 Computed discount for', m.code, ':', discount, 'base:', base);
+        return result;
+      })
+      // Nếu base = 0, vẫn hiển thị phiếu (discount = 0) để user biết có phiếu
+      // Nếu base > 0, chỉ hiển thị phiếu có discount > 0
+      .filter((x) => {
+        if (base > 0 && x.discount <= 0) {
+          console.log('⚠️ Filtered out voucher due to discount <= 0:', x.code, 'discount:', x.discount);
+          return false;
+        }
+        // Nếu base = 0, vẫn hiển thị (discount = 0)
+        return true;
+      })
       .sort((a, b) => b.discount - a.discount);
+    console.log('✅ Usable vouchers (after discount > 0 filter):', usable.length, usable);
+    
     this.allVouchers = usable;
     this.displayedVouchers = usable.slice(0, this.maxDisplayedVouchers);
+    console.log('🎯 Displayed vouchers:', this.displayedVouchers.length, this.displayedVouchers);
+    console.log('🎯 allVouchers:', this.allVouchers.length);
+    
+    // Force change detection
     this.cdr.detectChanges();
   }
 
-  private computeVoucherDiscount(v: any, base: number): number {
+  computeVoucherDiscount(v: any, base: number): number {
     if (v.type === 'PERCENT') {
       let d = (base * v.value) / 100;
       if (v.maxDiscount !== undefined && v.maxDiscount !== null) d = Math.min(d, v.maxDiscount);

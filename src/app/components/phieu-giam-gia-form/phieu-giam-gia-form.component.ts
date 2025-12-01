@@ -54,6 +54,18 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   customers: KhachHang[] = [];
   filteredCustomers: KhachHang[] = [];
   
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 5;
+  get totalPages(): number {
+    return Math.ceil(this.filteredCustomers.length / this.itemsPerPage);
+  }
+  get paginatedCustomers(): KhachHang[] {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    return this.filteredCustomers.slice(startIndex, endIndex);
+  }
+  
   // Filter options
   filterGender: boolean | null = null;
   filterStatus: boolean | null = null;
@@ -192,8 +204,55 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     console.log('Final filtered customers:', this.filteredCustomers.length);
     console.log('=== filterCustomers end ===');
     
+    // Reset về trang 1 khi filter thay đổi
+    this.currentPage = 1;
+    
     // Trigger change detection để cập nhật UI
     this.cdr.markForCheck();
+  }
+  
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.cdr.markForCheck();
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.cdr.markForCheck();
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.cdr.markForCheck();
+    }
+  }
+  
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPages = Math.min(5, this.totalPages); // Hiển thị tối đa 5 số trang
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPages - 1);
+    
+    // Điều chỉnh nếu gần cuối
+    if (endPage - startPage < maxPages - 1) {
+      startPage = Math.max(1, endPage - maxPages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+  
+  // Helper method for pagination info
+  getEndIndex(): number {
+    return Math.min(this.currentPage * this.itemsPerPage, this.filteredCustomers.length);
   }
   
   // Helper method to check if customer is in age range

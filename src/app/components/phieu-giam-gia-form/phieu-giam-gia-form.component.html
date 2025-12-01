@@ -379,13 +379,13 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let customer of filteredCustomers; let i = index" 
+              <tr *ngFor="let customer of paginatedCustomers; let i = index" 
                   class="customer-row"
                   [class.selected]="isCustomerSelected(customer)"
                   (click)="selectCustomer(customer)"
                   [style.cursor]="'pointer'"
                   title="Click để chọn khách hàng">
-                <td>{{ i + 1 }}</td>
+                <td>{{ (currentPage - 1) * itemsPerPage + i + 1 }}</td>
                 <td>{{ customer.maKhachHang }}</td>
                 <td>{{ customer.tenKhachHang }}</td>
                 <td>{{ getGenderText(customer.gioiTinh) }}</td>
@@ -394,8 +394,46 @@
                 <td>{{ customer.diemTichLuy || 0 }}</td>
                 <td>{{ formatDate(customer.lanMuaGanNhat) }}</td>
               </tr>
+              <tr *ngIf="paginatedCustomers.length === 0">
+                <td colspan="8" class="text-center" style="padding: 20px;">
+                  Không có khách hàng nào
+                </td>
+              </tr>
             </tbody>
           </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination-container" *ngIf="totalPages > 1">
+          <div class="pagination-info">
+            Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ getEndIndex() }} 
+            trong tổng số {{ filteredCustomers.length }} khách hàng
+          </div>
+          <div class="pagination-controls">
+            <button 
+              class="btn-pagination" 
+              (click)="previousPage()" 
+              [disabled]="currentPage === 1"
+              title="Trang trước">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            
+            <button 
+              *ngFor="let page of getPageNumbers()"
+              class="btn-pagination"
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)">
+              {{ page }}
+            </button>
+            
+            <button 
+              class="btn-pagination" 
+              (click)="nextPage()" 
+              [disabled]="currentPage === totalPages"
+              title="Trang sau">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -299,7 +299,7 @@ export class HoaDonService {
   }
 
   /**
-   * Hoàn tiền khi hủy đơn hàng
+   * Hoàn tiền khi hủy đơn hàng (cho admin/staff)
    * @param id Invoice ID
    * @param refundRequest Thông tin hoàn tiền
    */
@@ -312,6 +312,19 @@ export class HoaDonService {
     accountHolder?: string;
   }): Observable<HoaDonDTO> {
     return this.http.post<HoaDonDTO>(`${this.apiUrl}/${id}/refund`, refundRequest);
+  }
+
+  /**
+   * Khách hàng submit thông tin hoàn tiền (không cần auth)
+   * @param refundData Thông tin tài khoản ngân hàng
+   */
+  submitRefundInfo(refundData: {
+    maHoaDon: string;
+    bankAccount: string;
+    bankName: string;
+    accountHolder: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/refund/submit`, refundData);
   }
 
   /**
@@ -532,7 +545,7 @@ export class HoaDonService {
   }
 
   createCustomer(customer: any): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/khach-hang/create`, customer);
+    return this.http.post<any>(`${environment.apiUrl}/khach-hang`, customer);
   }
 
   searchCustomerByName(name: string): Observable<any[]> {
