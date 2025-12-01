@@ -267,6 +267,15 @@
         line-height: 1.5;
         word-wrap: break-word;
         white-space: pre-wrap;
+        margin-bottom: 8px;
+      }
+
+      .product-cards-container {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        max-width: 100%;
       }
 
       .message-time {
