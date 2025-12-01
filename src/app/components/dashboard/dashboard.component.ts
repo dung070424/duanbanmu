@@ -15,7 +15,7 @@ interface PeriodCard {
   periodLabel: string; // Label ngắn: "Ngày", "Tuần", "Tháng", "Năm"
   revenue: number;
   actualRevenue: number; // Doanh thu thực tế (đã thanh toán)
-  debtRevenue: number; // Công nợ (doanh số - thực tế)
+  debtRevenue: number; // Dư nợ (doanh số - thực tế)
   productsSold: number;
   orders: number;
   iconColor: string;
