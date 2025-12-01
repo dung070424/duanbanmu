@@ -3262,6 +3262,32 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Load hóa đơn hiện tại để lấy đầy đủ thông tin bắt buộc
     this.hoaDonService.getHoaDonById(this.invoiceToConfirm.id).subscribe({
       next: (currentInvoice) => {
+        // QUAN TRỌNG: Map danhSachChiTiet từ currentInvoice để đảm bảo không bị mất dữ liệu
+        let danhSachChiTietToSend: any[] = [];
+        
+        // Ưu tiên lấy từ danhSachChiTiet, nếu không có thì lấy từ danhSachSanPham
+        if (currentInvoice.danhSachChiTiet && currentInvoice.danhSachChiTiet.length > 0) {
+          danhSachChiTietToSend = currentInvoice.danhSachChiTiet.map((item: any) => ({
+            id: item.id || null,
+            chiTietSanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
+            soLuong: item.soLuong ? Number(item.soLuong) : 1,
+            donGia: item.donGia != null ? Number(item.donGia) : 0,
+            giamGia: item.giamGia != null ? Number(item.giamGia) : 0,
+            thanhTien: item.thanhTien != null ? Number(item.thanhTien) : ((item.donGia || 0) * (item.soLuong || 1))
+          })).filter((item: any) => item.chiTietSanPhamId != null);
+        } else if (currentInvoice.danhSachSanPham && currentInvoice.danhSachSanPham.length > 0) {
+          danhSachChiTietToSend = currentInvoice.danhSachSanPham.map((item: any) => ({
+            id: item.id || null,
+            chiTietSanPhamId: item.chiTietSanPhamId || item.sanPhamId || null,
+            soLuong: item.soLuong ? Number(item.soLuong) : 1,
+            donGia: item.donGia != null ? Number(item.donGia) : 0,
+            giamGia: item.giamGia != null ? Number(item.giamGia) : 0,
+            thanhTien: item.thanhTien != null ? Number(item.thanhTien) : ((item.donGia || 0) * (item.soLuong || 1))
+          })).filter((item: any) => item.chiTietSanPhamId != null);
+        }
+
+        console.log('📦 Prepared danhSachChiTiet for update:', danhSachChiTietToSend.length, 'items');
+
         // Merge dữ liệu mới vào hóa đơn hiện tại - đảm bảo có đủ các trường bắt buộc
         const updateData: any = {
           // Các trường bắt buộc từ hóa đơn hiện tại
@@ -3273,6 +3299,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           soLuongSanPham: currentInvoice.soLuongSanPham || 0,
           nhanVienId: currentInvoice.nhanVienId,
           ghiChu: currentInvoice.ghiChu || '',
+
+          // QUAN TRỌNG: Gửi danhSachChiTiet để đảm bảo không bị xóa
+          danhSachChiTiet: danhSachChiTietToSend,
 
           // Cập nhật trạng thái mới
           trangThai: 'DA_XAC_NHAN', // Cập nhật trạng thái từ "CHỜ XÁC NHẬN" sang "ĐÃ XÁC NHẬN"
