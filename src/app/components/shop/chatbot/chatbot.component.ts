@@ -7,11 +7,12 @@ import { AuthService } from '../../../services/auth';
 import { CustomerService } from '../../../services/customer.service';
 import { Conversation, ChatMessage, SendMessageRequest } from '../../../interfaces/chat.interface';
 import { Subscription } from 'rxjs';
+import { ChatbotProductCardComponent } from './chatbot-product-card/chatbot-product-card.component';
 
 @Component({
   selector: 'app-chatbot',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ChatbotProductCardComponent],
   templateUrl: './chatbot.component.html',
   styleUrls: ['./chatbot.component.scss']
 })
@@ -137,6 +138,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
         this.currentConversation = conversation;
         this.messages = conversation.messages || [];
         this.isLoading = false;
+        this.cdr.detectChanges();
         this.scrollToBottom();
         
         // Bắt đầu polling để lấy tin nhắn mới
@@ -259,6 +261,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
       daDoc: false
     };
     this.messages.push(optimisticBotMessage);
+    this.cdr.detectChanges();
     this.scrollToBottom();
 
     // Gửi tin nhắn đến server (backend sẽ tự động tạo conversation nếu chưa có)
@@ -313,6 +316,19 @@ export class ChatbotComponent implements OnInit, OnDestroy {
                 this.currentConversation = updatedConversation;
                 // Thay thế list messages bằng dữ liệu từ server (tự loại bỏ message optimistic id âm)
                 this.messages = (updatedConversation.messages || []);
+                
+                // Debug: Log suggestedProducts
+                this.messages.forEach((msg, index) => {
+                  if (msg.suggestedProducts && msg.suggestedProducts.length > 0) {
+                    console.log(`✅ Message ${index} has ${msg.suggestedProducts.length} suggested products:`, msg.suggestedProducts);
+                    msg.suggestedProducts.forEach((product, pIndex) => {
+                      console.log(`  Product ${pIndex}: ${product.tenSanPham}, Image: ${product.anhSanPham ? 'Yes' : 'No'}`);
+                    });
+                  }
+                });
+                
+                // Force change detection để đảm bảo UI cập nhật
+                this.cdr.detectChanges();
                 this.scrollToBottom();
                 
                 // Bắt đầu polling nếu chưa có
@@ -391,10 +407,11 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     this.pollingSubscription = this.chatService.startPollingMessages(conversationId, 3000)
       .subscribe({
         next: (conversation) => {
-          if (conversation && conversation.messages) {
+            if (conversation && conversation.messages) {
             // Chỉ cập nhật nếu có tin nhắn mới
             if (conversation.messages.length > this.messages.length) {
               this.messages = conversation.messages;
+              this.cdr.detectChanges();
               this.scrollToBottom();
             }
           }

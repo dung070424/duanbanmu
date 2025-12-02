@@ -1,3 +1,5 @@
+import { SanPhamResponse } from '../services/product-api.service';
+
 export interface ChatMessage {
   id?: number;
   conversationId?: number;
@@ -10,6 +12,7 @@ export interface ChatMessage {
   thoiGianGui: string;
   tuDongTraLoi?: boolean;
   daDoc?: boolean;
+  suggestedProducts?: SanPhamResponse[]; // Danh sách sản phẩm gợi ý từ chatbot
 }
 
 export interface Conversation {

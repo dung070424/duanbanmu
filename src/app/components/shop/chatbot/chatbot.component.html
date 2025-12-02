@@ -67,7 +67,16 @@
             <i class="fas fa-user-tie" *ngIf="isStaffMessage(message)"></i>
           </div>
           <div class="message-bubble">
-            <p class="message-text">{{ message.noiDung }}</p>
+            <p class="message-text" *ngIf="message.noiDung">{{ message.noiDung }}</p>
+            
+            <!-- Product Cards -->
+            <div class="product-cards-container" *ngIf="message.suggestedProducts && message.suggestedProducts.length > 0">
+              <app-chatbot-product-card 
+                *ngFor="let product of message.suggestedProducts" 
+                [product]="product"
+              ></app-chatbot-product-card>
+            </div>
+            
             <span class="message-time">{{ formatTime(message.thoiGianGui) }}</span>
           </div>
           <div class="message-avatar" *ngIf="isCustomerMessage(message)">

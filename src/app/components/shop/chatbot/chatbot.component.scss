@@ -173,19 +173,19 @@
   position: relative; // Đảm bảo không bị overlap
 
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   &::-webkit-scrollbar-track {
-    background: #e0e0e0;
+    background: #f1f1f1;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #a8a8a8;
-    border-radius: 4px;
+    background: #888;
+    border-radius: 3px;
 
     &:hover {
-      background: #8c8c8c;
+      background: #555;
     }
   }
 }
@@ -267,6 +267,15 @@
         line-height: 1.5;
         word-wrap: break-word;
         white-space: pre-wrap;
+        margin-bottom: 8px;
+      }
+
+      .product-cards-container {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        max-width: 100%;
       }
 
       .message-time {

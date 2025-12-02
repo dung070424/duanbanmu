@@ -1,0 +1,39 @@
+<div class="chatbot-product-card" [routerLink]="['/shop/product', product.id]">
+  <div class="product-image-wrapper">
+    <img 
+      [src]="getProductImageUrl()" 
+      [alt]="product.tenSanPham"
+      (error)="handleImageError($event)"
+      class="product-image"
+    />
+    <div class="product-status" [class.out-of-stock]="!product.trangThai || (product.soLuongTon !== null && product.soLuongTon <= 0)">
+      {{ (product.soLuongTon !== null && product.soLuongTon > 0) ? 'Còn hàng' : 'Hết hàng' }}
+    </div>
+  </div>
+  
+  <div class="product-info">
+    <h4 class="product-name">{{ product.tenSanPham }}</h4>
+    
+    <div class="product-details">
+      <div class="product-price">{{ formatCurrency(product.giaBan) }}</div>
+      
+      <div class="product-meta" *ngIf="product.mauSacTen">
+        <span class="meta-label">Màu:</span>
+        <span class="meta-value">{{ product.mauSacTen }}</span>
+      </div>
+      
+      <div class="product-meta" *ngIf="product.soLuongTon !== null">
+        <span class="meta-label">Tồn kho:</span>
+        <span class="meta-value">{{ product.soLuongTon }} sản phẩm</span>
+      </div>
+    </div>
+    
+    <button class="buy-button" [routerLink]="['/shop/product', product.id]" (click)="$event.stopPropagation()">
+      <i class="fas fa-shopping-cart"></i>
+      Xem chi tiết
+    </button>
+
+    
+  </div>
+</div>
+

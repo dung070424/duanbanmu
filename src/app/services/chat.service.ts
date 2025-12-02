@@ -152,11 +152,31 @@ export class ChatService {
    * Lấy conversation theo ID
    */
   getConversationById(conversationId: number): Observable<Conversation> {
+    console.log('📥 Fetching conversation:', conversationId);
     return this.http.get<Conversation>(
       `${this.apiUrl}/conversation/${conversationId}`,
       { headers: this.getHeaders() }
     ).pipe(
       map(conversation => {
+        console.log('📥 Raw conversation response:', conversation);
+        
+        // Debug: Log suggestedProducts trong messages
+        if (conversation.messages) {
+          conversation.messages.forEach((msg, index) => {
+            if (msg.suggestedProducts) {
+              console.log(`✅ Message ${index} has suggestedProducts:`, msg.suggestedProducts.length, 'products');
+              msg.suggestedProducts.forEach((p, pIndex) => {
+                console.log(`  Product ${pIndex}:`, {
+                  id: p.id,
+                  name: p.tenSanPham,
+                  hasImage: !!p.anhSanPham,
+                  imageLength: p.anhSanPham ? p.anhSanPham.length : 0
+                });
+              });
+            }
+          });
+        }
+        
         if (conversation.id === this.currentConversationSubject.value?.id) {
           this.currentConversationSubject.next(conversation);
         }
