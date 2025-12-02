@@ -141,6 +141,9 @@ export class CounterSalesComponent implements OnInit {
   productPageSize: number = 10;
   maxProductPage: number = 1;
 
+  // Internal flag tránh vòng lặp khi vừa refresh voucher vừa tính lại tổng tiền
+  private isRefreshingVouchers: boolean = false;
+
   // Pagination
   currentPage: number = 1;
   itemsPerPage: number = 10;
@@ -1784,8 +1787,10 @@ export class CounterSalesComponent implements OnInit {
     }
     const shippingAmount = this.isDelivery ? normalizedShipping : 0;
     this.cartTotal = afterDiscount + shippingAmount; // Loại bỏ thuế khỏi tổng
-    // ✅ Refresh voucher suggestions để cập nhật danh sách (nhưng không tự động áp dụng voucher tốt nhất nếu đã chọn voucher khác)
-    this.refreshVoucherSuggestions();
+    // ✅ Refresh voucher suggestions để cập nhật danh sách (nhưng tránh gọi lồng nhau)
+    if (!this.isRefreshingVouchers) {
+      this.refreshVoucherSuggestions();
+    }
   }
 
   onShippingFeeChange(value: number | string): void {
@@ -1878,25 +1883,28 @@ export class CounterSalesComponent implements OnInit {
     // Chỉ hiển thị một số phiếu giảm giá đầu tiên (giới hạn để view không bị dài)
     this.displayedVouchers = usable.slice(0, this.maxDisplayedVouchers);
 
-    // ✅ SỬA: Chỉ tự động áp dụng voucher tốt nhất khi CHƯA có voucher nào được chọn
-    // Không tự động thay đổi nếu người dùng đã chọn voucher khác
+    // ✅ Tự động chọn voucher tốt nhất cho lần đầu tiên
     const topVoucher = this.bestVoucher;
     if (topVoucher) {
-      // Chỉ tự động áp dụng nếu chưa có voucher nào được chọn
+      // Chỉ tự động áp dụng nếu CHƯA có voucher nào được chọn
       if (!this.appliedCoupon) {
         this.appliedCoupon = topVoucher;
         this.couponCode = topVoucher.code;
+        // Áp dụng ngay giảm giá cho voucher tốt nhất
+        this.isRefreshingVouchers = true;
+        this.calculateCartTotal();
+        this.isRefreshingVouchers = false;
       } else {
         // Nếu đã có voucher được chọn, kiểm tra xem voucher đó còn hợp lệ không
         const currentVoucherStillValid = usable.some((v) => v.code === this.appliedCoupon?.code);
-        // Nếu voucher đang chọn không còn trong danh sách hợp lệ, xóa nó
+        // Nếu voucher đang chọn không còn trong danh sách hợp lệ, xóa và áp dụng best voucher
         if (!currentVoucherStillValid) {
-          this.removeCoupon();
-          // Sau khi xóa, tự động áp dụng voucher tốt nhất
           this.appliedCoupon = topVoucher;
           this.couponCode = topVoucher.code;
+          this.isRefreshingVouchers = true;
+          this.calculateCartTotal();
+          this.isRefreshingVouchers = false;
         }
-        // Nếu voucher đang chọn vẫn hợp lệ, giữ nguyên lựa chọn của người dùng
       }
     } else if (this.appliedCoupon) {
       // Nếu không còn voucher nào hợp lệ, xóa voucher đang chọn

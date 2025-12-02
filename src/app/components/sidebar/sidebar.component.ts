@@ -70,7 +70,7 @@ export class SidebarComponent implements OnInit {
       active: false,
       hasSubmenu: true,
       isExpanded: false,
-      roles: ['ADMIN'], // Chỉ ADMIN
+      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
       submenu: [
         {
           label: 'Sản phẩm mũ bảo hiểm',
@@ -117,11 +117,6 @@ export class SidebarComponent implements OnInit {
             {
               label: 'Nhà sản xuất',
               route: '/products/manufacturers',
-              active: false,
-            },
-            {
-              label: 'Kiểu dáng mũ',
-              route: '/products/helmet-styles',
               active: false,
             },
             {
@@ -200,16 +195,6 @@ export class SidebarComponent implements OnInit {
       isExpanded: false,
       submenu: [],
       roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
-    },
-    {
-      icon: 'bi-shield-check',
-      label: 'Sản phẩm mũ bảo hiểm',
-      route: '/products/helmet-styles',
-      active: false,
-      hasSubmenu: false,
-      isExpanded: false,
-      submenu: [],
-      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF (chỉ xem)
     },
   ];
 

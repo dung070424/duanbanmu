@@ -551,7 +551,7 @@
                           class="form-check-input"
                           name="voucherChoice"
                           [checked]="appliedCoupon?.code === v.code"
-                          (change)="applyCouponFromSuggestion(v)"
+                          (click)="applyCouponFromSuggestion(v)"
                         />
                         <span>Chọn</span>
                       </label>
@@ -784,7 +784,7 @@
                 class="form-check-input"
                 name="voucherChoiceModal"
                 [checked]="appliedCoupon?.code === v.code"
-                (change)="applyCouponFromModal(v)"
+                (click)="applyCouponFromModal(v)"
               />
               <span>Chọn</span>
             </label>

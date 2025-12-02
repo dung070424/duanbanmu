@@ -464,13 +464,16 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
+    background: #e0e0e0;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: #a8a8a8;
     border-radius: 4px;
+    
+    &:hover {
+      background: #8c8c8c;
+    }
 
     &:hover {
       background: #a8a8a8;

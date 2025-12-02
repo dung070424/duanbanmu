@@ -256,21 +256,21 @@
 
 /* Hide scrollbar but keep functionality */
 .table-container::-webkit-scrollbar {
+  width: 8px;
   height: 8px;
 }
 
 .table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: #e0e0e0;
 }
 
 .table-container::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #a8a8a8;
   border-radius: 4px;
 }
 
 .table-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #8c8c8c;
 }
 
 .data-table {

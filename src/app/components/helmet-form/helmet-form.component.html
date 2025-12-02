@@ -250,29 +250,6 @@
         </div>
 
         <div *ngIf="hasHelmetVersions" class="mb-4">
-          <div class="row g-2 mb-2 align-items-center">
-            <div class="col-md-3">
-              <input
-                type="number"
-                class="form-control"
-                [(ngModel)]="priceAll"
-                placeholder="Nhập giá chung"
-                (blur)="onPriceChangeAll()"
-              />
-            </div>
-            <div class="col-md-3">
-              <input
-                type="number"
-                class="form-control"
-                [(ngModel)]="quantityAll"
-                placeholder="Nhập số lượng chung"
-                (blur)="onQuantityChangeAll()"
-              />
-            </div>
-            <div class="col text-muted fst-italic small">
-              Nhập giá/số lượng trên để áp dụng cho tất cả phiên bản phía dưới
-            </div>
-          </div>
           <div class="table-responsive">
             <table class="table table-bordered align-middle text-center">
               <thead class="table-light">
@@ -315,6 +292,8 @@
                       [(ngModel)]="v.trongLuongTen"
                       [ngModelOptions]="{ standalone: true }"
                       placeholder="VD: 500g, 1kg"
+                      (keydown)="onNumericKeyDown($event)"
+                      (blur)="onTrongLuongChangeRow(i, v.trongLuongTen)"
                     />
                   </td>
                   <td>
@@ -324,6 +303,7 @@
                       name="giaBan_{{ i }}"
                       [(ngModel)]="v.giaBan"
                       [ngModelOptions]="{ standalone: true }"
+                      (keydown)="onNumericKeyDown($event)"
                       (blur)="onPriceChangeRow(i, v.giaBan)"
                       (input)="castVersionNumber(i, 'giaBan')"
                     />
@@ -335,6 +315,7 @@
                       name="soLuongTon_{{ i }}"
                       [(ngModel)]="v.soLuongTon"
                       [ngModelOptions]="{ standalone: true }"
+                      (keydown)="onNumericKeyDown($event)"
                       (blur)="onQuantityChangeRow(i, v.soLuongTon)"
                       (input)="castVersionNumber(i, 'soLuongTon')"
                     />
@@ -408,7 +389,7 @@
           <button type="button" class="btn btn-secondary me-3" (click)="onCancel()">
             <i class="bi bi-x-circle me-2"></i>Hủy
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="!isFormValid() || isLoading">
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading">
             <span
               *ngIf="isLoading"
               class="spinner-border spinner-border-sm me-2"

@@ -1428,16 +1428,15 @@ $text-light: #6c757d;
     }
     
     &::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
+      background: #e0e0e0;
     }
     
     &::-webkit-scrollbar-thumb {
-      background: #febc49;
+      background: #a8a8a8;
       border-radius: 4px;
       
       &:hover {
-        background: #e6a942;
+        background: #8c8c8c;
       }
     }
   }
@@ -1593,6 +1592,24 @@ $text-light: #6c757d;
     
     &:hover {
       border-color: #febc49;
+    }
+  }
+
+  // Style cho select quận/huyện - màu xám
+  select[name="district"] {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #495057;
+    
+    &:focus {
+      background-color: #e9ecef;
+      border-color: #adb5bd;
+      color: #495057;
+      box-shadow: 0 0 0 0.2rem rgba(173, 181, 189, 0.25);
+    }
+    
+    &:hover {
+      border-color: #adb5bd;
     }
   }
   
