@@ -16,7 +16,7 @@
                   type="text"
                   class="form-control"
                   [class.is-invalid]="isFieldInvalid('searchTerm')"
-                  placeholder="Tìm theo số hóa đơn, tên khách hàng, SĐT"
+                  placeholder="Tìm theo số hóa đơn,SĐT"
                   [(ngModel)]="searchTerm"
                   name="searchTerm"
                   (input)="onSearchInput($event)"
@@ -459,14 +459,36 @@
                     <i class="bi" [ngClass]="selectedActivityDetail?.id === log.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                   </button>
                 </div>
-                <div *ngIf="selectedActivityDetail?.id === log.id" class="activity-detail mt-2 p-2 bg-light rounded">
-                  <div *ngIf="log.oldData" class="mb-2">
-                    <strong>Dữ liệu cũ:</strong>
-                    <pre class="mb-0 small">{{ formatJsonData(log.oldData) }}</pre>
+                <div *ngIf="selectedActivityDetail?.id === log.id" class="activity-detail">
+                  <div class="data-comparison" *ngIf="log.oldData && log.newData">
+                    <div class="data-section">
+                      <strong>
+                        <i class="bi bi-file-earmark-minus text-danger me-2"></i>
+                        Dữ liệu cũ
+                      </strong>
+                      <div class="data-content old-data">{{ formatActivityData(log.oldData) }}</div>
+                    </div>
+                    <div class="data-section">
+                      <strong>
+                        <i class="bi bi-file-earmark-plus text-success me-2"></i>
+                        Dữ liệu mới
+                      </strong>
+                      <div class="data-content new-data">{{ formatActivityData(log.newData) }}</div>
+                    </div>
                   </div>
-                  <div *ngIf="log.newData">
-                    <strong>Dữ liệu mới:</strong>
-                    <pre class="mb-0 small">{{ formatJsonData(log.newData) }}</pre>
+                  <div *ngIf="log.oldData && !log.newData" class="data-section">
+                    <strong>
+                      <i class="bi bi-file-earmark-minus text-danger me-2"></i>
+                      Dữ liệu cũ
+                    </strong>
+                    <div class="data-content old-data">{{ formatActivityData(log.oldData) }}</div>
+                  </div>
+                  <div *ngIf="!log.oldData && log.newData" class="data-section">
+                    <strong>
+                      <i class="bi bi-file-earmark-plus text-success me-2"></i>
+                      Dữ liệu mới
+                    </strong>
+                    <div class="data-content new-data">{{ formatActivityData(log.newData) }}</div>
                   </div>
                 </div>
               </td>

@@ -163,35 +163,37 @@ input, textarea, select {
 }
 
 /* ============================================
-   MODERN SCROLLBAR
+   MODERN SCROLLBAR - Màu xám
    ============================================ */
+/* Kích thước thanh cuộn */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;   /* chiều rộng */
+  height: 8px;
 }
 
+/* Rãnh (track) */
 ::-webkit-scrollbar-track {
-  background: var(--gray-100);
-  border-radius: var(--radius-full);
+  background: #e0e0e0; /* xám nhạt */
 }
 
+/* Thanh trượt (thumb) */
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-  border-radius: var(--radius-full);
-  border: 2px solid var(--gray-100);
+  background: #a8a8a8; /* xám */
+  border-radius: 4px;
 }
 
+/* Hover vào thanh cuộn */
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  background: #8c8c8c; /* xám đậm hơn khi hover */
 }
 
 /* Utility classes */
 .text-primary {
-  color: #007bff !important;
+  color: #a8abaf !important;
 }
 
 .bg-primary {
-  background-color: #007bff !important;
+  background-color: #97a0aa !important;
 }
 
 .border-primary {

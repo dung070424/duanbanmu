@@ -34,7 +34,6 @@ import { ProductDetailComponent } from './components/shop/product-detail/product
 import { roleGuard } from './guards/role-guard';
 import { AuthGuard } from './guards/auth-guard';
 import { ColorsComponent } from './components/colors/colors.component';
-import { HelmetStylesComponent } from './components/helmet-styles/helmet-styles.component';
 import { SizesComponent } from './components/sizes/sizes.component';
 import { MaterialsComponent } from './components/materials/materials.component';
 import { OriginsComponent } from './components/origins/origins.component';
@@ -185,12 +184,6 @@ export const routes: Routes = [
     path: 'products/colors',
     component: ColorsComponent,
     canActivate: [AuthGuard],
-  },
-  {
-    path: 'products/helmet-styles',
-    component: HelmetStylesComponent,
-    canActivate: [AuthGuard, roleGuard],
-    data: { roles: ['ADMIN', 'STAFF'] },
   },
   {
     path: 'products/sizes',

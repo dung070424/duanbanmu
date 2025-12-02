@@ -1943,9 +1943,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             // Thoát edit mode sau khi reload
             setTimeout(() => {
               this.isEditMode = false;
+              const editingEmail = this.editingInvoice?.emailKhachHang;
               this.editingInvoice = null;
               this.startAutoRefresh(); // Resume auto-refresh
-            this.showToast('Cập nhật hóa đơn thành công!', 'success');
+              
+              // Thông báo thành công - backend sẽ tự động gửi email nếu có thay đổi và có email khách hàng
+              if (editingEmail && editingEmail.trim() !== '') {
+                this.showToast('Cập nhật hóa đơn thành công! Email thông báo các thay đổi đã được gửi đến khách hàng.', 'success');
+              } else {
+                this.showToast('Cập nhật hóa đơn thành công!', 'success');
+              }
               
               // Force change detection một lần nữa để đảm bảo UI cập nhật
               // Đảm bảo invoice object được cập nhật lại từ server

@@ -69,7 +69,7 @@
             <div class="total-customers">Tổng số sản phẩm: {{ totalElements }}</div>
             <div class="action-buttons">
               <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
-              <button class="btn-add" (click)="navigateToAddForm()">Thêm Chi Tiết Sản Phẩm</button>
+              <button *ngIf="isAdmin" class="btn-add" (click)="navigateToAddForm()">Thêm Chi Tiết Sản Phẩm</button>
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <button class="btn-edit" (click)="openEditModal(product)" title="Chỉnh sửa">
+                      <button *ngIf="isAdmin" class="btn-edit" (click)="openEditModal(product)" title="Chỉnh sửa">
                         <i class="bi bi-pencil"></i>
                       </button>
                       <button class="btn-view" (click)="viewProduct(product)" title="Xem chi tiết">

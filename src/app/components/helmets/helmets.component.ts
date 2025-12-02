@@ -25,6 +25,7 @@ import { HelmetStyleApiService } from '../../services/helmet-style-api.service';
 import { CongNgheAnToanApiService } from '../../services/cong-nghe-an-toan-api.service';
 import { HelmetVersionApiService } from '../../services/helmet-version-api.service';
 import { SizeApiService, SizeResponse } from '../../services/size-api.service';
+import { AuthService } from '../../services/auth';
 
 interface HelmetProduct {
   id: number;
@@ -157,8 +158,14 @@ export class HelmetsComponent implements OnInit {
     private helmetStyleApi: HelmetStyleApiService,
     private congNgheAnToanApi: CongNgheAnToanApiService,
     private helmetVersionApi: HelmetVersionApiService,
-    private sizeApi: SizeApiService
+    private sizeApi: SizeApiService,
+    private authService: AuthService
   ) {}
+
+  // Kiểm tra quyền ADMIN để hiển thị các nút thêm/sửa/xóa
+  get isAdmin(): boolean {
+    return this.authService.hasAnyRole('ADMIN');
+  }
 
   ngOnInit() {
     this.loadLookups();

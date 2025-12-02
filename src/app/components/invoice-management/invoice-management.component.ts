@@ -1199,6 +1199,20 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
   }
 
+  formatActivityData(data: string | undefined): string {
+    if (!data) return '';
+    // Nếu dữ liệu là text format (không phải JSON), trả về trực tiếp
+    // Nếu là JSON, format lại
+    try {
+      const obj = JSON.parse(data);
+      // Nếu parse thành công nhưng là object phức tạp, format lại
+      return JSON.stringify(obj, null, 2);
+    } catch (e) {
+      // Không phải JSON, trả về text trực tiếp
+      return data;
+    }
+  }
+
   trackByActivityIdFn = (index: number, activity: HoaDonActivity): number => {
     return activity.id;
   }

@@ -17,12 +17,20 @@
   overflow-x: hidden;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #e0e0e0;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: var(--gray-300);
-    border-radius: var(--radius-full);
+    background: #a8a8a8;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #8c8c8c;
+    }
   }
 
   // Ensure all text elements inherit the same font

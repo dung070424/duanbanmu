@@ -168,19 +168,20 @@
 
 /* Custom scrollbar for dropdown options */
 .dropdown-options::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .dropdown-options::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+  background: #e0e0e0;
 }
 
 .dropdown-options::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
+  background: #a8a8a8;
+  border-radius: 4px;
 
   &:hover {
+    background: #8c8c8c;
+  }
     background: #a8a8a8;
   }
 }

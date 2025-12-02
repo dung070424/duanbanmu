@@ -549,6 +549,22 @@
   color: #6c757d !important;
 }
 
+// Style cho select quận/huyện - màu xám
+select#quanHuyen,
+select[name="selectedQuanCode"] {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+select#quanHuyen:focus,
+select[name="selectedQuanCode"]:focus {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+  color: #495057;
+  box-shadow: 0 0 0 0.25rem rgba(173, 181, 189, 0.25);
+}
+
 // Responsive utilities
 @media (max-width: 768px) {
   .page-header {

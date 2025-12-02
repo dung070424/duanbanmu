@@ -173,16 +173,28 @@ export class AuthService {
   }
 
   resetPassword(email: string, otp: string, newPassword: string, confirmPassword: string): Observable<boolean> {
-    const request: ResetPasswordRequest = { email, otp, newPassword, confirmPassword };
+    const request: ResetPasswordRequest = { 
+      email: email.trim(), 
+      otp: otp.trim().toUpperCase(), 
+      newPassword, 
+      confirmPassword 
+    };
+    
+    console.log('🔄 [AuthService] Gửi request reset password:', { 
+      email: request.email, 
+      otpLength: request.otp.length 
+    });
     
     return this.http.post<AuthResponse>(`${this.apiUrl}/reset-password`, request).pipe(
-      map(() => {
+      map((response: AuthResponse) => {
+        console.log('✅ [AuthService] Reset password thành công:', response.message);
         // Không tự động đăng nhập; chỉ báo thành công
         return true;
       }),
       catchError((error) => {
-        console.error('Reset password error:', error);
-        return throwError(() => new Error(error.error?.message || 'Không thể đặt lại mật khẩu'));
+        console.error('❌ [AuthService] Reset password error:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại!';
+        return throwError(() => new Error(errorMessage));
       })
     );
   }
