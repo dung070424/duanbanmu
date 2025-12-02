@@ -304,7 +304,7 @@
             <input class="form-control" [(ngModel)]="newSale.customerPhone" />
           </div>
           <button
-            class="btn btn-primary w-100"
+            class="btn btn-yellow w-100"
             (click)="quickAddCustomer()"
             [disabled]="!newSale.customerName || !newSale.customerPhone || customerCreating"
           >
@@ -639,7 +639,7 @@
           </ng-container>
 
           <button
-            class="btn btn-primary w-100 mt-3"
+            class="btn btn-yellow w-100 mt-3"
             (click)="confirmPayment()"
             [disabled]="isPayButtonDisabled()"
           >
