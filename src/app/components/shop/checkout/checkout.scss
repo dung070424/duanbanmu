@@ -431,6 +431,24 @@
         }
       }
 
+      // Style cho select quận/huyện - màu xám
+      select[name="district"] {
+        background-color: #e9ecef !important;
+        border-color: #adb5bd !important;
+        color: #495057 !important;
+        
+        &:focus {
+          background-color: #e9ecef !important;
+          border-color: #adb5bd !important;
+          color: #495057 !important;
+          box-shadow: 0 0 0 4px rgba(173, 181, 189, 0.15) !important;
+        }
+        
+        &:hover {
+          border-color: #adb5bd !important;
+        }
+      }
+
       .address-select-row {
         display: flex;
         gap: 12px;
@@ -1535,17 +1553,15 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: rgba(244, 161, 26, 0.05);
-    border-radius: 10px;
+    background: #e0e0e0;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #f4a11a 0%, #d88908 100%);
-    border-radius: 10px;
-    border: 2px solid rgba(244, 161, 26, 0.1);
-
+    background: #a8a8a8;
+    border-radius: 4px;
+    
     &:hover {
-      background: linear-gradient(180deg, #d88908 0%, #c77a07 100%);
+      background: #8c8c8c;
     }
   }
 }

@@ -194,6 +194,20 @@ export interface AddressFormData {
       box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
 
+    // Style cho select quận/huyện - màu xám
+    select[name="quanHuyen"] {
+      background-color: #e9ecef;
+      border-color: #adb5bd;
+      color: #495057;
+    }
+
+    select[name="quanHuyen"]:focus {
+      background-color: #e9ecef;
+      border-color: #adb5bd;
+      color: #495057;
+      box-shadow: 0 0 0 0.2rem rgba(173, 181, 189, 0.25);
+    }
+
     .form-check-input:checked {
       background-color: #0d6efd;
       border-color: #0d6efd;
