@@ -795,10 +795,34 @@ export class CheckoutComponent implements OnInit {
       products = this.cart?.danhSachGioHang || [];
     }
 
-    // Tạo order summary
+    // Lấy thông tin địa chỉ đầy đủ
+    const provinceName = this.selectedProvinceCode
+      ? (this.provinces.find(p => p.code === this.selectedProvinceCode)?.name || '')
+      : '';
+    const districtName = this.selectedDistrictCode
+      ? (this.districts.find(d => d.code === this.selectedDistrictCode)?.name || '')
+      : '';
+    const wardName = this.selectedWardCode
+      ? (this.wards.find(w => w.code === this.selectedWardCode)?.name || '')
+      : '';
+    const fullAddress = [
+      this.billingInfo.address,
+      wardName,
+      districtName,
+      provinceName
+    ].filter(Boolean).join(', ');
+
+    // Tạo order summary với đầy đủ thông tin
     this.orderSummary = {
       products: products,
-      billingInfo: { ...this.billingInfo },
+      billingInfo: {
+        ...this.billingInfo,
+        fullAddress: fullAddress,
+        province: provinceName,
+        district: districtName,
+        ward: wardName,
+        addressDetail: this.billingInfo.address
+      },
       paymentMethod: this.paymentMethod,
       transactionCode: this.transactionCode,
       bankInfo: { ...this.bankInfo },
@@ -1063,13 +1087,22 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  placeOrder(): void {
+  /**
+   * Chuẩn bị đặt hàng - hiển thị modal xác nhận
+   */
+  prepareOrder(): void {
     // Validate form trước khi đặt hàng
     if (!this.validateForm()) {
-      this.isSubmitting = false;
       return;
     }
 
+    // Hiển thị modal xác nhận đơn hàng với đầy đủ thông tin
+    this.showOrderConfirmationScreen();
+    this.error = '';
+  }
+
+
+  placeOrder(): void {
     this.isSubmitting = true;
     this.error = '';
 

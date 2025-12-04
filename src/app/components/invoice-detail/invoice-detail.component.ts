@@ -18,12 +18,14 @@ import { CustomerAddress } from '../../interfaces/customer-address.interface';
 import { HoaDonDTO } from '../../interfaces/hoa-don.interface';
 import { Subject, interval, takeUntil, firstValueFrom, Subscription, timeout, catchError, of } from 'rxjs';
 import { InvoiceStatusTimelineComponent } from '../invoice-status-timeline/invoice-status-timeline.component';
+import { ShopHeaderComponent } from '../shop/shared/shop-header.component';
+import { ShopFooterComponent } from '../shop/shared/shop-footer.component';
 
 
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, InvoiceStatusTimelineComponent],
+  imports: [CommonModule, FormsModule, RouterModule, InvoiceStatusTimelineComponent, ShopHeaderComponent, ShopFooterComponent],
   templateUrl: './invoice-detail.component.html',
   styleUrls: ['./invoice-detail.component.scss']
 })
@@ -38,6 +40,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   isEditMode: boolean = false;
   editingInvoice: HoaDonDTO | null = null;
   employees: any[] = [];
+  isCustomerView: boolean = false; // Phân biệt customer view và admin view
 
   // Properties cho update modal
   allProducts: any[] = [];
@@ -83,6 +86,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   
   // Shipping fee adjustment properties
   showShippingFeeAdjustmentModal: boolean = false;
+  pendingSaveAfterShippingAdjustment: boolean = false; // Flag để tự động tiếp tục lưu sau khi xử lý modal
   shippingFeeAdjustmentData = {
     newShippingFee: 0,
     oldShippingFee: 0,
@@ -461,9 +465,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Xác định xem đây có phải là customer view không
+    this.isCustomerView = this.authService.isCustomer();
+    console.log('🔍 InvoiceDetailComponent initialized, isCustomerView:', this.isCustomerView);
+    
     // Load provinces ngay khi component khởi tạo
     this.loadProvinces();
-    console.log('🔍 InvoiceDetailComponent initialized');
     this.route.params.subscribe(params => {
       const idParam = params['id'];
       console.log('📋 Route params received:', params, 'id param:', idParam);
@@ -1488,6 +1495,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               bankName: '',
               accountHolder: ''
             };
+            this.pendingSaveAfterShippingAdjustment = true; // Đánh dấu cần tiếp tục lưu sau khi xử lý modal
             this.showShippingFeeAdjustmentModal = true;
             
             // Reset button state và return - sẽ tiếp tục trong modal
@@ -1790,6 +1798,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         bankName: '',
         accountHolder: ''
       };
+      this.pendingSaveAfterShippingAdjustment = true; // Đánh dấu cần tiếp tục lưu sau khi xử lý modal
       this.showShippingFeeAdjustmentModal = true;
       
       // Reset button state
@@ -1995,6 +2004,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
    */
   closeShippingFeeAdjustmentModal(): void {
     this.showShippingFeeAdjustmentModal = false;
+    this.pendingSaveAfterShippingAdjustment = false; // Reset flag khi đóng modal
     // Reset data
     this.shippingFeeAdjustmentData = {
       newShippingFee: 0,
@@ -2024,6 +2034,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     this.savingStatus = true;
+    const shouldContinueSave = this.pendingSaveAfterShippingAdjustment; // Lưu flag trước khi reset
 
     const adjustmentRequest = {
       newShippingFee: this.shippingFeeAdjustmentData.newShippingFee,
@@ -2058,6 +2069,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               : Number(updatedInvoice.thanhTien);
           }
           
+          // Cập nhật editingInvoice với phiGiaoHang mới để tiếp tục lưu
+          if (this.editingInvoice) {
+            this.editingInvoice.phiGiaoHang = updatedInvoice.phiGiaoHang;
+            this.editingInvoice.thanhTien = updatedInvoice.thanhTien;
+          }
+          
           // Cập nhật invoice object để hiển thị ngay (tạo object mới để trigger change detection)
           this.invoice = { ...updatedInvoice };
           this.cdr.detectChanges();
@@ -2077,22 +2094,29 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         
         this.showToast(message, 'success');
         
-        // ✅ QUAN TRỌNG: Reload toàn bộ dữ liệu hóa đơn từ DB để đảm bảo hiển thị đúng
-        // Delay để đảm bảo backend đã lưu xong và commit transaction
-        setTimeout(() => {
-          console.log('🔄 Reloading invoice detail from DB after shipping fee adjustment...');
-        this.loadInvoiceDetail();
-          // Force change detection sau khi reload
+        // ✅ Tự động tiếp tục lưu thay đổi nếu có flag
+        if (shouldContinueSave) {
+          console.log('🔄 Auto-continuing save after shipping fee adjustment...');
           setTimeout(() => {
-            this.cdr.detectChanges();
-            console.log('✅ Reloaded invoice detail from DB after adjustment, phiGiaoHang:', this.invoice?.phiGiaoHang);
-            console.log('✅ Reloaded invoice detail from DB after adjustment, thanhTien:', this.invoice?.thanhTien);
-          }, 200);
-        }, 1000); // Tăng delay để đảm bảo backend đã lưu xong và commit transaction
+            this.saveChanges();
+          }, 500); // Delay nhỏ để đảm bảo modal đã đóng
+        } else {
+          // ✅ QUAN TRỌNG: Reload toàn bộ dữ liệu hóa đơn từ DB để đảm bảo hiển thị đúng
+          setTimeout(() => {
+            console.log('🔄 Reloading invoice detail from DB after shipping fee adjustment...');
+            this.loadInvoiceDetail();
+            setTimeout(() => {
+              this.cdr.detectChanges();
+              console.log('✅ Reloaded invoice detail from DB after adjustment, phiGiaoHang:', this.invoice?.phiGiaoHang);
+              console.log('✅ Reloaded invoice detail from DB after adjustment, thanhTien:', this.invoice?.thanhTien);
+            }, 200);
+          }, 1000);
+        }
       },
       error: (error) => {
         console.error('❌ Error adjusting shipping fee:', error);
         this.savingStatus = false;
+        this.pendingSaveAfterShippingAdjustment = false; // Reset flag khi có lỗi
         this.showToast('Lỗi khi điều chỉnh phí ship: ' + (error.error?.message || error.message), 'error');
       }
     });

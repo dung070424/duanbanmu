@@ -15,6 +15,33 @@
         <p>Xem và quản lý các đơn hàng của bạn</p>
       </div>
 
+      <!-- Search Filter -->
+      <div class="search-filter-section">
+        <div class="search-box">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            class="search-input"
+            [(ngModel)]="searchTerm"
+            (input)="onSearchChange()"
+            placeholder="Tìm kiếm theo mã đơn hàng..."
+          />
+          <button
+            *ngIf="searchTerm"
+            class="btn-clear-search"
+            (click)="clearSearch()"
+            type="button"
+            title="Xóa tìm kiếm"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div *ngIf="searchTerm && filteredOrders.length === 0 && orders.length > 0" class="search-no-results">
+          <i class="fas fa-info-circle"></i>
+          Không tìm thấy đơn hàng nào với mã "{{ searchTerm }}"
+        </div>
+      </div>
+
     <div *ngIf="error" class="error-message">
       <i class="fas fa-exclamation-circle"></i>
       {{ error }}
@@ -33,8 +60,8 @@
       <p>Bạn chưa có đơn hàng nào. Hãy <a routerLink="/shop">mua sắm ngay</a>!</p>
     </div>
 
-    <div *ngIf="orders.length > 0" class="orders-list">
-      <div *ngFor="let order of orders" [id]="'order-' + order.id" class="order-card">
+    <div *ngIf="filteredOrders.length > 0" class="orders-list">
+      <div *ngFor="let order of filteredOrders" [id]="'order-' + order.id" class="order-card">
         <div class="order-header">
           <div class="order-info">
             <h3>Mã đơn hàng: {{ order.maHoaDon }}</h3>
@@ -139,7 +166,7 @@
     </div>
 
     <!-- Pagination -->
-    <div *ngIf="orders.length > 0 && totalPages > 1" class="pagination">
+    <div *ngIf="filteredOrders.length > 0 && totalPages > 1" class="pagination">
       <button 
         class="btn-page" 
         [disabled]="currentPage === 0"

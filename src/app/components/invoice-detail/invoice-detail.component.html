@@ -1,4 +1,7 @@
-<div class="invoice-detail-container">
+<div class="invoice-detail-container" [class.customer-view]="isCustomerView">
+  <!-- Shop Header cho customer view -->
+  <app-shop-header *ngIf="isCustomerView"></app-shop-header>
+
   <!-- Header -->
   <div class="detail-header">
     <div class="header-left">
@@ -459,7 +462,7 @@
           </div>
           <div class="info-row">
             <span class="label">Phí giao hàng</span>
-            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }} ₫</span>
+            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }}</span>
           </div>
           <div class="info-row">
             <span class="label">Khối lượng</span>
@@ -477,19 +480,19 @@
           <div class="divider"></div>
           <div class="info-row">
             <span class="label">Tổng tiền hàng</span>
-            <span class="value">{{ formatCurrency(invoice.tongTien || 0) }} ₫</span>
+            <span class="value">{{ formatCurrency(invoice.tongTien || 0) }}</span>
           </div>
           <div class="info-row">
             <span class="label">Giảm giá</span>
-            <span class="value text-danger">-{{ formatCurrency(invoice.tienGiamGia || 0) }} ₫</span>
+            <span class="value text-danger">-{{ formatCurrency(invoice.tienGiamGia || 0) }}</span>
           </div>
           <div class="info-row">
             <span class="label">Phí vận chuyển</span>
-            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }} ₫</span>
+            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }}</span>
           </div>
           <div class="info-row total">
             <span class="label">Thành tiền</span>
-            <span class="value">{{ formatCurrency(invoice.thanhTien || 0) }} ₫</span>
+            <span class="value">{{ formatCurrency(invoice.thanhTien || 0) }}</span>
           </div>
         </div>
       </article>
@@ -563,19 +566,19 @@
       <div class="products-summary" *ngIf="invoice.danhSachSanPham && invoice.danhSachSanPham.length > 0">
         <div class="summary-row">
           <span>Tổng tiền hàng</span>
-          <strong>{{ formatCurrency(invoice.tongTien || 0) }} ₫</strong>
+          <strong>{{ formatCurrency(invoice.tongTien || 0) }}</strong>
         </div>
         <div class="summary-row" *ngIf="invoice.tienGiamGia && invoice.tienGiamGia > 0">
           <span>Giảm giá</span>
-          <strong class="text-danger">-{{ formatCurrency(invoice.tienGiamGia) }} ₫</strong>
+          <strong class="text-danger">-{{ formatCurrency(invoice.tienGiamGia) }}</strong>
         </div>
         <div class="summary-row" *ngIf="invoice.phiGiaoHang && invoice.phiGiaoHang > 0">
           <span>Phí vận chuyển</span>
-          <strong>{{ formatCurrency(invoice.phiGiaoHang) }} ₫</strong>
+          <strong>{{ formatCurrency(invoice.phiGiaoHang) }}</strong>
         </div>
         <div class="summary-row total">
           <span>Thành tiền</span>
-          <strong>{{ formatCurrency(invoice.thanhTien || 0) }} ₫</strong>
+          <strong>{{ formatCurrency(invoice.thanhTien || 0) }}</strong>
         </div>
       </div>
     </section>
@@ -979,7 +982,7 @@
           <i class="bi bi-info-circle me-2"></i>
           <strong>Lưu ý:</strong> Đơn hàng này đã thanh toán. Sau khi hủy, hệ thống sẽ tự động xử lý hoàn tiền.
           <br>
-          <small>Số tiền sẽ được hoàn trả: <strong>{{ formatCurrency(invoice?.thanhTien || 0) }} ₫</strong></small>
+          <small>Số tiền sẽ được hoàn trả: <strong>{{ formatCurrency(invoice?.thanhTien || 0) }}</strong></small>
         </div>
       </div>
       <div class="modal-footer">
@@ -1014,21 +1017,79 @@
                 (click)="closeShippingFeeAdjustmentModal()" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div class="alert" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'alert-info' : 'alert-warning'">
-          <i class="bi bi-info-circle me-2"></i>
-          <strong *ngIf="shippingFeeAdjustmentData.adjustmentType === 'REFUND'">Hoàn phí ship:</strong>
-          <strong *ngIf="shippingFeeAdjustmentData.adjustmentType === 'SURCHARGE'">Tăng phụ phí ship:</strong>
-          <br>
-          <span>Phí ship cũ: <strong>{{ formatCurrency(shippingFeeAdjustmentData.oldShippingFee) }} ₫</strong></span>
-          <br>
-          <span>Phí ship mới: <strong>{{ formatCurrency(shippingFeeAdjustmentData.newShippingFee) }} ₫</strong></span>
-          <br>
-          <span *ngIf="shippingFeeAdjustmentData.adjustmentType === 'REFUND'">
-            Số tiền hoàn lại: <strong class="text-success">{{ formatCurrency(shippingFeeAdjustmentData.adjustmentAmount) }} ₫</strong>
-          </span>
-          <span *ngIf="shippingFeeAdjustmentData.adjustmentType === 'SURCHARGE'">
-            Số tiền tăng thêm: <strong class="text-danger">+{{ formatCurrency(shippingFeeAdjustmentData.adjustmentAmount) }} ₫</strong>
-          </span>
+        <!-- Thông tin chi tiết về số tiền -->
+        <div class="card mb-3" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'border-info' : 'border-warning'">
+          <div class="card-header" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bg-info text-white' : 'bg-warning text-dark'">
+            <h6 class="mb-0">
+              <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-counterclockwise' : 'bi-arrow-up-circle'" class="me-2"></i>
+              {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Thông tin hoàn phí ship' : 'Thông tin tăng phụ phí ship' }}
+            </h6>
+          </div>
+          <div class="card-body">
+            <!-- Số tiền khách đã chuyển (tổng tiền ban đầu) -->
+            <div class="row mb-2">
+              <div class="col-6">
+                <span class="text-muted">
+                  <i class="bi bi-cash-coin text-primary me-1"></i>
+                  Số tiền khách đã chuyển:
+                </span>
+              </div>
+              <div class="col-6 text-end">
+                <strong class="text-primary fs-6">
+                  {{ formatCurrency((invoice?.thanhTien || 0) - (shippingFeeAdjustmentData.adjustmentType === 'SURCHARGE' ? shippingFeeAdjustmentData.adjustmentAmount : -shippingFeeAdjustmentData.adjustmentAmount)) }}
+                </strong>
+              </div>
+            </div>
+            
+            <!-- Phí ship cũ -->
+            <div class="row mb-2">
+              <div class="col-6">
+                <span class="text-muted">Phí ship cũ:</span>
+              </div>
+              <div class="col-6 text-end">
+                <strong>{{ formatCurrency(shippingFeeAdjustmentData.oldShippingFee) }}</strong>
+              </div>
+            </div>
+            
+            <!-- Phí ship mới -->
+            <div class="row mb-2">
+              <div class="col-6">
+                <span class="text-muted">Phí ship mới:</span>
+              </div>
+              <div class="col-6 text-end">
+                <strong>{{ formatCurrency(shippingFeeAdjustmentData.newShippingFee) }}</strong>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Số tiền cần trả/thêm -->
+            <div class="row mb-2">
+              <div class="col-6">
+                <span class="text-muted">
+                  <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-down-circle text-success' : 'bi-arrow-up-circle text-danger'" class="me-1"></i>
+                  {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Số tiền cần trả lại:' : 'Số tiền cần thu thêm:' }}
+                </span>
+              </div>
+              <div class="col-6 text-end">
+                <strong [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'text-success' : 'text-danger'">
+                  {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? '-' : '+' }}{{ formatCurrency(shippingFeeAdjustmentData.adjustmentAmount) }}
+                </strong>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Tổng tiền mới -->
+            <div class="row">
+              <div class="col-6">
+                <span class="fw-bold">Tổng tiền mới:</span>
+              </div>
+              <div class="col-6 text-end">
+                <strong class="text-primary fs-5">{{ formatCurrency(invoice?.thanhTien || 0) }}</strong>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="mb-3">
@@ -1123,6 +1184,10 @@
     </div>
   </div>
 </div>
+
+<!-- Shop Footer cho customer view -->
+<app-shop-footer *ngIf="isCustomerView"></app-shop-footer>
+
 <div class="modal-backdrop fade" [class.show]="showShippingFeeAdjustmentModal"
      [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'"
      (click)="closeShippingFeeAdjustmentModal()"></div>

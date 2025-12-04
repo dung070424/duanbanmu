@@ -4129,3 +4129,400 @@ $text-light: #6c757d;
   font-weight: 600;
   color: #111827;
 }
+
+/* ============================================
+   CUSTOMER VIEW STYLES - Thiết kế riêng cho khách hàng
+   ============================================ */
+.invoice-detail-container.customer-view {
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 50%, #f0f4f8 100%);
+  background-attachment: fixed;
+  padding: 0;
+  min-height: 100vh;
+
+  // Header cho customer view - thiết kế thân thiện hơn
+  .detail-header {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 30px 0;
+    margin-bottom: 0;
+    border-bottom: 3px solid #f4a11a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    .header-left {
+      h2 {
+        color: #111827;
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        &::before {
+          content: '';
+          width: 4px;
+          height: 32px;
+          background: linear-gradient(135deg, #f4a11a 0%, #d88908 100%);
+          border-radius: 2px;
+        }
+      }
+    }
+
+    .header-right {
+      .btn {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+
+        &.btn-outline-secondary {
+          border: 2px solid #e5e7eb;
+          color: #6b7280;
+
+          &:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        &.btn-outline-primary {
+          background: linear-gradient(135deg, #f4a11a 0%, #d88908 100%);
+          border: none;
+          color: #fff;
+
+          &:hover {
+            background: linear-gradient(135deg, #d88908 0%, #c77a07 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(244, 161, 26, 0.3);
+          }
+        }
+      }
+    }
+  }
+
+  // Invoice Content - thiết kế card hiện đại
+  .invoice-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+
+    .invoice-card {
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: none;
+      overflow: hidden;
+      margin-bottom: 30px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+        transform: translateY(-4px);
+      }
+
+      .card-header {
+        background: linear-gradient(135deg, #f4a11a 0%, #d88908 100%);
+        color: #fff;
+        padding: 25px 30px;
+        border: none;
+        font-weight: 700;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        i {
+          font-size: 24px;
+        }
+      }
+
+      .card-body {
+        padding: 30px;
+      }
+    }
+
+    // Invoice Info Card - thiết kế đẹp hơn
+    .invoice-info-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 25px;
+
+      .info-row {
+        padding: 15px 0;
+        border-bottom: 1px solid #f1f1f1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .label {
+          font-weight: 600;
+          color: #6b7280;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .value {
+          font-weight: 500;
+          color: #111827;
+          font-size: 15px;
+        }
+      }
+    }
+
+    // Products Table - thiết kế đẹp hơn
+    .invoice-products-table {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      margin-bottom: 25px;
+
+      table {
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+
+        thead {
+          background: linear-gradient(135deg, #f4a11a 0%, #d88908 100%);
+          color: #fff;
+
+          th {
+            padding: 18px 20px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            color: #fff;
+          }
+        }
+
+        tbody {
+          tr {
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: #f9fafb;
+              transform: scale(1.01);
+            }
+
+            td {
+              padding: 18px 20px;
+              border-bottom: 1px solid #f1f1f1;
+              color: #374151;
+              font-size: 14px;
+
+              &.product-name {
+                font-weight: 600;
+                color: #111827;
+              }
+            }
+
+            &:last-child td {
+              border-bottom: none;
+            }
+          }
+        }
+      }
+    }
+
+    // Invoice Summary - thiết kế nổi bật
+    .invoice-summary {
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 25px 30px;
+      margin-bottom: 25px;
+
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        font-size: 15px;
+        color: #6b7280;
+
+        &.total-row {
+          border-top: 2px solid #f4a11a;
+          margin-top: 15px;
+          padding-top: 20px;
+          font-size: 20px;
+          font-weight: 700;
+          color: #111827;
+
+          span:last-child {
+            color: #f4a11a;
+            font-size: 24px;
+          }
+        }
+      }
+    }
+
+    // Payment Info - thiết kế card
+    .payment-info {
+      background: #fff;
+      border-radius: 16px;
+      padding: 25px 30px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      margin-bottom: 25px;
+      border-left: 4px solid #f4a11a;
+
+      .info-row {
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f1f1;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .label {
+          font-weight: 600;
+          color: #6b7280;
+          font-size: 14px;
+        }
+
+        .value {
+          font-weight: 500;
+          color: #111827;
+          font-size: 15px;
+        }
+      }
+    }
+
+    // Status Badge - thiết kế đẹp hơn
+    .status-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+
+      &.status-waiting {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      &.status-confirmed {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      &.status-shipping {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      &.status-delivered {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      &.status-cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+    }
+
+    // Info Cards - thiết kế card hiện đại
+    .info-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      margin-bottom: 25px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+
+      &:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+      }
+
+      .card-header {
+        background: linear-gradient(135deg, #f4a11a 0%, #d88908 100%);
+        color: #fff;
+        padding: 20px 25px;
+        font-weight: 700;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: none;
+
+        i {
+          font-size: 20px;
+        }
+      }
+
+      .card-body {
+        padding: 25px;
+
+        .info-row {
+          padding: 12px 0;
+          border-bottom: 1px solid #f1f1f1;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          .label {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 14px;
+          }
+
+          .value {
+            font-weight: 500;
+            color: #111827;
+            font-size: 15px;
+            text-align: right;
+          }
+        }
+      }
+    }
+
+    // Responsive cho customer view
+    @media (max-width: 768px) {
+      padding: 20px 15px;
+
+      .detail-header {
+        padding: 20px 15px;
+
+        .header-left h2 {
+          font-size: 22px;
+        }
+      }
+
+      .invoice-card,
+      .info-card {
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+
+      .invoice-products-table {
+        overflow-x: auto;
+      }
+    }
+  }
+
+  // Ẩn các phần chỉ dành cho admin
+  .edit-mode-controls,
+  .admin-actions,
+  .status-change-section {
+    display: none !important;
+  }
+}
