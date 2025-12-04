@@ -532,9 +532,11 @@
                     <div class="voucher-body">
                       <div class="discount-row">
                         <span class="tag">Giảm:</span>
-                        <span class="value" *ngIf="v.type === 'PERCENT'"> -{{ v.value }}% </span>
+                        <span class="value" *ngIf="v.type === 'PERCENT'">
+                          -{{ getVoucherPercentDisplay(v) }}%
+                        </span>
                         <span class="value" *ngIf="v.type === 'FIXED'">
-                          -{{ formatCurrency(v.discount) }}
+                          -{{ formatCurrency(getVoucherFixedDisplay(v)) }}
                         </span>
                       </div>
                       <div class="extra" *ngIf="v.expiry || v.expiredAt">
@@ -765,9 +767,11 @@
           <div class="voucher-body">
             <div class="discount-row">
               <span class="tag">Giảm:</span>
-              <span class="value" *ngIf="v.type === 'PERCENT'"> -{{ v.value }}% </span>
+              <span class="value" *ngIf="v.type === 'PERCENT'">
+                -{{ getVoucherPercentDisplay(v) }}%
+              </span>
               <span class="value" *ngIf="v.type === 'FIXED'">
-                -{{ formatCurrency(v.discount) }}
+                -{{ formatCurrency(getVoucherFixedDisplay(v)) }}
               </span>
             </div>
             <div class="extra" *ngIf="v.expiry || v.expiredAt">

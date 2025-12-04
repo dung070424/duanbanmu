@@ -144,6 +144,25 @@ export class CounterSalesComponent implements OnInit {
   // Internal flag tránh vòng lặp khi vừa refresh voucher vừa tính lại tổng tiền
   private isRefreshingVouchers: boolean = false;
 
+  /**
+   * Lưu mapping phiếu giảm giá theo từng hóa đơn chờ.
+   * Mục tiêu: khi chuyển hóa đơn chờ khác, hóa đơn cũ vẫn giữ đúng mã & số tiền giảm giá cũ,
+   * không bị tự động áp dụng lại theo best voucher hiện tại.
+   */
+  private invoiceVoucherMap: {
+    [hoaDonChoId: number]: {
+      appliedCoupon: {
+        id: number;
+        code: string;
+        type: 'PERCENT' | 'FIXED';
+        value: number;
+        maxDiscount?: number;
+        minOrder?: number;
+      } | null;
+      couponCode: string;
+    };
+  } = {};
+
   // Pagination
   currentPage: number = 1;
   itemsPerPage: number = 10;
@@ -332,6 +351,40 @@ export class CounterSalesComponent implements OnInit {
     this.refreshVoucherSuggestions();
     this.loadPendingInvoices();
     this.loadProvinces();
+  }
+
+  /**
+   * Helper chuyển context hóa đơn chờ hiện tại, đồng thời
+   * lưu lại voucher của hóa đơn cũ và khôi phục voucher của hóa đơn mới (nếu có).
+   */
+  private switchCurrentInvoice(newHoaDonChoId: number | null): void {
+    // Lưu trạng thái voucher của hóa đơn hiện tại (nếu có id)
+    if (this.currentHoaDonChoId) {
+      this.invoiceVoucherMap[this.currentHoaDonChoId] = {
+        appliedCoupon: this.appliedCoupon ? { ...this.appliedCoupon } : null,
+        couponCode: this.couponCode || '',
+      };
+    }
+
+    // Cập nhật id mới
+    this.currentHoaDonChoId = newHoaDonChoId;
+    this.activePendingInvoiceId = newHoaDonChoId ?? null;
+
+    // Khôi phục voucher cho hóa đơn mới (nếu đã từng lưu)
+    if (newHoaDonChoId && this.invoiceVoucherMap[newHoaDonChoId]) {
+      const entry = this.invoiceVoucherMap[newHoaDonChoId];
+      this.appliedCoupon = entry.appliedCoupon ? { ...entry.appliedCoupon } : null;
+      this.couponCode = entry.couponCode || (this.appliedCoupon?.code ?? '');
+    } else {
+      // Nếu chưa có mapping => coi như chưa chọn voucher nào
+      this.appliedCoupon = null;
+      this.couponCode = '';
+    }
+
+    // Tính lại tổng cho hóa đơn hiện tại với voucher đã khôi phục
+    this.isRefreshingVouchers = true;
+    this.calculateCartTotal();
+    this.isRefreshingVouchers = false;
   }
 
   private getVariantMeta(chiTietSanPhamId: number): {
@@ -837,8 +890,8 @@ export class CounterSalesComponent implements OnInit {
 
     this.hoaDonChoService.createHoaDonCho(hoaDonChoData).subscribe({
       next: (created: HoaDonCho) => {
-        this.currentHoaDonChoId = created.id || null;
-        this.activePendingInvoiceId = created.id || null;
+        const newId = created.id || null;
+        this.switchCurrentInvoice(newId);
 
         // Thêm hóa đơn mới vào danh sách ngay lập tức để hiển thị ngay
         // Đảm bảo có danhSachGioHang rỗng nếu chưa có
@@ -903,12 +956,30 @@ export class CounterSalesComponent implements OnInit {
 
     this.hoaDonChoService.getHoaDonChoById(inv.id).subscribe({
       next: (hoaDonCho: HoaDonCho) => {
-        this.currentHoaDonChoId = hoaDonCho.id || null;
-        this.activePendingInvoiceId = hoaDonCho.id || null;
+        // Chuyển context sang hóa đơn chờ được chọn
+        this.switchCurrentInvoice(hoaDonCho.id || null);
         // Convert GioHangChoItem[] to CartItem[]
         this.cart = (hoaDonCho.danhSachGioHang || []).map((item: GioHangChoItem) =>
           this.mapCartItemFromPending(item)
         );
+
+        // Khôi phục snapshot phiếu giảm giá nếu hóa đơn chờ đã có
+        if (hoaDonCho.voucherCode && hoaDonCho.voucherDiscountAmount != null) {
+          this.appliedCoupon = {
+            id: 0,
+            code: hoaDonCho.voucherCode,
+            type: (hoaDonCho.voucherType as any) || 'PERCENT',
+            value: hoaDonCho.voucherValue || 0,
+            maxDiscount: hoaDonCho.voucherMaxDiscount || undefined,
+          };
+          this.couponCode = hoaDonCho.voucherCode;
+          this.couponDiscount = hoaDonCho.voucherDiscountAmount || 0;
+        } else {
+          this.appliedCoupon = null;
+          this.couponCode = '';
+          this.couponDiscount = 0;
+        }
+
         this.calculateCartTotal();
         // Enable adding products to cart when loading pending invoice
         this.isInvoiceCreated = true;
@@ -951,6 +1022,10 @@ export class CounterSalesComponent implements OnInit {
             this.cart = [];
             this.calculateCartTotal();
             this.isInvoiceCreated = false;
+          }
+          // Xóa mapping voucher tương ứng nếu có
+          if (inv.id && this.invoiceVoucherMap[inv.id]) {
+            delete this.invoiceVoucherMap[inv.id];
           }
           this.showToast('Đã xóa hóa đơn chờ', 'success');
         },
@@ -1183,7 +1258,50 @@ export class CounterSalesComponent implements OnInit {
     this.appliedCoupon = mapped;
     this.couponCode = mapped.code;
     this.couponResults = [];
-    this.calculateCartTotal();
+
+    // Tính số tiền giảm theo voucher hiện tại
+    const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
+    const discount = this.computeVoucherDiscount(mapped, base);
+
+    // Nếu đang làm việc với hóa đơn chờ, lưu snapshot xuống backend
+    if (this.currentHoaDonChoId) {
+      const payload: Partial<HoaDonCho> = {
+        voucherCode: mapped.code,
+        voucherDiscountAmount: discount,
+        voucherType: mapped.type,
+        voucherValue: mapped.value,
+        voucherMaxDiscount: mapped.maxDiscount,
+      };
+
+      this.hoaDonChoService.updateHoaDonCho(this.currentHoaDonChoId, payload).subscribe({
+        next: (updated: HoaDonCho) => {
+          // Cập nhật lại danh sách hóa đơn chờ (đặc biệt là snapshot voucher)
+          const idx = this.pendingInvoices.findIndex((x) => x.id === updated.id);
+          if (idx !== -1) {
+            this.pendingInvoices[idx] = {
+              ...this.pendingInvoices[idx],
+              voucherCode: updated.voucherCode,
+              voucherDiscountAmount: updated.voucherDiscountAmount,
+              voucherType: updated.voucherType as any,
+              voucherValue: updated.voucherValue || mapped.value,
+              voucherMaxDiscount: updated.voucherMaxDiscount || mapped.maxDiscount,
+            };
+          }
+
+          this.couponDiscount = updated.voucherDiscountAmount || discount;
+          this.calculateCartTotal();
+        },
+        error: () => {
+          // Nếu lỗi, vẫn tính tạm trên FE để không chặn luồng
+          this.couponDiscount = discount;
+          this.calculateCartTotal();
+        },
+      });
+    } else {
+      // Trường hợp chưa có hóa đơn chờ (giỏ tạm), chỉ tính trên FE
+      this.couponDiscount = discount;
+      this.calculateCartTotal();
+    }
   }
 
   applyCoupon(): void {
@@ -1719,9 +1837,22 @@ export class CounterSalesComponent implements OnInit {
   calculateCartTotal(): void {
     this.cartSubtotal = this.cart.reduce((sum, item) => sum + item.totalPrice, 0);
     this.cartDiscount = this.cart.reduce((sum, item) => sum + item.discountAmount, 0);
-    // tính coupon
+
+    // Mặc định không có giảm thêm từ voucher
     this.couponDiscount = 0;
-    if (this.appliedCoupon) {
+
+    // Nếu hóa đơn chờ hiện tại đã có snapshot voucher thì ưu tiên dùng số tiền snapshot
+    let usedSnapshot = false;
+    if (this.currentHoaDonChoId) {
+      const currentInv = this.pendingInvoices.find((x) => x.id === this.currentHoaDonChoId);
+      if (currentInv && currentInv.voucherCode && currentInv.voucherDiscountAmount != null) {
+        this.couponDiscount = currentInv.voucherDiscountAmount;
+        usedSnapshot = true;
+      }
+    }
+
+    // Nếu chưa có snapshot, mới tính giảm giá theo appliedCoupon hiện tại
+    if (!usedSnapshot && this.appliedCoupon) {
       const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
       console.log('💰 calculateCartTotal - Applied coupon:', {
         code: this.appliedCoupon.code,
@@ -1883,33 +2014,72 @@ export class CounterSalesComponent implements OnInit {
     // Chỉ hiển thị một số phiếu giảm giá đầu tiên (giới hạn để view không bị dài)
     this.displayedVouchers = usable.slice(0, this.maxDisplayedVouchers);
 
-    // ✅ Tự động chọn voucher tốt nhất cho lần đầu tiên
+    // Nếu hóa đơn chờ hiện tại đã có snapshot phiếu giảm giá thì KHÔNG tự động đổi nữa
+    if (this.currentHoaDonChoId) {
+      const currentInv = this.pendingInvoices.find((x) => x.id === this.currentHoaDonChoId);
+      if (currentInv && currentInv.voucherCode && currentInv.voucherDiscountAmount != null) {
+        return;
+      }
+    }
+
+    // ✅ Tự động chọn voucher tốt nhất cho lần đầu tiên (khi chưa có snapshot)
     const topVoucher = this.bestVoucher;
     if (topVoucher) {
       // Chỉ tự động áp dụng nếu CHƯA có voucher nào được chọn
       if (!this.appliedCoupon) {
-        this.appliedCoupon = topVoucher;
-        this.couponCode = topVoucher.code;
-        // Áp dụng ngay giảm giá cho voucher tốt nhất
-        this.isRefreshingVouchers = true;
-        this.calculateCartTotal();
-        this.isRefreshingVouchers = false;
+        // Dùng cùng luồng với khi user click chọn voucher
+        this.applyCouponFromSuggestion(topVoucher);
       } else {
         // Nếu đã có voucher được chọn, kiểm tra xem voucher đó còn hợp lệ không
         const currentVoucherStillValid = usable.some((v) => v.code === this.appliedCoupon?.code);
         // Nếu voucher đang chọn không còn trong danh sách hợp lệ, xóa và áp dụng best voucher
         if (!currentVoucherStillValid) {
-          this.appliedCoupon = topVoucher;
-          this.couponCode = topVoucher.code;
-          this.isRefreshingVouchers = true;
-          this.calculateCartTotal();
-          this.isRefreshingVouchers = false;
+          this.applyCouponFromSuggestion(topVoucher);
         }
       }
     } else if (this.appliedCoupon) {
       // Nếu không còn voucher nào hợp lệ, xóa voucher đang chọn
       this.removeCoupon();
     }
+  }
+
+  /**
+   * Hiển thị % giảm cho thẻ voucher.
+   * Nếu hóa đơn chờ hiện tại đã lưu snapshot và mã trùng với thẻ đang render,
+   * ưu tiên dùng giá trị snapshot (voucherValue) để không bị đổi khi cập nhật phiếu.
+   */
+  getVoucherPercentDisplay(v: any): number {
+    if (this.currentHoaDonChoId) {
+      const inv = this.pendingInvoices.find((x) => x.id === this.currentHoaDonChoId);
+      if (
+        inv &&
+        inv.voucherCode === v.code &&
+        inv.voucherType === 'PERCENT' &&
+        inv.voucherValue != null
+      ) {
+        return inv.voucherValue;
+      }
+    }
+    return v.value;
+  }
+
+  /**
+   * Hiển thị số tiền giảm (dạng FIXED) cho thẻ voucher.
+   * Nếu có snapshot thì ưu tiên dùng số tiền snapshot, tránh đổi khi cấu hình mới.
+   */
+  getVoucherFixedDisplay(v: any): number {
+    if (this.currentHoaDonChoId) {
+      const inv = this.pendingInvoices.find((x) => x.id === this.currentHoaDonChoId);
+      if (
+        inv &&
+        inv.voucherCode === v.code &&
+        inv.voucherType === 'FIXED' &&
+        inv.voucherDiscountAmount != null
+      ) {
+        return inv.voucherDiscountAmount;
+      }
+    }
+    return v.discount;
   }
 
   private computeVoucherDiscount(v: any, base: number): number {

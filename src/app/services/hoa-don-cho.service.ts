@@ -32,6 +32,12 @@ export interface HoaDonCho {
   tongTien?: number;
   tongGiamGia?: number;
   thanhTien?: number;
+  // Snapshot phiếu giảm giá cho từng hóa đơn chờ
+  voucherCode?: string;
+  voucherDiscountAmount?: number;
+  voucherType?: 'PERCENT' | 'FIXED';
+  voucherValue?: number;
+  voucherMaxDiscount?: number;
 }
 
 @Injectable({
