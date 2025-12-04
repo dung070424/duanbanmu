@@ -537,18 +537,18 @@
               </div>
             </div>
 
+            <!-- Button Đặt hàng -->
             <button
               class="btn-place-order"
-              (click)="placeOrder()"
+              (click)="prepareOrder()"
               [disabled]="isSubmitting || !hasCartItems()"
             >
               <i class="fas fa-shopping-bag"></i>
-              {{ isSubmitting ? 'Đang xử lý...' : 'ĐẶT HÀNG' }}
+              ĐẶT HÀNG
             </button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </main>
@@ -598,10 +598,27 @@
               </p>
               <p><strong>Số điện thoại:</strong> {{ orderSummary.billingInfo.phone }}</p>
               <p><strong>Email:</strong> {{ orderSummary.billingInfo.email }}</p>
-              <p>
-                <strong>Địa chỉ:</strong> {{ orderSummary.billingInfo.address }},
-                {{ orderSummary.billingInfo.city }}
+              <p *ngIf="orderSummary.billingInfo.fullAddress">
+                <strong>Địa chỉ đầy đủ:</strong> {{ orderSummary.billingInfo.fullAddress }}
               </p>
+              <div *ngIf="!orderSummary.billingInfo.fullAddress">
+                <p *ngIf="orderSummary.billingInfo.addressDetail">
+                  <strong>Địa chỉ chi tiết:</strong> {{ orderSummary.billingInfo.addressDetail }}
+                </p>
+                <p *ngIf="orderSummary.billingInfo.ward">
+                  <strong>Phường/Xã:</strong> {{ orderSummary.billingInfo.ward }}
+                </p>
+                <p *ngIf="orderSummary.billingInfo.district">
+                  <strong>Quận/Huyện:</strong> {{ orderSummary.billingInfo.district }}
+                </p>
+                <p *ngIf="orderSummary.billingInfo.province">
+                  <strong>Tỉnh/Thành phố:</strong> {{ orderSummary.billingInfo.province }}
+                </p>
+                <p *ngIf="orderSummary.billingInfo.address && orderSummary.billingInfo.city">
+                  <strong>Địa chỉ:</strong> {{ orderSummary.billingInfo.address }},
+                  {{ orderSummary.billingInfo.city }}
+                </p>
+              </div>
             </div>
           </div>
 

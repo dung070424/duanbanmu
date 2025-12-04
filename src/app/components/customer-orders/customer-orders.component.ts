@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { HoaDonService } from '../../services/hoa-don.service';
 import { HoaDonDTO } from '../../interfaces/hoa-don.interface';
 import { AuthService } from '../../services/auth';
@@ -10,18 +11,20 @@ import { ShopFooterComponent } from '../shop/shared/shop-footer.component';
 @Component({
   selector: 'app-customer-orders',
   standalone: true,
-  imports: [CommonModule, RouterModule, ShopHeaderComponent, ShopFooterComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ShopHeaderComponent, ShopFooterComponent],
   templateUrl: './customer-orders.component.html',
   styleUrls: ['./customer-orders.component.scss']
 })
 export class CustomerOrdersComponent implements OnInit {
   orders: HoaDonDTO[] = [];
+  filteredOrders: HoaDonDTO[] = [];
   isLoading = false;
   error = '';
   currentPage = 0;
   totalPages = 0;
   totalElements = 0;
   pageSize = 10;
+  searchTerm: string = ''; // Tìm kiếm theo mã đơn hàng
 
   constructor(
     private hoaDonService: HoaDonService,
@@ -94,9 +97,11 @@ export class CustomerOrdersComponent implements OnInit {
           this.orders = response.content;
           this.totalPages = response.totalPages || 0;
           this.totalElements = response.totalElements || 0;
+          this.filterOrders(); // Áp dụng filter sau khi load
           console.log('✅ Loaded', this.orders.length, 'orders');
         } else {
           this.orders = [];
+          this.filteredOrders = [];
           this.totalPages = 0;
           this.totalElements = 0;
           console.log('⚠️ No orders found or invalid response format');
@@ -116,6 +121,7 @@ export class CustomerOrdersComponent implements OnInit {
         console.error('❌ Error loading customer orders:', error);
         this.error = 'Không thể tải danh sách đơn hàng. Vui lòng thử lại!';
         this.orders = [];
+        this.filteredOrders = [];
         this.isLoading = false;
         
         // Force change detection để đảm bảo UI được cập nhật
@@ -207,6 +213,36 @@ export class CustomerOrdersComponent implements OnInit {
     } else {
       this.router.navigate(['/shop']);
     }
+  }
+
+  /**
+   * Lọc đơn hàng theo mã đơn hàng
+   */
+  filterOrders(): void {
+    if (!this.searchTerm || this.searchTerm.trim() === '') {
+      this.filteredOrders = [...this.orders];
+    } else {
+      const searchLower = this.searchTerm.toLowerCase().trim();
+      this.filteredOrders = this.orders.filter(order => 
+        order.maHoaDon?.toLowerCase().includes(searchLower)
+      );
+    }
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Xử lý khi thay đổi search term
+   */
+  onSearchChange(): void {
+    this.filterOrders();
+  }
+
+  /**
+   * Xóa search term
+   */
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.filterOrders();
   }
 
   /**
