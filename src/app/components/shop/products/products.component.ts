@@ -44,6 +44,14 @@ export class ShopProductsComponent implements OnInit {
   currentYear = new Date().getFullYear();
   productVariantImages: Record<number, string> = {};
   chiTietSanPhamCache: ChiTietSanPhamResponse[] = [];
+  // Lưu min/max giá cho từng sản phẩm
+  productPriceRange: Record<
+    number,
+    {
+      minPrice: number | null;
+      maxPrice: number | null;
+    }
+  > = {};
 
   constructor(
     public authService: AuthService,
@@ -194,6 +202,23 @@ export class ShopProductsComponent implements OnInit {
     }).format(value ?? 0);
   }
 
+  /**
+   * Hiển thị giá từ ... đến ... cho 1 sản phẩm ở trang bán hàng online.
+   * - Nếu đã có trong productPriceRange: dùng min/max đó.
+   * - Nếu chưa có: fallback dùng product.giaBan.
+   */
+  getProductPriceRangeDisplay(product: SanPhamResponse): string {
+    const range = this.productPriceRange[product.id];
+    if (range && range.minPrice != null && range.maxPrice != null) {
+      if (range.minPrice === range.maxPrice) {
+        return this.formatCurrency(range.minPrice);
+      }
+      return `${this.formatCurrency(range.minPrice)} - ${this.formatCurrency(range.maxPrice)}`;
+    }
+    // Fallback: dùng giá gốc nếu chưa có range
+    return this.formatCurrency(product.giaBan);
+  }
+
   getProductImageUrl(product: SanPhamResponse): string {
     const variantImage = this.productVariantImages[product.id];
     return this.normalizeImagePath(variantImage || product.anhSanPham);
@@ -245,14 +270,37 @@ export class ShopProductsComponent implements OnInit {
     this.chiTietSanPhamService.getAll().subscribe({
       next: (variants: ChiTietSanPhamResponse[]) => {
         this.chiTietSanPhamCache = variants || [];
-        const map: Record<number, string> = {};
+        const imageMap: Record<number, string> = {};
+        const priceMap: Record<
+          number,
+          {
+            minPrice: number | null;
+            maxPrice: number | null;
+          }
+        > = {};
+
         variants.forEach((variant) => {
           if (!variant?.sanPhamId) return;
-          if (variant.anhSanPham && !map[variant.sanPhamId]) {
-            map[variant.sanPhamId] = this.normalizeImagePath(variant.anhSanPham);
+
+          // Ảnh biến thể đầu tiên cho mỗi sản phẩm
+          if (variant.anhSanPham && !imageMap[variant.sanPhamId]) {
+            imageMap[variant.sanPhamId] = this.normalizeImagePath(variant.anhSanPham);
           }
+
+          // Tính min/max giá từ danh sách biến thể theo sanPhamId
+          const rawPrice = variant.giaBan;
+          if (rawPrice == null) return;
+          const num = Number(String(rawPrice).replace(/\s+/g, '').replace(/,/g, ''));
+          if (!Number.isFinite(num)) return;
+
+          const current = priceMap[variant.sanPhamId] || { minPrice: null, maxPrice: null };
+          if (current.minPrice == null || num < current.minPrice) current.minPrice = num;
+          if (current.maxPrice == null || num > current.maxPrice) current.maxPrice = num;
+          priceMap[variant.sanPhamId] = current;
         });
-        this.productVariantImages = map;
+
+        this.productVariantImages = imageMap;
+        this.productPriceRange = priceMap;
         this.applyFilters();
         this.cdr.detectChanges();
       },

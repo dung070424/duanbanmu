@@ -23,7 +23,6 @@
             Tất cả model đang có sẵn tại TDK Store. Lọc theo dòng mũ, tìm kiếm bằng tên hoặc mã sản
             phẩm để chọn nhanh chiếc mũ phù hợp với hành trình của bạn.
           </p>
-          
         </div>
       </div>
     </section>
@@ -103,7 +102,9 @@
               </p>
             </div>
             <div class="product-footer">
-              <span class="product-price">{{ formatCurrency(product.giaBan) }}</span>
+              <span class="product-price">
+                {{ getProductPriceRangeDisplay(product) }}
+              </span>
               <button class="btn-primary" type="button" (click)="viewProductDetail(product.id)">
                 Xem chi tiết
               </button>

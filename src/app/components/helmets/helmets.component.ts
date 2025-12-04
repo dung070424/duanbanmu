@@ -32,6 +32,8 @@ interface HelmetProduct {
   code: string;
   name: string;
   avgPrice?: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
   totalQuantity?: number | null;
   loaiMuBaoHiem?: string | null;
   nhaSanXuat?: string | null;
@@ -307,15 +309,13 @@ export class HelmetsComponent implements OnInit {
           this.totalPages = res.totalPages ?? 0;
           this.cdr.detectChanges();
 
-          // Fallback: nếu BE không trả tongSoLuongChiTiet, tính tổng từ phiên bản
+          // Tính lại tổng số lượng, giá trung bình và khoảng giá từ danh sách phiên bản
           this.helmetProducts.forEach((prod, idx) => {
-            const needQty = prod.totalQuantity === null || prod.totalQuantity === undefined;
-            const needAvg = prod.avgPrice === null || prod.avgPrice === undefined;
-            if (!needQty && !needAvg) return;
             this.helmetVersionApi.getBySanPhamId(prod.id).subscribe({
               next: (resp: any) => {
                 const items = resp?.data || resp || [];
-                if (needQty) {
+                // Tổng số lượng
+                if (prod.totalQuantity === null || prod.totalQuantity === undefined) {
                   const sumQty = items
                     .map((v: any) => (v?.soLuongTon != null ? String(v.soLuongTon) : ''))
                     .map((s: string) => {
@@ -328,27 +328,44 @@ export class HelmetsComponent implements OnInit {
                   this.helmetProducts[idx].totalQuantity = sumQty;
                   this.filteredProducts[idx].totalQuantity = sumQty;
                 }
-                if (needAvg) {
-                  const prices = items
-                    .map((v: any) => (v?.giaBan != null ? String(v.giaBan) : ''))
-                    .map((s: string) => {
-                      let cleaned = (s || '').trim().replace(/\s+/g, '').replace(/,/g, '');
-                      const firstDot = cleaned.indexOf('.');
-                      const lastDot = cleaned.lastIndexOf('.');
-                      if (firstDot !== -1 && lastDot !== -1 && firstDot !== lastDot) {
-                        cleaned = cleaned.replace(/\./g, '');
-                      }
-                      const n = Number(cleaned);
-                      return Number.isFinite(n) ? n : NaN;
-                    })
-                    .filter((n: number) => Number.isFinite(n));
-                  if (prices.length > 0) {
+
+                // Giá từ/toi đa + giá trung bình
+                const prices = items
+                  .map((v: any) => (v?.giaBan != null ? String(v.giaBan) : ''))
+                  .map((s: string) => {
+                    let cleaned = (s || '').trim().replace(/\s+/g, '').replace(/,/g, '');
+                    const firstDot = cleaned.indexOf('.');
+                    const lastDot = cleaned.lastIndexOf('.');
+                    if (firstDot !== -1 && lastDot !== -1 && firstDot !== lastDot) {
+                      cleaned = cleaned.replace(/\./g, '');
+                    }
+                    const n = Number(cleaned);
+                    return Number.isFinite(n) ? n : NaN;
+                  })
+                  .filter((n: number) => Number.isFinite(n));
+
+                if (prices.length > 0) {
+                  // Giá thấp nhất & cao nhất
+                  const min = Math.min(...prices);
+                  const max = Math.max(...prices);
+                  this.helmetProducts[idx].minPrice = min;
+                  this.helmetProducts[idx].maxPrice = max;
+                  this.filteredProducts[idx].minPrice = min;
+                  this.filteredProducts[idx].maxPrice = max;
+
+                  // Giá trung bình (nếu BE không trả)
+                  if (prod.avgPrice === null || prod.avgPrice === undefined) {
                     const avg = Math.round(
                       prices.reduce((a: number, b: number) => a + b, 0) / prices.length
                     );
                     this.helmetProducts[idx].avgPrice = avg;
                     this.filteredProducts[idx].avgPrice = avg;
                   }
+                } else {
+                  this.helmetProducts[idx].minPrice = null;
+                  this.helmetProducts[idx].maxPrice = null;
+                  this.filteredProducts[idx].minPrice = null;
+                  this.filteredProducts[idx].maxPrice = null;
                 }
                 this.cdr.detectChanges();
               },
@@ -865,6 +882,32 @@ export class HelmetsComponent implements OnInit {
       style: 'currency',
       currency: 'VND',
     }).format(price);
+  }
+
+  /**
+   * Hiển thị giá từ ... đến ... cho danh sách sản phẩm.
+   * - Nếu có cả minPrice và maxPrice:
+   *   + Nếu bằng nhau -> hiển thị một giá.
+   *   + Nếu khác nhau -> hiển thị "min - max".
+   * - Nếu chưa có min/max nhưng có avgPrice -> fallback dùng avgPrice.
+   * - Nếu không có dữ liệu -> "-".
+   */
+  getPriceRangeDisplay(p: HelmetProduct): string {
+    const hasMin = p.minPrice !== null && p.minPrice !== undefined;
+    const hasMax = p.maxPrice !== null && p.maxPrice !== undefined;
+
+    if (hasMin && hasMax) {
+      if (p.minPrice === p.maxPrice) {
+        return this.formatPrice(p.minPrice);
+      }
+      return `${this.formatPrice(p.minPrice)} - ${this.formatPrice(p.maxPrice)}`;
+    }
+
+    if (p.avgPrice !== null && p.avgPrice !== undefined) {
+      return this.formatPrice(p.avgPrice);
+    }
+
+    return '-';
   }
 
   // Helpers: hiển thị tên theo id

@@ -69,7 +69,9 @@
             <div class="total-customers">Tổng số sản phẩm: {{ totalElements }}</div>
             <div class="action-buttons">
               <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
-              <button *ngIf="isAdmin" class="btn-add" (click)="navigateToAddForm()">Thêm Chi Tiết Sản Phẩm</button>
+              <button *ngIf="isAdmin" class="btn-add" (click)="navigateToAddForm()">
+                Thêm Chi Tiết Sản Phẩm
+              </button>
             </div>
           </div>
         </div>
@@ -98,7 +100,7 @@
                   <th>Tên sản phẩm</th>
                   <th>Loại mũ</th>
                   <th>Nhà sản xuất</th>
-                  <th>Giá TB (VNĐ)</th>
+                  <th>Giá (từ - đến)</th>
                   <th>Số lượng</th>
                   <th>Trạng thái</th>
                   <th>Hành động</th>
@@ -134,14 +136,7 @@
                     <span class="no-data" *ngIf="!product.nhaSanXuat">-</span>
                   </td>
                   <td>
-                    <span *ngIf="product.avgPrice !== null && product.avgPrice !== undefined">
-                      {{ formatPrice(product.avgPrice) }}
-                    </span>
-                    <span
-                      class="no-data"
-                      *ngIf="product.avgPrice === null || product.avgPrice === undefined"
-                      >-</span
-                    >
+                    {{ getPriceRangeDisplay(product) }}
                   </td>
                   <td>
                     <span
@@ -175,7 +170,12 @@
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <button *ngIf="isAdmin" class="btn-edit" (click)="openEditModal(product)" title="Chỉnh sửa">
+                      <button
+                        *ngIf="isAdmin"
+                        class="btn-edit"
+                        (click)="openEditModal(product)"
+                        title="Chỉnh sửa"
+                      >
                         <i class="bi bi-pencil"></i>
                       </button>
                       <button class="btn-view" (click)="viewProduct(product)" title="Xem chi tiết">
