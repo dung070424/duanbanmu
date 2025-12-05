@@ -110,6 +110,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   loadingDistricts: boolean = false;
   loadingWards: boolean = false;
   calculatingShippingFee: boolean = false;
+  originalShippingFee: number = 0; // Lưu phí ship ban đầu
 
   // Selected saved address
   selectedSavedAddressId: string = '';
@@ -444,6 +445,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         if (fee > 0) {
           this.editingInvoice!.phiGiaoHang = fee;
           this.showToast(`Phí vận chuyển: ${this.formatCurrency(fee)}`, 'success');
+          // Trigger change detection để hiển thị thông báo chênh lệch
+          this.cdr.detectChanges();
+          // Log để debug
+          console.log('💰 Shipping fee updated:', {
+            original: this.originalShippingFee,
+            new: fee,
+            difference: fee - this.originalShippingFee,
+            message: this.getShippingFeeDifferenceMessage()
+          });
         } else {
           // Dùng phí mặc định
           this.editingInvoice!.phiGiaoHang = 0;
@@ -462,6 +472,75 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  /**
+   * Tính chênh lệch phí ship và trả về thông báo
+   */
+  getShippingFeeDifferenceMessage(): string | null {
+    if (!this.editingInvoice) {
+      return null;
+    }
+
+    // Nếu chưa có originalShippingFee, lấy từ invoice
+    const originalFee = this.originalShippingFee !== undefined 
+      ? this.originalShippingFee 
+      : (this.invoice?.phiGiaoHang || 0);
+
+    const currentFee = this.editingInvoice.phiGiaoHang || 0;
+    const difference = currentFee - originalFee;
+
+    // Nếu không có thay đổi (chênh lệch < 1 VND)
+    if (Math.abs(difference) < 1) {
+      return null;
+    }
+
+    // Nếu phí mới cao hơn
+    if (difference > 0) {
+      return `Khách cần nộp thêm ${this.formatCurrency(difference)}`;
+    }
+
+    // Nếu phí mới thấp hơn
+    return `Cần hoàn lại ${this.formatCurrency(Math.abs(difference))} cho khách`;
+  }
+
+  /**
+   * Kiểm tra xem phí ship có thay đổi không
+   */
+  hasShippingFeeChanged(): boolean {
+    if (!this.editingInvoice) {
+      return false;
+    }
+
+    // Nếu chưa có originalShippingFee, lấy từ invoice
+    const originalFee = this.originalShippingFee !== undefined 
+      ? this.originalShippingFee 
+      : (this.invoice?.phiGiaoHang || 0);
+
+    const currentFee = this.editingInvoice.phiGiaoHang || 0;
+    const difference = Math.abs(currentFee - originalFee);
+    
+    // Chỉ hiển thị nếu chênh lệch >= 1 VND
+    return difference >= 1;
+  }
+
+  /**
+   * Xử lý khi phí ship thay đổi (khi người dùng nhập thủ công)
+   */
+  onShippingFeeChange(): void {
+    this.cdr.detectChanges();
+    // Log để debug
+    if (this.editingInvoice) {
+      const originalFee = this.originalShippingFee !== undefined 
+        ? this.originalShippingFee 
+        : (this.invoice?.phiGiaoHang || 0);
+      console.log('💰 Shipping fee changed manually:', {
+        original: originalFee,
+        new: this.editingInvoice.phiGiaoHang || 0,
+        difference: (this.editingInvoice.phiGiaoHang || 0) - originalFee,
+        message: this.getShippingFeeDifferenceMessage()
+      });
+    }
   }
 
   ngOnInit(): void {
@@ -684,6 +763,28 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         if (invoice.phiGiaoHang !== undefined && invoice.phiGiaoHang !== null) {
           invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string' ? parseFloat(invoice.phiGiaoHang) : Number(invoice.phiGiaoHang);
         }
+        
+        // Parse các trường vận chuyển
+        if (invoice.khoiLuong !== undefined && invoice.khoiLuong !== null) {
+          invoice.khoiLuong = typeof invoice.khoiLuong === 'string' ? parseFloat(invoice.khoiLuong) : Number(invoice.khoiLuong);
+        }
+        if (invoice.chieuDai !== undefined && invoice.chieuDai !== null) {
+          invoice.chieuDai = typeof invoice.chieuDai === 'string' ? parseFloat(invoice.chieuDai) : Number(invoice.chieuDai);
+        }
+        if (invoice.chieuRong !== undefined && invoice.chieuRong !== null) {
+          invoice.chieuRong = typeof invoice.chieuRong === 'string' ? parseFloat(invoice.chieuRong) : Number(invoice.chieuRong);
+        }
+        if (invoice.chieuCao !== undefined && invoice.chieuCao !== null) {
+          invoice.chieuCao = typeof invoice.chieuCao === 'string' ? parseFloat(invoice.chieuCao) : Number(invoice.chieuCao);
+        }
+        
+        // Đảm bảo ngayDuKienGiao là string hoặc Date hợp lệ
+        if (invoice.ngayDuKienGiao) {
+          // Nếu là string, giữ nguyên; nếu là Date object, convert sang string
+          if (invoice.ngayDuKienGiao instanceof Date) {
+            invoice.ngayDuKienGiao = invoice.ngayDuKienGiao.toISOString();
+          }
+        }
 
         // Đảm bảo danhSachSanPham luôn được map từ danhSachChiTiet
         // Priority: 1. danhSachChiTiet (từ backend) -> map sang danhSachSanPham
@@ -795,10 +896,19 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           phuongXa: invoice.phuongXa,
           diaChiChiTiet: invoice.diaChiChiTiet
         });
+        
+        console.log('📦 Invoice shipping data:', {
+          khoiLuong: invoice.khoiLuong,
+          chieuDai: invoice.chieuDai,
+          chieuRong: invoice.chieuRong,
+          chieuCao: invoice.chieuCao,
+          ngayDuKienGiao: invoice.ngayDuKienGiao
+        });
 
         // Tạo object mới để trigger change detection - QUAN TRỌNG để UI cập nhật
         this.invoice = { ...invoice };
         this.originalStatus = invoice.trangThai; // Lưu trạng thái ban đầu
+        this.originalShippingFee = invoice.phiGiaoHang || 0; // Lưu phí ship ban đầu
         this.statusChanged = false; // Reset flag
         this.selectedStatus = ''; // Reset selected status
         
@@ -1085,6 +1195,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     // Tạo bản sao của invoice hiện tại để chỉnh sửa
       this.editingInvoice = { ...this.invoice };
+      // Lưu phí ship ban đầu khi mở modal
+      this.originalShippingFee = this.invoice?.phiGiaoHang || 0;
 
       console.log('🔄 Opening update modal for invoice:', this.editingInvoice.maHoaDon);
       console.log('📋 Invoice data:', this.editingInvoice);
@@ -1298,6 +1410,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       // Enter edit mode
       this.isEditMode = true;
       this.editingInvoice = this.invoice ? { ...this.invoice } : null;
+      // Lưu phí ship ban đầu khi vào edit mode
+      this.originalShippingFee = this.invoice?.phiGiaoHang || 0;
       this.stopAutoRefresh(); // Stop auto-refresh during edit
     }
   }
@@ -1333,6 +1447,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     this.isEditMode = true;
     this.editingInvoice = { ...this.invoice };
+    // Lưu phí ship ban đầu khi vào edit mode
+    this.originalShippingFee = this.invoice?.phiGiaoHang || 0;
     this.stopAutoRefresh();
     
     // Load provinces và địa chỉ khi vào edit mode
@@ -2729,8 +2845,20 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   public getDerivedPaymentStatus(): 'pending' | 'paid' | 'cancelled' {
     const status = this.invoice?.trangThai;
-    if (status === 'DA_GIAO_HANG') return 'paid';
     if (status === 'HUY') return 'cancelled';
+    
+    // Nếu phương thức thanh toán là "Chuyển khoản ngân hàng" => trạng thái thanh toán là "Đã thanh toán"
+    const paymentMethod = this.invoice?.phuongThucThanhToan || '';
+    const paymentMethodLower = paymentMethod.toLowerCase();
+    if (paymentMethodLower === 'transfer' || 
+        paymentMethodLower === 'chuyển khoản' || 
+        paymentMethodLower === 'chuyen khoan' ||
+        paymentMethodLower === 'chuyển khoản ngân hàng' ||
+        paymentMethodLower === 'chuyen khoan ngan hang') {
+      return 'paid';
+    }
+    
+    if (status === 'DA_GIAO_HANG') return 'paid';
     return 'pending';
   }
 
@@ -4783,9 +4911,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       // Cập nhật trạng thái mới (phải là enum value từ backend)
       trangThai: 'DA_XAC_NHAN',
 
-      // LƯU Ý: Các field vận chuyển (ngayDuKienGiao, khoiLuong, chieuDai, chieuRong, chieuCao, phiGiaoHang, nguoiChiuPhi)
-      // không có trong HoaDonDTO backend, nên không gửi lên để tránh lỗi 400
-      // Có thể cần tạo endpoint riêng hoặc lưu vào entity ThongTinDonHang nếu cần
+      // ✅ QUAN TRỌNG: Gửi thông tin vận chuyển để lưu vào ThongTinDonHang
+      ngayDuKienGiao: this.confirmInvoiceData.ngayDuKienGiao ? new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString() : null,
+      khoiLuong: this.confirmInvoiceData.khoiLuong || null,
+      chieuDai: this.confirmInvoiceData.chieuDai || null,
+      chieuRong: this.confirmInvoiceData.chieuRong || null,
+      chieuCao: this.confirmInvoiceData.chieuCao || null,
+      phiGiaoHang: this.confirmInvoiceData.phiGiaoHang || 0
     };
 
     // QUAN TRỌNG: Giữ lại danh sách sản phẩm từ hóa đơn hiện tại
@@ -4920,7 +5052,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       tienGiamGia: updateData.tienGiamGia ? Number(updateData.tienGiamGia) : 0,
       soLuongSanPham: updateData.soLuongSanPham || 0,
       // Đảm bảo danhSachChiTiet là array
-      danhSachChiTiet: updateData.danhSachChiTiet || []
+      danhSachChiTiet: updateData.danhSachChiTiet || [],
+      // ✅ QUAN TRỌNG: Đảm bảo thông tin vận chuyển được gửi lên backend
+      ngayDuKienGiao: updateData.ngayDuKienGiao || null,
+      khoiLuong: updateData.khoiLuong ? Number(updateData.khoiLuong) : null,
+      chieuDai: updateData.chieuDai ? Number(updateData.chieuDai) : null,
+      chieuRong: updateData.chieuRong ? Number(updateData.chieuRong) : null,
+      chieuCao: updateData.chieuCao ? Number(updateData.chieuCao) : null,
+      phiGiaoHang: updateData.phiGiaoHang ? Number(updateData.phiGiaoHang) : 0
     };
 
     // Log final data trước khi gửi
