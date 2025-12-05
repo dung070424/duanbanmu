@@ -432,10 +432,6 @@
               <span *ngIf="!loadingAddresses">{{ getCustomerAddress() }}</span>
             </span>
           </div>
-          <div class="info-row">
-            <span class="label">ID khách hàng</span>
-            <span class="value">{{ invoice.khachHangId || 'Không có' }}</span>
-          </div>
           <div class="info-row payment-row">
             <span class="label">Trạng thái thanh toán</span>
             <span class="value" [ngClass]="getDerivedPaymentStatusClass()">{{ getDerivedPaymentStatusLabel() }}</span>
@@ -813,6 +809,7 @@
                   type="number" 
                   class="form-control" 
                   [(ngModel)]="editingInvoice.phiGiaoHang" 
+                  (ngModelChange)="onShippingFeeChange()"
                   min="0"
                   [disabled]="calculatingShippingFee"
                 >
@@ -823,13 +820,22 @@
               <small class="text-muted" *ngIf="calculatingShippingFee">
                 <i class="fas fa-spinner fa-spin"></i> Đang tính phí ship tự động...
               </small>
-              <small class="text-info" *ngIf="!calculatingShippingFee && editingInvoice?.tinhThanh && editingInvoice?.quanHuyen">
+              <small class="text-info" *ngIf="!calculatingShippingFee && editingInvoice?.tinhThanh && editingInvoice?.quanHuyen && !hasShippingFeeChanged()">
                 <i class="fas fa-info-circle"></i> Phí ship sẽ được tính tự động khi bạn chọn địa chỉ
               </small>
+              <!-- Hiển thị thông báo chênh lệch phí ship -->
+              <div *ngIf="hasShippingFeeChanged() && getShippingFeeDifferenceMessage()" 
+                   class="shipping-fee-difference-alert"
+                   [class.alert-surcharge]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))"
+                   [class.alert-refund]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))">
+                <i class="fas" 
+                   [class.fa-arrow-up]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))"
+                   [class.fa-arrow-down]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))"></i>
+                <strong>{{ getShippingFeeDifferenceMessage() }}</strong>
+              </div>
             </div>
           </div>
         </div>
-
         <div class="row">
           <div class="col-md-6">
             <div class="form-group">
