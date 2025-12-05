@@ -826,11 +826,11 @@
               <!-- Hiển thị thông báo chênh lệch phí ship -->
               <div *ngIf="hasShippingFeeChanged() && getShippingFeeDifferenceMessage()" 
                    class="shipping-fee-difference-alert"
-                   [class.alert-surcharge]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))"
-                   [class.alert-refund]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))">
+                   [class.alert-surcharge]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"
+                   [class.alert-refund]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)">
                 <i class="fas" 
-                   [class.fa-arrow-up]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))"
-                   [class.fa-arrow-down]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice?.phiGiaoHang || 0))"></i>
+                   [class.fa-arrow-up]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"
+                   [class.fa-arrow-down]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"></i>
                 <strong>{{ getShippingFeeDifferenceMessage() }}</strong>
               </div>
             </div>
