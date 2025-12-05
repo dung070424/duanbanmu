@@ -260,6 +260,65 @@ export class CounterSalesComponent implements OnInit {
     return Number.isFinite(num) ? num : null;
   }
 
+  /**
+   * Lấy giá gốc hiện tại của biến thể để so sánh với giá đang bán trong giỏ.
+   * Ưu tiên:
+   * 1) Giá gốc từ danh sách biến thể (availableProducts / pagedProducts / variantRawMap)
+   * 2) Nếu không có, fallback giá cao nhất của cùng productId đang có trong giỏ
+   */
+  private getOriginalUnitPrice(item: UICartItem): number | null {
+    if (!item?.productId) return null;
+    const variantId = item.productId;
+
+    // Giá gốc từ catalog
+    let catalogPrice: number | null = null;
+    const variant =
+      (this.availableProducts || []).find((p) => p.id === variantId) ||
+      (this.pagedProducts || []).find((p: any) => p?.id === variantId);
+
+    if (variant && (variant as any).price != null) {
+      const n = Number((variant as any).price);
+      if (Number.isFinite(n) && n > 0) catalogPrice = n;
+    }
+
+    const raw = this.variantRawMap?.[variantId];
+    if (raw) {
+      const n = this.parsePrice(raw.giaBan || raw.gia_ban);
+      if (Number.isFinite(n) && n > 0) catalogPrice = n;
+    }
+
+    if (catalogPrice != null) return catalogPrice;
+
+    // Fallback: giá cao nhất của cùng productId trong giỏ
+    const sameItems = (this.cart || []).filter((x) => x.productId === variantId);
+    if (sameItems.length > 0) {
+      const max = Math.max(
+        ...sameItems.map((x) => Number(x.unitPrice)).filter((v) => Number.isFinite(v) && v > 0)
+      );
+      if (Number.isFinite(max) && max > 0) return max;
+    }
+
+    return null;
+  }
+
+  /**
+   * Kiểm tra có phải đang bán thấp hơn giá gốc không để hiển thị giá gạch.
+   */
+  hasSpecialUnitPrice(item: UICartItem): boolean {
+    const original = this.getOriginalUnitPrice(item);
+    if (original == null) return false;
+    const current = Number(item.unitPrice);
+    if (!Number.isFinite(current)) return false;
+    // Chỉ gạch khi giá hiện tại thấp hơn giá gốc
+    return current + 1 <= original && original > 0;
+  }
+
+  getOriginalUnitPriceDisplay(item: UICartItem): number {
+    const original = this.getOriginalUnitPrice(item);
+    if (original != null && Number.isFinite(original)) return original;
+    return Number(item.unitPrice) || 0;
+  }
+
   // Helper method to get image URL from chiTietSanPhamId
   private getImageUrlFromChiTietSanPhamId(chiTietSanPhamId: number): string | undefined {
     if (this.chiTietImageUrl[chiTietSanPhamId]) {

@@ -113,7 +113,23 @@
                     </button>
                   </div>
                 </td>
-                <td>{{ formatCurrency(item.unitPrice) }}</td>
+                <td>
+                  <ng-container *ngIf="hasSpecialUnitPrice(item); else normalUnitPrice">
+                    <div
+                      class="d-flex flex-column flex-sm-row gap-1 align-items-start align-items-sm-center"
+                    >
+                      <span class="text-muted text-decoration-line-through">
+                        {{ formatCurrency(getOriginalUnitPriceDisplay(item)) }}
+                      </span>
+                      <span class="fw-semibold text-danger">
+                        {{ formatCurrency(item.unitPrice) }}
+                      </span>
+                    </div>
+                  </ng-container>
+                  <ng-template #normalUnitPrice>
+                    {{ formatCurrency(item.unitPrice) }}
+                  </ng-template>
+                </td>
                 <td class="text-success fw-semibold">
                   {{ formatCurrency(item.totalPrice - item.discountAmount) }}
                 </td>

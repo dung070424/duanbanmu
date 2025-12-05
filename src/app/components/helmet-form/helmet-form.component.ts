@@ -1036,11 +1036,11 @@ export class HelmetFormComponent implements OnInit {
             mauSacId: Number(v.mauSacId),
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
-            giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
             soLuongTon:
               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-            trangThai: true,
-            anhSanPham: v.anhSanPham || null,
+             trangThai: true,
+             anhSanPham: v.anhSanPham || null,
           };
           this.helmetVersionApi.create(versionPayload).subscribe({
             next: () => {
@@ -1138,10 +1138,10 @@ export class HelmetFormComponent implements OnInit {
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
-            soLuongTon:
-              v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-            trangThai: true,
-            anhSanPham: v.anhSanPham || null,
+             soLuongTon:
+               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+             trangThai: true,
+             anhSanPham: v.anhSanPham || null,
           };
           if (v.id) {
             this.helmetVersionApi.update(v.id, versionPayload).subscribe();
