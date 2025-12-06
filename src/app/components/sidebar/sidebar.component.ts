@@ -70,7 +70,7 @@ export class SidebarComponent implements OnInit {
       active: false,
       hasSubmenu: true,
       isExpanded: false,
-      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
+      roles: ['ADMIN'], // Chỉ ADMIN
       submenu: [
         {
           label: 'Sản phẩm mũ bảo hiểm',
@@ -185,16 +185,6 @@ export class SidebarComponent implements OnInit {
           submenu: [],
         },
       ],
-    },
-    {
-      icon: 'bi-clock-history',
-      label: 'Quản Lý Ca Làm',
-      route: '/ca-lam',
-      active: false,
-      hasSubmenu: false,
-      isExpanded: false,
-      submenu: [],
-      roles: ['ADMIN', 'STAFF'], // ADMIN và STAFF
     },
   ];
 

@@ -560,7 +560,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       if (this.invoiceId && !isNaN(this.invoiceId) && this.invoiceId > 0) {
         console.log('🔄 Valid invoiceId, loading detail...');
         this.loadInvoiceDetail();
-        this.startAutoRefresh();
+        // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
+        // this.startAutoRefresh();
       } else {
         console.error('❌ Invalid invoiceId:', this.invoiceId);
         this.error = 'Mã hóa đơn không hợp lệ';
@@ -1394,8 +1395,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.isEditMode = false;
     this.selectedProductsForUpdate = [];
 
-    // Resume auto-refresh
-    this.startAutoRefresh();
+    // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
+    // this.startAutoRefresh();
 
     console.log('✅ Update modal closed and returned to invoice detail view');
   }
@@ -1405,7 +1406,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       // Cancel edit mode
       this.isEditMode = false;
       this.editingInvoice = null;
-      this.startAutoRefresh(); // Resume auto-refresh
+      // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
+      // this.startAutoRefresh(); // Resume auto-refresh
     } else {
       // Enter edit mode
       this.isEditMode = true;
@@ -1498,8 +1500,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.editingInvoice = null;
     this.selectedProductsForUpdate = [];
 
-    // Resume auto-refresh
-    this.startAutoRefresh();
+    // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
+    // this.startAutoRefresh();
 
     console.log('✅ Edit cancelled and returned to invoice detail view');
   }
@@ -2070,7 +2072,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               this.isEditMode = false;
               const editingEmail = this.editingInvoice?.emailKhachHang;
               this.editingInvoice = null;
-              this.startAutoRefresh(); // Resume auto-refresh
+              // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
+              // this.startAutoRefresh(); // Resume auto-refresh
               
               // Thông báo thành công - backend sẽ tự động gửi email nếu có thay đổi và có email khách hàng
               if (editingEmail && editingEmail.trim() !== '') {

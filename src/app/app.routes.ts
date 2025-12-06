@@ -45,7 +45,6 @@ import { AboutComponent } from './components/shop/about/about.component';
 import { NewsComponent } from './components/shop/news/news.component';
 import { ContactComponent } from './components/shop/contact/contact.component';
 import { ShopProductsComponent } from './components/shop/products/products.component';
-import { CaLamManagementComponent } from './components/ca-lam-management/ca-lam-management.component';
 import { RefundFormComponent } from './components/refund-form/refund-form.component';
 
 export const routes: Routes = [
@@ -168,52 +167,62 @@ export const routes: Routes = [
   {
     path: 'products/helmets',
     component: HelmetsComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/helmets/new',
     component: HelmetFormComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/manufacturers',
     component: ManufacturersComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/colors',
     component: ColorsComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/sizes',
     component: SizesComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/materials',
     component: MaterialsComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/origins',
     component: OriginsComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/trong-luong',
     component: TrongLuongComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/loai-mu-bao-hiem',
     component: LoaiMuBaoHiemComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   {
     path: 'products/cong-nghe-an-toan',
     component: CongNgheAnToanComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
   },
   // { path: 'products/inventory', component: InventoryComponent, canActivate: [AuthGuard] },
   {
@@ -240,12 +249,6 @@ export const routes: Routes = [
     path: 'staff',
     component: StaffManagementComponent,
     canActivate: [AuthGuard],
-  },
-  {
-    path: 'ca-lam',
-    component: CaLamManagementComponent,
-    canActivate: [AuthGuard, roleGuard],
-    data: { roles: ['ADMIN', 'STAFF'] },
   },
 
   { path: '**', redirectTo: '/dashboard' },
