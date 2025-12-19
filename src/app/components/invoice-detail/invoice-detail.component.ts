@@ -4920,7 +4920,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       chieuDai: this.confirmInvoiceData.chieuDai || null,
       chieuRong: this.confirmInvoiceData.chieuRong || null,
       chieuCao: this.confirmInvoiceData.chieuCao || null,
-      phiGiaoHang: this.confirmInvoiceData.phiGiaoHang || 0
+      // ✅ QUAN TRỌNG: Giữ nguyên phiGiaoHang từ hóa đơn hiện tại, KHÔNG lấy từ confirmInvoiceData
+      phiGiaoHang: this.invoice.phiGiaoHang ? Number(this.invoice.phiGiaoHang) : 0
     };
 
     // QUAN TRỌNG: Giữ lại danh sách sản phẩm từ hóa đơn hiện tại
@@ -5062,7 +5063,9 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       chieuDai: updateData.chieuDai ? Number(updateData.chieuDai) : null,
       chieuRong: updateData.chieuRong ? Number(updateData.chieuRong) : null,
       chieuCao: updateData.chieuCao ? Number(updateData.chieuCao) : null,
-      phiGiaoHang: updateData.phiGiaoHang ? Number(updateData.phiGiaoHang) : 0
+      phiGiaoHang: updateData.phiGiaoHang ? Number(updateData.phiGiaoHang) : 0,
+      // ✅ QUAN TRỌNG: Giữ nguyên phương thức thanh toán từ hóa đơn hiện tại
+      phuongThucThanhToan: this.invoice.phuongThucThanhToan || null
     };
 
     // Log final data trước khi gửi
