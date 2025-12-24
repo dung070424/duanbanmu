@@ -14,7 +14,7 @@ $text-light: #6c757d;
 
 // Main container
 .invoice-management-container {
-  background: linear-gradient(135deg, rgba(254, 188, 73, 0.05) 0%, rgba(254, 188, 73, 0.02) 100%);
+  background: #f8f9fa;
   min-height: 100vh;
   padding: 20px;
 }
@@ -22,14 +22,15 @@ $text-light: #6c757d;
 
 // Page header
 .page-header {
-  background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
-  color: $white;
+  background: $white;
+  color: $text-dark;
   padding: 30px;
   border-radius: 15px;
   margin-bottom: 25px;
-  box-shadow: 0 8px 25px rgba(254, 188, 73, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  border: 1px solid #e9ecef;
   
   &::before {
     content: '';
@@ -38,7 +39,7 @@ $text-light: #6c757d;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    background: transparent;
     pointer-events: none;
   }
   
@@ -48,11 +49,12 @@ $text-light: #6c757d;
     margin: 0;
     position: relative;
     z-index: 1;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: $text-dark;
     
     i {
       margin-right: 15px;
       opacity: 0.9;
+      color: $text-dark;
     }
   }
 }
@@ -63,8 +65,8 @@ $text-light: #6c757d;
   border-radius: 15px;
   padding: 25px;
   margin-bottom: 25px;
-  box-shadow: 0 4px 15px rgba(254, 188, 73, 0.1);
-  border: 1px solid rgba(254, 188, 73, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
 
   .section-title {
     display: flex;
@@ -75,14 +77,14 @@ $text-light: #6c757d;
 
     i {
       font-size: 1.5rem;
-      color: #febc49;
+      color: $text-dark;
     }
 
     h3 {
       margin: 0;
       font-size: 1.5rem;
       font-weight: 600;
-      color: #febc49;
+      color: $text-dark;
     }
   }
 
@@ -104,13 +106,13 @@ $text-light: #6c757d;
       font-size: 0.9rem;
 
       &:focus {
-        border-color: $primary-color;
-        box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25);
+        border-color: #6c757d;
+        box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
         outline: none;
       }
 
       &:hover {
-        border-color: rgba(254, 188, 73, 0.5);
+        border-color: #adb5bd;
       }
     }
 
@@ -159,8 +161,9 @@ $text-light: #6c757d;
   }
   
   .btn-primary {
-    background: linear-gradient(135deg, $primary-color, $primary-dark);
-    border: none;
+    background: $white;
+    border: 2px solid $text-dark;
+    color: $text-dark;
     border-radius: 10px;
     padding: 12px 20px;
     font-weight: 600;
@@ -168,7 +171,8 @@ $text-light: #6c757d;
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(254, 188, 73, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      background: #f8f9fa;
     }
   }
 }
@@ -186,12 +190,16 @@ $text-light: #6c757d;
     padding: 12px 24px;
     font-weight: 600;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(254, 188, 73, 0.3);
+    background: $white;
+    border: 2px solid $text-dark;
+    color: $text-dark;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      background: #f8f9fa;
     }
     
     i {
@@ -279,7 +287,7 @@ $text-light: #6c757d;
     transition: background-color 0.2s ease;
     
     &:hover {
-      background-color: rgba(254, 188, 73, 0.05);
+      background-color: #f8f9fa;
     }
   }
 
@@ -288,18 +296,18 @@ $text-light: #6c757d;
     align-items: center;
     
     .btn-link {
-      color: $primary-color;
+      color: $text-dark;
       text-decoration: none;
       
       &:hover {
-        color: $primary-dark;
+        color: #000000;
       }
     }
   }
 
   .activity-detail {
     background-color: $light-bg;
-    border-left: 3px solid $primary-color;
+    border-left: 3px solid #6c757d;
     max-height: 600px;
     overflow-y: auto;
     margin-top: 12px;
@@ -402,8 +410,8 @@ $text-light: #6c757d;
   background: $white;
   border-radius: 15px;
   padding: 25px;
-  box-shadow: 0 8px 25px rgba(254, 188, 73, 0.15);
-  border: 1px solid rgba(254, 188, 73, 0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
   overflow: hidden;
 
   .table {
@@ -412,8 +420,9 @@ $text-light: #6c757d;
     overflow: hidden;
 
     thead {
-      background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+      background: $white;
       position: relative;
+      border-bottom: 2px solid #e9ecef;
       
       &::before {
         content: '';
@@ -422,20 +431,19 @@ $text-light: #6c757d;
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+        background: transparent;
         pointer-events: none;
       }
       
       th {
         border: none;
-        color: $white;
+        color: $text-dark;
         font-weight: 700;
         padding: 18px 15px;
         font-size: 0.95rem;
         text-align: center;
         position: relative;
         z-index: 1;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 
         &.sortable {
           cursor: pointer;
@@ -463,18 +471,18 @@ $text-light: #6c757d;
     tbody {
       tr {
         transition: all 0.3s ease;
-        border-bottom: 1px solid rgba(254, 188, 73, 0.1);
+        border-bottom: 1px solid #e9ecef;
         position: relative;
         
         &:nth-child(even) {
-          background: rgba(254, 188, 73, 0.02);
+          background: #f8f9fa;
         }
 
         &:hover {
-          background: linear-gradient(135deg, rgba(254, 188, 73, 0.08) 0%, rgba(254, 188, 73, 0.05) 100%);
+          background: #f8f9fa;
           transform: translateY(-2px);
-          box-shadow: 0 4px 15px rgba(254, 188, 73, 0.2);
-          border-left: 4px solid $primary-color;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          border-left: 4px solid #6c757d;
         }
         
         td {
@@ -503,9 +511,8 @@ $text-light: #6c757d;
           // Invoice number
           .invoice-number {
             font-weight: 700;
-            color: $primary-color;
+            color: $text-dark;
             font-size: 0.95rem;
-            text-shadow: 0 1px 2px rgba(254, 188, 73, 0.2);
           }
           
           // Customer info
@@ -551,8 +558,9 @@ $text-light: #6c757d;
             }
             
             &.bg-primary {
-              background: linear-gradient(135deg, $primary-color, $primary-dark) !important;
-              color: $white;
+              background: $white !important;
+              color: $text-dark !important;
+              border: 1px solid $text-dark;
             }
             
             &.bg-success {
@@ -676,9 +684,9 @@ $text-light: #6c757d;
   align-items: center;
   margin-top: 30px;
   padding: 20px;
-  background: linear-gradient(135deg, rgba(254, 188, 73, 0.05) 0%, rgba(254, 188, 73, 0.02) 100%);
+  background: $white;
   border-radius: 15px;
-  border: 1px solid rgba(254, 188, 73, 0.1);
+  border: 1px solid #e9ecef;
 
 .pagination {
     margin: 0;
@@ -687,7 +695,7 @@ $text-light: #6c757d;
       margin: 0 3px;
       
   .page-link {
-        border: 2px solid rgba(254, 188, 73, 0.2);
+        border: 2px solid #e9ecef;
         color: $text-dark;
         padding: 12px 16px;
         border-radius: 10px;
@@ -697,19 +705,19 @@ $text-light: #6c757d;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
     &:hover {
-          background: linear-gradient(135deg, $primary-color, $primary-dark);
-          color: $white;
-          border-color: $primary-color;
+          background: #f8f9fa;
+          color: $text-dark;
+          border-color: $text-dark;
           transform: translateY(-2px);
-          box-shadow: 0 4px 15px rgba(254, 188, 73, 0.3);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
       }
       
       &.active .page-link {
-        background: linear-gradient(135deg, $primary-color, $primary-dark);
-        color: $white;
-        border-color: $primary-color;
-        box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
+        background: $white;
+        color: $text-dark;
+        border-color: $text-dark;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       }
       
       &.disabled .page-link {
@@ -733,8 +741,9 @@ $text-light: #6c757d;
     font-size: 0.9rem;
     
     .badge {
-      background: linear-gradient(135deg, $primary-color, $primary-dark);
-      color: $white;
+      background: $white;
+      color: $text-dark;
+      border: 1px solid $text-dark;
       padding: 6px 12px;
       border-radius: 15px;
       font-size: 0.8rem;
@@ -747,14 +756,14 @@ $text-light: #6c757d;
   .modal-content {
   border-radius: 15px;
     border: none;
-  box-shadow: 0 10px 30px rgba(254, 188, 73, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 
   .modal-header {
-    background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
-    color: $white;
+    background: $white;
+    color: $text-dark;
     border-radius: 15px 15px 0 0;
     padding: 20px 25px;
-    border-bottom: none;
+    border-bottom: 1px solid #e9ecef;
 
     .modal-title {
       font-weight: 700;
@@ -782,10 +791,10 @@ $text-light: #6c757d;
   }
 
   .modal-footer {
-    background: rgba(254, 188, 73, 0.05);
+    background: $white;
     border-radius: 0 0 15px 15px;
     padding: 20px 25px;
-    border-top: 1px solid rgba(254, 188, 73, 0.1);
+    border-top: 1px solid #e9ecef;
 
     .btn {
       padding: 10px 20px;
@@ -794,12 +803,14 @@ $text-light: #6c757d;
       transition: all 0.3s ease;
 
       &.btn-primary {
-        background: linear-gradient(135deg, $primary-color, $primary-dark);
-        border: none;
+        background: $white;
+        border: 2px solid $text-dark;
+        color: $text-dark;
     
     &:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 15px rgba(254, 188, 73, 0.3);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+          background: #f8f9fa;
         }
       }
       
@@ -837,7 +848,7 @@ $text-light: #6c757d;
 
 // Loading spinner
 .spinner-border {
-  color: $primary-color;
+  color: $text-dark;
 }
 
 // Responsive design
@@ -905,8 +916,8 @@ $text-light: #6c757d;
   border-radius: 15px;
   padding: 20px;
   margin-bottom: 25px;
-  box-shadow: 0 4px 15px rgba(254, 188, 73, 0.1);
-  border: 1px solid rgba(254, 188, 73, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
 
   .status-filter-btn {
     display: flex;
@@ -927,10 +938,10 @@ $text-light: #6c757d;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
     &:hover {
-      border-color: $primary-color;
-      background: rgba(254, 188, 73, 0.05);
+      border-color: #6c757d;
+      background: #f8f9fa;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(254, 188, 73, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     &.active {

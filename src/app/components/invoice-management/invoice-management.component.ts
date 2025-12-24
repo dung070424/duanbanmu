@@ -17,11 +17,13 @@ import { ChiTietSanPhamApiService, ChiTietSanPhamResponse } from '../../services
 import { Subject, debounceTime, distinctUntilChanged, takeUntil, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { map, tap } from 'rxjs/operators';
+import { ToastService } from '../../services/toast.service';
+import { ToastComponent } from '../shared/toast/toast.component';
 
 @Component({
   selector: 'app-invoice-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './invoice-management.component.html',
   styleUrls: ['./invoice-management.component.scss'],
 })
@@ -175,7 +177,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   statusOptions = [
     { value: 'all', label: 'Tất cả' },
     { value: 'CHO_XAC_NHAN', label: 'Chờ xác nhận' },
-    { value: 'DA_XAC_NHAN', label: 'Đã xác nhận' },
+    { value: 'DA_XAC_NHAN', label: 'Chờ vận chuyển' },
     { value: 'DANG_GIAO_HANG', label: 'Đang giao hàng' },
     { value: 'DA_GIAO_HANG', label: 'Đã giao hàng' },
     { value: 'HUY', label: 'Hủy' },
@@ -205,7 +207,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     private vietnamAddressService: VietnamAddressService,
     private employeeService: EmployeeService,
     private chiTietSanPhamService: ChiTietSanPhamApiService,
-    private http: HttpClient
+    private http: HttpClient,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -809,7 +812,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Validate invoice ID before navigation
     if (!invoice || invoice.id === undefined || invoice.id === null) {
       console.error('❌ Invalid invoice data:', invoice);
-      alert('Không thể xem chi tiết hóa đơn: thiếu thông tin ID');
+      this.toastService.show('Không thể xem chi tiết hóa đơn: thiếu thông tin ID', 'error');
       return;
     }
 
@@ -817,7 +820,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const invoiceId = Number(invoice.id);
     if (isNaN(invoiceId) || invoiceId <= 0) {
       console.error('❌ Invalid invoice ID:', invoice.id);
-      alert('Mã hóa đơn không hợp lệ');
+      this.toastService.show('Mã hóa đơn không hợp lệ', 'error');
       return;
     }
 
@@ -835,7 +838,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       (error) => {
         console.error('❌ [openViewModal] Navigation error:', error);
         console.error('❌ [openViewModal] Error details:', JSON.stringify(error, null, 2));
-        alert('Không thể mở chi tiết hóa đơn. Vui lòng đăng nhập lại hoặc liên hệ quản trị viên!');
+        this.toastService.show('Không thể mở chi tiết hóa đơn. Vui lòng đăng nhập lại hoặc liên hệ quản trị viên!', 'error');
       }
     );
   }
@@ -896,7 +899,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const normalizedStatus = (status === 'DA_HUY' || status === 'HUY') ? 'HUY' : status;
     const statusMap: { [key: string]: string } = {
       CHO_XAC_NHAN: 'Chờ xác nhận',
-      DA_XAC_NHAN: 'Đã xác nhận',
+      DA_XAC_NHAN: 'Chờ vận chuyển',
       DANG_GIAO_HANG: 'Đang giao hàng',
       DA_GIAO_HANG: 'Đã giao hàng',
       HUY: 'Hủy',
@@ -1735,8 +1738,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
     } catch (error) {
       console.error('Error showing toast:', error);
-      // Fallback: sử dụng alert nếu toast không hoạt động
-      alert(`${type.toUpperCase()}: ${message}`);
+      // Fallback: sử dụng toast service nếu có lỗi
+      this.toastService.show(message, type);
     }
   }
 
@@ -3188,14 +3191,18 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
 
     // Các trạng thái khác: xác nhận hoàn thành trực tiếp
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn xác nhận hoàn thành hóa đơn "${invoice.maHoaDon}"?\n\n` +
-      `Hóa đơn sẽ được chuyển sang trạng thái "Đã giao hàng".`
+    this.toastService.showConfirm(
+      `Bạn có chắc chắn muốn xác nhận hoàn thành hóa đơn "${invoice.maHoaDon}"? Hóa đơn sẽ được chuyển sang trạng thái "Đã giao hàng".`,
+      () => {
+        this.confirmInvoiceComplete(invoice);
+      },
+      undefined,
+      'warning'
     );
+    return;
+  }
 
-    if (!confirmed) {
-      return;
-    }
+  private confirmInvoiceComplete(invoice: HoaDonDTO): void {
 
     // Cập nhật trạng thái sang "Đã giao hàng"
     this.hoaDonService.updateTrangThaiHoaDon(invoice.id, 'DA_GIAO_HANG').subscribe({
@@ -3318,7 +3325,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           danhSachChiTiet: danhSachChiTietToSend,
 
           // Cập nhật trạng thái mới
-          trangThai: 'DA_XAC_NHAN', // Cập nhật trạng thái từ "CHỜ XÁC NHẬN" sang "ĐÃ XÁC NHẬN"
+          trangThai: 'DA_XAC_NHAN', // Cập nhật trạng thái từ "CHỜ XÁC NHẬN" sang "CHỜ VẬN CHUYỂN"
 
           // Thông tin vận chuyển mới
           ngayDuKienGiao: new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString(),
@@ -3350,7 +3357,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
             this.closeConfirmInvoiceModal();
 
             // Hiển thị thông báo thành công
-            this.showToast('Xác nhận hóa đơn thành công! Trạng thái đã được cập nhật thành "Đã xác nhận".', 'success');
+            this.showToast('Xác nhận hóa đơn thành công! Trạng thái đã được cập nhật thành "Chờ vận chuyển".', 'success');
 
             // Reload danh sách để cập nhật UI và trạng thái
             this.loadHoaDon();
@@ -3396,14 +3403,18 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
 
     // Xác nhận với người dùng
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn hủy hóa đơn "${invoice.maHoaDon}"?\n\n` +
-      `Hành động này không thể hoàn tác.`
+    this.toastService.showConfirm(
+      `Bạn có chắc chắn muốn hủy hóa đơn "${invoice.maHoaDon}"? Hành động này không thể hoàn tác.`,
+      () => {
+        this.cancelInvoiceConfirmed(invoice);
+      },
+      undefined,
+      'warning'
     );
+    return;
+  }
 
-    if (!confirmed) {
-      return;
-    }
+  private cancelInvoiceConfirmed(invoice: HoaDonDTO): void {
 
     // Cập nhật trạng thái sang "Hủy"
     this.hoaDonService.updateTrangThaiHoaDon(invoice.id, 'HUY').subscribe({

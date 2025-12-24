@@ -20,12 +20,14 @@ import { Subject, interval, takeUntil, firstValueFrom, Subscription, timeout, ca
 import { InvoiceStatusTimelineComponent } from '../invoice-status-timeline/invoice-status-timeline.component';
 import { ShopHeaderComponent } from '../shop/shared/shop-header.component';
 import { ShopFooterComponent } from '../shop/shared/shop-footer.component';
+import { ToastService } from '../../services/toast.service';
+import { ToastComponent } from '../shared/toast/toast.component';
 
 
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, InvoiceStatusTimelineComponent, ShopHeaderComponent, ShopFooterComponent],
+  imports: [CommonModule, FormsModule, RouterModule, InvoiceStatusTimelineComponent, ShopHeaderComponent, ShopFooterComponent, ToastComponent],
   templateUrl: './invoice-detail.component.html',
   styleUrls: ['./invoice-detail.component.scss']
 })
@@ -115,6 +117,27 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   // Selected saved address
   selectedSavedAddressId: string = '';
 
+  // Address editing in view (for CHO_XAC_NHAN status)
+  isEditingAddress: boolean = false;
+  savingAddress: boolean = false;
+  editingAddress: {
+    diaChiChiTiet: string;
+    selectedProvinceCode: string;
+    selectedDistrictCode: string;
+    selectedWardCode: string;
+    tinhThanh: string;
+    quanHuyen: string;
+    phuongXa: string;
+  } = {
+    diaChiChiTiet: '',
+    selectedProvinceCode: '',
+    selectedDistrictCode: '',
+    selectedWardCode: '',
+    tinhThanh: '',
+    quanHuyen: '',
+    phuongXa: ''
+  };
+
   // Auto-refresh - Cập nhật liên tục từ DB
   private destroy$ = new Subject<void>();
   private refreshInterval = interval(2000); // 2 giây để cập nhật liên tục
@@ -141,7 +164,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     private chiTietSanPhamService: ChiTietSanPhamApiService,
     private ghnService: GHNService,
     private vietnamAddressService: VietnamAddressService,
-    private khachHangService: KhachHangService
+    private khachHangService: KhachHangService,
+    private toastService: ToastService
   ) {}
 
   /**
@@ -330,14 +354,24 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   onSelectSavedAddress(): void {
     if (!this.selectedSavedAddressId || this.selectedSavedAddressId === 'new') {
       // Reset địa chỉ khi chọn "Nhập địa chỉ mới"
-      this.selectedProvince = '';
-      this.selectedDistrict = '';
-      this.selectedWard = '';
-      if (this.editingInvoice) {
-        this.editingInvoice.diaChiChiTiet = '';
-        this.editingInvoice.tinhThanh = '';
-        this.editingInvoice.quanHuyen = '';
-        this.editingInvoice.phuongXa = '';
+      if (this.isEditingAddress) {
+        this.editingAddress.selectedProvinceCode = '';
+        this.editingAddress.selectedDistrictCode = '';
+        this.editingAddress.selectedWardCode = '';
+        this.editingAddress.diaChiChiTiet = '';
+        this.editingAddress.tinhThanh = '';
+        this.editingAddress.quanHuyen = '';
+        this.editingAddress.phuongXa = '';
+      } else {
+        this.selectedProvince = '';
+        this.selectedDistrict = '';
+        this.selectedWard = '';
+        if (this.editingInvoice) {
+          this.editingInvoice.diaChiChiTiet = '';
+          this.editingInvoice.tinhThanh = '';
+          this.editingInvoice.quanHuyen = '';
+          this.editingInvoice.phuongXa = '';
+        }
       }
       this.districts = [];
       this.wards = [];
@@ -346,13 +380,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     const addr = this.customerAddresses.find((a) => String(a.id) === this.selectedSavedAddressId);
     if (addr) {
-      this.applyAddressFromSaved(addr);
-      // Tự động tính phí vận chuyển sau khi áp dụng địa chỉ
-      setTimeout(() => {
-        if (addr.tinhThanh && addr.quanHuyen) {
-          this.calculateShippingFeeForAddress(addr.tinhThanh, addr.quanHuyen);
-        }
-      }, 200);
+      if (this.isEditingAddress) {
+        this.applyAddressToEditingAddress(addr);
+      } else {
+        this.applyAddressFromSaved(addr);
+        // Tự động tính phí vận chuyển sau khi áp dụng địa chỉ
+        setTimeout(() => {
+          if (addr.tinhThanh && addr.quanHuyen) {
+            this.calculateShippingFeeForAddress(addr.tinhThanh, addr.quanHuyen);
+          }
+        }, 200);
+      }
     }
   }
 
@@ -1626,13 +1664,21 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         
         // Nếu chỉ thay đổi địa chỉ nhưng phí ship không đổi, tiếp tục cập nhật
         if (addressChanged && !shippingFeeChanged) {
-          if (!confirm('Địa chỉ giao hàng đã thay đổi nhưng phí ship không đổi.\n\nBạn có muốn tiếp tục cập nhật?')) {
+          this.toastService.showConfirm(
+            'Địa chỉ giao hàng đã thay đổi nhưng phí ship không đổi. Bạn có muốn tiếp tục cập nhật?',
+            () => {
+              // Tiếp tục với logic cập nhật
+            },
+            () => {
               if (saveButton) {
                 saveButton.disabled = false;
                 saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
               }
-              return;
-            }
+            },
+            'warning'
+          );
+          return;
+        }
         }
 
         // Đảm bảo giá trị từ dropdown được map vào editingInvoice trước khi save
@@ -4547,15 +4593,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Xác nhận với người dùng
     const currentStatusLabel = this.getStatusLabel(this.invoice.trangThai);
     const newStatusLabel = this.getStatusLabel(this.selectedStatus);
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn đổi trạng thái từ "${currentStatusLabel}" sang "${newStatusLabel}"?`
+    this.toastService.showConfirm(
+      `Bạn có chắc chắn muốn đổi trạng thái từ "${currentStatusLabel}" sang "${newStatusLabel}"?`,
+      () => {
+        this.updateStatusConfirmed();
+      },
+      undefined,
+      'warning'
     );
+    return;
+  }
 
-    if (!confirmed) {
-      console.log('❌ User cancelled status change');
-      return;
-    }
-
+  private updateStatusConfirmed(): void {
     // Gọi phương thức cập nhật trạng thái hiện có
     this.onStatusChangeFromTimeline(this.selectedStatus);
   }
@@ -4712,15 +4761,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Xác nhận với người dùng
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"?\n\n` +
-      `Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`
+    this.toastService.showConfirm(
+      `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"? Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`,
+      () => {
+        this.updateInvoiceStatusConfirmed(newStatus, statusMessage);
+      },
+      undefined,
+      'warning'
     );
+    return;
+  }
 
-    if (!confirmed) {
-      return;
-    }
-
+  private updateInvoiceStatusConfirmed(newStatus: string, statusMessage: string): void {
     this.savingStatus = true;
 
     // Cập nhật trạng thái
@@ -4774,9 +4826,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Xác nhận với khách hàng
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng sản phẩm sẽ được hoàn lại vào kho.')) {
-      return;
-    }
+    this.toastService.showConfirm(
+      'Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng sản phẩm sẽ được hoàn lại vào kho.',
+      () => {
+        this.cancelOrderConfirmed();
+      },
+      undefined,
+      'warning'
+    );
+    return;
+  }
+
+  private cancelOrderConfirmed(): void {
 
     this.savingStatus = true;
     console.log('🔄 Customer cancelling order:', this.invoice.id);
@@ -5332,5 +5393,244 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.showToast('Lỗi khi tải thông tin hóa đơn', 'error');
       }
     });
+  }
+
+  /**
+   * Bắt đầu chỉnh sửa địa chỉ trong view (cho trạng thái CHO_XAC_NHAN)
+   */
+  startEditAddress(): void {
+    if (!this.invoice) return;
+    
+    this.isEditingAddress = true;
+    // Khởi tạo editingAddress từ invoice hiện tại
+    this.editingAddress = {
+      diaChiChiTiet: this.invoice.diaChiChiTiet || '',
+      selectedProvinceCode: '',
+      selectedDistrictCode: '',
+      selectedWardCode: '',
+      tinhThanh: this.invoice.tinhThanh || '',
+      quanHuyen: this.invoice.quanHuyen || '',
+      phuongXa: this.invoice.phuongXa || ''
+    };
+    
+    // Load provinces nếu chưa có
+    if (this.provinces.length === 0) {
+      this.loadProvinces();
+    }
+    
+    // Nếu có tỉnh, tìm code và load districts
+    if (this.editingAddress.tinhThanh) {
+      setTimeout(() => {
+        this.findProvinceCodeAndLoadDistrictsForAddress(this.editingAddress.tinhThanh);
+      }, 100);
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Hủy chỉnh sửa địa chỉ
+   */
+  cancelEditAddress(): void {
+    this.isEditingAddress = false;
+    this.editingAddress = {
+      diaChiChiTiet: '',
+      selectedProvinceCode: '',
+      selectedDistrictCode: '',
+      selectedWardCode: '',
+      tinhThanh: '',
+      quanHuyen: '',
+      phuongXa: ''
+    };
+    this.selectedSavedAddressId = '';
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Lưu địa chỉ đã cập nhật
+   */
+  saveAddressUpdate(): void {
+    if (!this.invoice) return;
+    
+    // Validate
+    if (!this.editingAddress.diaChiChiTiet || !this.editingAddress.tinhThanh || !this.editingAddress.quanHuyen) {
+      this.toastService.show('Vui lòng nhập đầy đủ thông tin địa chỉ', 'warning');
+      return;
+    }
+    
+    this.savingAddress = true;
+    
+    // Cập nhật invoice với địa chỉ mới
+    const updateData: any = {
+      diaChiChiTiet: this.editingAddress.diaChiChiTiet,
+      tinhThanh: this.editingAddress.tinhThanh,
+      quanHuyen: this.editingAddress.quanHuyen,
+      phuongXa: this.editingAddress.phuongXa || '',
+      diaChiGiaoHang: `${this.editingAddress.diaChiChiTiet}, ${this.editingAddress.phuongXa}, ${this.editingAddress.quanHuyen}, ${this.editingAddress.tinhThanh}`
+    };
+    
+    this.hoaDonService.updateHoaDon(this.invoice.id, updateData).subscribe({
+      next: (updatedInvoice) => {
+        this.savingAddress = false;
+        this.toastService.show('Cập nhật địa chỉ thành công!', 'success');
+        this.isEditingAddress = false;
+        this.loadInvoiceDetail(); // Reload để hiển thị địa chỉ mới
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('❌ Error updating address:', error);
+        this.savingAddress = false;
+        this.toastService.show('Có lỗi xảy ra khi cập nhật địa chỉ', 'error');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Áp dụng địa chỉ đã lưu vào editingAddress
+   */
+  applyAddressToEditingAddress(address: any): void {
+    this.editingAddress.diaChiChiTiet = address.diaChi || '';
+    this.editingAddress.tinhThanh = address.tinhThanh || '';
+    this.editingAddress.quanHuyen = address.quanHuyen || '';
+    this.editingAddress.phuongXa = address.phuongXa || '';
+    
+    // Tìm province code và load districts
+    if (this.editingAddress.tinhThanh) {
+      setTimeout(() => {
+        this.findProvinceCodeAndLoadDistrictsForAddress(this.editingAddress.tinhThanh);
+      }, 100);
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Tìm province code và load districts cho editingAddress
+   */
+  findProvinceCodeAndLoadDistrictsForAddress(provinceName: string): void {
+    if (!provinceName || provinceName.trim() === '') return;
+    
+    const province = this.provinces.find(p => {
+      const pName = p.name.trim().toLowerCase();
+      const searchName = provinceName.trim().toLowerCase();
+      return pName === searchName || 
+             pName.includes(searchName) || 
+             searchName.includes(pName);
+    });
+    
+    if (province) {
+      this.editingAddress.selectedProvinceCode = province.code;
+      this.editingAddress.tinhThanh = province.name;
+      this.loadDistrictsByProvinceForAddress(province.code);
+      
+      // Nếu đã có quận/huyện, tìm và load wards
+      if (this.editingAddress.quanHuyen) {
+        setTimeout(() => {
+          const district = this.districts.find(d => {
+            const dName = d.name.trim().toLowerCase();
+            const searchName = this.editingAddress.quanHuyen.trim().toLowerCase();
+            return dName === searchName || searchName.includes(dName);
+          });
+          if (district) {
+            this.editingAddress.selectedDistrictCode = district.code;
+            this.loadWardsByDistrictForAddress(district.code);
+          }
+        }, 500);
+      }
+    }
+  }
+
+  /**
+   * Load districts cho editingAddress (sử dụng lại method hiện có)
+   */
+  loadDistrictsByProvinceForAddress(provinceCode: string): void {
+    this.loadDistrictsByProvince(provinceCode);
+    // Cập nhật selectedDistrictCode từ districts đã load
+    if (this.editingAddress.quanHuyen && this.districts.length > 0) {
+      const district = this.districts.find(d => {
+        const dName = d.name.trim().toLowerCase();
+        const searchName = this.editingAddress.quanHuyen.trim().toLowerCase();
+        return dName === searchName || searchName.includes(dName);
+      });
+      if (district) {
+        this.editingAddress.selectedDistrictCode = district.code;
+        this.loadWardsByDistrictForAddress(district.code);
+      }
+    }
+  }
+
+  /**
+   * Load wards cho editingAddress (sử dụng lại method hiện có)
+   */
+  loadWardsByDistrictForAddress(districtCode: string): void {
+    this.loadWardsByDistrict(districtCode);
+    // Cập nhật selectedWardCode từ wards đã load
+    if (this.editingAddress.phuongXa && this.wards.length > 0) {
+      const ward = this.wards.find(w => {
+        const wName = w.name.trim().toLowerCase();
+        const searchName = this.editingAddress.phuongXa.trim().toLowerCase();
+        return wName === searchName || searchName.includes(wName);
+      });
+      if (ward) {
+        this.editingAddress.selectedWardCode = ward.code;
+      }
+    }
+  }
+
+  /**
+   * Xử lý khi chọn tỉnh trong form cập nhật địa chỉ
+   */
+  onProvinceChangeForAddress(): void {
+    if (!this.editingAddress.selectedProvinceCode) {
+      this.editingAddress.selectedDistrictCode = '';
+      this.editingAddress.selectedWardCode = '';
+      this.editingAddress.tinhThanh = '';
+      this.editingAddress.quanHuyen = '';
+      this.editingAddress.phuongXa = '';
+      this.districts = [];
+      this.wards = [];
+      return;
+    }
+    
+    const province = this.provinces.find(p => p.code === this.editingAddress.selectedProvinceCode);
+    if (province) {
+      this.editingAddress.tinhThanh = province.name;
+      this.loadDistrictsByProvinceForAddress(province.code);
+    }
+  }
+
+  /**
+   * Xử lý khi chọn quận/huyện trong form cập nhật địa chỉ
+   */
+  onDistrictChangeForAddress(): void {
+    if (!this.editingAddress.selectedDistrictCode) {
+      this.editingAddress.selectedWardCode = '';
+      this.editingAddress.quanHuyen = '';
+      this.editingAddress.phuongXa = '';
+      this.wards = [];
+      return;
+    }
+    
+    const district = this.districts.find(d => d.code === this.editingAddress.selectedDistrictCode);
+    if (district) {
+      this.editingAddress.quanHuyen = district.name;
+      this.loadWardsByDistrictForAddress(district.code);
+    }
+  }
+
+  /**
+   * Xử lý khi chọn phường/xã trong form cập nhật địa chỉ
+   */
+  onWardChangeForAddress(): void {
+    if (!this.editingAddress.selectedWardCode) {
+      this.editingAddress.phuongXa = '';
+      return;
+    }
+    
+    const ward = this.wards.find(w => w.code === this.editingAddress.selectedWardCode);
+    if (ward) {
+      this.editingAddress.phuongXa = ward.name;
+    }
   }
 }

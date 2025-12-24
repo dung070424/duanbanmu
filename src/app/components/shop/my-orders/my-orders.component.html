@@ -1,0 +1,176 @@
+<div class="customer-orders-container">
+  <app-shop-header></app-shop-header>
+
+  <main class="customer-orders-main">
+    <div class="container">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb-nav">
+        <button class="btn-back" (click)="goBack()" type="button">
+          <i class="fas fa-arrow-left"></i> Quay lại
+        </button>
+      </nav>
+
+      <div class="page-header">
+        <h1><i class="fas fa-shopping-bag"></i> Đơn hàng của tôi</h1>
+        <p>Xem và quản lý các đơn hàng của bạn</p>
+        <div class="login-prompt" *ngIf="!isLoggedIn">
+          <i class="fas fa-info-circle"></i>
+          <span>Bạn chưa đăng nhập. <a (click)="goToLogin()" style="cursor: pointer; color: #f4a11a; text-decoration: underline;">Đăng nhập</a> để xem tất cả đơn hàng và quản lý tài khoản.</span>
+        </div>
+      </div>
+
+      <!-- Search Filter -->
+      <div class="search-filter-section">
+        <div class="search-box">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            class="search-input"
+            [(ngModel)]="searchTerm"
+            (input)="onSearchChange()"
+            placeholder="Tìm kiếm theo mã đơn hàng..."
+          />
+          <button
+            *ngIf="searchTerm"
+            class="btn-clear-search"
+            (click)="clearSearch()"
+            type="button"
+            title="Xóa tìm kiếm"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div *ngIf="searchTerm && filteredOrders.length === 0 && orders.length > 0" class="search-no-results">
+          <i class="fas fa-info-circle"></i>
+          Không tìm thấy đơn hàng nào với mã "{{ searchTerm }}"
+        </div>
+      </div>
+
+    <div *ngIf="error" class="error-message">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ error }}
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="isLoading" class="loading">
+      <div class="spinner"></div>
+      <p>Đang tải đơn hàng...</p>
+    </div>
+
+    <!-- Chỉ hiển thị "Chưa có đơn hàng" khi KHÔNG đang load và KHÔNG có lỗi và KHÔNG có đơn hàng -->
+    <div *ngIf="!isLoading && orders.length === 0 && !error" class="no-orders">
+      <i class="fas fa-box-open"></i>
+      <h3>Chưa có đơn hàng nào</h3>
+      <p>Bạn chưa có đơn hàng nào. Hãy <a routerLink="/shop">mua sắm ngay</a>!</p>
+    </div>
+
+    <div *ngIf="filteredOrders.length > 0" class="orders-list">
+      <div *ngFor="let order of filteredOrders" [id]="'order-' + order.id" class="order-card">
+        <div class="order-header">
+          <div class="order-info">
+            <h3>Mã đơn hàng: {{ order.maHoaDon }}</h3>
+            <p class="order-date">
+              <i class="fas fa-calendar"></i>
+              Ngày đặt: {{ formatDate(order.ngayTao) }}
+            </p>
+            <p class="order-type" *ngIf="order.viTriBanHang">
+              <i class="fas fa-store"></i>
+              Loại đơn: {{ order.viTriBanHang === 'Online' ? 'Online' : 'Tại quầy' }}
+            </p>
+          </div>
+          <div class="order-status">
+            <span [class]="'status-badge ' + getStatusClass(order.trangThai)">
+              {{ getStatusLabel(order.trangThai) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="order-body">
+          <!-- Danh sách sản phẩm -->
+          <div class="order-products" *ngIf="order.danhSachSanPham && order.danhSachSanPham.length > 0">
+            <h4><i class="fas fa-box"></i> Sản phẩm trong đơn hàng:</h4>
+            <div class="products-list">
+              <div *ngFor="let product of order.danhSachSanPham" class="product-item">
+                <div class="product-info">
+                  <img 
+                    *ngIf="product.anhSanPham" 
+                    [src]="product.anhSanPham" 
+                    [alt]="product.tenSanPham"
+                    class="product-image"
+                  />
+                  <div class="product-details">
+                    <h5>{{ product.tenSanPham || 'N/A' }}</h5>
+                    <p class="product-meta" *ngIf="product.mauSac || product.kichThuoc">
+                      <span *ngIf="product.mauSac">Màu: {{ product.mauSac }}</span>
+                      <span *ngIf="product.kichThuoc"> | Size: {{ product.kichThuoc }}</span>
+                    </p>
+                    <p class="product-code" *ngIf="product.maSanPham">
+                      Mã: {{ product.maSanPham }}
+                    </p>
+                  </div>
+                </div>
+                <div class="product-quantity">
+                  <span class="quantity">x{{ product.soLuong || 1 }}</span>
+                </div>
+                <div class="product-price">
+                  {{ formatCurrency(product.thanhTien || (product.donGia * (product.soLuong || 1))) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Địa chỉ giao hàng -->
+          <div class="order-delivery" *ngIf="order.diaChiChiTiet || order.diaChiKhachHang">
+            <h4><i class="fas fa-map-marker-alt"></i> Địa chỉ giao hàng:</h4>
+            <p class="delivery-address">
+              <span *ngIf="order.diaChiChiTiet">{{ order.diaChiChiTiet }}</span>
+              <span *ngIf="order.phuongXa">, {{ order.phuongXa }}</span>
+              <span *ngIf="order.quanHuyen">, {{ order.quanHuyen }}</span>
+              <span *ngIf="order.tinhThanh">, {{ order.tinhThanh }}</span>
+              <span *ngIf="!order.diaChiChiTiet && order.diaChiKhachHang">{{ order.diaChiKhachHang }}</span>
+            </p>
+          </div>
+
+          <div class="order-summary">
+            <div class="summary-item">
+              <span class="label">Số lượng sản phẩm:</span>
+              <span class="value">{{ order.soLuongSanPham || 0 }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Tổng tiền:</span>
+              <span class="value total-price">{{ formatCurrency(order.tongTien || 0) }}</span>
+            </div>
+            <div class="summary-item" *ngIf="order.tienGiamGia && order.tienGiamGia > 0">
+              <span class="label">Giảm giá:</span>
+              <span class="value discount">-{{ formatCurrency(order.tienGiamGia) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Thành tiền:</span>
+              <span class="value final-price">{{ formatCurrency(order.thanhTien || 0) }}</span>
+            </div>
+          </div>
+
+          <div class="order-actions">
+            <button 
+              class="btn btn-primary" 
+              (click)="viewOrderDetail(order.id!)"
+            >
+              <i class="fas fa-eye"></i> Xem chi tiết
+            </button>
+            <button 
+              *ngIf="canCancel(order)"
+              class="btn btn-danger" 
+              (click)="cancelOrder(order.id!)"
+            >
+              <i class="fas fa-times"></i> Hủy đơn hàng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </main>
+
+  <app-shop-footer></app-shop-footer>
+</div>
+

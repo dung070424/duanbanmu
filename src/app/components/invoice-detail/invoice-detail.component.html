@@ -204,117 +204,8 @@
         <div class="status-update-body">
           <div class="alert alert-info">
             <i class="bi bi-info-circle me-2"></i>
-            Vui lòng nhập thông tin vận chuyển để chuyển hóa đơn sang trạng thái "Đã xác nhận"
+            Bạn có thể cập nhật địa chỉ giao hàng trước khi xác nhận hóa đơn
           </div>
-
-          <form>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Ngày dự kiến giao *</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.ngayDuKienGiao"
-                    name="ngayDuKienGiao"
-                    [min]="getTodayDate()"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Khối lượng (kg) *</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.khoiLuong"
-                    name="khoiLuong"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-12">
-                <label class="form-label required">Kích thước (cm) *</label>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều dài</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuDai"
-                    name="chieuDai"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều rộng</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuRong"
-                    name="chieuRong"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều cao</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuCao"
-                    name="chieuCao"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Phí giao hàng (VNĐ) *</label>
-                  <div class="input-group">
-                    <span class="input-group-text">₫</span>
-                    <input
-                      type="number"
-                      class="form-control"
-                      [(ngModel)]="confirmInvoiceData.phiGiaoHang"
-                      name="phiGiaoHang"
-                      min="0"
-                      step="1000"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            </div> -->
-
-            <!-- <div class="alert alert-warning" *ngIf="confirmInvoiceData.nguoiChiuPhi === 'nguoi_nhan'">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              Phí giao hàng sẽ được tính vào tổng tiền của khách hàng.
-            </div> -->
-          </form>
         </div>
       </div>
     </div>
@@ -429,8 +320,121 @@
             <span class="label">Địa chỉ</span>
             <span class="value">
               <span *ngIf="loadingAddresses" class="loading-text">Đang tải địa chỉ...</span>
-              <span *ngIf="!loadingAddresses">{{ getCustomerAddress() }}</span>
+              <span *ngIf="!loadingAddresses && !isEditingAddress">{{ getCustomerAddress() }}</span>
+              <button
+                *ngIf="!loadingAddresses && !isEditingAddress && invoice?.trangThai === 'CHO_XAC_NHAN' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))"
+                class="btn btn-sm btn-outline-primary ms-2"
+                (click)="startEditAddress()"
+                type="button"
+              >
+                <i class="fas fa-edit me-1"></i> Cập nhật
+              </button>
             </span>
+          </div>
+          
+          <!-- Form cập nhật địa chỉ (chỉ hiển thị khi ở trạng thái CHO_XAC_NHAN) -->
+          <div *ngIf="isEditingAddress && invoice?.trangThai === 'CHO_XAC_NHAN' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))" class="address-edit-form mt-3 p-3 border rounded">
+            <h6 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>Cập nhật địa chỉ giao hàng</h6>
+            
+            <!-- Chọn địa chỉ đã lưu (nếu có) -->
+            <div class="mb-3" *ngIf="customerAddresses.length > 0">
+              <label class="form-label">Chọn địa chỉ đã lưu:</label>
+              <select
+                class="form-control"
+                [(ngModel)]="selectedSavedAddressId"
+                (change)="onSelectSavedAddress()"
+              >
+                <option [ngValue]="''">-- Chọn địa chỉ --</option>
+                <option *ngFor="let addr of customerAddresses" [ngValue]="addr.id + ''">
+                  {{ addr.diaChi }}, {{ addr.phuongXa }}, {{ addr.quanHuyen }}, {{ addr.tinhThanh }}
+                </option>
+                <option [ngValue]="'new'">+ Nhập địa chỉ mới</option>
+              </select>
+            </div>
+            
+            <div *ngIf="selectedSavedAddressId === '' || selectedSavedAddressId === 'new' || customerAddresses.length === 0">
+              <div class="mb-3">
+                <label class="form-label">Địa chỉ chi tiết:</label>
+                <textarea
+                  class="form-control"
+                  [(ngModel)]="editingAddress.diaChiChiTiet"
+                  rows="2"
+                  placeholder="Số nhà, tên đường..."
+                ></textarea>
+              </div>
+              
+              <!-- Vietnam Address Dropdowns -->
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Tỉnh/Thành phố</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="editingAddress.selectedProvinceCode"
+                      (change)="onProvinceChangeForAddress()"
+                      [disabled]="loadingProvinces"
+                    >
+                      <option [ngValue]="''">Chọn tỉnh/thành phố</option>
+                      <option *ngFor="let province of provinces" [ngValue]="province.code">
+                        {{ province.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Quận/Huyện</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="editingAddress.selectedDistrictCode"
+                      (change)="onDistrictChangeForAddress()"
+                      [disabled]="!editingAddress.selectedProvinceCode || loadingDistricts"
+                    >
+                      <option [ngValue]="''">Chọn quận/huyện</option>
+                      <option *ngFor="let district of districts" [ngValue]="district.code">
+                        {{ district.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Phường/Xã</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="editingAddress.selectedWardCode"
+                      (change)="onWardChangeForAddress()"
+                      [disabled]="!editingAddress.selectedDistrictCode || loadingWards"
+                    >
+                      <option [ngValue]="''">Chọn phường/xã</option>
+                      <option *ngFor="let ward of wards" [ngValue]="ward.code">
+                        {{ ward.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="d-flex gap-2 mt-3">
+              <button
+                class="btn btn-primary"
+                (click)="saveAddressUpdate()"
+                [disabled]="savingAddress"
+                type="button"
+              >
+                <i class="fas fa-save me-1"></i>
+                {{ savingAddress ? 'Đang lưu...' : 'Lưu địa chỉ' }}
+              </button>
+              <button
+                class="btn btn-secondary"
+                (click)="cancelEditAddress()"
+                [disabled]="savingAddress"
+                type="button"
+              >
+                <i class="fas fa-times me-1"></i> Hủy
+              </button>
+            </div>
           </div>
           <div class="info-row payment-row">
             <span class="label">Trạng thái thanh toán</span>
@@ -1193,6 +1197,7 @@
 
 <!-- Shop Footer cho customer view -->
 <app-shop-footer *ngIf="isCustomerView"></app-shop-footer>
+<app-toast></app-toast>
 
 <div class="modal-backdrop fade" [class.show]="showShippingFeeAdjustmentModal"
      [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'"

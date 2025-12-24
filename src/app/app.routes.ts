@@ -46,6 +46,7 @@ import { NewsComponent } from './components/shop/news/news.component';
 import { ContactComponent } from './components/shop/contact/contact.component';
 import { ShopProductsComponent } from './components/shop/products/products.component';
 import { RefundFormComponent } from './components/refund-form/refund-form.component';
+import { ShopMyOrdersComponent } from './components/shop/my-orders/my-orders.component';
 
 export const routes: Routes = [
   // Public routes (Admin/Staff)
@@ -65,6 +66,7 @@ export const routes: Routes = [
   { path: 'shop/about', component: AboutComponent },
   { path: 'shop/news', component: NewsComponent },
   { path: 'shop/contact', component: ContactComponent },
+  { path: 'shop/my-orders', component: ShopMyOrdersComponent },
   { path: 'shop', component: ShopComponent },
 
   // Refund form - public access (không cần đăng nhập)

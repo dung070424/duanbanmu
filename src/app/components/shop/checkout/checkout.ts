@@ -16,6 +16,8 @@ import wardsData from 'sub-vn/json_data/wards.json';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
 import { ShopFooterComponent } from '../shared/shop-footer.component';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../shared/toast/toast.component';
 
 @Component({
   selector: 'app-checkout',
@@ -27,6 +29,7 @@ import { ChatbotComponent } from '../chatbot/chatbot.component';
     ShopHeaderComponent,
     ShopFooterComponent,
     ChatbotComponent,
+    ToastComponent,
   ],
   templateUrl: './checkout.html',
   styleUrls: ['./checkout.scss'],
@@ -146,7 +149,8 @@ export class CheckoutComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private location: Location,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -854,8 +858,18 @@ export class CheckoutComponent implements OnInit {
   closeInvoiceDetails(): void {
     this.showInvoiceDetails = false;
 
-    // Chuyển về trang chủ sau khi đóng modal
-    this.router.navigate(['/shop']);
+    // Chuyển đến trang đơn hàng của tôi sau khi đóng modal
+    if (this.authService.isLoggedIn()) {
+      // Navigate đến trang lịch sử đơn hàng với query param để highlight đơn hàng vừa tạo
+      this.router.navigate(['/customer/orders'], {
+        queryParams: this.createdInvoice?.id ? { newOrderId: this.createdInvoice.id } : {}
+      });
+    } else {
+      // Chuyển đến trang đơn hàng của tôi (khách chưa đăng nhập)
+      this.router.navigate(['/shop/my-orders'], {
+        queryParams: this.createdInvoice?.id ? { newOrderId: this.createdInvoice.id } : {}
+      });
+    }
 
     // Force change detection để cập nhật UI ngay lập tức
     this.cdr.detectChanges();
@@ -925,6 +939,10 @@ export class CheckoutComponent implements OnInit {
     quantity: number;
     unitPrice: number;
     total: number;
+    imageUrl?: string;
+    mauSac?: string;
+    kichThuoc?: string;
+    moTa?: string;
   }[] {
     const sourceItems = this.isTempCart
       ? Array.isArray(this.tempCart)
@@ -940,6 +958,10 @@ export class CheckoutComponent implements OnInit {
         ? item.totalItemPrice || unitPrice * quantity
         : item.thanhTien ?? unitPrice * quantity - (item.giamGia || 0);
       const code = item.maSanPham || item.maChiTiet || item.chiTietSanPhamId;
+      const imageUrl = this.isTempCart ? item.imageUrl : item.anhSanPham || item.imageUrl;
+      const mauSac = this.isTempCart ? item.mauSac : item.mauSac;
+      const kichThuoc = this.isTempCart ? item.kichThuoc : item.kichThuoc;
+      const moTa = this.isTempCart ? item.moTa : item.moTa;
 
       return {
         code,
@@ -947,6 +969,10 @@ export class CheckoutComponent implements OnInit {
         quantity,
         unitPrice,
         total,
+        imageUrl,
+        mauSac,
+        kichThuoc,
+        moTa,
       };
     });
   }
@@ -954,45 +980,45 @@ export class CheckoutComponent implements OnInit {
   validateForm(): boolean {
     // Validate họ và tên
     if (!this.billingInfo.firstName || !this.billingInfo.lastName) {
-      alert('Vui lòng nhập đầy đủ họ và tên!');
+      this.toastService.show('Vui lòng nhập đầy đủ họ và tên!', 'warning');
       return false;
     }
 
     // Validate địa chỉ
     if (!this.billingInfo.address || this.billingInfo.address.trim() === '') {
-      alert('Vui lòng nhập địa chỉ chi tiết!');
+      this.toastService.show('Vui lòng nhập địa chỉ chi tiết!', 'warning');
       return false;
     }
 
     // Validate tỉnh/thành phố
     if (!this.billingInfo.city || this.billingInfo.city.trim() === '') {
-      alert('Vui lòng nhập tỉnh/thành phố!');
+      this.toastService.show('Vui lòng nhập tỉnh/thành phố!', 'warning');
       return false;
     }
 
     // Validate số điện thoại
     if (!this.billingInfo.phone || this.billingInfo.phone.trim() === '') {
-      alert('Vui lòng nhập số điện thoại!');
+      this.toastService.show('Vui lòng nhập số điện thoại!', 'warning');
       return false;
     }
 
     // Validate format số điện thoại (10-11 số)
     const phoneRegex = /^[0-9]{10,11}$/;
     if (!phoneRegex.test(this.billingInfo.phone.replace(/\s+/g, ''))) {
-      alert('Số điện thoại không hợp lệ! Vui lòng nhập 10-11 chữ số.');
+      this.toastService.show('Số điện thoại không hợp lệ! Vui lòng nhập 10-11 chữ số.', 'warning');
       return false;
     }
 
     // Validate email
     if (!this.billingInfo.email || this.billingInfo.email.trim() === '') {
-      alert('Vui lòng nhập email!');
+      this.toastService.show('Vui lòng nhập email!', 'warning');
       return false;
     }
 
     // Validate format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.billingInfo.email)) {
-      alert('Email không hợp lệ! Vui lòng nhập email đúng định dạng.');
+      this.toastService.show('Email không hợp lệ! Vui lòng nhập email đúng định dạng.', 'warning');
       return false;
     }
 
@@ -1001,7 +1027,7 @@ export class CheckoutComponent implements OnInit {
       (this.cart && this.cart.danhSachGioHang && this.cart.danhSachGioHang.length > 0) ||
       (this.isTempCart && this.tempCart && this.tempCart.length > 0);
     if (!hasCartItems) {
-      alert('Giỏ hàng của bạn đang trống!');
+      this.toastService.show('Giỏ hàng của bạn đang trống!', 'warning');
       return false;
     }
 
@@ -1010,7 +1036,7 @@ export class CheckoutComponent implements OnInit {
       this.paymentMethod === 'transfer' &&
       (!this.transactionCode || this.transactionCode === '')
     ) {
-      alert('Vui lòng tạo mã giao dịch!');
+      this.toastService.show('Vui lòng tạo mã giao dịch!', 'warning');
       return false;
     }
 
@@ -1389,22 +1415,74 @@ export class CheckoutComponent implements OnInit {
         this.createdInvoice = hoaDon;
         this.isSubmitting = false;
 
-        console.log('✅ Order created successfully, redirecting to order history...');
+        console.log('✅ Order created successfully, showing confirmation...');
 
-        // Chuyển sang trang lịch sử đơn hàng với order ID vừa tạo
-        // Kiểm tra nếu user đã đăng nhập
-        if (this.authService.isLoggedIn()) {
-          // Navigate đến trang lịch sử đơn hàng với query param để highlight đơn hàng vừa tạo
-          this.router.navigate(['/customer/orders'], {
-            queryParams: { newOrderId: hoaDon.id }
-          });
-        } else {
-          // QUAN TRỌNG: Nếu chưa đăng nhập, redirect về trang chủ thay vì /customer/orders
-          // (vì /customer/orders có guard yêu cầu đăng nhập và sẽ redirect đến login)
-          console.log('ℹ️ User not logged in, redirecting to shop home after order creation');
-          alert(`Đơn hàng đã được tạo thành công!\nMã đơn hàng: ${hoaDon.maHoaDon}\n`);
-          this.router.navigate(['/shop']);
-        }
+        // QUAN TRỌNG: Hiển thị modal confirmation trước khi redirect
+        // Fetch lại đơn hàng đầy đủ từ API để có danhSachSanPham cho modal
+        this.hoaDonService.getHoaDonById(hoaDon.id!).subscribe({
+          next: (fullOrder) => {
+            console.log('✅ Fetched full order details for confirmation:', fullOrder);
+            
+            // Cập nhật createdInvoice với dữ liệu đầy đủ
+            this.createdInvoice = fullOrder;
+            
+            // Hiển thị modal confirmation
+            this.showInvoiceDetails = true;
+            this.cdr.detectChanges();
+            
+            // Lưu vào localStorage nếu chưa đăng nhập
+            if (!this.authService.isLoggedIn()) {
+              try {
+                const storedOrders = localStorage.getItem('guest_orders');
+                let orders: any[] = storedOrders ? JSON.parse(storedOrders) : [];
+                orders.unshift(fullOrder);
+                localStorage.setItem('guest_orders', JSON.stringify(orders));
+                console.log('✅ Order saved to localStorage with full details');
+              } catch (error) {
+                console.error('❌ Error saving order to localStorage:', error);
+              }
+            }
+          },
+          error: (err) => {
+            console.error('❌ Error fetching full order details:', err);
+            
+            // Fallback: Sử dụng dữ liệu hiện tại và map danhSachChiTiet
+            if (hoaDon.danhSachChiTiet && !hoaDon.danhSachSanPham) {
+              hoaDon.danhSachSanPham = hoaDon.danhSachChiTiet.map((item: any) => ({
+                id: item.id,
+                chiTietSanPhamId: item.chiTietSanPhamId,
+                tenSanPham: item.tenSanPham || 'Sản phẩm',
+                maSanPham: item.maSanPham,
+                mauSac: item.mauSac,
+                kichThuoc: item.kichThuoc,
+                nhaSanXuat: item.nhaSanXuat,
+                soLuong: item.soLuong || 0,
+                donGia: item.donGia ? Number(item.donGia) : 0,
+                giamGia: item.giamGia ? Number(item.giamGia) : 0,
+                thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
+                anhSanPham: item.anhSanPham,
+                sanPhamId: item.chiTietSanPhamId
+              }));
+            }
+            
+            this.createdInvoice = hoaDon;
+            this.showInvoiceDetails = true;
+            this.cdr.detectChanges();
+            
+            // Lưu vào localStorage nếu chưa đăng nhập
+            if (!this.authService.isLoggedIn()) {
+              try {
+                const storedOrders = localStorage.getItem('guest_orders');
+                let orders: any[] = storedOrders ? JSON.parse(storedOrders) : [];
+                orders.unshift(hoaDon);
+                localStorage.setItem('guest_orders', JSON.stringify(orders));
+                console.log('✅ Order saved to localStorage (fallback)');
+              } catch (error) {
+                console.error('❌ Error saving order to localStorage (fallback):', error);
+              }
+            }
+          }
+        });
       },
       error: (err) => {
         console.error('❌ Error creating invoice:', err);

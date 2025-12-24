@@ -573,6 +573,63 @@
             padding: 12px 0;
             color: #6b7280;
 
+            .product-info-row {
+              display: flex;
+              align-items: flex-start;
+              gap: 12px;
+
+              .product-thumbnail {
+                width: 60px;
+                height: 60px;
+                object-fit: cover;
+                border-radius: 8px;
+                border: 1px solid #e5e7eb;
+                flex-shrink: 0;
+              }
+
+              .product-details {
+                flex: 1;
+                min-width: 0;
+              }
+
+              .product-name {
+                font-weight: 600;
+                color: #111827;
+                margin-bottom: 4px;
+              }
+
+              .product-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px 12px;
+                font-size: 0.9rem;
+                color: #9ca3af;
+
+                span {
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 4px;
+
+                  strong {
+                    color: #111827;
+                  }
+                }
+              }
+
+              .product-description {
+                margin-top: 6px;
+                font-size: 0.85rem;
+                color: #6b7280;
+                line-height: 1.4;
+                max-height: 40px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+              }
+            }
+
             .product-name {
               font-weight: 600;
               color: #111827;
@@ -627,6 +684,19 @@
           td {
             padding: 12px 0;
             color: #6b7280;
+
+            .shipping-fee-row {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              .shipping-logo {
+                height: 28px;
+                width: auto;
+                object-fit: contain;
+                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+              }
+            }
           }
 
           &.total-row {
@@ -1476,6 +1546,46 @@
               td {
                 padding: 12px;
                 color: #6b7280;
+
+                .product-info-row {
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 12px;
+
+                  .product-thumbnail {
+                    width: 50px;
+                    height: 50px;
+                    object-fit: cover;
+                    border-radius: 6px;
+                    border: 1px solid #e5e7eb;
+                    flex-shrink: 0;
+                  }
+
+                  .product-details {
+                    flex: 1;
+                    min-width: 0;
+
+                    .product-name {
+                      font-weight: 600;
+                      color: #111827;
+                      margin-bottom: 4px;
+                    }
+
+                    .product-meta {
+                      display: flex;
+                      flex-wrap: wrap;
+                      gap: 6px 12px;
+                      font-size: 0.85rem;
+                      color: #6b7280;
+
+                      span {
+                        strong {
+                          color: #111827;
+                        }
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -1510,8 +1620,18 @@
         .total-row {
           display: flex;
           justify-content: space-between;
+          align-items: center;
           padding: 10px 0;
           color: #6b7280;
+
+          .shipping-logo-small {
+            height: 24px;
+            width: auto;
+            object-fit: contain;
+            margin-right: 8px;
+            vertical-align: middle;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+          }
 
           &.total {
             border-top: 2px solid #111827;

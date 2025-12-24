@@ -375,17 +375,36 @@
                 <ng-container *ngIf="hasCartItems(); else emptyCart">
                   <tr *ngFor="let item of getOrderItems()">
                     <td>
-                      <div class="product-name">{{ item.name }}</div>
-                      <div class="product-meta">
-                        <span
-                          >Mã chi tiết: <strong>#{{ item.code || 'N/A' }}</strong></span
-                        >
-                        <span
-                          >Đơn giá: <strong>{{ formatCurrency(item.unitPrice) }}</strong></span
-                        >
-                        <span
-                          >Số lượng: <strong>{{ item.quantity }}</strong></span
-                        >
+                      <div class="product-info-row">
+                        <img
+                          *ngIf="item.imageUrl"
+                          [src]="item.imageUrl"
+                          [alt]="item.name"
+                          class="product-thumbnail"
+                        />
+                        <div class="product-details">
+                          <div class="product-name">{{ item.name }}</div>
+                          <div class="product-meta">
+                            <span
+                              >Mã chi tiết: <strong>#{{ item.code || 'N/A' }}</strong></span
+                            >
+                            <span *ngIf="item.mauSac"
+                              >Màu: <strong>{{ item.mauSac }}</strong></span
+                            >
+                            <span *ngIf="item.kichThuoc"
+                              >Size: <strong>{{ item.kichThuoc }}</strong></span
+                            >
+                            <span
+                              >Đơn giá: <strong>{{ formatCurrency(item.unitPrice) }}</strong></span
+                            >
+                            <span
+                              >Số lượng: <strong>{{ item.quantity }}</strong></span
+                            >
+                          </div>
+                          <div *ngIf="item.moTa" class="product-description">
+                            {{ item.moTa }}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td>{{ formatCurrency(item.total) }}</td>
@@ -406,7 +425,17 @@
                   <td>{{ formatCurrency(getSubtotal()) }}</td>
                 </tr>
                 <tr>
-                  <td>Phí vận chuyển</td>
+                  <td>
+                    <div class="shipping-fee-row">
+                      <img
+                        src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                        alt="Giao Hàng Tiết Kiệm"
+                        class="shipping-logo"
+                        onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
+                      />
+                      <span>Phí vận chuyển</span>
+                    </div>
+                  </td>
                   <td>
                     <span *ngIf="isCalculatingShippingFee" class="text-muted">
                       <i class="fas fa-spinner fa-spin"></i> Đang tính...
@@ -673,7 +702,15 @@
               <span class="text-danger">-{{ formatCurrency(orderSummary.couponDiscount) }}</span>
             </div>
             <div *ngIf="orderSummary.shippingFee > 0" class="total-row">
-              <span>Phí vận chuyển:</span>
+              <span>
+                <img
+                  src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                  alt="Giao Hàng Tiết Kiệm"
+                  class="shipping-logo-small"
+                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
+                />
+                Phí vận chuyển:
+              </span>
               <span>{{ formatCurrency(orderSummary.shippingFee) }}</span>
             </div>
             <div class="total-row total">
@@ -792,12 +829,12 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let item of createdInvoice.danhSachChiTiet">
-                    <td>{{ item.tenSanPham }}</td>
-                    <td>{{ item.soLuong }}</td>
-                    <td>{{ formatCurrency(item.donGia) }}</td>
+                  <tr *ngFor="let item of (createdInvoice.danhSachSanPham || createdInvoice.danhSachChiTiet || [])">
+                    <td>{{ item.tenSanPham || 'Sản phẩm' }}</td>
+                    <td>{{ item.soLuong || 0 }}</td>
+                    <td>{{ formatCurrency(item.donGia || 0) }}</td>
                     <td>
-                      <strong>{{ formatCurrency(item.thanhTien) }}</strong>
+                      <strong>{{ formatCurrency(item.thanhTien || 0) }}</strong>
                     </td>
                   </tr>
                 </tbody>
@@ -953,4 +990,5 @@
   <app-shop-footer></app-shop-footer>
 
   <app-chatbot></app-chatbot>
+  <app-toast></app-toast>
 </div>
