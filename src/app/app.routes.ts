@@ -40,6 +40,7 @@ import { OriginsComponent } from './components/origins/origins.component';
 import { TrongLuongComponent } from './components/trong-luong/trong-luong.component';
 import { LoaiMuBaoHiemComponent } from './components/loai-mu-bao-hiem/loai-mu-bao-hiem.component';
 import { CongNgheAnToanComponent } from './components/cong-nghe-an-toan/cong-nghe-an-toan.component';
+import { HelmetStylesComponent } from './components/helmet-styles/helmet-styles.component';
 import { ChatManagementComponent } from './components/chat-management/chat-management.component';
 import { AboutComponent } from './components/shop/about/about.component';
 import { NewsComponent } from './components/shop/news/news.component';
@@ -221,6 +222,12 @@ export const routes: Routes = [
   {
     path: 'products/cong-nghe-an-toan',
     component: CongNgheAnToanComponent,
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN'] },
+  },
+  {
+    path: 'products/helmet-styles',
+    component: HelmetStylesComponent,
     canActivate: [AuthGuard, roleGuard],
     data: { roles: ['ADMIN'] },
   },

@@ -105,11 +105,6 @@ export class SidebarComponent implements OnInit {
               active: false,
             },
             {
-              label: 'Trọng lượng',
-              route: '/products/trong-luong',
-              active: false,
-            },
-            {
               label: 'Loại mũ bảo hiểm',
               route: '/products/loai-mu-bao-hiem',
               active: false,
@@ -122,6 +117,11 @@ export class SidebarComponent implements OnInit {
             {
               label: 'Công nghệ an toàn',
               route: '/products/cong-nghe-an-toan',
+              active: false,
+            },
+            {
+              label: 'Kiểu dáng mũ',
+              route: '/products/helmet-styles',
               active: false,
             },
           ],
