@@ -24,7 +24,6 @@
   font-size: 13px;
 }
 
-
 .btn {
   padding: 8px 16px;
   border-radius: 6px;
@@ -97,14 +96,12 @@
 
     i {
       font-size: 18px;
-      color: #febc49;
     }
 
     h3 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
-      color: #febc49;
     }
   }
 
@@ -161,7 +158,7 @@
 
 .filter-group {
   display: flex;
-flex-direction: column;
+  flex-direction: column;
   gap: 6px;
   min-width: 180px;
   flex: 1;
@@ -340,7 +337,7 @@ flex-direction: column;
   }
 
   .slider-input {
-position: absolute;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
@@ -490,7 +487,7 @@ position: absolute;
   }
 
   .filter-actions {
-justify-content: center;
+    justify-content: center;
     flex-wrap: wrap;
   }
 }
@@ -542,14 +539,12 @@ justify-content: center;
 
   i {
     font-size: 20px;
-    color: #febc49;
   }
 
   h3 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #febc49;
   }
 }
 
@@ -669,7 +664,7 @@ justify-content: center;
 
 // Modal chi tiết khuyến mại
 .promotion-details-modal {
-position: fixed;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -805,7 +800,7 @@ position: fixed;
           &:hover {
             background-color: #f0a500;
             border-color: #f0a500;
-transform: translateY(-1px);
+            transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(254, 188, 73, 0.3);
           }
         }
@@ -969,7 +964,7 @@ transform: translateY(-1px);
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-padding: 15px 20px;
+    padding: 15px 20px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1152,7 +1147,7 @@ padding: 15px 20px;
   }
 
   .search-filter-section {
-flex-direction: column;
+    flex-direction: column;
     align-items: stretch;
   }
 
@@ -1416,6 +1411,10 @@ flex-direction: column;
 
 // Animation for refresh button
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

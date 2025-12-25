@@ -52,11 +52,11 @@
             class="date-input-inline"
           />
           <span class="date-separator-inline">đến</span>
-          <input 
-            type="date" 
-            [(ngModel)]="endDate" 
-            (change)="applyFilters()" 
-            class="date-input-inline" 
+          <input
+            type="date"
+            [(ngModel)]="endDate"
+            (change)="applyFilters()"
+            class="date-input-inline"
           />
         </div>
       </div>
@@ -70,7 +70,7 @@
           <i class="bi bi-file-earmark-excel"></i>
           <span>Xuất Excel</span>
         </button>
-        <button class="btn btn-primary" (click)="addPhieuGiamGia()" title="Thêm Phiếu Giảm Giá">
+        <button class="btn btn-add-phieu" (click)="addPhieuGiamGia()" title="Thêm Phiếu Giảm Giá">
           <i class="bi bi-plus-circle"></i>
           <span>Thêm Phiếu Giảm Giá</span>
         </button>
@@ -145,7 +145,11 @@
             <td>{{ formatDate(phieu.ngayBatDau) }}</td>
             <td>{{ formatDate(phieu.ngayKetThuc) }}</td>
             <td class="actions">
-              <div class="toggle-switch" [class.active]="phieu.trangThai" [class.updating]="phieu.isUpdating">
+              <div
+                class="toggle-switch"
+                [class.active]="phieu.trangThai"
+                [class.updating]="phieu.isUpdating"
+              >
                 <input
                   type="checkbox"
                   [checked]="phieu.trangThai"
@@ -157,7 +161,12 @@
                   <span *ngIf="phieu.isUpdating" class="loading-spinner"></span>
                 </span>
               </div>
-              <button class="btn-edit" (click)="editPhieuGiamGia(phieu)" title="Chỉnh sửa" [disabled]="phieu.isUpdating">
+              <button
+                class="btn-edit"
+                (click)="editPhieuGiamGia(phieu)"
+                title="Chỉnh sửa"
+                [disabled]="phieu.isUpdating"
+              >
                 <i class="bi bi-pencil"></i>
               </button>
             </td>
@@ -185,12 +194,13 @@
 
       <!-- Page Numbers -->
       <div class="page-numbers">
-        <button 
-          *ngFor="let page of getPageNumbers()" 
+        <button
+          *ngFor="let page of getPageNumbers()"
           class="page-number-btn"
           [class.active]="page === currentPage"
           [disabled]="page === '...'"
-          (click)="onPageNumberClick(page)">
+          (click)="onPageNumberClick(page)"
+        >
           {{ page }}
         </button>
       </div>
@@ -199,7 +209,9 @@
         <i class="bi bi-chevron-right"></i>
       </button>
 
-      <span class="page-info">Trang {{ currentPage }} / {{ totalPages }} ({{ totalItems }} phiếu)</span>
+      <span class="page-info"
+        >Trang {{ currentPage }} / {{ totalPages }} ({{ totalItems }} phiếu)</span
+      >
     </div>
   </div>
 
@@ -217,11 +229,15 @@
 
       <div class="modal-body">
         <!-- General error message -->
-        <div *ngIf="hasEditFieldError('general')" class="alert alert-danger" style="margin-bottom: 20px;">
+        <div
+          *ngIf="hasEditFieldError('general')"
+          class="alert alert-danger"
+          style="margin-bottom: 20px"
+        >
           <i class="bi bi-exclamation-triangle"></i>
           {{ getEditFieldError('general') }}
         </div>
-        
+
         <form>
           <div class="form-row">
             <div class="form-group">
@@ -271,7 +287,12 @@
             </div>
             <div class="form-group">
               <label>Trạng thái</label>
-              <select [(ngModel)]="editForm.trangThai" class="form-control disabled-input" name="trangThai" disabled>
+              <select
+                [(ngModel)]="editForm.trangThai"
+                class="form-control disabled-input"
+                name="trangThai"
+                disabled
+              >
                 <option value="sap_dien_ra">Sắp diễn ra</option>
                 <option value="dang_dien_ra">Đang diễn ra</option>
                 <option value="ket_thuc">Kết thúc</option>
@@ -318,7 +339,7 @@
             </div>
           </div>
 
-          <div class="form-row" [ngClass]="{'single-column': !editForm.loaiPhieuGiamGia}">
+          <div class="form-row" [ngClass]="{ 'single-column': !editForm.loaiPhieuGiamGia }">
             <div class="form-group" *ngIf="editForm.loaiPhieuGiamGia">
               <label>Số tiền tối đa</label>
               <div class="input-group">
@@ -385,12 +406,13 @@
                   readonly
                   title="Thông tin khách hàng (chỉ xem)"
                 />
-                <button 
+                <button
                   type="button"
                   class="btn-edit-customer"
                   (click)="openEditCustomerModal()"
                   *ngIf="editingPhieu?.isPublic === false"
-                  title="Chỉnh sửa khách hàng">
+                  title="Chỉnh sửa khách hàng"
+                >
                   <i class="bi bi-pencil"></i>
                 </button>
               </div>
@@ -450,7 +472,7 @@
           type="button"
           class="btn btn-warning"
           (click)="testValidation()"
-          style="margin-right: 10px;"
+          style="margin-right: 10px"
           *ngIf="false"
         >
           Test Validation
@@ -499,23 +521,35 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr 
+                  <tr
                     *ngFor="let customer of paginatedAvailableCustomers; let i = index"
                     (click)="selectCustomerForEdit(customer)"
                     class="customer-row-edit"
                     title="Click để chọn khách hàng"
                   >
-                    <td>{{ (currentPageAvailableCustomers - 1) * itemsPerPageAvailableCustomers + i + 1 }}</td>
+                    <td>
+                      {{
+                        (currentPageAvailableCustomers - 1) * itemsPerPageAvailableCustomers + i + 1
+                      }}
+                    </td>
                     <td>{{ customer.maKhachHang }}</td>
                     <td>{{ customer.tenKhachHang }}</td>
-                    <td>{{ customer.gioiTinh === true ? 'Nam' : (customer.gioiTinh === false ? 'Nữ' : 'N/A') }}</td>
+                    <td>
+                      {{
+                        customer.gioiTinh === true
+                          ? 'Nam'
+                          : customer.gioiTinh === false
+                          ? 'Nữ'
+                          : 'N/A'
+                      }}
+                    </td>
                     <td>{{ customer.ngaySinh || 'N/A' }}</td>
                     <td>{{ customer.soLanMua || 0 }}</td>
                     <td>{{ customer.diemTichLuy || 0 }}</td>
                     <td>{{ customer.lanMuaGanNhat || 'N/A' }}</td>
                   </tr>
                   <tr *ngIf="availableCustomersForEdit.length === 0">
-                    <td colspan="8" style="text-align: center; color: #999;">
+                    <td colspan="8" style="text-align: center; color: #999">
                       Không có khách hàng nào
                     </td>
                   </tr>
@@ -523,42 +557,49 @@
               </table>
             </div>
             <!-- Pagination for available customers table -->
-            <div class="pagination-container" *ngIf="availableCustomersForEdit.length > 0 && totalPagesAvailableCustomers > 1">
+            <div
+              class="pagination-container"
+              *ngIf="availableCustomersForEdit.length > 0 && totalPagesAvailableCustomers > 1"
+            >
               <div class="pagination-info">
-                Hiển thị {{ getStartIndexAvailableCustomers() }} - 
-                {{ getEndIndexAvailableCustomers() }} 
+                Hiển thị {{ getStartIndexAvailableCustomers() }} -
+                {{ getEndIndexAvailableCustomers() }}
                 / {{ availableCustomersForEdit.length }} khách hàng
               </div>
               <div class="pagination-controls">
-                <button 
-                  class="pagination-btn" 
+                <button
+                  class="pagination-btn"
                   [disabled]="currentPageAvailableCustomers === 1"
                   (click)="goToPageAvailableCustomers(1)"
-                  title="Trang đầu">
+                  title="Trang đầu"
+                >
                   <i class="bi bi-chevron-double-left"></i>
                 </button>
-                <button 
-                  class="pagination-btn" 
+                <button
+                  class="pagination-btn"
                   [disabled]="currentPageAvailableCustomers === 1"
                   (click)="prevPageAvailableCustomers()"
-                  title="Trang trước">
+                  title="Trang trước"
+                >
                   <i class="bi bi-chevron-left"></i>
                 </button>
                 <span class="pagination-page-info">
                   Trang {{ currentPageAvailableCustomers }} / {{ totalPagesAvailableCustomers }}
                 </span>
-                <button 
-                  class="pagination-btn" 
+                <button
+                  class="pagination-btn"
                   [disabled]="currentPageAvailableCustomers >= totalPagesAvailableCustomers"
                   (click)="nextPageAvailableCustomers()"
-                  title="Trang sau">
+                  title="Trang sau"
+                >
                   <i class="bi bi-chevron-right"></i>
                 </button>
-                <button 
-                  class="pagination-btn" 
+                <button
+                  class="pagination-btn"
                   [disabled]="currentPageAvailableCustomers >= totalPagesAvailableCustomers"
                   (click)="goToPageAvailableCustomers(totalPagesAvailableCustomers)"
-                  title="Trang cuối">
+                  title="Trang cuối"
+                >
                   <i class="bi bi-chevron-double-right"></i>
                 </button>
               </div>
@@ -584,7 +625,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr 
+                  <tr
                     *ngFor="let customer of selectedCustomersForEdit; let i = index"
                     (click)="deselectCustomerForEdit(customer)"
                     class="customer-row-edit selected-row-edit"
@@ -593,14 +634,22 @@
                     <td>{{ i + 1 }}</td>
                     <td>{{ customer.maKhachHang }}</td>
                     <td>{{ customer.tenKhachHang }}</td>
-                    <td>{{ customer.gioiTinh === true ? 'Nam' : (customer.gioiTinh === false ? 'Nữ' : 'N/A') }}</td>
+                    <td>
+                      {{
+                        customer.gioiTinh === true
+                          ? 'Nam'
+                          : customer.gioiTinh === false
+                          ? 'Nữ'
+                          : 'N/A'
+                      }}
+                    </td>
                     <td>{{ customer.ngaySinh || 'N/A' }}</td>
                     <td>{{ customer.soLanMua || 0 }}</td>
                     <td>{{ customer.diemTichLuy || 0 }}</td>
                     <td>{{ customer.lanMuaGanNhat || 'N/A' }}</td>
                   </tr>
                   <tr *ngIf="selectedCustomersForEdit.length === 0">
-                    <td colspan="8" style="text-align: center; color: #999;">
+                    <td colspan="8" style="text-align: center; color: #999">
                       Chưa chọn khách hàng nào
                     </td>
                   </tr>
@@ -612,11 +661,7 @@
       </div>
 
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="closeEditCustomerModal()"
-        >
+        <button type="button" class="btn btn-secondary" (click)="closeEditCustomerModal()">
           Hủy
         </button>
         <button
