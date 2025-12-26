@@ -25,10 +25,16 @@ export class CustomerOrdersComponent implements OnInit {
   totalElements = 0;
   pageSize = 10;
   searchTerm: string = ''; // Tìm kiếm theo mã đơn hàng
+  
+  // Tra cứu đơn hàng (cho khách hàng chưa đăng nhập)
+  orderCodeSearch: string = '';
+  searchedOrder: HoaDonDTO | null = null;
+  isSearching = false;
+  searchError = '';
 
   constructor(
     private hoaDonService: HoaDonService,
-    private authService: AuthService,
+    public authService: AuthService, // Changed to public để dùng trong template
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private location: Location,
@@ -36,13 +42,32 @@ export class CustomerOrdersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // QUAN TRỌNG: Cho phép xem lịch sử đơn hàng cả khi chưa đăng nhập (lấy từ localStorage)
-    // Nếu đã đăng nhập thì load từ API, nếu chưa thì load từ localStorage
-    
     console.log('📋 Customer Orders Component initialized');
     console.log('📋 User logged in:', this.authService.isLoggedIn());
     
-    // Set isLoading = true khi bắt đầu load
+    // QUAN TRỌNG: Khi chưa đăng nhập, CHỈ hiển thị view tra cứu đơn hàng
+    // KHÔNG load đơn hàng từ localStorage, người dùng phải nhập mã hóa đơn để tra cứu
+    if (!this.authService.isLoggedIn()) {
+      this.isLoading = false;
+      // Kiểm tra query params để tự động điền mã hóa đơn nếu có
+      const orderCode = this.activatedRoute.snapshot.queryParams['orderCode'];
+      if (orderCode) {
+        this.orderCodeSearch = orderCode;
+        // Tự động tra cứu nếu có mã trong query params
+        setTimeout(() => {
+          this.searchOrderByCode();
+        }, 500);
+        // Xóa query param sau khi đã sử dụng
+        this.router.navigate([], {
+          relativeTo: this.activatedRoute,
+          queryParams: {},
+          replaceUrl: true
+        });
+      }
+      return;
+    }
+    
+    // Nếu đã đăng nhập, load đơn hàng từ API
     this.isLoading = true;
     
     // Kiểm tra query params để highlight đơn hàng vừa tạo
@@ -64,13 +89,11 @@ export class CustomerOrdersComponent implements OnInit {
     }
     
     // Auto refresh orders every 30 seconds to update status (chỉ khi đã đăng nhập)
-    if (this.authService.isLoggedIn()) {
-      setInterval(() => {
-        if (!this.isLoading) { // Chỉ refresh nếu không đang load
-          this.loadOrders();
-        }
-      }, 30000);
-    }
+    setInterval(() => {
+      if (!this.isLoading) { // Chỉ refresh nếu không đang load
+        this.loadOrders();
+      }
+    }, 30000);
   }
 
   loadOrders(callback?: () => void): void {
@@ -134,10 +157,13 @@ export class CustomerOrdersComponent implements OnInit {
         }
       });
     } else {
-      // Nếu chưa đăng nhập, load từ localStorage
-      console.log('📋 Loading customer orders from localStorage');
-      this.loadOrdersFromLocalStorage();
-      
+      // QUAN TRỌNG: Khi chưa đăng nhập, KHÔNG load từ localStorage
+      // Người dùng phải tra cứu bằng mã hóa đơn
+      console.log('📋 User not logged in - showing order lookup view only');
+      this.orders = [];
+      this.filteredOrders = [];
+      this.totalElements = 0;
+      this.totalPages = 0;
       this.isLoading = false;
       this.cdr.detectChanges();
       
@@ -311,6 +337,44 @@ export class CustomerOrdersComponent implements OnInit {
   clearSearch(): void {
     this.searchTerm = '';
     this.filterOrders();
+  }
+
+  /**
+   * Tra cứu đơn hàng theo mã hóa đơn (cho khách hàng chưa đăng nhập)
+   */
+  searchOrderByCode(): void {
+    if (!this.orderCodeSearch || this.orderCodeSearch.trim() === '') {
+      this.searchError = 'Vui lòng nhập mã hóa đơn';
+      return;
+    }
+
+    this.isSearching = true;
+    this.searchError = '';
+    this.searchedOrder = null;
+
+    this.hoaDonService.searchOrderByCode(this.orderCodeSearch.trim()).subscribe({
+      next: (order: HoaDonDTO) => {
+        this.searchedOrder = order;
+        this.isSearching = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('❌ Error searching order:', error);
+        this.searchError = error.error?.message || 'Không tìm thấy đơn hàng với mã này. Vui lòng kiểm tra lại mã hóa đơn!';
+        this.searchedOrder = null;
+        this.isSearching = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Xóa kết quả tra cứu
+   */
+  clearSearchResult(): void {
+    this.orderCodeSearch = '';
+    this.searchedOrder = null;
+    this.searchError = '';
   }
 
   /**

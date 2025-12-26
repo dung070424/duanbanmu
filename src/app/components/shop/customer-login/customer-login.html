@@ -67,7 +67,12 @@
       </button>
 
       <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
+        <i class="fas fa-exclamation-circle"></i>
+        <div class="error-content">
+          <strong>Đăng nhập thất bại!</strong>
+          <p>{{ errorMessage }}</p>
+          <small>Vui lòng kiểm tra lại thông tin và thử lại.</small>
+        </div>
       </div>
     </form>
 

@@ -313,6 +313,14 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
             returnedItems: response.content.length,
             selectedStatus: this.selectedStatus
           });
+          // Debug: Log status của các invoice được trả về
+          if (this.selectedStatus && this.selectedStatus !== 'all' && response.content.length > 0) {
+            const statusCounts = response.content.reduce((acc: any, inv: any) => {
+              acc[inv.trangThai] = (acc[inv.trangThai] || 0) + 1;
+              return acc;
+            }, {});
+            console.log('🔍 Invoice statuses in response (filtered by ' + this.selectedStatus + '):', statusCounts);
+          }
         } else if (response.hoaDonList) {
           this.paginatedInvoices = response.hoaDonList;
           this.totalItems = response.totalItems || 0;
@@ -643,9 +651,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Đếm từ allInvoices để có số chính xác
     const invoicesToCount = this.allInvoices.length > 0 ? this.allInvoices : this.paginatedInvoices;
     // Normalize status để so sánh: cả "HUY" và "DA_HUY" đều được coi là "HUY"
+    // QUAN TRỌNG: CHỈ đếm đúng status, không normalize CHO_XAC_NHAN và DA_XAC_NHAN
     return invoicesToCount.filter(invoice => {
+      // Normalize chỉ cho HUY/DA_HUY
       const invoiceStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
       const statusNormalized = (status === 'DA_HUY' || status === 'HUY') ? 'HUY' : status;
+      // So sánh chính xác, không normalize CHO_XAC_NHAN và DA_XAC_NHAN
       return invoiceStatus === statusNormalized;
     }).length;
   }

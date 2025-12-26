@@ -174,7 +174,7 @@ export class CustomerLoginComponent implements OnInit, AfterViewInit, OnDestroy 
             if (!user?.roles || !user.roles.includes('CUSTOMER')) {
               console.error('❌ Only CUSTOMER role can login from customer website');
               console.error('   - User roles:', user?.roles);
-              this.errorMessage = 'Chỉ tài khoản khách hàng mới có thể đăng nhập tại đây! Vui lòng sử dụng trang đăng nhập dành cho nhân viên/quản trị viên.';
+              this.handleLoginError('Chỉ tài khoản khách hàng mới có thể đăng nhập tại đây! Vui lòng sử dụng trang đăng nhập dành cho nhân viên/quản trị viên.');
               this.authService.logout(); // Logout ngay lập tức
               this.isLoading = false;
               return;
@@ -192,15 +192,33 @@ export class CustomerLoginComponent implements OnInit, AfterViewInit, OnDestroy 
             this.router.navigate(['/shop']);
           } else {
             console.log('❌ Login failed - invalid credentials');
-            this.errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng!';
+            this.handleLoginError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng kiểm tra lại và thử lại!');
           }
           this.isLoading = false;
         },
         error: (error: any) => {
           console.error('❌ Login error:', error);
-          this.errorMessage = error.error?.message || error.message || 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!';
+          const errorMsg = error.error?.message || error.message || 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!';
+          this.handleLoginError(errorMsg);
           this.isLoading = false;
         },
       });
+  }
+
+  /**
+   * Xử lý lỗi đăng nhập: hiển thị thông báo và yêu cầu nhập lại
+   */
+  private handleLoginError(message: string): void {
+    this.errorMessage = message;
+    // Xóa mật khẩu để yêu cầu nhập lại
+    this.loginData.password = '';
+    // Focus vào ô username sau một chút để người dùng có thể nhập lại
+    setTimeout(() => {
+      const usernameInput = document.getElementById('username') as HTMLInputElement;
+      if (usernameInput) {
+        usernameInput.focus();
+        usernameInput.select();
+      }
+    }, 100);
   }
 }

@@ -1406,28 +1406,20 @@ export class CheckoutComponent implements OnInit {
 
         console.log('✅ Order created successfully, redirecting to order history...');
 
-        // Lưu đơn hàng vào localStorage nếu chưa đăng nhập
+        // QUAN TRỌNG: Khi chưa đăng nhập, KHÔNG lưu vào localStorage
+        // Chuyển đến trang tra cứu đơn hàng với mã hóa đơn trong query params
         if (!this.authService.isLoggedIn()) {
-          try {
-            const storedOrders = localStorage.getItem('guest_orders');
-            let orders: any[] = storedOrders ? JSON.parse(storedOrders) : [];
-            // Thêm đơn hàng mới vào đầu danh sách
-            orders.unshift(hoaDon);
-            // Giới hạn số lượng đơn hàng lưu trong localStorage (ví dụ: 50 đơn hàng gần nhất)
-            if (orders.length > 50) {
-              orders = orders.slice(0, 50);
-            }
-            localStorage.setItem('guest_orders', JSON.stringify(orders));
-            console.log('✅ Saved order to localStorage for guest user');
-          } catch (error) {
-            console.error('❌ Error saving order to localStorage:', error);
-          }
+          console.log('✅ Guest user - redirecting to order lookup with order code:', hoaDon.maHoaDon);
+          // Chuyển đến trang tra cứu với mã hóa đơn (mã này sẽ được gửi qua email)
+          this.router.navigate(['/customer/orders'], {
+            queryParams: { orderCode: hoaDon.maHoaDon }
+          });
+        } else {
+          // Khi đã đăng nhập, chuyển đến trang đơn hàng với order ID
+          this.router.navigate(['/customer/orders'], {
+            queryParams: { newOrderId: hoaDon.id }
+          });
         }
-
-        // Chuyển sang trang lịch sử đơn hàng với order ID vừa tạo (cả khi đã đăng nhập và chưa đăng nhập)
-        this.router.navigate(['/customer/orders'], {
-          queryParams: { newOrderId: hoaDon.id }
-        });
       },
       error: (err) => {
         console.error('❌ Error creating invoice:', err);

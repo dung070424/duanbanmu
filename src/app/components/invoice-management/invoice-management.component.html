@@ -1,4 +1,4 @@
-<div class="container-fluid">
+﻿<div class="container-fluid">
   <!-- Bộ Lọc Tìm Kiếm Section -->
   <div class="filter-section">
     <div class="section-title">
@@ -68,11 +68,11 @@
     </div>
     <div class="status-tab" [class.active]="selectedStatus === 'DA_XAC_NHAN'"
       (click)="selectStatusFilter('DA_XAC_NHAN')">
-      CHỜ VẬN CHUYỂN <span class="count-badge text-bg-secondary">{{ getStatusCount('DA_XAC_NHAN') }}</span>
+      ĐÃ XÁC NHẬN <span class="count-badge text-bg-secondary">{{ getStatusCount('DA_XAC_NHAN') }}</span>
     </div>
     <div class="status-tab" [class.active]="selectedStatus === 'DANG_GIAO_HANG'"
       (click)="selectStatusFilter('DANG_GIAO_HANG')">
-      ĐANG VẬN CHUYỂN <span class="count-badge text-bg-secondary">{{ getStatusCount('DANG_GIAO_HANG') }}</span>
+      ĐANG GIAO HÀNG <span class="count-badge text-bg-secondary">{{ getStatusCount('DANG_GIAO_HANG') }}</span>
     </div>
     <div class="status-tab" [class.active]="selectedStatus === 'DA_GIAO_HANG'"
       (click)="selectStatusFilter('DA_GIAO_HANG')">
