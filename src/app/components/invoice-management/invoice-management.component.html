@@ -16,6 +16,16 @@
               (input)="onSearchInput($event)" (blur)="onSearchTermChange()" (keydown.enter)="onSearchTermChange()" />
           </div>
         </div>
+
+        <div class="date-section">
+          <label class="filter-label">Từ ngày</label>
+          <input type="date" class="form-control search-input" [(ngModel)]="startDate" (change)="onDateChange()" />
+        </div>
+
+        <div class="date-section">
+          <label class="filter-label">Đến ngày</label>
+          <input type="date" class="form-control search-input" [(ngModel)]="endDate" (change)="onDateChange()" />
+        </div>
       </div>
 
     </div>
@@ -38,7 +48,7 @@
     <div class="info-and-actions">
       <div class="total-customers">Tổng số hóa đơn: {{ totalItems }}</div>
       <div class="action-buttons">
-        <button class="btn-reset" (click)="clearSearch(); clearStatusFilter(); clearPaymentStatusFilter()">Đặt lại bộ
+        <button class="btn-reset" (click)="resetAllFilters()">Đặt lại bộ
           lọc</button>
         <button class="btn-add" (click)="openActivityModal()">
           <i class="bi bi-clock-history me-1"></i> Lịch sử thay đổi
