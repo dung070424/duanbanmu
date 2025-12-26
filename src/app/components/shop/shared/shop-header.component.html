@@ -8,12 +8,6 @@
           <span><i class="fas fa-envelope"></i> contact@tdkstore.com</span>
         </div>
         <div class="top-bar-right">
-          <a 
-            [routerLink]="authService.isLoggedIn() ? '/customer/orders' : '/shop/my-orders'"
-            *ngIf="!authService.isLoggedIn()"
-          >
-            Đơn hàng của tôi
-          </a>
           <a routerLink="/shop/login" *ngIf="!authService.isLoggedIn()">Đăng nhập</a>
           <a routerLink="/shop/register" *ngIf="!authService.isLoggedIn()">Đăng ký</a>
           <a
@@ -53,9 +47,8 @@
           <a routerLink="/shop/news" routerLinkActive="active">Tin tức</a>
           <a routerLink="/shop/contact" routerLinkActive="active">Liên hệ</a>
           <a 
-            routerLink="/customer/orders" 
+            [routerLink]="authService.isLoggedIn() ? '/customer/orders' : '/shop/my-orders'"
             routerLinkActive="active"
-            *ngIf="authService.isLoggedIn()"
           >
             Đơn hàng của tôi
           </a>
