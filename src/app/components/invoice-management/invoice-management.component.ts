@@ -271,7 +271,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
     // Add payment status filter if not 'all'
     if (this.selectedPaymentStatus && this.selectedPaymentStatus !== 'all') {
-      filterParams.paymentStatus = this.selectedPaymentStatus;
+      filterParams.trangThaiThanhToan = this.selectedPaymentStatus;
     }
 
     // Add payment method filter if not 'all'
@@ -573,33 +573,6 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.loadHoaDon();
   }
 
-  clearSearch(): void {
-    this.searchTerm = '';
-    // ✅ Backend xử lý search - chỉ cần gửi đến searchSubject để gọi API
-    this.searchSubject.next('');
-  }
-
-  clearStatusFilter(): void {
-    this.selectedStatus = 'all';
-    this.currentPage = 1;
-    // ✅ Backend xử lý filter - chỉ cần gọi API
-    this.loadHoaDon();
-  }
-
-  clearPaymentStatusFilter(): void {
-    this.selectedPaymentStatus = 'all';
-    this.currentPage = 1;
-    // ✅ Backend xử lý filter - chỉ cần gọi API
-    this.loadHoaDon();
-  }
-
-  clearPaymentMethodFilter(): void {
-    this.selectedPaymentMethod = 'all';
-    this.currentPage = 1;
-    // ✅ Backend xử lý filter - chỉ cần gọi API
-    this.loadHoaDon();
-  }
-
   onSearchChange(): void {
     this.currentPage = 1;
     this.loadHoaDon();
@@ -645,27 +618,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
         // Sau khi load xong allInvoices, cập nhật lại totalItems nếu đang filter theo status
         // QUAN TRỌNG: Normalize status để so sánh đúng (HUY và DA_HUY đều là HUY)
-        if (this.selectedStatus && this.selectedStatus !== 'all' && this.allInvoices.length > 0) {
-          const selectedStatusNormalized = (this.selectedStatus === 'DA_HUY' || this.selectedStatus === 'HUY') ? 'HUY' : this.selectedStatus;
-          let countFromAll = this.allInvoices.filter(inv => {
-            const invStatus = (inv.trangThai === 'DA_HUY' || inv.trangThai === 'HUY') ? 'HUY' : inv.trangThai;
-            return invStatus === selectedStatusNormalized;
-          });
-
-          // Frontend filters (search/date) không áp dụng ở đây vì backend đã xử lý
-          // Chỉ cần đếm theo status là đủ
-
-          const newTotalItems = countFromAll.length;
-          if (newTotalItems !== this.totalItems) {
-            console.log('📊 Updated totalItems after loadAllInvoicesForCount:', {
-              oldTotalItems: this.totalItems,
-              newTotalItems: newTotalItems,
-              selectedStatus: this.selectedStatus,
-              normalizedStatus: selectedStatusNormalized
-            });
-            this.totalItems = newTotalItems;
-          }
-        }
+        // if (this.selectedStatus && this.selectedStatus !== 'all' && this.allInvoices.length > 0) { ... }
+        // FIX: Không cập nhật totalItems ở đây vì allInvoices không áp dụng search/date filter
+        // totalItems phải lấy từ response của loadHoaDon() để đảm bảo chính xác với view hiện tại
 
         this.cdr.detectChanges();
       },
@@ -722,7 +677,35 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.startDate = '';
     this.endDate = '';
     this.currentPage = 1;
-    // ✅ Backend xử lý filter - chỉ cần gọi API
+    this.loadHoaDon();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.currentPage = 1;
+    this.loadHoaDon();
+  }
+
+  clearStatusFilter(): void {
+    this.selectedStatus = 'all';
+    this.currentPage = 1;
+    this.loadHoaDon();
+  }
+
+  clearPaymentStatusFilter(): void {
+    this.selectedPaymentStatus = 'all';
+    this.currentPage = 1;
+    this.loadHoaDon();
+  }
+
+  resetAllFilters(): void {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.selectedPaymentStatus = 'all';
+    this.selectedPaymentMethod = 'all';
+    this.startDate = '';
+    this.endDate = '';
+    this.currentPage = 1;
     this.loadHoaDon();
   }
 
@@ -1099,6 +1082,11 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   closeActivityModal(): void {
     this.showActivityModal = false;
+  }
+
+  onDateChange(): void {
+    this.currentPage = 1;
+    this.loadHoaDon();
   }
 
   loadActivityLogs(): void {
@@ -3224,11 +3212,11 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
    */
   resetConfirmInvoiceForm(): void {
     this.confirmInvoiceData = {
-      ngayDuKienGiao: '',
-      khoiLuong: null,
-      chieuDai: null,
-      chieuRong: null,
-      chieuCao: null,
+      ngayDuKienGiao: new Date().toISOString().split('T')[0], // Default to today
+      khoiLuong: 0,
+      chieuDai: 0,
+      chieuRong: 0,
+      chieuCao: 0,
       phiGiaoHang: 30000,
       nguoiChiuPhi: 'nguoi_gui',
     };
@@ -3261,18 +3249,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
 
     // Validate form
-    if (!this.confirmInvoiceData.ngayDuKienGiao) {
-      this.showToast('Vui lòng nhập ngày dự kiến giao', 'warning');
-      return;
-    }
-
-    if (!this.confirmInvoiceData.khoiLuong || this.confirmInvoiceData.khoiLuong <= 0) {
-      this.showToast('Vui lòng nhập khối lượng hợp lệ', 'warning');
-      return;
-    }
-
-    if (!this.confirmInvoiceData.chieuDai || !this.confirmInvoiceData.chieuRong || !this.confirmInvoiceData.chieuCao) {
-      this.showToast('Vui lòng nhập đầy đủ kích thước (dài, rộng, cao)', 'warning');
+    // Validation for shipping fee only
+    if (this.confirmInvoiceData.phiGiaoHang < 0) {
+      this.showToast('Phí giao hàng không hợp lệ', 'warning');
       return;
     }
 
@@ -3326,11 +3305,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           trangThai: 'DA_XAC_NHAN', // Cập nhật trạng thái từ "CHỜ XÁC NHẬN" sang "ĐÃ XÁC NHẬN"
 
           // Thông tin vận chuyển mới
-          ngayDuKienGiao: new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString(),
-          khoiLuong: this.confirmInvoiceData.khoiLuong,
-          chieuDai: this.confirmInvoiceData.chieuDai,
-          chieuRong: this.confirmInvoiceData.chieuRong,
-          chieuCao: this.confirmInvoiceData.chieuCao,
+          // Thông tin vận chuyển mới (Sử dụng giá trị mặc định hoặc từ form hidden)
+          ngayDuKienGiao: this.confirmInvoiceData.ngayDuKienGiao ? new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString() : new Date().toISOString(),
+          khoiLuong: this.confirmInvoiceData.khoiLuong || 0,
+          chieuDai: this.confirmInvoiceData.chieuDai || 0,
+          chieuRong: this.confirmInvoiceData.chieuRong || 0,
+          chieuCao: this.confirmInvoiceData.chieuCao || 0,
           phiGiaoHang: this.confirmInvoiceData.phiGiaoHang,
           nguoiChiuPhi: this.confirmInvoiceData.nguoiChiuPhi,
         };

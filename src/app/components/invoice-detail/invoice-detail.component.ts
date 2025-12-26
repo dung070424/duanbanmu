@@ -83,7 +83,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     bankName: '',
     accountHolder: ''
   };
-  
+
   // Shipping fee adjustment properties
   showShippingFeeAdjustmentModal: boolean = false;
   pendingSaveAfterShippingAdjustment: boolean = false; // Flag để tự động tiếp tục lưu sau khi xử lý modal
@@ -142,7 +142,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     private ghnService: GHNService,
     private vietnamAddressService: VietnamAddressService,
     private khachHangService: KhachHangService
-  ) {}
+  ) { }
 
   /**
    * Quay lại trang quản lý hóa đơn hoặc đơn hàng của customer
@@ -376,14 +376,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       if (province) {
         this.selectedProvince = province.code;
         this.onProvinceChange(province.code);
-        
+
         // Đợi districts load xong rồi mới set district
         setTimeout(() => {
           const district = this.districts.find((d) => d.name === addr.quanHuyen);
           if (district) {
             this.selectedDistrict = district.code;
             this.onDistrictChange(district.code);
-            
+
             // Đợi wards load xong rồi mới set ward
             setTimeout(() => {
               const ward = this.wards.find((w) => w.name === addr.phuongXa);
@@ -409,7 +409,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (!this.editingInvoice || !tinhThanh || !quanHuyen) return;
 
     this.calculatingShippingFee = true;
-    
+
     // Tìm district code từ district name
     const district = this.districts.find((d) => d.name === quanHuyen);
     if (!district) {
@@ -419,7 +419,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     const districtId = this.getDistrictIdForGHN(district.code);
-    
+
     // Tính phí ship qua GHN API
     this.ghnService.calculateShippingFeeViaBackend({
       from_district_id: 1442, // Quận Ba Đình, Hà Nội (mặc định)
@@ -483,8 +483,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Nếu chưa có originalShippingFee, lấy từ invoice
-    const originalFee = this.originalShippingFee !== undefined 
-      ? this.originalShippingFee 
+    const originalFee = this.originalShippingFee !== undefined
+      ? this.originalShippingFee
       : (this.invoice?.phiGiaoHang || 0);
 
     const currentFee = this.editingInvoice.phiGiaoHang || 0;
@@ -513,13 +513,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Nếu chưa có originalShippingFee, lấy từ invoice
-    const originalFee = this.originalShippingFee !== undefined 
-      ? this.originalShippingFee 
+    const originalFee = this.originalShippingFee !== undefined
+      ? this.originalShippingFee
       : (this.invoice?.phiGiaoHang || 0);
 
     const currentFee = this.editingInvoice.phiGiaoHang || 0;
     const difference = Math.abs(currentFee - originalFee);
-    
+
     // Chỉ hiển thị nếu chênh lệch >= 1 VND
     return difference >= 1;
   }
@@ -531,8 +531,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
     // Log để debug
     if (this.editingInvoice) {
-      const originalFee = this.originalShippingFee !== undefined 
-        ? this.originalShippingFee 
+      const originalFee = this.originalShippingFee !== undefined
+        ? this.originalShippingFee
         : (this.invoice?.phiGiaoHang || 0);
       console.log('💰 Shipping fee changed manually:', {
         original: originalFee,
@@ -547,7 +547,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Xác định xem đây có phải là customer view không
     this.isCustomerView = this.authService.isCustomer();
     console.log('🔍 InvoiceDetailComponent initialized, isCustomerView:', this.isCustomerView);
-    
+
     // Load provinces ngay khi component khởi tạo
     this.loadProvinces();
     this.route.params.subscribe(params => {
@@ -653,7 +653,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       if (!this.isEditMode) {
         // Cập nhật liên tục từ DB: Load invoice detail và customer info
         this.loadInvoiceDetail();
-        
+
         // Cũng reload customer info nếu có khachHangId
         if (this.invoice?.khachHangId) {
           this.loadCustomerInfo(this.invoice.khachHangId);
@@ -764,7 +764,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         if (invoice.phiGiaoHang !== undefined && invoice.phiGiaoHang !== null) {
           invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string' ? parseFloat(invoice.phiGiaoHang) : Number(invoice.phiGiaoHang);
         }
-        
+
         // Parse các trường vận chuyển
         if (invoice.khoiLuong !== undefined && invoice.khoiLuong !== null) {
           invoice.khoiLuong = typeof invoice.khoiLuong === 'string' ? parseFloat(invoice.khoiLuong) : Number(invoice.khoiLuong);
@@ -778,7 +778,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         if (invoice.chieuCao !== undefined && invoice.chieuCao !== null) {
           invoice.chieuCao = typeof invoice.chieuCao === 'string' ? parseFloat(invoice.chieuCao) : Number(invoice.chieuCao);
         }
-        
+
         // Đảm bảo ngayDuKienGiao là string hoặc Date hợp lệ
         if (invoice.ngayDuKienGiao) {
           // Nếu là string, giữ nguyên; nếu là Date object, convert sang string
@@ -876,13 +876,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
         // QUAN TRỌNG: Đảm bảo phiGiaoHang và thanhTien được parse đúng
         if (invoice.phiGiaoHang !== undefined && invoice.phiGiaoHang !== null) {
-          invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string' 
-            ? parseFloat(invoice.phiGiaoHang) 
+          invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string'
+            ? parseFloat(invoice.phiGiaoHang)
             : Number(invoice.phiGiaoHang);
         }
         if (invoice.thanhTien !== undefined && invoice.thanhTien !== null) {
-          invoice.thanhTien = typeof invoice.thanhTien === 'string' 
-            ? parseFloat(invoice.thanhTien) 
+          invoice.thanhTien = typeof invoice.thanhTien === 'string'
+            ? parseFloat(invoice.thanhTien)
             : Number(invoice.thanhTien);
         }
 
@@ -897,7 +897,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           phuongXa: invoice.phuongXa,
           diaChiChiTiet: invoice.diaChiChiTiet
         });
-        
+
         console.log('📦 Invoice shipping data:', {
           khoiLuong: invoice.khoiLuong,
           chieuDai: invoice.chieuDai,
@@ -912,10 +912,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.originalShippingFee = invoice.phiGiaoHang || 0; // Lưu phí ship ban đầu
         this.statusChanged = false; // Reset flag
         this.selectedStatus = ''; // Reset selected status
-        
+
         // Force change detection để đảm bảo UI cập nhật ngay lập tức
         this.cdr.detectChanges();
-        
+
         console.log('✅ Invoice object updated in component:', {
           id: this.invoice?.id,
           phiGiaoHang: this.invoice?.phiGiaoHang,
@@ -1113,7 +1113,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             danhSachChiTiet: detailData?.danhSachChiTiet,
             trangThai: detailData?.trangThai || this.invoice?.trangThai
           });
-          
+
           // QUAN TRỌNG: Nếu soLuongSanPham > 0 nhưng danhSachChiTiet rỗng, 
           // có thể backend chưa load chi tiết. Thử gọi lại API với force load chi tiết
           if ((detailData?.soLuongSanPham || this.invoice?.soLuongSanPham || 0) > 0) {
@@ -1143,7 +1143,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                       thuongHieu: item.thuongHieu || '',
                       ghiChu: item.ghiChu || ''
                     }));
-                    
+
                     if (this.invoice) {
                       this.invoice.danhSachSanPham = retryDanhSachSanPham;
                       this.invoice.soLuongSanPham = retryDanhSachSanPham.length;
@@ -1194,7 +1194,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         return;
       }
 
-    // Tạo bản sao của invoice hiện tại để chỉnh sửa
+      // Tạo bản sao của invoice hiện tại để chỉnh sửa
       this.editingInvoice = { ...this.invoice };
       // Lưu phí ship ban đầu khi mở modal
       this.originalShippingFee = this.invoice?.phiGiaoHang || 0;
@@ -1337,12 +1337,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       // Trigger change detection để đảm bảo UI được cập nhật
       this.cdr.detectChanges();
 
-    // Mở modal
-    const modal = document.getElementById('updateInvoiceModal');
-    if (modal) {
-      modal.classList.add('show');
-      modal.style.display = 'block';
-      document.body.classList.add('modal-open');
+      // Mở modal
+      const modal = document.getElementById('updateInvoiceModal');
+      if (modal) {
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        document.body.classList.add('modal-open');
         console.log('✅ Update modal opened successfully');
 
         // Force update UI sau khi modal mở để đảm bảo dữ liệu hiển thị
@@ -1452,15 +1452,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Lưu phí ship ban đầu khi vào edit mode
     this.originalShippingFee = this.invoice?.phiGiaoHang || 0;
     this.stopAutoRefresh();
-    
+
     // Load provinces và địa chỉ khi vào edit mode
     this.loadProvinces();
-    
+
     // Load customer addresses nếu có khách hàng
     if (this.invoice?.khachHangId) {
       this.loadCustomerAddresses();
     }
-    
+
     // Nếu đã có địa chỉ, load districts và wards tương ứng
     // Đợi provinces load xong rồi mới tìm province code
     setTimeout(() => {
@@ -1542,19 +1542,19 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         }
 
         // Kiểm tra thay đổi địa chỉ và phí ship
-        const originalAddress = this.invoice 
+        const originalAddress = this.invoice
           ? `${this.invoice.tinhThanh || ''}_${this.invoice.quanHuyen || ''}_${this.invoice.phuongXa || ''}_${this.invoice.diaChiChiTiet || ''}`
           : '';
         const newAddress = `${this.editingInvoice.tinhThanh || ''}_${this.editingInvoice.quanHuyen || ''}_${this.editingInvoice.phuongXa || ''}_${this.editingInvoice.diaChiChiTiet || ''}`;
         const addressChanged = originalAddress !== newAddress;
-        
+
         const originalShippingFee = this.invoice?.phiGiaoHang || 0;
         let newShippingFee = this.editingInvoice.phiGiaoHang || 0;
-        
+
         // Nếu địa chỉ thay đổi, tự động tính lại phí ship bằng GHN API
         if (addressChanged && this.editingInvoice.tinhThanh && this.editingInvoice.quanHuyen) {
           console.log('📍 Address changed, calculating new shipping fee via GHN API...');
-          
+
           // Tính phí ship mới bằng GHN API
           const ghnRequest = {
             province: this.editingInvoice.tinhThanh,
@@ -1566,7 +1566,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             height: this.invoice?.chieuCao || 20,
             insurance_value: this.invoice?.tongTien || 0
           };
-          
+
           this.ghnService.calculateShippingFeeViaBackend(ghnRequest).subscribe({
             next: (ghnResponse) => {
               console.log('✅ GHN API response:', ghnResponse);
@@ -1577,7 +1577,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                   console.log('💰 Updated editingInvoice.phiGiaoHang to:', newShippingFee);
                 }
                 console.log('💰 New shipping fee calculated:', newShippingFee);
-                
+
                 // Tiếp tục xử lý với phí ship mới
                 this.processShippingFeeAfterCalculation(originalShippingFee, newShippingFee, addressChanged, saveButton, customerId || null);
               } else {
@@ -1592,47 +1592,47 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               this.processShippingFeeAfterCalculation(originalShippingFee, newShippingFee, addressChanged, saveButton, customerId || null);
             }
           });
-          
+
           return; // Return để chờ GHN API response
         }
-        
+
         // Nếu không thay đổi địa chỉ, xử lý bình thường
         const shippingFeeChanged = originalShippingFee !== newShippingFee;
         const shippingFeeDifference = newShippingFee - originalShippingFee;
 
         // Nếu phí ship thay đổi, hiển thị modal điều chỉnh phí ship
-          if (shippingFeeChanged) {
-            this.shippingFeeAdjustmentData = {
-              newShippingFee: newShippingFee,
-              oldShippingFee: originalShippingFee,
-              adjustmentType: shippingFeeDifference > 0 ? 'SURCHARGE' : 'REFUND',
-              adjustmentAmount: Math.abs(shippingFeeDifference),
-              reason: addressChanged ? 'Thay đổi địa chỉ giao hàng' : 'Điều chỉnh phí ship',
-              refundMethod: 'original_method',
-              bankAccount: '',
-              bankName: '',
-              accountHolder: ''
-            };
-            this.pendingSaveAfterShippingAdjustment = true; // Đánh dấu cần tiếp tục lưu sau khi xử lý modal
-            this.showShippingFeeAdjustmentModal = true;
-            
-            // Reset button state và return - sẽ tiếp tục trong modal
+        if (shippingFeeChanged) {
+          this.shippingFeeAdjustmentData = {
+            newShippingFee: newShippingFee,
+            oldShippingFee: originalShippingFee,
+            adjustmentType: shippingFeeDifference > 0 ? 'SURCHARGE' : 'REFUND',
+            adjustmentAmount: Math.abs(shippingFeeDifference),
+            reason: addressChanged ? 'Thay đổi địa chỉ giao hàng' : 'Điều chỉnh phí ship',
+            refundMethod: 'original_method',
+            bankAccount: '',
+            bankName: '',
+            accountHolder: ''
+          };
+          this.pendingSaveAfterShippingAdjustment = true; // Đánh dấu cần tiếp tục lưu sau khi xử lý modal
+          this.showShippingFeeAdjustmentModal = true;
+
+          // Reset button state và return - sẽ tiếp tục trong modal
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+          }
+          return;
+        }
+
+        // Nếu chỉ thay đổi địa chỉ nhưng phí ship không đổi, tiếp tục cập nhật
+        if (addressChanged && !shippingFeeChanged) {
+          if (!confirm('Địa chỉ giao hàng đã thay đổi nhưng phí ship không đổi.\n\nBạn có muốn tiếp tục cập nhật?')) {
             if (saveButton) {
               saveButton.disabled = false;
               saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
             }
             return;
-        }
-        
-        // Nếu chỉ thay đổi địa chỉ nhưng phí ship không đổi, tiếp tục cập nhật
-        if (addressChanged && !shippingFeeChanged) {
-          if (!confirm('Địa chỉ giao hàng đã thay đổi nhưng phí ship không đổi.\n\nBạn có muốn tiếp tục cập nhật?')) {
-              if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
-              }
-              return;
-            }
+          }
         }
 
         // Đảm bảo giá trị từ dropdown được map vào editingInvoice trước khi save
@@ -1708,11 +1708,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           }
 
           // Phí ship - QUAN TRỌNG: Luôn gửi phiGiaoHang nếu đã được tính lại từ GHN API hoặc có thay đổi
-          const newPhiGiaoHang = this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null 
-            ? Number(this.editingInvoice.phiGiaoHang) 
+          const newPhiGiaoHang = this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null
+            ? Number(this.editingInvoice.phiGiaoHang)
             : (this.invoice?.phiGiaoHang || 0);
-          const oldPhiGiaoHang = this.invoice.phiGiaoHang !== undefined && this.invoice.phiGiaoHang !== null 
-            ? Number(this.invoice.phiGiaoHang) 
+          const oldPhiGiaoHang = this.invoice.phiGiaoHang !== undefined && this.invoice.phiGiaoHang !== null
+            ? Number(this.invoice.phiGiaoHang)
             : 0;
           // Luôn gửi phiGiaoHang nếu có thay đổi hoặc đã được tính lại (khi địa chỉ thay đổi)
           if (newPhiGiaoHang !== oldPhiGiaoHang || addressChanged) {
@@ -1798,8 +1798,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         // ✅ QUAN TRỌNG: Đảm bảo phiGiaoHang luôn được gửi trong request (kể cả khi không thay đổi)
         if (invoiceData.phiGiaoHang === undefined || invoiceData.phiGiaoHang === null) {
           // Nếu không có trong invoiceData, lấy từ editingInvoice hoặc invoice hiện tại
-          invoiceData.phiGiaoHang = this.editingInvoice?.phiGiaoHang 
-            ? Number(this.editingInvoice.phiGiaoHang) 
+          invoiceData.phiGiaoHang = this.editingInvoice?.phiGiaoHang
+            ? Number(this.editingInvoice.phiGiaoHang)
             : (this.invoice?.phiGiaoHang ? Number(this.invoice.phiGiaoHang) : 0);
           console.log('💰 Added phiGiaoHang to invoiceData:', invoiceData.phiGiaoHang);
         }
@@ -1821,8 +1821,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           // Thêm ghi chú đánh dấu đã chỉnh sửa
           const editNote = '[ĐÃ CHỈNH SỬA]';
           if (!invoiceData.ghiChu || !invoiceData.ghiChu.includes(editNote)) {
-            invoiceData.ghiChu = invoiceData.ghiChu 
-              ? `${editNote} ${invoiceData.ghiChu}` 
+            invoiceData.ghiChu = invoiceData.ghiChu
+              ? `${editNote} ${invoiceData.ghiChu}`
               : editNote;
           }
         }
@@ -1840,27 +1840,27 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             bankName: this.shippingFeeAdjustmentData.bankName || '',
             accountHolder: this.shippingFeeAdjustmentData.accountHolder || ''
           };
-          
+
           this.hoaDonService.adjustShippingFee(this.invoiceId, adjustmentRequest).subscribe({
             next: (adjustedInvoice) => {
               console.log('✅ Shipping fee adjusted successfully:', adjustedInvoice);
               console.log('💰 Adjusted invoice phiGiaoHang:', adjustedInvoice.phiGiaoHang);
-              
+
               // QUAN TRỌNG: Cập nhật phiGiaoHang trong invoiceData từ adjustedInvoice
               if (adjustedInvoice.phiGiaoHang !== undefined && adjustedInvoice.phiGiaoHang !== null) {
-                invoiceData.phiGiaoHang = typeof adjustedInvoice.phiGiaoHang === 'string' 
-                  ? parseFloat(adjustedInvoice.phiGiaoHang) 
+                invoiceData.phiGiaoHang = typeof adjustedInvoice.phiGiaoHang === 'string'
+                  ? parseFloat(adjustedInvoice.phiGiaoHang)
                   : Number(adjustedInvoice.phiGiaoHang);
                 console.log('💰 Updated invoiceData.phiGiaoHang to:', invoiceData.phiGiaoHang);
               }
-              
+
               // Cập nhật thanhTien nếu có
               if (adjustedInvoice.thanhTien !== undefined && adjustedInvoice.thanhTien !== null) {
-                invoiceData.thanhTien = typeof adjustedInvoice.thanhTien === 'string' 
-                  ? parseFloat(adjustedInvoice.thanhTien) 
+                invoiceData.thanhTien = typeof adjustedInvoice.thanhTien === 'string'
+                  ? parseFloat(adjustedInvoice.thanhTien)
                   : Number(adjustedInvoice.thanhTien);
               }
-              
+
               // Tiếp tục cập nhật hóa đơn với phiGiaoHang mới
               this.continueUpdateInvoice(invoiceData, customerId || null, saveButton);
             },
@@ -1918,7 +1918,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       };
       this.pendingSaveAfterShippingAdjustment = true; // Đánh dấu cần tiếp tục lưu sau khi xử lý modal
       this.showShippingFeeAdjustmentModal = true;
-      
+
       // Reset button state
       if (saveButton) {
         saveButton.disabled = false;
@@ -1945,8 +1945,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       tongTien: this.editingInvoice.tongTien ? Number(this.editingInvoice.tongTien) : 0,
       tienGiamGia: this.editingInvoice.tienGiamGia ? Number(this.editingInvoice.tienGiamGia) : 0,
       thanhTien: this.editingInvoice.thanhTien ? Number(this.editingInvoice.thanhTien) : 0,
-      phiGiaoHang: this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null 
-        ? Number(this.editingInvoice.phiGiaoHang) 
+      phiGiaoHang: this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null
+        ? Number(this.editingInvoice.phiGiaoHang)
         : (this.invoice?.phiGiaoHang || 0),
       nhanVienId: this.editingInvoice.nhanVienId ? Number(this.editingInvoice.nhanVienId) : undefined,
       khachHangId: customerId || this.editingInvoice.khachHangId ? Number(customerId || this.editingInvoice.khachHangId) : undefined,
@@ -1983,8 +1983,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (isOnlineOrder) {
       const editNote = '[ĐÃ CHỈNH SỬA]';
       if (!invoiceData.ghiChu || !invoiceData.ghiChu.includes(editNote)) {
-        invoiceData.ghiChu = invoiceData.ghiChu 
-          ? `${editNote} ${invoiceData.ghiChu}` 
+        invoiceData.ghiChu = invoiceData.ghiChu
+          ? `${editNote} ${invoiceData.ghiChu}`
           : editNote;
       }
     }
@@ -1997,118 +1997,118 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
    * Tiếp tục cập nhật hóa đơn sau khi điều chỉnh phí ship
    */
   private continueUpdateInvoice(invoiceData: any, customerId: number | null, saveButton: HTMLButtonElement | null): void {
-        // ✅ QUAN TRỌNG: Log dữ liệu trước khi gửi request
-        console.log('📤 Sending update request with invoiceData:', {
-          id: this.invoiceId,
-          phiGiaoHang: invoiceData.phiGiaoHang,
-          tongTien: invoiceData.tongTien,
-          tienGiamGia: invoiceData.tienGiamGia,
-          thanhTien: invoiceData.thanhTien
-        });
-        
-        this.hoaDonService.updateHoaDonNew(this.invoiceId, invoiceData).subscribe({
-          next: (updatedInvoice: any) => {
-            console.log('✅ Invoice updated successfully from API:', updatedInvoice);
-            console.log('💰 Updated shipping fee (phiGiaoHang) from API:', updatedInvoice.phiGiaoHang);
-            console.log('💰 Updated thanhTien from API:', updatedInvoice.thanhTien);
+    // ✅ QUAN TRỌNG: Log dữ liệu trước khi gửi request
+    console.log('📤 Sending update request with invoiceData:', {
+      id: this.invoiceId,
+      phiGiaoHang: invoiceData.phiGiaoHang,
+      tongTien: invoiceData.tongTien,
+      tienGiamGia: invoiceData.tienGiamGia,
+      thanhTien: invoiceData.thanhTien
+    });
+
+    this.hoaDonService.updateHoaDonNew(this.invoiceId, invoiceData).subscribe({
+      next: (updatedInvoice: any) => {
+        console.log('✅ Invoice updated successfully from API:', updatedInvoice);
+        console.log('💰 Updated shipping fee (phiGiaoHang) from API:', updatedInvoice.phiGiaoHang);
+        console.log('💰 Updated thanhTien from API:', updatedInvoice.thanhTien);
 
         // Đóng modal điều chỉnh phí ship nếu đang mở
         if (this.showShippingFeeAdjustmentModal) {
           this.closeShippingFeeAdjustmentModal();
         }
 
-            // Cập nhật invoice ngay lập tức với dữ liệu từ response để hiển thị ngay
-            if (updatedInvoice) {
-              // Đảm bảo phiGiaoHang được convert sang number
-              if (updatedInvoice.phiGiaoHang !== undefined && updatedInvoice.phiGiaoHang !== null) {
-                updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string' 
-                  ? parseFloat(updatedInvoice.phiGiaoHang) 
-                  : Number(updatedInvoice.phiGiaoHang);
-              }
-              
-              // Đảm bảo thanhTien cũng được cập nhật nếu phiGiaoHang thay đổi
-              if (updatedInvoice.thanhTien !== undefined && updatedInvoice.thanhTien !== null) {
-                updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string' 
-                  ? parseFloat(updatedInvoice.thanhTien) 
-                  : Number(updatedInvoice.thanhTien);
-              }
-              
-              // Cập nhật invoice object để hiển thị ngay
-              this.invoice = { ...updatedInvoice }; // Tạo object mới để trigger change detection
-              this.cdr.detectChanges();
-              
-              console.log('🔄 Updated invoice object immediately:', {
-                phiGiaoHang: updatedInvoice.phiGiaoHang,
-                thanhTien: updatedInvoice.thanhTien,
-                tinhThanh: updatedInvoice.tinhThanh,
-                quanHuyen: updatedInvoice.quanHuyen
-              });
-            }
-
-            // ✅ QUAN TRỌNG: Reload toàn bộ dữ liệu hóa đơn từ DB để đảm bảo hiển thị đúng
-            // Delay để đảm bảo backend đã lưu xong và commit transaction
-            setTimeout(() => {
-              console.log('🔄 Reloading invoice detail from DB after update...');
-              this.loadInvoiceDetail();
-              // Force change detection sau khi reload
-              setTimeout(() => {
-                this.cdr.detectChanges();
-                console.log('✅ Reloaded invoice detail from DB, phiGiaoHang:', this.invoice?.phiGiaoHang);
-                console.log('✅ Reloaded invoice detail from DB, thanhTien:', this.invoice?.thanhTien);
-              }, 200);
-            }, 1000); // Tăng delay để đảm bảo backend đã lưu xong và commit transaction
-
-            // Reload customer information
-            if (customerId) {
-              this.loadCustomerInfo(customerId);
-            } else if (updatedInvoice?.khachHangId) {
-              this.loadCustomerInfo(updatedInvoice.khachHangId);
-            } else if (this.invoice?.khachHangId) {
-              this.loadCustomerInfo(this.invoice.khachHangId);
-            }
-
-            // Thoát edit mode sau khi reload
-            setTimeout(() => {
-              this.isEditMode = false;
-              const editingEmail = this.editingInvoice?.emailKhachHang;
-              this.editingInvoice = null;
-              // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
-              // this.startAutoRefresh(); // Resume auto-refresh
-              
-              // Thông báo thành công - backend sẽ tự động gửi email nếu có thay đổi và có email khách hàng
-              if (editingEmail && editingEmail.trim() !== '') {
-                this.showToast('Cập nhật hóa đơn thành công! Email thông báo các thay đổi đã được gửi đến khách hàng.', 'success');
-              } else {
-                this.showToast('Cập nhật hóa đơn thành công!', 'success');
-              }
-              
-              // Force change detection một lần nữa để đảm bảo UI cập nhật
-              // Đảm bảo invoice object được cập nhật lại từ server
-              this.cdr.detectChanges();
-              
-              // ✅ QUAN TRỌNG: Reload lại một lần nữa từ DB để đảm bảo dữ liệu đồng bộ hoàn toàn
-              setTimeout(() => {
-                console.log('🔄 Final reload from DB to ensure data sync...');
-                this.loadInvoiceDetail();
-                setTimeout(() => {
-                  this.cdr.detectChanges();
-                  console.log('✅ Final reload completed, all data synced from DB');
-                }, 100);
-              }, 500);
-            }, 500);
-          },
-          error: (error: any) => {
-            console.error('Error updating invoice:', error);
-            this.showToast('Lỗi khi cập nhật hóa đơn: ' + (error.error?.message || error.message), 'error');
-          },
-          complete: () => {
-            // Reset button state
-            if (saveButton) {
-              saveButton.disabled = false;
-              saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
-            }
+        // Cập nhật invoice ngay lập tức với dữ liệu từ response để hiển thị ngay
+        if (updatedInvoice) {
+          // Đảm bảo phiGiaoHang được convert sang number
+          if (updatedInvoice.phiGiaoHang !== undefined && updatedInvoice.phiGiaoHang !== null) {
+            updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string'
+              ? parseFloat(updatedInvoice.phiGiaoHang)
+              : Number(updatedInvoice.phiGiaoHang);
           }
-        });
+
+          // Đảm bảo thanhTien cũng được cập nhật nếu phiGiaoHang thay đổi
+          if (updatedInvoice.thanhTien !== undefined && updatedInvoice.thanhTien !== null) {
+            updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string'
+              ? parseFloat(updatedInvoice.thanhTien)
+              : Number(updatedInvoice.thanhTien);
+          }
+
+          // Cập nhật invoice object để hiển thị ngay
+          this.invoice = { ...updatedInvoice }; // Tạo object mới để trigger change detection
+          this.cdr.detectChanges();
+
+          console.log('🔄 Updated invoice object immediately:', {
+            phiGiaoHang: updatedInvoice.phiGiaoHang,
+            thanhTien: updatedInvoice.thanhTien,
+            tinhThanh: updatedInvoice.tinhThanh,
+            quanHuyen: updatedInvoice.quanHuyen
+          });
+        }
+
+        // ✅ QUAN TRỌNG: Reload toàn bộ dữ liệu hóa đơn từ DB để đảm bảo hiển thị đúng
+        // Delay để đảm bảo backend đã lưu xong và commit transaction
+        setTimeout(() => {
+          console.log('🔄 Reloading invoice detail from DB after update...');
+          this.loadInvoiceDetail();
+          // Force change detection sau khi reload
+          setTimeout(() => {
+            this.cdr.detectChanges();
+            console.log('✅ Reloaded invoice detail from DB, phiGiaoHang:', this.invoice?.phiGiaoHang);
+            console.log('✅ Reloaded invoice detail from DB, thanhTien:', this.invoice?.thanhTien);
+          }, 200);
+        }, 1000); // Tăng delay để đảm bảo backend đã lưu xong và commit transaction
+
+        // Reload customer information
+        if (customerId) {
+          this.loadCustomerInfo(customerId);
+        } else if (updatedInvoice?.khachHangId) {
+          this.loadCustomerInfo(updatedInvoice.khachHangId);
+        } else if (this.invoice?.khachHangId) {
+          this.loadCustomerInfo(this.invoice.khachHangId);
+        }
+
+        // Thoát edit mode sau khi reload
+        setTimeout(() => {
+          this.isEditMode = false;
+          const editingEmail = this.editingInvoice?.emailKhachHang;
+          this.editingInvoice = null;
+          // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
+          // this.startAutoRefresh(); // Resume auto-refresh
+
+          // Thông báo thành công - backend sẽ tự động gửi email nếu có thay đổi và có email khách hàng
+          if (editingEmail && editingEmail.trim() !== '') {
+            this.showToast('Cập nhật hóa đơn thành công! Email thông báo các thay đổi đã được gửi đến khách hàng.', 'success');
+          } else {
+            this.showToast('Cập nhật hóa đơn thành công!', 'success');
+          }
+
+          // Force change detection một lần nữa để đảm bảo UI cập nhật
+          // Đảm bảo invoice object được cập nhật lại từ server
+          this.cdr.detectChanges();
+
+          // ✅ QUAN TRỌNG: Reload lại một lần nữa từ DB để đảm bảo dữ liệu đồng bộ hoàn toàn
+          setTimeout(() => {
+            console.log('🔄 Final reload from DB to ensure data sync...');
+            this.loadInvoiceDetail();
+            setTimeout(() => {
+              this.cdr.detectChanges();
+              console.log('✅ Final reload completed, all data synced from DB');
+            }, 100);
+          }, 500);
+        }, 500);
+      },
+      error: (error: any) => {
+        console.error('Error updating invoice:', error);
+        this.showToast('Lỗi khi cập nhật hóa đơn: ' + (error.error?.message || error.message), 'error');
+      },
+      complete: () => {
+        // Reset button state
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+        }
+      }
+    });
   }
 
   /**
@@ -2171,48 +2171,48 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       next: (updatedInvoice) => {
         console.log('✅ Shipping fee adjusted successfully:', updatedInvoice);
         console.log('💰 Updated shipping fee (phiGiaoHang):', updatedInvoice.phiGiaoHang);
-        
+
         // Cập nhật invoice ngay lập tức với dữ liệu từ response để hiển thị ngay
         if (updatedInvoice) {
           // Đảm bảo phiGiaoHang được convert sang number
           if (updatedInvoice.phiGiaoHang !== undefined && updatedInvoice.phiGiaoHang !== null) {
-            updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string' 
-              ? parseFloat(updatedInvoice.phiGiaoHang) 
+            updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string'
+              ? parseFloat(updatedInvoice.phiGiaoHang)
               : Number(updatedInvoice.phiGiaoHang);
           }
-          
+
           // Đảm bảo thanhTien cũng được cập nhật nếu phiGiaoHang thay đổi
           if (updatedInvoice.thanhTien !== undefined && updatedInvoice.thanhTien !== null) {
-            updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string' 
-              ? parseFloat(updatedInvoice.thanhTien) 
+            updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string'
+              ? parseFloat(updatedInvoice.thanhTien)
               : Number(updatedInvoice.thanhTien);
           }
-          
+
           // Cập nhật editingInvoice với phiGiaoHang mới để tiếp tục lưu
           if (this.editingInvoice) {
             this.editingInvoice.phiGiaoHang = updatedInvoice.phiGiaoHang;
             this.editingInvoice.thanhTien = updatedInvoice.thanhTien;
           }
-          
+
           // Cập nhật invoice object để hiển thị ngay (tạo object mới để trigger change detection)
           this.invoice = { ...updatedInvoice };
           this.cdr.detectChanges();
-          
+
           console.log('🔄 Updated invoice object immediately after shipping fee adjustment:', {
             phiGiaoHang: updatedInvoice.phiGiaoHang,
             thanhTien: updatedInvoice.thanhTien
           });
         }
-        
+
         this.savingStatus = false;
         this.closeShippingFeeAdjustmentModal();
-        
+
         const message = this.shippingFeeAdjustmentData.adjustmentType === 'REFUND'
           ? `Đã hoàn phí ship thành công. Số tiền ${this.formatCurrency(this.shippingFeeAdjustmentData.adjustmentAmount)} ₫ sẽ được hoàn trả trong vòng 3-5 ngày làm việc.`
           : `Đã tăng phụ phí ship thành công. Khách hàng cần thanh toán thêm ${this.formatCurrency(this.shippingFeeAdjustmentData.adjustmentAmount)} ₫.`;
-        
+
         this.showToast(message, 'success');
-        
+
         // ✅ Tự động tiếp tục lưu thay đổi nếu có flag
         if (shouldContinueSave) {
           console.log('🔄 Auto-continuing save after shipping fee adjustment...');
@@ -2253,41 +2253,41 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           } else {
             // Customer doesn't exist, create new one with unique email and phone
             const baseEmail = `${customerName.toLowerCase().replace(/\s+/g, '')}@example.com`;
-            
+
             // Lấy số điện thoại từ form nếu có, nếu không thì tạo unique
             let phoneNumber = '';
-            if (this.editingInvoice?.soDienThoaiKhachHang && 
-                this.editingInvoice.soDienThoaiKhachHang.trim() !== '' &&
-                this.editingInvoice.soDienThoaiKhachHang.trim() !== 'Chưa có') {
+            if (this.editingInvoice?.soDienThoaiKhachHang &&
+              this.editingInvoice.soDienThoaiKhachHang.trim() !== '' &&
+              this.editingInvoice.soDienThoaiKhachHang.trim() !== 'Chưa có') {
               phoneNumber = this.editingInvoice.soDienThoaiKhachHang.trim();
             } else {
               // Tạo số điện thoại unique bằng cách thêm timestamp
               const timestamp = Date.now();
               phoneNumber = `TEMP_${timestamp}`;
             }
-            
+
             this.generateUniqueEmail(baseEmail).then((uniqueEmail) => {
               // ✅ BỎ QUA VALIDATE SỐ ĐIỆN THOẠI - Tạo khách hàng trực tiếp không cần check
               // (Theo yêu cầu: bỏ qua validate số điện thoại đã tồn tại)
-              
-            const newCustomer = {
-              tenKhachHang: customerName,
+
+              const newCustomer = {
+                tenKhachHang: customerName,
                 email: uniqueEmail,
                 soDienThoai: phoneNumber,
-              gioiTinh: true,
-              ngaySinh: new Date().toISOString().split('T')[0],
-              diemTichLuy: 0,
-              ngayTao: new Date().toISOString().split('T')[0],
-              trangThai: true
-            };
+                gioiTinh: true,
+                ngaySinh: new Date().toISOString().split('T')[0],
+                diemTichLuy: 0,
+                ngayTao: new Date().toISOString().split('T')[0],
+                trangThai: true
+              };
 
-            this.hoaDonService.createCustomer(newCustomer).subscribe({
-              next: (createdCustomer) => {
-                console.log('New customer created:', createdCustomer);
-                resolve(createdCustomer.id);
-              },
-              error: (error) => {
-                console.error('Error creating customer:', error);
+              this.hoaDonService.createCustomer(newCustomer).subscribe({
+                next: (createdCustomer) => {
+                  console.log('New customer created:', createdCustomer);
+                  resolve(createdCustomer.id);
+                },
+                error: (error) => {
+                  console.error('Error creating customer:', error);
                   // Nếu lỗi do email trùng, thử lại với email unique mới
                   if (error.error?.message && error.error.message.includes('Email đã tồn tại')) {
                     this.generateUniqueEmail(baseEmail).then((newUniqueEmail) => {
@@ -2304,9 +2304,9 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                       });
                     });
                   } else {
-                reject(error);
+                    reject(error);
                   }
-              }
+                }
               });
             }).catch((emailError) => {
               console.error('Error generating unique email:', emailError);
@@ -2849,18 +2849,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   public getDerivedPaymentStatus(): 'pending' | 'paid' | 'cancelled' {
     const status = this.invoice?.trangThai;
     if (status === 'HUY') return 'cancelled';
-    
+
     // Nếu phương thức thanh toán là "Chuyển khoản ngân hàng" => trạng thái thanh toán là "Đã thanh toán"
     const paymentMethod = this.invoice?.phuongThucThanhToan || '';
     const paymentMethodLower = paymentMethod.toLowerCase();
-    if (paymentMethodLower === 'transfer' || 
-        paymentMethodLower === 'chuyển khoản' || 
-        paymentMethodLower === 'chuyen khoan' ||
-        paymentMethodLower === 'chuyển khoản ngân hàng' ||
-        paymentMethodLower === 'chuyen khoan ngan hang') {
+    if (paymentMethodLower === 'transfer' ||
+      paymentMethodLower === 'chuyển khoản' ||
+      paymentMethodLower === 'chuyen khoan' ||
+      paymentMethodLower === 'chuyển khoản ngân hàng' ||
+      paymentMethodLower === 'chuyen khoan ngan hang') {
       return 'paid';
     }
-    
+
     if (status === 'DA_GIAO_HANG') return 'paid';
     return 'pending';
   }
@@ -3014,16 +3014,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
           // Chỉ populate nếu các trường địa chỉ chưa có dữ liệu
           const hasEmptyAddress = !this.editingInvoice?.tinhThanh ||
-                                 !this.editingInvoice?.quanHuyen ||
-                                 !this.editingInvoice?.phuongXa ||
-                                 !this.editingInvoice?.diaChiChiTiet;
+            !this.editingInvoice?.quanHuyen ||
+            !this.editingInvoice?.phuongXa ||
+            !this.editingInvoice?.diaChiChiTiet;
 
           if (hasEmptyAddress) {
             console.log('📍 Populating address from database (fields were empty)');
-          this.populateAddressFields(addresses[0]);
+            this.populateAddressFields(addresses[0]);
           } else {
             console.log('📍 Address fields already populated from invoice, skipping database population');
-        }
+          }
         }
 
         // Trigger change detection để cập nhật UI
@@ -3079,14 +3079,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     this.loadingProvinces = true;
     console.log('🔄 Loading provinces from local data...');
-    
+
     try {
       // Sử dụng dữ liệu local từ sub-vn package thay vì gọi API
       this.provinces = provincesData as any as Array<{ code: string; name: string }>;
       this.loadingProvinces = false;
       console.log('✅ Loaded provinces from local data:', this.provinces.length);
       this.cdr.detectChanges();
-      
+
       // Nếu đang trong edit mode và có địa chỉ, load districts sau khi provinces load xong
       if (this.isEditMode && this.editingInvoice?.tinhThanh) {
         setTimeout(() => {
@@ -3102,7 +3102,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.loadingProvinces = false;
           console.log('✅ Loaded provinces from API (fallback):', this.provinces.length);
           this.cdr.detectChanges();
-          
+
           if (this.isEditMode && this.editingInvoice?.tinhThanh) {
             setTimeout(() => {
               this.findProvinceCodeAndLoadDistricts(this.editingInvoice?.tinhThanh || '');
@@ -3130,17 +3130,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     console.log('🔍 Finding province code for:', provinceName);
     console.log('   Available provinces:', this.provinces.length);
-    
+
     // Tìm province với nhiều cách matching
     const province = this.provinces.find(p => {
       const pName = p.name.trim().toLowerCase();
       const searchName = provinceName.trim().toLowerCase();
-      return pName === searchName || 
-             pName.includes(searchName) || 
-             searchName.includes(pName) ||
-             pName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+      return pName === searchName ||
+        pName.includes(searchName) ||
+        searchName.includes(pName) ||
+        pName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
     });
-    
+
     if (province) {
       console.log('✅ Found province:', province);
       this.selectedProvince = province.code;
@@ -3148,7 +3148,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.editingInvoice.tinhThanh = province.name;
       }
       this.loadDistrictsByProvince(province.code);
-      
+
       // Nếu đã có quận/huyện, tìm và load wards
       if (this.editingInvoice?.quanHuyen) {
         // Đợi districts load xong
@@ -3156,10 +3156,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           const district = this.districts.find(d => {
             const dName = d.name.trim().toLowerCase();
             const searchName = (this.editingInvoice?.quanHuyen || '').trim().toLowerCase();
-            return dName === searchName || 
-                   dName.includes(searchName) || 
-                   searchName.includes(dName) ||
-                   dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+            return dName === searchName ||
+              dName.includes(searchName) ||
+              searchName.includes(dName) ||
+              dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
           });
           if (district) {
             console.log('✅ Found district:', district);
@@ -3168,17 +3168,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               this.editingInvoice.quanHuyen = district.name;
             }
             this.loadWardsByDistrict(district.code);
-            
+
             // Nếu đã có phường/xã, tìm và set selectedWard
             if (this.editingInvoice?.phuongXa) {
               setTimeout(() => {
                 const ward = this.wards.find(w => {
                   const wName = w.name.trim().toLowerCase();
                   const searchName = (this.editingInvoice?.phuongXa || '').trim().toLowerCase();
-                  return wName === searchName || 
-                         wName.includes(searchName) || 
-                         searchName.includes(wName) ||
-                         wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+                  return wName === searchName ||
+                    wName.includes(searchName) ||
+                    searchName.includes(wName) ||
+                    wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
                 });
                 if (ward) {
                   console.log('✅ Found ward:', ward);
@@ -3235,16 +3235,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.districts = allDistricts.filter((d) => d.province_code === provinceCode);
       this.loadingDistricts = false;
       console.log('✅ Loaded districts from local data:', this.districts.length);
-      
+
       // Nếu đã có quận/huyện trong editingInvoice, tìm và load wards
       if (this.editingInvoice?.quanHuyen) {
         const district = this.districts.find(d => {
           const dName = d.name.trim().toLowerCase();
           const searchName = (this.editingInvoice?.quanHuyen || '').trim().toLowerCase();
-          return dName === searchName || 
-                 dName.includes(searchName) || 
-                 searchName.includes(dName) ||
-                 dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+          return dName === searchName ||
+            dName.includes(searchName) ||
+            searchName.includes(dName) ||
+            dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
         });
         if (district) {
           this.selectedDistrict = district.code;
@@ -3260,7 +3260,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.districts = districts || [];
           this.loadingDistricts = false;
           console.log('✅ Loaded districts from API (fallback):', this.districts.length);
-          
+
           if (this.editingInvoice?.quanHuyen) {
             const district = districts.find(d => d.name === this.editingInvoice?.quanHuyen);
             if (district) {
@@ -3305,16 +3305,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.wards = allWards.filter((w) => w.district_code === districtCode);
       this.loadingWards = false;
       console.log('✅ Loaded wards from local data:', this.wards.length);
-      
+
       // Nếu đã có phường/xã trong editingInvoice, tìm và set selectedWard
       if (this.editingInvoice?.phuongXa) {
         const ward = this.wards.find(w => {
           const wName = w.name.trim().toLowerCase();
           const searchName = (this.editingInvoice?.phuongXa || '').trim().toLowerCase();
-          return wName === searchName || 
-                 wName.includes(searchName) || 
-                 searchName.includes(wName) ||
-                 wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
+          return wName === searchName ||
+            wName.includes(searchName) ||
+            searchName.includes(wName) ||
+            wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
         });
         if (ward) {
           this.selectedWard = ward.code;
@@ -3329,7 +3329,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.wards = wards || [];
           this.loadingWards = false;
           console.log('✅ Loaded wards from API (fallback):', this.wards.length);
-          
+
           if (this.editingInvoice?.phuongXa) {
             const ward = wards.find(w => w.name === this.editingInvoice?.phuongXa);
             if (ward) {
@@ -3357,13 +3357,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.editingInvoice.tinhThanh = province.name;
       this.selectedProvince = provinceCode;
       this.loadDistrictsByProvince(provinceCode);
-      
+
       // Reset district và ward
       this.editingInvoice.quanHuyen = '';
       this.editingInvoice.phuongXa = '';
       this.selectedDistrict = '';
       this.selectedWard = '';
-      
+
       // Tự động tính lại phí ship
       this.calculateShippingFeeOnAddressChange();
     }
@@ -3378,11 +3378,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.editingInvoice.quanHuyen = district.name;
       this.selectedDistrict = districtCode;
       this.loadWardsByDistrict(districtCode);
-      
+
       // Reset ward
       this.editingInvoice.phuongXa = '';
       this.selectedWard = '';
-      
+
       // Tự động tính lại phí ship
       this.calculateShippingFeeOnAddressChange();
     }
@@ -3396,7 +3396,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (ward && this.editingInvoice) {
       this.editingInvoice.phuongXa = ward.name;
       this.selectedWard = wardCode;
-      
+
       // Tự động tính lại phí ship
       this.calculateShippingFeeOnAddressChange();
     }
@@ -3428,7 +3428,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       next: (ghnResponse) => {
         console.log('✅ GHN API response:', ghnResponse);
         this.calculatingShippingFee = false;
-        
+
         if (ghnResponse && ghnResponse.code === 200 && ghnResponse.data) {
           const newShippingFee = ghnResponse.data.total || 0;
           if (this.editingInvoice) {
@@ -3680,36 +3680,36 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     try {
-        // 1) Tải toàn bộ danh sách ChiTietSanPham thay vì SanPham
-        const chiTietProducts = await firstValueFrom(
-          this.chiTietSanPhamService.getAll().pipe(
-            timeout(5000),
-            catchError(() => of([]))
-          )
-        ) as ChiTietSanPhamResponse[];
+      // 1) Tải toàn bộ danh sách ChiTietSanPham thay vì SanPham
+      const chiTietProducts = await firstValueFrom(
+        this.chiTietSanPhamService.getAll().pipe(
+          timeout(5000),
+          catchError(() => of([]))
+        )
+      ) as ChiTietSanPhamResponse[];
 
-        // Map ChiTietSanPhamResponse to match frontend expected format
-        this.allProducts = chiTietProducts.map((product: ChiTietSanPhamResponse) => ({
-          id: product.id, // Đây là chiTietSanPhamId - ID chính xác cần dùng
-          chiTietSanPhamId: product.id, // Đảm bảo có chiTietSanPhamId
-          sanPhamId: product.sanPhamId, // ID của SanPham gốc
-          tenSanPham: product.sanPhamTen || 'Chưa có tên',
-          giaBan: parseFloat(product.giaBan || '0'),
-          donGia: parseFloat(product.giaBan || '0'), // Map giaBan to donGia for compatibility
-          soLuongTon: parseInt(product.soLuongTon || '0', 10),
-          maSanPham: `SP${product.sanPhamId?.toString().padStart(3, '0') || '000'}`,
-          trangThai: product.trangThai,
-          // Thông tin chi tiết
-          kichThuoc: product.kichThuocTen || '',
-          mauSac: product.mauSacTen || '',
-          mauSacMa: product.mauSacMa || '',
-          trongLuong: product.trongLuongTen || '',
-          anhSanPham: '', // ChiTietSanPhamResponse không có anhSanPham
-          // Thông tin sản phẩm gốc
-          danhMuc: '',
-          thuongHieu: '',
-          moTa: ''
-        }));
+      // Map ChiTietSanPhamResponse to match frontend expected format
+      this.allProducts = chiTietProducts.map((product: ChiTietSanPhamResponse) => ({
+        id: product.id, // Đây là chiTietSanPhamId - ID chính xác cần dùng
+        chiTietSanPhamId: product.id, // Đảm bảo có chiTietSanPhamId
+        sanPhamId: product.sanPhamId, // ID của SanPham gốc
+        tenSanPham: product.sanPhamTen || 'Chưa có tên',
+        giaBan: parseFloat(product.giaBan || '0'),
+        donGia: parseFloat(product.giaBan || '0'), // Map giaBan to donGia for compatibility
+        soLuongTon: parseInt(product.soLuongTon || '0', 10),
+        maSanPham: `SP${product.sanPhamId?.toString().padStart(3, '0') || '000'}`,
+        trangThai: product.trangThai,
+        // Thông tin chi tiết
+        kichThuoc: product.kichThuocTen || '',
+        mauSac: product.mauSacTen || '',
+        mauSacMa: product.mauSacMa || '',
+        trongLuong: product.trongLuongTen || '',
+        anhSanPham: '', // ChiTietSanPhamResponse không có anhSanPham
+        // Thông tin sản phẩm gốc
+        danhMuc: '',
+        thuongHieu: '',
+        moTa: ''
+      }));
       console.log('✅ ChiTietSanPham loaded for modal:', this.allProducts);
       console.log('🔍 Debug - All products IDs:', this.allProducts.map(p => p.id));
       console.log('🔍 Debug - Product with ID=6:', this.allProducts.find(p => Number(p.id) === 6));
@@ -3778,7 +3778,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           if (invoiceProduct.id) {
             console.log(`🔍 Searching by id: ${invoiceProduct.id}`);
             foundProduct = this.allProducts.find(p => Number(p.id) === Number(invoiceProduct.id));
-          if (foundProduct) {
+            if (foundProduct) {
               matchMethod = 'id';
               console.log(`✅ Found by id: ${invoiceProduct.id} -> Product ID: ${foundProduct.id}`);
             } else {
@@ -3980,7 +3980,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       console.log(`🔢 Updated quantity for ${product.tenSanPham}: ${selected.soLuong} (Total: ${selected.thanhTien})`);
 
       // Cập nhật tổng tiền của hóa đơn
-    this.updateTotalAmount();
+      this.updateTotalAmount();
 
       // Trigger change detection để cập nhật UI
       this.cdr.detectChanges();
@@ -4226,11 +4226,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       thanhTien: p.thanhTien
     })) || []);
 
-      // Gọi API để cập nhật hóa đơn
+    // Gọi API để cập nhật hóa đơn
     this.hoaDonService.updateHoaDonNew(this.invoiceId, invoiceData).subscribe({
-        next: (response: any) => {
+      next: (response: any) => {
         console.log('✅ ===== API RESPONSE SUCCESS =====');
-          console.log('✅ Invoice updated successfully:', response);
+        console.log('✅ Invoice updated successfully:', response);
 
         // Cập nhật dữ liệu local ngay lập tức
         console.log('🔄 Updating local data...');
@@ -4238,20 +4238,20 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
         // Đóng modal
         console.log('🚪 Closing update modal...');
-          this.closeUpdateModal();
+        this.closeUpdateModal();
 
         // Refresh dữ liệu từ server để đảm bảo đồng bộ
         console.log('🔄 Refreshing invoice detail from server...');
-          this.loadInvoiceDetail();
+        this.loadInvoiceDetail();
 
         // Hiển thị thông báo thành công
         this.showToast('Cập nhật hóa đơn thành công!', 'success');
 
         console.log('✅ ===== INVOICE UPDATE PROCESS COMPLETED =====');
-        },
-        error: (error: any) => {
+      },
+      error: (error: any) => {
         console.error('❌ ===== API RESPONSE ERROR =====');
-          console.error('❌ Error updating invoice:', error);
+        console.error('❌ Error updating invoice:', error);
         const errorMessage = error.error?.message || error.message || 'Có lỗi xảy ra khi cập nhật hóa đơn';
         this.showToast('Lỗi khi cập nhật hóa đơn: ' + errorMessage, 'error');
       }
@@ -4824,11 +4824,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
    */
   resetConfirmInvoiceForm(): void {
     this.confirmInvoiceData = {
-      ngayDuKienGiao: '',
-      khoiLuong: null,
-      chieuDai: null,
-      chieuRong: null,
-      chieuCao: null,
+      ngayDuKienGiao: new Date().toISOString().split('T')[0], // Default to today
+      khoiLuong: 0,
+      chieuDai: 0,
+      chieuRong: 0,
+      chieuCao: 0,
       phiGiaoHang: 0,
       nguoiChiuPhi: 'nguoi_gui',
     };
@@ -4852,20 +4852,9 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Validate form
-    if (!this.confirmInvoiceData.ngayDuKienGiao) {
-      this.showToast('Vui lòng nhập ngày dự kiến giao', 'warning');
-      return;
-    }
+    // Validation removed for shipping fields as per request
+    // Default values are now used
 
-    if (!this.confirmInvoiceData.khoiLuong || this.confirmInvoiceData.khoiLuong <= 0) {
-      this.showToast('Vui lòng nhập khối lượng hợp lệ', 'warning');
-      return;
-    }
-
-    if (!this.confirmInvoiceData.chieuDai || !this.confirmInvoiceData.chieuRong || !this.confirmInvoiceData.chieuCao) {
-      this.showToast('Vui lòng nhập đầy đủ kích thước (dài, rộng, cao)', 'warning');
-      return;
-    }
 
     this.savingStatus = true;
 
@@ -4915,11 +4904,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       trangThai: 'DA_XAC_NHAN',
 
       // ✅ QUAN TRỌNG: Gửi thông tin vận chuyển để lưu vào ThongTinDonHang
-      ngayDuKienGiao: this.confirmInvoiceData.ngayDuKienGiao ? new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString() : null,
-      khoiLuong: this.confirmInvoiceData.khoiLuong || null,
-      chieuDai: this.confirmInvoiceData.chieuDai || null,
-      chieuRong: this.confirmInvoiceData.chieuRong || null,
-      chieuCao: this.confirmInvoiceData.chieuCao || null,
+      // ✅ QUAN TRỌNG: Gửi thông tin vận chuyển để lưu vào ThongTinDonHang (Sử dụng defaults)
+      ngayDuKienGiao: this.confirmInvoiceData.ngayDuKienGiao ? new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString() : new Date().toISOString(),
+      khoiLuong: this.confirmInvoiceData.khoiLuong || 0,
+      chieuDai: this.confirmInvoiceData.chieuDai || 0,
+      chieuRong: this.confirmInvoiceData.chieuRong || 0,
+      chieuCao: this.confirmInvoiceData.chieuCao || 0,
       // ✅ QUAN TRỌNG: Giữ nguyên phiGiaoHang từ hóa đơn hiện tại, KHÔNG lấy từ confirmInvoiceData
       phiGiaoHang: this.invoice.phiGiaoHang ? Number(this.invoice.phiGiaoHang) : 0
     };
@@ -5267,7 +5257,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.hoaDonService.updateTrangThaiHoaDon(this.invoice.id, 'HUY').subscribe({
           next: (updatedInvoice) => {
             console.log('✅ Invoice status updated to HUY:', updatedInvoice);
-            
+
             // Bước 2: Nếu đơn hàng đã thanh toán, xử lý hoàn tiền
             if (currentInvoice.ngayThanhToan) {
               console.log('💰 Processing refund for paid invoice...');
@@ -5276,23 +5266,23 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                 refundReason: cancelNote || 'Hủy đơn hàng',
                 refundMethod: 'original_method' as const
               };
-              
+
               if (!this.invoice || !this.invoice.id) {
                 this.savingStatus = false;
                 this.showToast('Không tìm thấy hóa đơn', 'error');
                 return;
               }
-              
+
               this.hoaDonService.refundInvoice(this.invoice.id, refundRequest).subscribe({
                 next: (refundedInvoice) => {
                   console.log('✅ Refund processed successfully:', refundedInvoice);
                   this.savingStatus = false;
                   this.closeCancelInvoiceModal();
                   this.showToast('Đã hủy hóa đơn và xử lý hoàn tiền thành công. Số tiền sẽ được hoàn trả trong vòng 3-5 ngày làm việc.', 'success');
-            this.loadInvoiceDetail();
-            setTimeout(() => {
-              this.router.navigate(['/invoices']);
-            }, 2000);
+                  this.loadInvoiceDetail();
+                  setTimeout(() => {
+                    this.router.navigate(['/invoices']);
+                  }, 2000);
                 },
                 error: (refundError) => {
                   console.error('❌ Error processing refund:', refundError);

@@ -8,19 +8,12 @@
       <h2> Chi tiết hóa đơn</h2>
     </div>
     <div class="header-right">
-      <button
-        class="btn btn-outline-secondary me-2"
-        (click)="goBack()"
-        type="button"
-      >
+      <button class="btn btn-outline-secondary me-2" (click)="goBack()" type="button">
         <i class="fas fa-arrow-left me-2"></i>Quay lại
       </button>
       <!-- Chỉ hiển thị button In hóa đơn khi trạng thái là Đã Giao Hàng (Đã Hoàn Thành) -->
-      <button
-        class="btn btn-outline-primary"
-        (click)="printInvoice()"
-        *ngIf="invoice && (invoice.trangThai === 'DA_GIAO_HANG')"
-      >
+      <button class="btn btn-outline-primary" (click)="printInvoice()"
+        *ngIf="invoice && (invoice.trangThai === 'DA_GIAO_HANG')">
         <i class="bi bi-printer me-2"></i>In hóa đơn
       </button>
     </div>
@@ -45,7 +38,7 @@
       {{ error }}
       <br>
       <button class="btn btn-sm btn-outline-danger mt-2" (click)="loadInvoiceDetail()">
-         Thử lại
+        Thử lại
       </button>
     </div>
   </div>
@@ -58,7 +51,8 @@
       <!-- Store Header -->
       <div class="invoice-header">
         <div class="store-name">CỬA HÀNG TDK STORE</div>
-        <div class="store-info">Địa chỉ: Cổng Ong, Tòa nhà FPT Polytechnic, 13 phố Phan Tây Nhạc, phường Xuân Phương, TP Hà Nội | ĐT: 0909 123 456</div>
+        <div class="store-info">Địa chỉ: Cổng Ong, Tòa nhà FPT Polytechnic, 13 phố Phan Tây Nhạc, phường Xuân Phương, TP
+          Hà Nội | ĐT: 0909 123 456</div>
         <div class="invoice-title">HÓA ĐƠN BÁN HÀNG</div>
       </div>
 
@@ -156,15 +150,12 @@
 
 
     <!-- Invoice Status Timeline (chỉ hiển thị khi trạng thái là Đang Giao Hàng) -->
-    <app-invoice-status-timeline
-      *ngIf="invoice && invoice.trangThai === 'DANG_GIAO_HANG'"
+    <app-invoice-status-timeline *ngIf="invoice && invoice.trangThai === 'DANG_GIAO_HANG'"
       [currentStatus]="invoice ? invoice.trangThai : undefined"
       [invoiceCreatedAt]="invoice ? invoice.ngayTao : undefined"
       [invoicePaymentDate]="invoice ? invoice.ngayThanhToan : undefined"
-      [invoiceEstimatedDelivery]="invoice ? invoice.ngayDuKienGiao : undefined"
-      [invoiceId]="invoiceId"
-      [enableClick]="false"
-      (statusChange)="onStatusChangeFromTimeline($event)">
+      [invoiceEstimatedDelivery]="invoice ? invoice.ngayDuKienGiao : undefined" [invoiceId]="invoiceId"
+      [enableClick]="false" (statusChange)="onStatusChangeFromTimeline($event)">
     </app-invoice-status-timeline>
 
     <!-- Single Status Icon Display (hiển thị cho tất cả trạng thái) -->
@@ -176,15 +167,12 @@
     </div>
 
     <!-- Nút hủy đơn hàng cho khách hàng (chỉ hiển thị khi trạng thái là CHO_XAC_NHAN) -->
-    <div class="customer-cancel-section" *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN' && authService.hasRole('CUSTOMER')">
-      
+    <div class="customer-cancel-section"
+      *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN' && authService.hasRole('CUSTOMER')">
+
       <div class="d-flex justify-content-end">
-        <button
-          type="button"
-          class="btn btn-outline-danger btn-lg"
-          (click)="cancelOrderByCustomer()"
-          [disabled]="savingStatus"
-        >
+        <button type="button" class="btn btn-outline-danger btn-lg" (click)="cancelOrderByCustomer()"
+          [disabled]="savingStatus">
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
           <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>
           {{ savingStatus ? 'Đang xử lý...' : 'Hủy đơn hàng' }}
@@ -192,135 +180,12 @@
       </div>
     </div>
 
-    <!-- Form xác nhận hóa đơn (chỉ hiển thị khi trạng thái là Chờ Xác Nhận và user là ADMIN/STAFF) -->
-    <div class="confirm-invoice-section" *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
-      <div class="status-update-card">
-        <div class="status-update-header">
-          <h5 class="mb-0">
-            <i class="bi bi-check-circle me-2"></i>
-            Xác nhận hóa đơn - {{ invoice.maHoaDon }}
-          </h5>
-        </div>
-        <div class="status-update-body">
-          <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>
-            Vui lòng nhập thông tin vận chuyển để chuyển hóa đơn sang trạng thái "Đã xác nhận"
-          </div>
+    <!-- Form xác nhận hóa đơn REMOVED as per request -->
 
-          <form>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Ngày dự kiến giao *</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.ngayDuKienGiao"
-                    name="ngayDuKienGiao"
-                    [min]="getTodayDate()"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Khối lượng (kg) *</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.khoiLuong"
-                    name="khoiLuong"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-12">
-                <label class="form-label required">Kích thước (cm) *</label>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều dài</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuDai"
-                    name="chieuDai"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều rộng</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuRong"
-                    name="chieuRong"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều cao</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuCao"
-                    name="chieuCao"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Phí giao hàng (VNĐ) *</label>
-                  <div class="input-group">
-                    <span class="input-group-text">₫</span>
-                    <input
-                      type="number"
-                      class="form-control"
-                      [(ngModel)]="confirmInvoiceData.phiGiaoHang"
-                      name="phiGiaoHang"
-                      min="0"
-                      step="1000"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            </div> -->
-
-            <!-- <div class="alert alert-warning" *ngIf="confirmInvoiceData.nguoiChiuPhi === 'nguoi_nhan'">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              Phí giao hàng sẽ được tính vào tổng tiền của khách hàng.
-            </div> -->
-          </form>
-        </div>
-      </div>
-    </div>
 
     <!-- Status Update Control (chỉ hiển thị khi KHÔNG phải Đã Xác Nhận, KHÔNG phải Chờ Xác Nhận, KHÔNG phải Đang Vận Chuyển, KHÔNG phải Đã Giao Hàng, và KHÔNG phải Hủy - CHỈ cho ADMIN/STAFF) -->
-    <div class="status-update-control" *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
+    <div class="status-update-control"
+      *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
       <div class="status-update-card">
         <div class="status-update-header">
 
@@ -329,18 +194,12 @@
         <div class="status-update-body">
           <div class="form-group">
             <label for="statusSelect" class="form-label">Trạng thái:</label>
-            <select
-              id="statusSelect"
-              class="form-select"
-              [(ngModel)]="selectedStatus"
-              [disabled]="savingStatus"
+            <select id="statusSelect" class="form-select" [(ngModel)]="selectedStatus" [disabled]="savingStatus"
               (change)="onStatusSelectChange($event)">
               <option value="" disabled selected>
                 -- Chọn trạng thái mới --
               </option>
-              <option
-                *ngFor="let status of statusSteps"
-                [value]="status.key"
+              <option *ngFor="let status of statusSteps" [value]="status.key"
                 [disabled]="status.key === invoice.trangThai && status.key !== 'HUY'">
                 {{ status.label }}{{ status.key === invoice.trangThai ? ' (Hiện tại)' : '' }}
               </option>
@@ -350,9 +209,7 @@
             </small>
           </div>
           <div class="status-update-actions">
-            <button
-              class="btn btn-primary"
-              (click)="updateInvoiceStatus()"
+            <button class="btn btn-primary" (click)="updateInvoiceStatus()"
               [disabled]="savingStatus || !selectedStatus || selectedStatus === invoice.trangThai">
 
               <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
@@ -361,7 +218,7 @@
           </div>
         </div>
       </div>
-            </div>
+    </div>
 
     <!-- Unified Invoice Information -->
     <section class="invoice-info-grid" *ngIf="invoice">
@@ -399,7 +256,8 @@
             <span class="label">Ghi chú</span>
             <span class="value">{{ invoice.ghiChu || 'Không có' }}</span>
           </div>
-          <div class="info-row text-danger" *ngIf="(invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY') && invoice.ghiChu">
+          <div class="info-row text-danger"
+            *ngIf="(invoice.trangThai === 'HUY' || invoice.trangThai === 'DA_HUY') && invoice.ghiChu">
             <span class="label text-danger">
               <i class="bi bi-exclamation-triangle me-2"></i>Lý do hủy
             </span>
@@ -454,7 +312,8 @@
         <div class="card-body">
           <div class="info-row">
             <span class="label">Ngày dự kiến giao</span>
-            <span class="value">{{ invoice.ngayDuKienGiao ? formatDate(invoice.ngayDuKienGiao) : 'Chưa cập nhật' }}</span>
+            <span class="value">{{ invoice.ngayDuKienGiao ? formatDate(invoice.ngayDuKienGiao) : 'Chưa cập nhật'
+              }}</span>
           </div>
           <div class="info-row">
             <span class="label">Phí giao hàng</span>
@@ -523,11 +382,9 @@
               <td>
                 <div class="product-info">
                   <div class="thumb">
-                    <img
-                      [src]="product.anhSanPham || 'https://via.placeholder.com/100x100?text=No+Image'"
+                    <img [src]="product.anhSanPham || 'https://via.placeholder.com/100x100?text=No+Image'"
                       [alt]="product.tenSanPham"
-                      (error)="$event.target.src='https://via.placeholder.com/100x100?text=No+Image'"
-                    />
+                      (error)="$event.target.src='https://via.placeholder.com/100x100?text=No+Image'" />
                   </div>
                   <div class="details">
                     <div class="name">{{ product.tenSanPham }}</div>
@@ -580,61 +437,31 @@
     </section>
 
     <div class="action-buttons-section" *ngIf="invoice">
-      <div
-        class="d-flex flex-wrap justify-content-end gap-3"
-        *ngIf="invoice.trangThai === 'CHO_XAC_NHAN'"
-      >
-        <button
-          type="button"
-          class="btn btn-outline-secondary"
-          *ngIf="!isEditMode && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))"
-          (click)="startPendingInvoiceEdit()"
-          [disabled]="savingStatus"
-        >
-          <i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin
-        </button>
-        <button
-          type="button"
-          class="btn btn-outline-danger"
-          *ngIf="authService.hasRole('ADMIN') || authService.hasRole('STAFF')"
-          (click)="openCancelInvoiceModal()"
-          [disabled]="savingStatus"
-        >
+      <div class="d-flex flex-wrap justify-content-end gap-3" *ngIf="invoice.trangThai === 'CHO_XAC_NHAN'">
+
+        <button type="button" class="btn btn-outline-danger"
+          *ngIf="authService.hasRole('ADMIN') || authService.hasRole('STAFF')" (click)="openCancelInvoiceModal()"
+          [disabled]="savingStatus">
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
           <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>Hủy hóa đơn
         </button>
-        <button
-          type="button"
-          class="btn btn-success"
-          *ngIf="authService.hasRole('ADMIN') || authService.hasRole('STAFF')"
-          (click)="submitConfirmInvoice()"
-          [disabled]="savingStatus"
-        >
+        <button type="button" class="btn btn-success"
+          *ngIf="authService.hasRole('ADMIN') || authService.hasRole('STAFF')" (click)="submitConfirmInvoice()"
+          [disabled]="savingStatus">
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
           <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
           {{ savingStatus ? 'Đang xử lý...' : 'Xác nhận' }}
         </button>
       </div>
-      <div
-        class="d-flex justify-content-end gap-3"
-        *ngIf="invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))"
-      >
-        <button
-          type="button"
-          class="btn btn-outline-danger"
-          (click)="openCancelInvoiceModal()"
+      <div class="d-flex justify-content-end gap-3"
+        *ngIf="invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
+        <button type="button" class="btn btn-outline-danger" (click)="openCancelInvoiceModal()"
           [disabled]="savingStatus"
-          *ngIf="invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_XAC_NHAN'"
-        >
+          *ngIf="invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_XAC_NHAN'">
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
           <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>Hủy
         </button>
-        <button
-          type="button"
-          class="btn btn-success btn-lg"
-          (click)="completeInvoice()"
-          [disabled]="savingStatus"
-        >
+        <button type="button" class="btn btn-success btn-lg" (click)="completeInvoice()" [disabled]="savingStatus">
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
           <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
           <span *ngIf="invoice.trangThai === 'DA_XAC_NHAN'">
@@ -647,7 +474,9 @@
       </div>
     </div>
     <!-- Edit Mode (chỉ cho ADMIN/STAFF) -->
-    <div *ngIf="invoice?.trangThai === 'CHO_XAC_NHAN' && isEditMode && editingInvoice && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))" class="edit-section" id="edit-section">
+    <div
+      *ngIf="invoice?.trangThai === 'CHO_XAC_NHAN' && isEditMode && editingInvoice && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))"
+      class="edit-section" id="edit-section">
       <h3>Cập nhật thông tin hóa đơn</h3>
       <div class="edit-form">
         <div class="row">
@@ -678,7 +507,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Địa chỉ giao hàng -->
         <div class="row">
           <div class="col-md-12">
@@ -691,11 +520,7 @@
           <div class="col-md-12">
             <div class="form-group">
               <label>Chọn địa chỉ đã lưu:</label>
-              <select
-                class="form-control"
-                [(ngModel)]="selectedSavedAddressId"
-                (change)="onSelectSavedAddress()"
-              >
+              <select class="form-control" [(ngModel)]="selectedSavedAddressId" (change)="onSelectSavedAddress()">
                 <option [ngValue]="''">-- Chọn địa chỉ --</option>
                 <option *ngFor="let addr of customerAddresses" [ngValue]="addr.id + ''">
                   {{ addr.diaChi }}, {{ addr.phuongXa }}, {{ addr.quanHuyen }}, {{ addr.tinhThanh }}
@@ -705,33 +530,27 @@
             </div>
           </div>
         </div>
-        
-        <div class="row" *ngIf="selectedSavedAddressId === '' || selectedSavedAddressId === 'new' || customerAddresses.length === 0">
+
+        <div class="row"
+          *ngIf="selectedSavedAddressId === '' || selectedSavedAddressId === 'new' || customerAddresses.length === 0">
           <div class="col-md-12">
             <div class="form-group">
               <label>Địa chỉ chi tiết:</label>
-              <textarea class="form-control" [(ngModel)]="editingInvoice.diaChiChiTiet" rows="2" placeholder="Số nhà, tên đường..."></textarea>
+              <textarea class="form-control" [(ngModel)]="editingInvoice.diaChiChiTiet" rows="2"
+                placeholder="Số nhà, tên đường..."></textarea>
             </div>
           </div>
         </div>
-        
+
         <!-- Vietnam Address Dropdowns -->
         <div class="row">
           <div class="col-md-4">
             <div class="form-group">
               <label>Tỉnh/Thành phố <span class="text-danger">*</span></label>
-              <select
-                class="form-control"
-                name="province"
-                [(ngModel)]="selectedProvince"
-                (change)="onProvinceChange(selectedProvince)"
-                required
-              >
+              <select class="form-control" name="province" [(ngModel)]="selectedProvince"
+                (change)="onProvinceChange(selectedProvince)" required>
                 <option value="" disabled>Chọn tỉnh/thành phố</option>
-                <option 
-                  *ngFor="let province of provinces" 
-                  [value]="province.code"
-                >
+                <option *ngFor="let province of provinces" [value]="province.code">
                   {{ province.name }}
                 </option>
               </select>
@@ -740,23 +559,15 @@
               </div>
             </div>
           </div>
-          
+
           <div class="col-md-4">
             <div class="form-group">
               <label>Quận/Huyện <span class="text-danger">*</span></label>
-              <select
-                class="form-control"
-                name="district"
-                [(ngModel)]="selectedDistrict"
-                (change)="onDistrictChange(selectedDistrict)"
-                [disabled]="!selectedProvince || loadingDistricts"
-                required
-              >
+              <select class="form-control" name="district" [(ngModel)]="selectedDistrict"
+                (change)="onDistrictChange(selectedDistrict)" [disabled]="!selectedProvince || loadingDistricts"
+                required>
                 <option value="" disabled>Chọn quận/huyện</option>
-                <option 
-                  *ngFor="let district of districts" 
-                  [value]="district.code"
-                >
+                <option *ngFor="let district of districts" [value]="district.code">
                   {{ district.name }}
                 </option>
               </select>
@@ -768,23 +579,14 @@
               </div>
             </div>
           </div>
-          
+
           <div class="col-md-4">
             <div class="form-group">
               <label>Phường/Xã <span class="text-danger">*</span></label>
-              <select
-                class="form-control"
-                name="ward"
-                [(ngModel)]="selectedWard"
-                (change)="onWardChange(selectedWard)"
-                [disabled]="!selectedDistrict || loadingWards"
-                required
-              >
+              <select class="form-control" name="ward" [(ngModel)]="selectedWard" (change)="onWardChange(selectedWard)"
+                [disabled]="!selectedDistrict || loadingWards" required>
                 <option value="" disabled>Chọn phường/xã</option>
-                <option 
-                  *ngFor="let ward of wards" 
-                  [value]="ward.code"
-                >
+                <option *ngFor="let ward of wards" [value]="ward.code">
                   {{ ward.name }}
                 </option>
               </select>
@@ -805,14 +607,8 @@
               <label>Phí giao hàng:</label>
               <div class="input-group">
                 <span class="input-group-text">₫</span>
-                <input 
-                  type="number" 
-                  class="form-control" 
-                  [(ngModel)]="editingInvoice.phiGiaoHang" 
-                  (ngModelChange)="onShippingFeeChange()"
-                  min="0"
-                  [disabled]="calculatingShippingFee"
-                >
+                <input type="number" class="form-control" [(ngModel)]="editingInvoice.phiGiaoHang"
+                  (ngModelChange)="onShippingFeeChange()" min="0" [disabled]="calculatingShippingFee">
                 <span *ngIf="calculatingShippingFee" class="input-group-text">
                   <i class="fas fa-spinner fa-spin"></i>
                 </span>
@@ -820,17 +616,18 @@
               <small class="text-muted" *ngIf="calculatingShippingFee">
                 <i class="fas fa-spinner fa-spin"></i> Đang tính phí ship tự động...
               </small>
-              <small class="text-info" *ngIf="!calculatingShippingFee && editingInvoice?.tinhThanh && editingInvoice?.quanHuyen && !hasShippingFeeChanged()">
+              <small class="text-info"
+                *ngIf="!calculatingShippingFee && editingInvoice?.tinhThanh && editingInvoice?.quanHuyen && !hasShippingFeeChanged()">
                 <i class="fas fa-info-circle"></i> Phí ship sẽ được tính tự động khi bạn chọn địa chỉ
               </small>
               <!-- Hiển thị thông báo chênh lệch phí ship -->
-              <div *ngIf="hasShippingFeeChanged() && getShippingFeeDifferenceMessage()" 
-                   class="shipping-fee-difference-alert"
-                   [class.alert-surcharge]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"
-                   [class.alert-refund]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)">
-                <i class="fas" 
-                   [class.fa-arrow-up]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"
-                   [class.fa-arrow-down]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"></i>
+              <div *ngIf="hasShippingFeeChanged() && getShippingFeeDifferenceMessage()"
+                class="shipping-fee-difference-alert"
+                [class.alert-surcharge]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"
+                [class.alert-refund]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)">
+                <i class="fas"
+                  [class.fa-arrow-up]="editingInvoice && (editingInvoice.phiGiaoHang || 0) > (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"
+                  [class.fa-arrow-down]="editingInvoice && (editingInvoice.phiGiaoHang || 0) < (originalShippingFee !== undefined ? originalShippingFee : (invoice ? invoice.phiGiaoHang : 0) || 0)"></i>
                 <strong>{{ getShippingFeeDifferenceMessage() }}</strong>
               </div>
             </div>
@@ -845,11 +642,7 @@
           </div>
         </div>
         <div class="edit-actions">
-          <button
-            id="saveChangesButton"
-            class="btn btn-success"
-            (click)="saveChanges()"
-          >
+          <button id="saveChangesButton" class="btn btn-success" (click)="saveChanges()">
             <i class="fas fa-save me-2"></i>Lưu thay đổi
           </button>
           <button class="btn btn-secondary" (click)="cancelEdit()">
@@ -865,7 +658,8 @@
 
 <!-- Modal chọn sản phẩm -->
 
-<div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel" aria-hidden="true">
+<div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel"
+  aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
@@ -880,65 +674,65 @@
           Đang tải danh sách sản phẩm...
         </div>
         <div *ngIf="!loadingProducts && allProducts && allProducts.length > 0">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover">
-            <thead class="table-dark">
-              <tr>
-                <th>STT</th>
-                <th></th>
-                <th>Mã SP</th>
-                <th>Tên sản phẩm</th>
-                <th>Đơn giá</th>
-                <th>Số lượng tồn</th>
-                <th>Số lượng chọn</th>
-                <th>Thành tiền</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let product of allProducts; let i = index">
-                <td><span class="badge bg-primary">{{ i + 1 }}</span></td>
-                <td>
-                  <input class="form-check-input" type="checkbox"
-                         [id]="'productCheck' + product.id"
-                         [checked]="isProductSelected(product)"
-                         [disabled]="isProductOutOfStock(product)"
-                         (change)="toggleProductSelection($event, product)">
-                </td>
-                <td>{{ product.maSanPham || 'N/A' }}</td>
-                <td><strong>{{ product.tenSanPham }}</strong></td>
-                <td>{{ product.giaBan | currency:'VND':'symbol':'1.0-0':'vi' }}</td>
-                <td>
-                  <span class="badge" [ngClass]="{'bg-success': product.soLuongTon > 0, 'bg-danger': product.soLuongTon === 0}">
-                    {{ product.soLuongTon }}
-                  </span>
-                </td>
-                <td>
-                  <input type="number" class="form-control form-control-sm"
-                         [value]="getSelectedProductQuantity(product)"
-                         (input)="updateSelectedProductQuantity(product, $event)"
-                         [disabled]="!isProductSelected(product) || isProductOutOfStock(product)"
-                         min="1" [max]="product.soLuongTon">
-                </td>
-                <td class="fw-bold text-primary">
-                  {{ formatCurrency((isProductSelected(product) ? getSelectedProductQuantity(product) : 0) * product.giaBan) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div *ngIf="!loadingProducts && (!allProducts || allProducts.length === 0)" class="alert alert-info m-3">
-          Không có sản phẩm để hiển thị.
-        </div>
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>STT</th>
+                  <th></th>
+                  <th>Mã SP</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Đơn giá</th>
+                  <th>Số lượng tồn</th>
+                  <th>Số lượng chọn</th>
+                  <th>Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let product of allProducts; let i = index">
+                  <td><span class="badge bg-primary">{{ i + 1 }}</span></td>
+                  <td>
+                    <input class="form-check-input" type="checkbox" [id]="'productCheck' + product.id"
+                      [checked]="isProductSelected(product)" [disabled]="isProductOutOfStock(product)"
+                      (change)="toggleProductSelection($event, product)">
+                  </td>
+                  <td>{{ product.maSanPham || 'N/A' }}</td>
+                  <td><strong>{{ product.tenSanPham }}</strong></td>
+                  <td>{{ product.giaBan | currency:'VND':'symbol':'1.0-0':'vi' }}</td>
+                  <td>
+                    <span class="badge"
+                      [ngClass]="{'bg-success': product.soLuongTon > 0, 'bg-danger': product.soLuongTon === 0}">
+                      {{ product.soLuongTon }}
+                    </span>
+                  </td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm"
+                      [value]="getSelectedProductQuantity(product)"
+                      (input)="updateSelectedProductQuantity(product, $event)"
+                      [disabled]="!isProductSelected(product) || isProductOutOfStock(product)" min="1"
+                      [max]="product.soLuongTon">
+                  </td>
+                  <td class="fw-bold text-primary">
+                    {{ formatCurrency((isProductSelected(product) ? getSelectedProductQuantity(product) : 0) *
+                    product.giaBan) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div *ngIf="!loadingProducts && (!allProducts || allProducts.length === 0)" class="alert alert-info m-3">
+            Không có sản phẩm để hiển thị.
+          </div>
         </div>
       </div>
       <div class="modal-footer d-flex justify-content-between align-items-center">
         <span class="fw-bold">Đã chọn: {{ selectedProductsForUpdate.length }} sản phẩm</span>
         <div>
           <button type="button" class="btn btn-secondary me-2" (click)="closeProductModal()">
-             Hủy
+            Hủy
           </button>
           <button type="button" class="btn btn-primary" (click)="confirmProductSelection()">
-             Xác nhận ({{ selectedProductsForUpdate.length }})
+            Xác nhận ({{ selectedProductsForUpdate.length }})
           </button>
         </div>
       </div>
@@ -947,16 +741,17 @@
 </div>
 
 <!-- Modal Hủy Hóa Đơn -->
-<div class="modal fade" [class.show]="showCancelInvoiceModal" [style.display]="showCancelInvoiceModal ? 'block' : 'none'"
-     id="cancelInvoiceModal" tabindex="-1" role="dialog"
-     [attr.aria-hidden]="!showCancelInvoiceModal">
+<div class="modal fade" [class.show]="showCancelInvoiceModal"
+  [style.display]="showCancelInvoiceModal ? 'block' : 'none'" id="cancelInvoiceModal" tabindex="-1" role="dialog"
+  [attr.aria-hidden]="!showCancelInvoiceModal">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>Hủy Hóa Đơn
         </h5>
-        <button type="button" class="btn-close btn-close-white" (click)="closeCancelInvoiceModal()" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" (click)="closeCancelInvoiceModal()"
+          aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="alert alert-warning mb-3">
@@ -970,16 +765,9 @@
           <label for="cancelInvoiceNote" class="form-label required">
             <i class="bi bi-pencil-square me-2"></i>Lý do hủy hóa đơn <span class="text-danger">*</span>
           </label>
-          <textarea
-            class="form-control"
-            id="cancelInvoiceNote"
-            rows="4"
-            [(ngModel)]="cancelInvoiceNote"
-            name="cancelInvoiceNote"
-            placeholder="Vui lòng nhập lý do hủy hóa đơn..."
-            required
-            [disabled]="savingStatus"
-          ></textarea>
+          <textarea class="form-control" id="cancelInvoiceNote" rows="4" [(ngModel)]="cancelInvoiceNote"
+            name="cancelInvoiceNote" placeholder="Vui lòng nhập lý do hủy hóa đơn..." required
+            [disabled]="savingStatus"></textarea>
           <small class="text-muted">Vui lòng nhập lý do hủy để lưu trữ thông tin.</small>
         </div>
 
@@ -995,7 +783,8 @@
         <button type="button" class="btn btn-secondary" (click)="closeCancelInvoiceModal()" [disabled]="savingStatus">
           <i class="bi bi-x-circle me-2"></i>Đóng
         </button>
-        <button type="button" class="btn btn-danger" (click)="markAsFailed()" [disabled]="savingStatus || !cancelInvoiceNote || cancelInvoiceNote.trim().length === 0">
+        <button type="button" class="btn btn-danger" (click)="markAsFailed()"
+          [disabled]="savingStatus || !cancelInvoiceNote || cancelInvoiceNote.trim().length === 0">
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
           <i class="bi bi-check-circle me-2" *ngIf="!savingStatus"></i>
           {{ savingStatus ? 'Đang xử lý...' : 'Xác nhận hủy' }}
@@ -1005,30 +794,38 @@
   </div>
 </div>
 <div class="modal-backdrop fade" [class.show]="showCancelInvoiceModal"
-     [style.display]="showCancelInvoiceModal ? 'block' : 'none'"
-     (click)="closeCancelInvoiceModal()"></div>
+  [style.display]="showCancelInvoiceModal ? 'block' : 'none'" (click)="closeCancelInvoiceModal()"></div>
 
 <!-- Modal Điều chỉnh Phí Ship -->
-<div class="modal fade" [class.show]="showShippingFeeAdjustmentModal" [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'"
-     id="shippingFeeAdjustmentModal" tabindex="-1" role="dialog"
-     [attr.aria-hidden]="!showShippingFeeAdjustmentModal">
+<div class="modal fade" [class.show]="showShippingFeeAdjustmentModal"
+  [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'" id="shippingFeeAdjustmentModal" tabindex="-1"
+  role="dialog" [attr.aria-hidden]="!showShippingFeeAdjustmentModal">
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bg-info text-white' : 'bg-warning'">
+      <div class="modal-header"
+        [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bg-info text-white' : 'bg-warning'">
         <h5 class="modal-title">
-          <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-counterclockwise' : 'bi-arrow-up-circle'" class="me-2"></i>
+          <i class="bi"
+            [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-counterclockwise' : 'bi-arrow-up-circle'"
+            class="me-2"></i>
           {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Hoàn Phí Ship' : 'Tăng Phụ Phí Ship' }}
         </h5>
-        <button type="button" class="btn-close" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'btn-close-white' : ''" 
-                (click)="closeShippingFeeAdjustmentModal()" aria-label="Close"></button>
+        <button type="button" class="btn-close"
+          [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'btn-close-white' : ''"
+          (click)="closeShippingFeeAdjustmentModal()" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <!-- Thông tin chi tiết về số tiền -->
-        <div class="card mb-3" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'border-info' : 'border-warning'">
-          <div class="card-header" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bg-info text-white' : 'bg-warning text-dark'">
+        <div class="card mb-3"
+          [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'border-info' : 'border-warning'">
+          <div class="card-header"
+            [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bg-info text-white' : 'bg-warning text-dark'">
             <h6 class="mb-0">
-              <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-counterclockwise' : 'bi-arrow-up-circle'" class="me-2"></i>
-              {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Thông tin hoàn phí ship' : 'Thông tin tăng phụ phí ship' }}
+              <i class="bi"
+                [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-counterclockwise' : 'bi-arrow-up-circle'"
+                class="me-2"></i>
+              {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Thông tin hoàn phí ship' : 'Thông tin tăng phụ
+              phí ship' }}
             </h6>
           </div>
           <div class="card-body">
@@ -1042,11 +839,13 @@
               </div>
               <div class="col-6 text-end">
                 <strong class="text-primary fs-6">
-                  {{ formatCurrency((invoice?.thanhTien || 0) - (shippingFeeAdjustmentData.adjustmentType === 'SURCHARGE' ? shippingFeeAdjustmentData.adjustmentAmount : -shippingFeeAdjustmentData.adjustmentAmount)) }}
+                  {{ formatCurrency((invoice?.thanhTien || 0) - (shippingFeeAdjustmentData.adjustmentType ===
+                  'SURCHARGE' ? shippingFeeAdjustmentData.adjustmentAmount :
+                  -shippingFeeAdjustmentData.adjustmentAmount)) }}
                 </strong>
               </div>
             </div>
-            
+
             <!-- Phí ship cũ -->
             <div class="row mb-2">
               <div class="col-6">
@@ -1056,7 +855,7 @@
                 <strong>{{ formatCurrency(shippingFeeAdjustmentData.oldShippingFee) }}</strong>
               </div>
             </div>
-            
+
             <!-- Phí ship mới -->
             <div class="row mb-2">
               <div class="col-6">
@@ -1066,26 +865,31 @@
                 <strong>{{ formatCurrency(shippingFeeAdjustmentData.newShippingFee) }}</strong>
               </div>
             </div>
-            
+
             <hr>
-            
+
             <!-- Số tiền cần trả/thêm -->
             <div class="row mb-2">
               <div class="col-6">
                 <span class="text-muted">
-                  <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-down-circle text-success' : 'bi-arrow-up-circle text-danger'" class="me-1"></i>
-                  {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Số tiền cần trả lại:' : 'Số tiền cần thu thêm:' }}
+                  <i class="bi"
+                    [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-arrow-down-circle text-success' : 'bi-arrow-up-circle text-danger'"
+                    class="me-1"></i>
+                  {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Số tiền cần trả lại:' : 'Số tiền cần thu
+                  thêm:' }}
                 </span>
               </div>
               <div class="col-6 text-end">
-                <strong [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'text-success' : 'text-danger'">
-                  {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? '-' : '+' }}{{ formatCurrency(shippingFeeAdjustmentData.adjustmentAmount) }}
+                <strong
+                  [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'text-success' : 'text-danger'">
+                  {{ shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? '-' : '+' }}{{
+                  formatCurrency(shippingFeeAdjustmentData.adjustmentAmount) }}
                 </strong>
               </div>
             </div>
-            
+
             <hr>
-            
+
             <!-- Tổng tiền mới -->
             <div class="row">
               <div class="col-6">
@@ -1102,31 +906,19 @@
           <label for="adjustmentReason" class="form-label required">
             <i class="bi bi-pencil-square me-2"></i>Lý do điều chỉnh <span class="text-danger">*</span>
           </label>
-          <textarea
-            class="form-control"
-            id="adjustmentReason"
-            rows="3"
-            [(ngModel)]="shippingFeeAdjustmentData.reason"
-            name="adjustmentReason"
-            placeholder="Vui lòng nhập lý do điều chỉnh phí ship..."
-            required
-            [disabled]="savingStatus"
-          ></textarea>
+          <textarea class="form-control" id="adjustmentReason" rows="3" [(ngModel)]="shippingFeeAdjustmentData.reason"
+            name="adjustmentReason" placeholder="Vui lòng nhập lý do điều chỉnh phí ship..." required
+            [disabled]="savingStatus"></textarea>
         </div>
 
         <!-- Form hoàn tiền (chỉ hiển thị khi là REFUND) -->
         <div *ngIf="shippingFeeAdjustmentData.adjustmentType === 'REFUND'" class="refund-section">
           <h6 class="mb-3"><i class="bi bi-bank me-2"></i>Thông tin hoàn tiền</h6>
-          
+
           <div class="mb-3">
             <label for="refundMethod" class="form-label">Phương thức hoàn tiền</label>
-            <select
-              class="form-control"
-              id="refundMethod"
-              [(ngModel)]="shippingFeeAdjustmentData.refundMethod"
-              name="refundMethod"
-              [disabled]="savingStatus"
-            >
+            <select class="form-control" id="refundMethod" [(ngModel)]="shippingFeeAdjustmentData.refundMethod"
+              name="refundMethod" [disabled]="savingStatus">
               <option value="original_method">Theo phương thức thanh toán gốc</option>
               <option value="bank_transfer">Chuyển khoản ngân hàng</option>
               <option value="cash">Tiền mặt</option>
@@ -1136,55 +928,39 @@
           <div *ngIf="shippingFeeAdjustmentData.refundMethod === 'bank_transfer'" class="bank-info-section">
             <div class="mb-3">
               <label for="bankAccount" class="form-label">Số tài khoản ngân hàng</label>
-              <input
-                type="text"
-                class="form-control"
-                id="bankAccount"
-                [(ngModel)]="shippingFeeAdjustmentData.bankAccount"
-                name="bankAccount"
-                placeholder="Nhập số tài khoản..."
-                [disabled]="savingStatus"
-              />
+              <input type="text" class="form-control" id="bankAccount"
+                [(ngModel)]="shippingFeeAdjustmentData.bankAccount" name="bankAccount"
+                placeholder="Nhập số tài khoản..." [disabled]="savingStatus" />
             </div>
             <div class="mb-3">
               <label for="bankName" class="form-label">Tên ngân hàng</label>
-              <input
-                type="text"
-                class="form-control"
-                id="bankName"
-                [(ngModel)]="shippingFeeAdjustmentData.bankName"
-                name="bankName"
-                placeholder="Nhập tên ngân hàng..."
-                [disabled]="savingStatus"
-              />
+              <input type="text" class="form-control" id="bankName" [(ngModel)]="shippingFeeAdjustmentData.bankName"
+                name="bankName" placeholder="Nhập tên ngân hàng..." [disabled]="savingStatus" />
             </div>
             <div class="mb-3">
               <label for="accountHolder" class="form-label">Chủ tài khoản</label>
-              <input
-                type="text"
-                class="form-control"
-                id="accountHolder"
-                [(ngModel)]="shippingFeeAdjustmentData.accountHolder"
-                name="accountHolder"
-                placeholder="Nhập tên chủ tài khoản..."
-                [disabled]="savingStatus"
-              />
+              <input type="text" class="form-control" id="accountHolder"
+                [(ngModel)]="shippingFeeAdjustmentData.accountHolder" name="accountHolder"
+                placeholder="Nhập tên chủ tài khoản..." [disabled]="savingStatus" />
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeShippingFeeAdjustmentModal()" [disabled]="savingStatus">
+        <button type="button" class="btn btn-secondary" (click)="closeShippingFeeAdjustmentModal()"
+          [disabled]="savingStatus">
           <i class="bi bi-x-circle me-2"></i>Hủy
         </button>
-        <button type="button" class="btn" 
-                [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'btn-info' : 'btn-warning'"
-                (click)="processShippingFeeAdjustment()" 
-                [disabled]="savingStatus || !shippingFeeAdjustmentData.reason || shippingFeeAdjustmentData.reason.trim().length === 0">
+        <button type="button" class="btn"
+          [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'btn-info' : 'btn-warning'"
+          (click)="processShippingFeeAdjustment()"
+          [disabled]="savingStatus || !shippingFeeAdjustmentData.reason || shippingFeeAdjustmentData.reason.trim().length === 0">
           <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
-          <i class="bi" [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-check-circle' : 'bi-arrow-up-circle'" 
-             class="me-2" *ngIf="!savingStatus"></i>
-          {{ savingStatus ? 'Đang xử lý...' : (shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Xác nhận hoàn phí' : 'Xác nhận tăng phụ phí') }}
+          <i class="bi"
+            [ngClass]="shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'bi-check-circle' : 'bi-arrow-up-circle'"
+            class="me-2" *ngIf="!savingStatus"></i>
+          {{ savingStatus ? 'Đang xử lý...' : (shippingFeeAdjustmentData.adjustmentType === 'REFUND' ? 'Xác nhận hoàn
+          phí' : 'Xác nhận tăng phụ phí') }}
         </button>
       </div>
     </div>
@@ -1195,5 +971,4 @@
 <app-shop-footer *ngIf="isCustomerView"></app-shop-footer>
 
 <div class="modal-backdrop fade" [class.show]="showShippingFeeAdjustmentModal"
-     [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'"
-     (click)="closeShippingFeeAdjustmentModal()"></div>
+  [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'" (click)="closeShippingFeeAdjustmentModal()"></div>
