@@ -193,131 +193,6 @@
     </div>
 
     <!-- Form xác nhận hóa đơn (chỉ hiển thị khi trạng thái là Chờ Xác Nhận và user là ADMIN/STAFF) -->
-    <div class="confirm-invoice-section" *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
-      <div class="status-update-card">
-        <div class="status-update-header">
-          <h5 class="mb-0">
-            <i class="bi bi-check-circle me-2"></i>
-            Xác nhận hóa đơn - {{ invoice.maHoaDon }}
-          </h5>
-        </div>
-        <div class="status-update-body">
-          <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>
-            Vui lòng nhập thông tin vận chuyển để chuyển hóa đơn sang trạng thái "Đã xác nhận"
-          </div>
-
-          <form>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Ngày dự kiến giao *</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.ngayDuKienGiao"
-                    name="ngayDuKienGiao"
-                    [min]="getTodayDate()"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Khối lượng (kg) *</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.khoiLuong"
-                    name="khoiLuong"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-12">
-                <label class="form-label required">Kích thước (cm) *</label>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều dài</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuDai"
-                    name="chieuDai"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều rộng</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuRong"
-                    name="chieuRong"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label class="form-label small">Chiều cao</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="confirmInvoiceData.chieuCao"
-                    name="chieuCao"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.0"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label required">Phí giao hàng (VNĐ) *</label>
-                  <div class="input-group">
-                    <span class="input-group-text">₫</span>
-                    <input
-                      type="number"
-                      class="form-control"
-                      [(ngModel)]="confirmInvoiceData.phiGiaoHang"
-                      name="phiGiaoHang"
-                      min="0"
-                      step="1000"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            </div> -->
-
-            <!-- <div class="alert alert-warning" *ngIf="confirmInvoiceData.nguoiChiuPhi === 'nguoi_nhan'">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              Phí giao hàng sẽ được tính vào tổng tiền của khách hàng.
-            </div> -->
-          </form>
-        </div>
-      </div>
-    </div>
 
     <!-- Status Update Control (chỉ hiển thị khi KHÔNG phải Đã Xác Nhận, KHÔNG phải Chờ Xác Nhận, KHÔNG phải Đang Vận Chuyển, KHÔNG phải Đã Giao Hàng, và KHÔNG phải Hủy - CHỈ cho ADMIN/STAFF) -->
     <div class="status-update-control" *ngIf="invoice && invoice.trangThai !== 'DA_XAC_NHAN' && invoice.trangThai !== 'CHO_XAC_NHAN' && invoice.trangThai !== 'DANG_GIAO_HANG' && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY' && (authService.hasRole('ADMIN') || authService.hasRole('STAFF'))">
@@ -462,16 +337,11 @@
           </div>
           <div class="info-row">
             <span class="label">Khối lượng</span>
-            <span class="value">{{ invoice.khoiLuong ? invoice.khoiLuong + ' kg' : 'Chưa cập nhật' }}</span>
+            <span class="value">8 kg</span>
           </div>
           <div class="info-row">
             <span class="label">Kích thước</span>
-            <span class="value">
-              <ng-container *ngIf="invoice.chieuDai || invoice.chieuRong || invoice.chieuCao; else sizeFallback">
-                {{ invoice.chieuDai || 0 }} x {{ invoice.chieuRong || 0 }} x {{ invoice.chieuCao || 0 }} cm
-              </ng-container>
-              <ng-template #sizeFallback>Chưa cập nhật</ng-template>
-            </span>
+            <span class="value">5 x 7 x 8 cm</span>
           </div>
           <div class="divider"></div>
           <div class="info-row">

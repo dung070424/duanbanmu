@@ -18,6 +18,44 @@
         </div>
       </div>
 
+      <div class="filter-row">
+        <div class="date-filter-section">
+          <label class="filter-label">Lọc theo ngày</label>
+          <div class="date-inputs-wrapper">
+            <div class="date-input-group">
+              <label class="date-label">Từ ngày</label>
+              <input 
+                type="date" 
+                class="date-input" 
+                [(ngModel)]="startDate"
+                (change)="onDateFilterChange()"
+                [max]="endDate || getMaxDate()"
+              />
+            </div>
+            <div class="date-input-group">
+              <label class="date-label">Đến ngày</label>
+              <input 
+                type="date" 
+                class="date-input" 
+                [(ngModel)]="endDate"
+                (change)="onDateFilterChange()"
+                [min]="startDate || ''"
+                [max]="getMaxDate()"
+              />
+            </div>
+            <button 
+              *ngIf="startDate || endDate"
+              class="btn-clear-date" 
+              (click)="clearDateFilter()"
+              type="button"
+              title="Xóa lọc ngày"
+            >
+              <i class="bi bi-x-circle"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
 
@@ -38,7 +76,7 @@
     <div class="info-and-actions">
       <div class="total-customers">Tổng số hóa đơn: {{ totalItems }}</div>
       <div class="action-buttons">
-        <button class="btn-reset" (click)="clearSearch(); clearStatusFilter(); clearPaymentStatusFilter()">Đặt lại bộ
+        <button class="btn-reset" (click)="clearSearch(); clearStatusFilter(); clearPaymentStatusFilter(); clearDateFilter()">Đặt lại bộ
           lọc</button>
         <button class="btn-add" (click)="openActivityModal()">
           <i class="bi bi-clock-history me-1"></i> Lịch sử thay đổi

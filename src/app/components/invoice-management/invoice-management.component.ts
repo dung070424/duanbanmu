@@ -170,6 +170,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   // Search debounce
   private searchSubject = new Subject<string>();
+  private dateFilterSubject = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   // Status options
@@ -211,6 +212,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.setupAutoSearch();
+    this.setupDateFilter();
     this.loadHoaDon();
     this.loadEmployees(); // Load employees when component initializes
     this.loadAllInvoicesForCount(); // Load tất cả invoices để đếm số lượng
@@ -231,6 +233,26 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       .subscribe((searchTerm) => {
         this.searchTerm = searchTerm;
         this.currentPage = 1;
+        this.loadHoaDon();
+      });
+  }
+
+  private setupDateFilter(): void {
+    this.dateFilterSubject
+      .pipe(
+        debounceTime(300), // Debounce 300ms để tránh load quá nhiều lần khi người dùng đang chọn ngày
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.currentPage = 1;
+        // Validate date range
+        if (this.startDate && this.endDate && this.startDate > this.endDate) {
+          // Nếu từ ngày > đến ngày, tự động swap
+          const temp = this.startDate;
+          this.startDate = this.endDate;
+          this.endDate = temp;
+        }
+        // ✅ Backend xử lý filter - tự động load sau khi nhập ngày
         this.loadHoaDon();
       });
   }
@@ -713,9 +735,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   }
 
   onDateFilterChange(): void {
-    this.currentPage = 1;
-    // ✅ Backend xử lý filter - chỉ cần gọi API
-    this.loadHoaDon();
+    // Gửi signal đến dateFilterSubject để debounce và tự động load
+    this.dateFilterSubject.next();
   }
 
   clearDateFilter(): void {
@@ -724,6 +745,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.currentPage = 1;
     // ✅ Backend xử lý filter - chỉ cần gọi API
     this.loadHoaDon();
+  }
+
+  /**
+   * Lấy ngày hôm nay dưới dạng YYYY-MM-DD để set max cho date input
+   */
+  getMaxDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   onPaymentMethodChange(): void {
@@ -952,10 +984,27 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   // QUAN TRỌNG: Normalize status để handle cả "HUY" và "DA_HUY"
   getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
     if (!invoice || !invoice.trangThai) return 'pending';
+    
     // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
     const normalizedStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
-    if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';
+    
+    // Nếu đơn hàng đã hủy, trả về cancelled
     if (normalizedStatus === 'HUY') return 'cancelled';
+    
+    // ✅ Đơn hàng mua online tự động có trạng thái "đã thanh toán"
+    if (invoice.viTriBanHang && 
+        (invoice.viTriBanHang.toLowerCase().trim() === 'online' || 
+         invoice.viTriBanHang.toLowerCase().trim() === 'mua online')) {
+      return 'paid';
+    }
+    
+    // Đơn hàng đã giao hàng thì đã thanh toán
+    if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';
+    
+    // Kiểm tra nếu có ngày thanh toán thì đã thanh toán
+    if (invoice.ngayThanhToan) return 'paid';
+    
+    // Còn lại là chờ thanh toán
     return 'pending';
   }
 

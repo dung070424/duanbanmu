@@ -406,7 +406,17 @@
                   <td>{{ formatCurrency(getSubtotal()) }}</td>
                 </tr>
                 <tr>
-                  <td>Phí vận chuyển</td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <img
+                        src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                        alt="Giao Hàng Tiết Kiệm"
+                        style="height: 24px; width: auto; object-fit: contain;"
+                        onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
+                      />
+                      <span>Phí vận chuyển</span>
+                    </div>
+                  </td>
                   <td>
                     <span *ngIf="isCalculatingShippingFee" class="text-muted">
                       <i class="fas fa-spinner fa-spin"></i> Đang tính...
@@ -579,10 +589,36 @@
               </thead>
               <tbody>
                 <tr *ngFor="let item of orderSummary.products">
-                  <td>{{ item.tenSanPham }}</td>
-                  <td>{{ item.soLuong }}</td>
-                  <td>{{ formatCurrency(item.donGia) }}</td>
-                  <td>{{ formatCurrency(item.thanhTien) }}</td>
+                  <td>
+                    <div class="product-info-row">
+                      <img
+                        *ngIf="item.imageUrl || item.anhSanPham"
+                        [src]="item.imageUrl || item.anhSanPham"
+                        [alt]="item.tenSanPham || item.name"
+                        class="product-thumbnail"
+                      />
+                      <div class="product-details">
+                        <div class="product-name">{{ item.tenSanPham || item.name }}</div>
+                        <div class="product-meta" *ngIf="item.mauSac || item.kichThuoc || item.code || item.chiTietSanPhamId">
+                          <span *ngIf="item.code || item.chiTietSanPhamId" class="product-code">
+                            Mã: <strong>#{{ item.code || item.chiTietSanPhamId }}</strong>
+                          </span>
+                          <span *ngIf="item.mauSac" class="product-color">
+                            Màu: <strong>{{ item.mauSac }}</strong>
+                          </span>
+                          <span *ngIf="item.kichThuoc" class="product-size">
+                            Size: <strong>{{ item.kichThuoc }}</strong>
+                          </span>
+                        </div>
+                        <div *ngIf="item.moTa || item.description" class="product-description">
+                          {{ item.moTa || item.description }}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ item.soLuong || item.quantity }}</td>
+                  <td>{{ formatCurrency(item.donGia || item.unitPrice) }}</td>
+                  <td>{{ formatCurrency(item.thanhTien || item.total) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -673,7 +709,15 @@
               <span class="text-danger">-{{ formatCurrency(orderSummary.couponDiscount) }}</span>
             </div>
             <div *ngIf="orderSummary.shippingFee > 0" class="total-row">
-              <span>Phí vận chuyển:</span>
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <img
+                  src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                  alt="Giao Hàng Tiết Kiệm"
+                  style="height: 20px; width: auto; object-fit: contain;"
+                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
+                />
+                <span>Phí vận chuyển:</span>
+              </span>
               <span>{{ formatCurrency(orderSummary.shippingFee) }}</span>
             </div>
             <div class="total-row total">

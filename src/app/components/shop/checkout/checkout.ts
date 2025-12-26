@@ -721,13 +721,13 @@ export class CheckoutComponent implements OnInit {
       !this.newAddress.diaChiChiTiet ||
       !this.newAddress.tinhThanh
     ) {
-      alert('Vui lòng nhập đầy đủ thông tin địa chỉ!');
+      this.showToast('Vui lòng nhập đầy đủ thông tin địa chỉ!', 'warning');
       return;
     }
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser?.id) {
-      alert('Bạn cần đăng nhập để lưu địa chỉ!');
+      this.showToast('Bạn cần đăng nhập để lưu địa chỉ!', 'warning');
       return;
     }
 
@@ -763,14 +763,14 @@ export class CheckoutComponent implements OnInit {
 
         // Force change detection để cập nhật UI ngay lập tức
         this.cdr.detectChanges();
-        alert('Đã lưu địa chỉ thành công!');
+        this.showToast('Đã lưu địa chỉ thành công!', 'success');
       },
       error: (error) => {
         console.error('Error saving address:', error);
 
         // Force change detection
         this.cdr.detectChanges();
-        alert('Không thể lưu địa chỉ. Vui lòng thử lại!');
+        this.showToast('Không thể lưu địa chỉ. Vui lòng thử lại!', 'error');
       },
     });
   }
@@ -780,7 +780,7 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
-    // Lấy danh sách sản phẩm từ cart hoặc tempCart
+    // Lấy danh sách sản phẩm từ cart hoặc tempCart với đầy đủ thông tin chi tiết
     let products: any[] = [];
     if (this.isTempCart && this.tempCart && this.tempCart.length > 0) {
       products = this.tempCart.map((item: any) => ({
@@ -790,9 +790,26 @@ export class CheckoutComponent implements OnInit {
         donGia: item.price || 0,
         giamGia: 0,
         thanhTien: item.totalItemPrice || item.price * (item.quantity || 1),
+        imageUrl: item.imageUrl || item.anhSanPham || '',
+        mauSac: item.mauSac || '',
+        kichThuoc: item.kichThuoc || '',
+        moTa: item.moTa || item.description || '',
+        code: item.maSanPham || item.maChiTiet || item.chiTietSanPhamId,
+        name: item.productName || '',
+        quantity: item.quantity || 1,
+        unitPrice: item.price || 0,
+        total: item.totalItemPrice || item.price * (item.quantity || 1),
       }));
     } else {
-      products = this.cart?.danhSachGioHang || [];
+      products = (this.cart?.danhSachGioHang || []).map((item: any) => ({
+        ...item,
+        imageUrl: item.anhSanPham || item.imageUrl || '',
+        code: item.maSanPham || item.maChiTiet || item.chiTietSanPhamId,
+        name: item.tenSanPham || '',
+        quantity: item.soLuong || 0,
+        unitPrice: item.donGia || 0,
+        total: item.thanhTien || 0,
+      }));
     }
 
     // Lấy thông tin địa chỉ đầy đủ
@@ -925,6 +942,10 @@ export class CheckoutComponent implements OnInit {
     quantity: number;
     unitPrice: number;
     total: number;
+    imageUrl?: string;
+    mauSac?: string;
+    kichThuoc?: string;
+    moTa?: string;
   }[] {
     const sourceItems = this.isTempCart
       ? Array.isArray(this.tempCart)
@@ -940,6 +961,10 @@ export class CheckoutComponent implements OnInit {
         ? item.totalItemPrice || unitPrice * quantity
         : item.thanhTien ?? unitPrice * quantity - (item.giamGia || 0);
       const code = item.maSanPham || item.maChiTiet || item.chiTietSanPhamId;
+      const imageUrl = item.imageUrl || item.anhSanPham || '';
+      const mauSac = item.mauSac || '';
+      const kichThuoc = item.kichThuoc || '';
+      const moTa = item.moTa || item.description || '';
 
       return {
         code,
@@ -947,6 +972,10 @@ export class CheckoutComponent implements OnInit {
         quantity,
         unitPrice,
         total,
+        imageUrl,
+        mauSac,
+        kichThuoc,
+        moTa,
       };
     });
   }
@@ -954,45 +983,45 @@ export class CheckoutComponent implements OnInit {
   validateForm(): boolean {
     // Validate họ và tên
     if (!this.billingInfo.firstName || !this.billingInfo.lastName) {
-      alert('Vui lòng nhập đầy đủ họ và tên!');
+      this.showToast('Vui lòng nhập đầy đủ họ và tên!', 'warning');
       return false;
     }
 
     // Validate địa chỉ
     if (!this.billingInfo.address || this.billingInfo.address.trim() === '') {
-      alert('Vui lòng nhập địa chỉ chi tiết!');
+      this.showToast('Vui lòng nhập địa chỉ chi tiết!', 'warning');
       return false;
     }
 
     // Validate tỉnh/thành phố
     if (!this.billingInfo.city || this.billingInfo.city.trim() === '') {
-      alert('Vui lòng nhập tỉnh/thành phố!');
+      this.showToast('Vui lòng nhập tỉnh/thành phố!', 'warning');
       return false;
     }
 
     // Validate số điện thoại
     if (!this.billingInfo.phone || this.billingInfo.phone.trim() === '') {
-      alert('Vui lòng nhập số điện thoại!');
+      this.showToast('Vui lòng nhập số điện thoại!', 'warning');
       return false;
     }
 
     // Validate format số điện thoại (10-11 số)
     const phoneRegex = /^[0-9]{10,11}$/;
     if (!phoneRegex.test(this.billingInfo.phone.replace(/\s+/g, ''))) {
-      alert('Số điện thoại không hợp lệ! Vui lòng nhập 10-11 chữ số.');
+      this.showToast('Số điện thoại không hợp lệ! Vui lòng nhập 10-11 chữ số.', 'warning');
       return false;
     }
 
     // Validate email
     if (!this.billingInfo.email || this.billingInfo.email.trim() === '') {
-      alert('Vui lòng nhập email!');
+      this.showToast('Vui lòng nhập email!', 'warning');
       return false;
     }
 
     // Validate format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.billingInfo.email)) {
-      alert('Email không hợp lệ! Vui lòng nhập email đúng định dạng.');
+      this.showToast('Email không hợp lệ! Vui lòng nhập email đúng định dạng.', 'warning');
       return false;
     }
 
@@ -1001,7 +1030,7 @@ export class CheckoutComponent implements OnInit {
       (this.cart && this.cart.danhSachGioHang && this.cart.danhSachGioHang.length > 0) ||
       (this.isTempCart && this.tempCart && this.tempCart.length > 0);
     if (!hasCartItems) {
-      alert('Giỏ hàng của bạn đang trống!');
+      this.showToast('Giỏ hàng của bạn đang trống!', 'warning');
       return false;
     }
 
@@ -1010,7 +1039,7 @@ export class CheckoutComponent implements OnInit {
       this.paymentMethod === 'transfer' &&
       (!this.transactionCode || this.transactionCode === '')
     ) {
-      alert('Vui lòng tạo mã giao dịch!');
+      this.showToast('Vui lòng tạo mã giao dịch!', 'warning');
       return false;
     }
 
@@ -1174,7 +1203,7 @@ export class CheckoutComponent implements OnInit {
     }
 
     if (cartItems.length === 0) {
-      alert('Giỏ hàng của bạn đang trống hoặc không có sản phẩm hợp lệ!');
+      this.showToast('Giỏ hàng của bạn đang trống hoặc không có sản phẩm hợp lệ!', 'warning');
       this.isSubmitting = false;
       return;
     }
@@ -1190,7 +1219,7 @@ export class CheckoutComponent implements OnInit {
     
     if (invalidItems.length > 0) {
       console.error('❌ Invalid cart items:', invalidItems);
-      alert('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!');
+      this.showToast('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!', 'error');
       this.isSubmitting = false;
       return;
     }
@@ -1233,17 +1262,17 @@ export class CheckoutComponent implements OnInit {
       const soDienThoaiKhachHang = this.billingInfo?.phone || '';
       
       if (!tenKhachHang || tenKhachHang === '') {
-        alert('Vui lòng nhập tên khách hàng!');
+        this.showToast('Vui lòng nhập tên khách hàng!', 'warning');
         this.isSubmitting = false;
         return;
       }
       if (!emailKhachHang || emailKhachHang === '') {
-        alert('Vui lòng nhập email khách hàng!');
+        this.showToast('Vui lòng nhập email khách hàng!', 'warning');
         this.isSubmitting = false;
         return;
       }
       if (!soDienThoaiKhachHang || soDienThoaiKhachHang === '') {
-        alert('Vui lòng nhập số điện thoại khách hàng!');
+        this.showToast('Vui lòng nhập số điện thoại khách hàng!', 'warning');
         this.isSubmitting = false;
         return;
       }
@@ -1306,7 +1335,7 @@ export class CheckoutComponent implements OnInit {
     // Validate dữ liệu trước khi gửi
     if (!hoaDonData.danhSachChiTiet || hoaDonData.danhSachChiTiet.length === 0) {
       console.error('❌ Cannot create invoice: cartItems is empty');
-      alert('Giỏ hàng của bạn đang trống!');
+      this.showToast('Giỏ hàng của bạn đang trống!', 'warning');
       this.isSubmitting = false;
       return;
     }
@@ -1320,7 +1349,7 @@ export class CheckoutComponent implements OnInit {
     
     if (invalidItems.length > 0) {
       console.error('❌ Cannot create invoice: invalid items found', invalidItems);
-      alert('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!');
+      this.showToast('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!', 'error');
       this.isSubmitting = false;
       return;
     }
@@ -1328,7 +1357,7 @@ export class CheckoutComponent implements OnInit {
     // Validate tổng tiền
     if (!hoaDonData.tongTien || hoaDonData.tongTien <= 0) {
       console.error('❌ Cannot create invoice: tongTien is invalid', hoaDonData.tongTien);
-      alert('Tổng tiền không hợp lệ. Vui lòng kiểm tra lại!');
+      this.showToast('Tổng tiền không hợp lệ. Vui lòng kiểm tra lại!', 'error');
       this.isSubmitting = false;
       return;
     }
@@ -1402,7 +1431,7 @@ export class CheckoutComponent implements OnInit {
           // QUAN TRỌNG: Nếu chưa đăng nhập, redirect về trang chủ thay vì /customer/orders
           // (vì /customer/orders có guard yêu cầu đăng nhập và sẽ redirect đến login)
           console.log('ℹ️ User not logged in, redirecting to shop home after order creation');
-          alert(`Đơn hàng đã được tạo thành công!\nMã đơn hàng: ${hoaDon.maHoaDon}\n`);
+          this.showToast(`Đơn hàng đã được tạo thành công! Mã đơn hàng: ${hoaDon.maHoaDon}`, 'success');
           this.router.navigate(['/shop']);
         }
       },
@@ -1419,14 +1448,14 @@ export class CheckoutComponent implements OnInit {
         // QUAN TRỌNG: Nếu lỗi 401 (Unauthorized) và chưa đăng nhập, redirect về trang chủ
         if (err.status === 401 && !this.authService.isLoggedIn()) {
           console.log('🛒 401 error on checkout, redirecting to shop home');
-          alert('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại!');
+          this.showToast('Bạn cần đăng nhập để đặt hàng. Vui lòng đăng nhập và thử lại!', 'warning');
           this.router.navigate(['/shop']);
           return;
         }
 
         // Force change detection
         this.cdr.detectChanges();
-        alert(`Lỗi: ${errorMsg}`);
+        this.showToast(`Lỗi: ${errorMsg}`, 'error');
       },
     });
     // }).catch((err) => {
@@ -1441,7 +1470,7 @@ export class CheckoutComponent implements OnInit {
    */
   async validateStockAndRecalculate(): Promise<boolean> {
     if (!this.cart || !this.cart.danhSachGioHang || this.cart.danhSachGioHang.length === 0) {
-      alert('Giỏ hàng của bạn đang trống!');
+      this.showToast('Giỏ hàng của bạn đang trống!', 'warning');
       return false;
     }
 
@@ -1486,8 +1515,9 @@ export class CheckoutComponent implements OnInit {
         if (validatedCount === totalItems) {
           // Đã validate xong tất cả items
           if (hasError) {
-            alert(
-              `⚠️ Có lỗi xảy ra khi kiểm tra đơn hàng:${errorMessage}\n\nVui lòng cập nhật giỏ hàng và thử lại.`
+            this.showToast(
+              `⚠️ Có lỗi xảy ra khi kiểm tra đơn hàng:${errorMessage}. Vui lòng cập nhật giỏ hàng và thử lại.`,
+              'error'
             );
             resolve(false);
             return;
@@ -1505,10 +1535,18 @@ export class CheckoutComponent implements OnInit {
               `Tổng tiền mới: ${this.formatCurrency(totalRecalculated)}\n\n` +
               `Bạn có muốn tiếp tục với tổng tiền mới không?`;
 
-            if (!confirm(confirmMessage)) {
-              resolve(false);
-              return;
-            }
+            // Sử dụng showConfirm và xử lý trong Promise
+            this.showConfirm(confirmMessage).then((confirmed) => {
+              if (!confirmed) {
+                resolve(false);
+                return;
+              }
+
+              // Cập nhật giỏ hàng với giá mới
+              this.cart!.danhSachGioHang = recalculatedItems;
+              resolve(true);
+            });
+            return;
           }
 
           // Cập nhật giỏ hàng với giá mới
@@ -2051,7 +2089,7 @@ export class CheckoutComponent implements OnInit {
   copyTransactionCode(): void {
     if (!this.transactionCode) return;
     navigator.clipboard.writeText(this.transactionCode).then(() => {
-      alert('Đã sao chép mã giao dịch!');
+      this.showToast('Đã sao chép mã giao dịch!', 'success');
     });
   }
 
@@ -2406,5 +2444,157 @@ export class CheckoutComponent implements OnInit {
         v.code.toLowerCase().includes(searchTerm) ||
         (v.discount && v.discount.toString().includes(searchTerm))
     );
+  }
+
+  /**
+   * Hiển thị toast notification ở giữa màn hình (không dùng class)
+   */
+  showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
+    const toast = document.createElement('div');
+    const colors: { [key: string]: string } = {
+      success: '#28a745',
+      error: '#dc3545',
+      warning: '#ffc107',
+      info: '#17a2b8'
+    };
+    const icons: { [key: string]: string } = {
+      success: '✓',
+      error: '✕',
+      warning: '⚠',
+      info: 'ℹ'
+    };
+    
+    toast.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: ${colors[type]};
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 10000;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 400px;
+      text-align: center;
+      animation: fadeIn 0.3s ease-out;
+    `;
+    
+    toast.innerHTML = `
+      <span style="font-size: 18px;">${icons[type]}</span>
+      <span>${message}</span>
+    `;
+    
+    if (!document.getElementById('toast-animations')) {
+      const style = document.createElement('style');
+      style.id = 'toast-animations';
+      style.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translate(-50%, -60%); }
+          to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; transform: translate(-50%, -50%); }
+          to { opacity: 0; transform: translate(-50%, -40%); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'fadeOut 0.3s ease-out';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  /**
+   * Hiển thị confirm dialog ở giữa màn hình (không dùng class)
+   */
+  showConfirm(message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease-out;
+      `;
+      
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+      `;
+      
+      dialog.innerHTML = `
+        <div style="margin-bottom: 20px; font-size: 16px; color: #333;">${message}</div>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="confirm-yes" style="
+            padding: 10px 24px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+          ">Xác nhận</button>
+          <button id="confirm-no" style="
+            padding: 10px 24px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+          ">Hủy</button>
+        </div>
+      `;
+      
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      
+      const removeDialog = () => {
+        overlay.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => overlay.remove(), 200);
+      };
+      
+      dialog.querySelector('#confirm-yes')?.addEventListener('click', () => {
+        resolve(true);
+        removeDialog();
+      });
+      
+      dialog.querySelector('#confirm-no')?.addEventListener('click', () => {
+        resolve(false);
+        removeDialog();
+      });
+      
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          resolve(false);
+          removeDialog();
+        }
+      });
+    });
   }
 }

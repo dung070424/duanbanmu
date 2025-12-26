@@ -73,6 +73,15 @@ export interface SanPhamTrongHoaDon {
   kichThuoc?: string; // Kích thước
   anhSanPham?: string; // Hình ảnh sản phẩm
   nhaSanXuat?: string; // Nhà sản xuất
+  // Các property mở rộng để hỗ trợ mapping từ localStorage
+  code?: string; // Mã sản phẩm (alias của maSanPham)
+  moTa?: string; // Mô tả sản phẩm
+  description?: string; // Mô tả sản phẩm (alias)
+  unitPrice?: number; // Đơn giá (alias của donGia)
+  quantity?: number; // Số lượng (alias của soLuong)
+  total?: number; // Tổng tiền (alias của thanhTien)
+  imageUrl?: string; // URL hình ảnh (alias của anhSanPham)
+  name?: string; // Tên sản phẩm (alias của tenSanPham)
 }
 
 export interface HoaDonPaginatedResponse {

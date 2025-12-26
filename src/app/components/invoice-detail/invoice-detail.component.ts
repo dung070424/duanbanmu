@@ -61,10 +61,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   // Confirm invoice properties (khi trạng thái là CHO_XAC_NHAN)
   confirmInvoiceData = {
     ngayDuKienGiao: '',
-    khoiLuong: null as number | null,
-    chieuDai: null as number | null,
-    chieuRong: null as number | null,
-    chieuCao: null as number | null,
+    khoiLuong: 8 as number, // Fix cứng: 8 kg
+    chieuDai: 5 as number, // Fix cứng: 5 cm
+    chieuRong: 7 as number, // Fix cứng: 7 cm
+    chieuCao: 8 as number, // Fix cứng: 8 cm
     phiGiaoHang: 0,
     nguoiChiuPhi: 'nguoi_gui' as 'nguoi_gui' | 'nguoi_nhan',
   };
@@ -83,7 +83,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     bankName: '',
     accountHolder: ''
   };
-  
+
   // Shipping fee adjustment properties
   showShippingFeeAdjustmentModal: boolean = false;
   pendingSaveAfterShippingAdjustment: boolean = false; // Flag để tự động tiếp tục lưu sau khi xử lý modal
@@ -114,6 +114,27 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   // Selected saved address
   selectedSavedAddressId: string = '';
+
+  // Address editing in view (for CHO_XAC_NHAN status)
+  isEditingAddress: boolean = false;
+  savingAddress: boolean = false;
+  editingAddress: {
+    diaChiChiTiet: string;
+    selectedProvinceCode: string;
+    selectedDistrictCode: string;
+    selectedWardCode: string;
+    tinhThanh: string;
+    quanHuyen: string;
+    phuongXa: string;
+  } = {
+    diaChiChiTiet: '',
+    selectedProvinceCode: '',
+    selectedDistrictCode: '',
+    selectedWardCode: '',
+    tinhThanh: '',
+    quanHuyen: '',
+    phuongXa: ''
+  };
 
   // Auto-refresh - Cập nhật liên tục từ DB
   private destroy$ = new Subject<void>();
@@ -330,14 +351,24 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   onSelectSavedAddress(): void {
     if (!this.selectedSavedAddressId || this.selectedSavedAddressId === 'new') {
       // Reset địa chỉ khi chọn "Nhập địa chỉ mới"
-      this.selectedProvince = '';
-      this.selectedDistrict = '';
-      this.selectedWard = '';
-      if (this.editingInvoice) {
-        this.editingInvoice.diaChiChiTiet = '';
-        this.editingInvoice.tinhThanh = '';
-        this.editingInvoice.quanHuyen = '';
-        this.editingInvoice.phuongXa = '';
+      if (this.isEditingAddress) {
+        this.editingAddress.selectedProvinceCode = '';
+        this.editingAddress.selectedDistrictCode = '';
+        this.editingAddress.selectedWardCode = '';
+        this.editingAddress.diaChiChiTiet = '';
+        this.editingAddress.tinhThanh = '';
+        this.editingAddress.quanHuyen = '';
+        this.editingAddress.phuongXa = '';
+      } else {
+        this.selectedProvince = '';
+        this.selectedDistrict = '';
+        this.selectedWard = '';
+        if (this.editingInvoice) {
+          this.editingInvoice.diaChiChiTiet = '';
+          this.editingInvoice.tinhThanh = '';
+          this.editingInvoice.quanHuyen = '';
+          this.editingInvoice.phuongXa = '';
+        }
       }
       this.districts = [];
       this.wards = [];
@@ -346,13 +377,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     const addr = this.customerAddresses.find((a) => String(a.id) === this.selectedSavedAddressId);
     if (addr) {
-      this.applyAddressFromSaved(addr);
-      // Tự động tính phí vận chuyển sau khi áp dụng địa chỉ
-      setTimeout(() => {
-        if (addr.tinhThanh && addr.quanHuyen) {
-          this.calculateShippingFeeForAddress(addr.tinhThanh, addr.quanHuyen);
-        }
-      }, 200);
+      if (this.isEditingAddress) {
+        this.applyAddressToEditingAddress(addr);
+      } else {
+        this.applyAddressFromSaved(addr);
+        // Tự động tính phí vận chuyển sau khi áp dụng địa chỉ
+        setTimeout(() => {
+          if (addr.tinhThanh && addr.quanHuyen) {
+            this.calculateShippingFeeForAddress(addr.tinhThanh, addr.quanHuyen);
+          }
+        }, 200);
+      }
     }
   }
 
@@ -376,14 +411,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       if (province) {
         this.selectedProvince = province.code;
         this.onProvinceChange(province.code);
-        
+
         // Đợi districts load xong rồi mới set district
         setTimeout(() => {
           const district = this.districts.find((d) => d.name === addr.quanHuyen);
           if (district) {
             this.selectedDistrict = district.code;
             this.onDistrictChange(district.code);
-            
+
             // Đợi wards load xong rồi mới set ward
             setTimeout(() => {
               const ward = this.wards.find((w) => w.name === addr.phuongXa);
@@ -409,7 +444,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (!this.editingInvoice || !tinhThanh || !quanHuyen) return;
 
     this.calculatingShippingFee = true;
-    
+
     // Tìm district code từ district name
     const district = this.districts.find((d) => d.name === quanHuyen);
     if (!district) {
@@ -419,7 +454,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     const districtId = this.getDistrictIdForGHN(district.code);
-    
+
     // Tính phí ship qua GHN API
     this.ghnService.calculateShippingFeeViaBackend({
       from_district_id: 1442, // Quận Ba Đình, Hà Nội (mặc định)
@@ -483,8 +518,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Nếu chưa có originalShippingFee, lấy từ invoice
-    const originalFee = this.originalShippingFee !== undefined 
-      ? this.originalShippingFee 
+    const originalFee = this.originalShippingFee !== undefined
+      ? this.originalShippingFee
       : (this.invoice?.phiGiaoHang || 0);
 
     const currentFee = this.editingInvoice.phiGiaoHang || 0;
@@ -513,13 +548,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Nếu chưa có originalShippingFee, lấy từ invoice
-    const originalFee = this.originalShippingFee !== undefined 
-      ? this.originalShippingFee 
+    const originalFee = this.originalShippingFee !== undefined
+      ? this.originalShippingFee
       : (this.invoice?.phiGiaoHang || 0);
 
     const currentFee = this.editingInvoice.phiGiaoHang || 0;
     const difference = Math.abs(currentFee - originalFee);
-    
+
     // Chỉ hiển thị nếu chênh lệch >= 1 VND
     return difference >= 1;
   }
@@ -531,8 +566,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
     // Log để debug
     if (this.editingInvoice) {
-      const originalFee = this.originalShippingFee !== undefined 
-        ? this.originalShippingFee 
+      const originalFee = this.originalShippingFee !== undefined
+        ? this.originalShippingFee
         : (this.invoice?.phiGiaoHang || 0);
       console.log('💰 Shipping fee changed manually:', {
         original: originalFee,
@@ -547,7 +582,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Xác định xem đây có phải là customer view không
     this.isCustomerView = this.authService.isCustomer();
     console.log('🔍 InvoiceDetailComponent initialized, isCustomerView:', this.isCustomerView);
-    
+
     // Load provinces ngay khi component khởi tạo
     this.loadProvinces();
     this.route.params.subscribe(params => {
@@ -653,7 +688,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       if (!this.isEditMode) {
         // Cập nhật liên tục từ DB: Load invoice detail và customer info
         this.loadInvoiceDetail();
-        
+
         // Cũng reload customer info nếu có khachHangId
         if (this.invoice?.khachHangId) {
           this.loadCustomerInfo(this.invoice.khachHangId);
@@ -764,7 +799,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         if (invoice.phiGiaoHang !== undefined && invoice.phiGiaoHang !== null) {
           invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string' ? parseFloat(invoice.phiGiaoHang) : Number(invoice.phiGiaoHang);
         }
-        
+
         // Parse các trường vận chuyển
         if (invoice.khoiLuong !== undefined && invoice.khoiLuong !== null) {
           invoice.khoiLuong = typeof invoice.khoiLuong === 'string' ? parseFloat(invoice.khoiLuong) : Number(invoice.khoiLuong);
@@ -778,7 +813,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         if (invoice.chieuCao !== undefined && invoice.chieuCao !== null) {
           invoice.chieuCao = typeof invoice.chieuCao === 'string' ? parseFloat(invoice.chieuCao) : Number(invoice.chieuCao);
         }
-        
+
         // Đảm bảo ngayDuKienGiao là string hoặc Date hợp lệ
         if (invoice.ngayDuKienGiao) {
           // Nếu là string, giữ nguyên; nếu là Date object, convert sang string
@@ -876,13 +911,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
         // QUAN TRỌNG: Đảm bảo phiGiaoHang và thanhTien được parse đúng
         if (invoice.phiGiaoHang !== undefined && invoice.phiGiaoHang !== null) {
-          invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string' 
-            ? parseFloat(invoice.phiGiaoHang) 
+          invoice.phiGiaoHang = typeof invoice.phiGiaoHang === 'string'
+            ? parseFloat(invoice.phiGiaoHang)
             : Number(invoice.phiGiaoHang);
         }
         if (invoice.thanhTien !== undefined && invoice.thanhTien !== null) {
-          invoice.thanhTien = typeof invoice.thanhTien === 'string' 
-            ? parseFloat(invoice.thanhTien) 
+          invoice.thanhTien = typeof invoice.thanhTien === 'string'
+            ? parseFloat(invoice.thanhTien)
             : Number(invoice.thanhTien);
         }
 
@@ -897,7 +932,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           phuongXa: invoice.phuongXa,
           diaChiChiTiet: invoice.diaChiChiTiet
         });
-        
+
         console.log('📦 Invoice shipping data:', {
           khoiLuong: invoice.khoiLuong,
           chieuDai: invoice.chieuDai,
@@ -912,10 +947,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.originalShippingFee = invoice.phiGiaoHang || 0; // Lưu phí ship ban đầu
         this.statusChanged = false; // Reset flag
         this.selectedStatus = ''; // Reset selected status
-        
+
         // Force change detection để đảm bảo UI cập nhật ngay lập tức
         this.cdr.detectChanges();
-        
+
         console.log('✅ Invoice object updated in component:', {
           id: this.invoice?.id,
           phiGiaoHang: this.invoice?.phiGiaoHang,
@@ -1113,8 +1148,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             danhSachChiTiet: detailData?.danhSachChiTiet,
             trangThai: detailData?.trangThai || this.invoice?.trangThai
           });
-          
-          // QUAN TRỌNG: Nếu soLuongSanPham > 0 nhưng danhSachChiTiet rỗng, 
+
+          // QUAN TRỌNG: Nếu soLuongSanPham > 0 nhưng danhSachChiTiet rỗng,
           // có thể backend chưa load chi tiết. Thử gọi lại API với force load chi tiết
           if ((detailData?.soLuongSanPham || this.invoice?.soLuongSanPham || 0) > 0) {
             console.log('🔄 soLuongSanPham > 0 but danhSachChiTiet is empty, trying to reload...');
@@ -1143,7 +1178,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                       thuongHieu: item.thuongHieu || '',
                       ghiChu: item.ghiChu || ''
                     }));
-                    
+
                     if (this.invoice) {
                       this.invoice.danhSachSanPham = retryDanhSachSanPham;
                       this.invoice.soLuongSanPham = retryDanhSachSanPham.length;
@@ -1452,15 +1487,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Lưu phí ship ban đầu khi vào edit mode
     this.originalShippingFee = this.invoice?.phiGiaoHang || 0;
     this.stopAutoRefresh();
-    
+
     // Load provinces và địa chỉ khi vào edit mode
     this.loadProvinces();
-    
+
     // Load customer addresses nếu có khách hàng
     if (this.invoice?.khachHangId) {
       this.loadCustomerAddresses();
     }
-    
+
     // Nếu đã có địa chỉ, load districts và wards tương ứng
     // Đợi provinces load xong rồi mới tìm province code
     setTimeout(() => {
@@ -1542,31 +1577,31 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         }
 
         // Kiểm tra thay đổi địa chỉ và phí ship
-        const originalAddress = this.invoice 
+        const originalAddress = this.invoice
           ? `${this.invoice.tinhThanh || ''}_${this.invoice.quanHuyen || ''}_${this.invoice.phuongXa || ''}_${this.invoice.diaChiChiTiet || ''}`
           : '';
         const newAddress = `${this.editingInvoice.tinhThanh || ''}_${this.editingInvoice.quanHuyen || ''}_${this.editingInvoice.phuongXa || ''}_${this.editingInvoice.diaChiChiTiet || ''}`;
         const addressChanged = originalAddress !== newAddress;
-        
+
         const originalShippingFee = this.invoice?.phiGiaoHang || 0;
         let newShippingFee = this.editingInvoice.phiGiaoHang || 0;
-        
+
         // Nếu địa chỉ thay đổi, tự động tính lại phí ship bằng GHN API
         if (addressChanged && this.editingInvoice.tinhThanh && this.editingInvoice.quanHuyen) {
           console.log('📍 Address changed, calculating new shipping fee via GHN API...');
-          
+
           // Tính phí ship mới bằng GHN API
           const ghnRequest = {
             province: this.editingInvoice.tinhThanh,
             to_district_id: 0, // Sẽ được tính từ tên quận/huyện
             to_ward_code: '', // Optional
-            weight: this.invoice?.khoiLuong ? Math.round(this.invoice.khoiLuong * 1000) : 1000, // Convert kg to gram
-            length: this.invoice?.chieuDai || 20,
-            width: this.invoice?.chieuRong || 20,
-            height: this.invoice?.chieuCao || 20,
+            weight: 8000, // Fix cứng: 8 kg = 8000 gram
+            length: 5, // Fix cứng: chiều dài = 5 cm
+            width: 7, // Fix cứng: chiều rộng = 7 cm
+            height: 8, // Fix cứng: chiều cao = 8 cm
             insurance_value: this.invoice?.tongTien || 0
           };
-          
+
           this.ghnService.calculateShippingFeeViaBackend(ghnRequest).subscribe({
             next: (ghnResponse) => {
               console.log('✅ GHN API response:', ghnResponse);
@@ -1577,7 +1612,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                   console.log('💰 Updated editingInvoice.phiGiaoHang to:', newShippingFee);
                 }
                 console.log('💰 New shipping fee calculated:', newShippingFee);
-                
+
                 // Tiếp tục xử lý với phí ship mới
                 this.processShippingFeeAfterCalculation(originalShippingFee, newShippingFee, addressChanged, saveButton, customerId || null);
               } else {
@@ -1592,10 +1627,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               this.processShippingFeeAfterCalculation(originalShippingFee, newShippingFee, addressChanged, saveButton, customerId || null);
             }
           });
-          
+
           return; // Return để chờ GHN API response
         }
-        
+
         // Nếu không thay đổi địa chỉ, xử lý bình thường
         const shippingFeeChanged = originalShippingFee !== newShippingFee;
         const shippingFeeDifference = newShippingFee - originalShippingFee;
@@ -1615,7 +1650,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             };
             this.pendingSaveAfterShippingAdjustment = true; // Đánh dấu cần tiếp tục lưu sau khi xử lý modal
             this.showShippingFeeAdjustmentModal = true;
-            
+
             // Reset button state và return - sẽ tiếp tục trong modal
             if (saveButton) {
               saveButton.disabled = false;
@@ -1623,16 +1658,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             }
             return;
         }
-        
+
         // Nếu chỉ thay đổi địa chỉ nhưng phí ship không đổi, tiếp tục cập nhật
         if (addressChanged && !shippingFeeChanged) {
-          if (!confirm('Địa chỉ giao hàng đã thay đổi nhưng phí ship không đổi.\n\nBạn có muốn tiếp tục cập nhật?')) {
-              if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
-              }
-              return;
+          if (window.confirm('Địa chỉ giao hàng đã thay đổi nhưng phí ship không đổi. Bạn có muốn tiếp tục cập nhật?')) {
+            // Tiếp tục với logic cập nhật
+          } else {
+            if (saveButton) {
+              saveButton.disabled = false;
+              saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
             }
+          }
+          return;
         }
 
         // Đảm bảo giá trị từ dropdown được map vào editingInvoice trước khi save
@@ -1708,11 +1745,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           }
 
           // Phí ship - QUAN TRỌNG: Luôn gửi phiGiaoHang nếu đã được tính lại từ GHN API hoặc có thay đổi
-          const newPhiGiaoHang = this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null 
-            ? Number(this.editingInvoice.phiGiaoHang) 
+          const newPhiGiaoHang = this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null
+            ? Number(this.editingInvoice.phiGiaoHang)
             : (this.invoice?.phiGiaoHang || 0);
-          const oldPhiGiaoHang = this.invoice.phiGiaoHang !== undefined && this.invoice.phiGiaoHang !== null 
-            ? Number(this.invoice.phiGiaoHang) 
+          const oldPhiGiaoHang = this.invoice.phiGiaoHang !== undefined && this.invoice.phiGiaoHang !== null
+            ? Number(this.invoice.phiGiaoHang)
             : 0;
           // Luôn gửi phiGiaoHang nếu có thay đổi hoặc đã được tính lại (khi địa chỉ thay đổi)
           if (newPhiGiaoHang !== oldPhiGiaoHang || addressChanged) {
@@ -1798,8 +1835,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         // ✅ QUAN TRỌNG: Đảm bảo phiGiaoHang luôn được gửi trong request (kể cả khi không thay đổi)
         if (invoiceData.phiGiaoHang === undefined || invoiceData.phiGiaoHang === null) {
           // Nếu không có trong invoiceData, lấy từ editingInvoice hoặc invoice hiện tại
-          invoiceData.phiGiaoHang = this.editingInvoice?.phiGiaoHang 
-            ? Number(this.editingInvoice.phiGiaoHang) 
+          invoiceData.phiGiaoHang = this.editingInvoice?.phiGiaoHang
+            ? Number(this.editingInvoice.phiGiaoHang)
             : (this.invoice?.phiGiaoHang ? Number(this.invoice.phiGiaoHang) : 0);
           console.log('💰 Added phiGiaoHang to invoiceData:', invoiceData.phiGiaoHang);
         }
@@ -1821,8 +1858,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           // Thêm ghi chú đánh dấu đã chỉnh sửa
           const editNote = '[ĐÃ CHỈNH SỬA]';
           if (!invoiceData.ghiChu || !invoiceData.ghiChu.includes(editNote)) {
-            invoiceData.ghiChu = invoiceData.ghiChu 
-              ? `${editNote} ${invoiceData.ghiChu}` 
+            invoiceData.ghiChu = invoiceData.ghiChu
+              ? `${editNote} ${invoiceData.ghiChu}`
               : editNote;
           }
         }
@@ -1840,27 +1877,27 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             bankName: this.shippingFeeAdjustmentData.bankName || '',
             accountHolder: this.shippingFeeAdjustmentData.accountHolder || ''
           };
-          
+
           this.hoaDonService.adjustShippingFee(this.invoiceId, adjustmentRequest).subscribe({
             next: (adjustedInvoice) => {
               console.log('✅ Shipping fee adjusted successfully:', adjustedInvoice);
               console.log('💰 Adjusted invoice phiGiaoHang:', adjustedInvoice.phiGiaoHang);
-              
+
               // QUAN TRỌNG: Cập nhật phiGiaoHang trong invoiceData từ adjustedInvoice
               if (adjustedInvoice.phiGiaoHang !== undefined && adjustedInvoice.phiGiaoHang !== null) {
-                invoiceData.phiGiaoHang = typeof adjustedInvoice.phiGiaoHang === 'string' 
-                  ? parseFloat(adjustedInvoice.phiGiaoHang) 
+                invoiceData.phiGiaoHang = typeof adjustedInvoice.phiGiaoHang === 'string'
+                  ? parseFloat(adjustedInvoice.phiGiaoHang)
                   : Number(adjustedInvoice.phiGiaoHang);
                 console.log('💰 Updated invoiceData.phiGiaoHang to:', invoiceData.phiGiaoHang);
               }
-              
+
               // Cập nhật thanhTien nếu có
               if (adjustedInvoice.thanhTien !== undefined && adjustedInvoice.thanhTien !== null) {
-                invoiceData.thanhTien = typeof adjustedInvoice.thanhTien === 'string' 
-                  ? parseFloat(adjustedInvoice.thanhTien) 
+                invoiceData.thanhTien = typeof adjustedInvoice.thanhTien === 'string'
+                  ? parseFloat(adjustedInvoice.thanhTien)
                   : Number(adjustedInvoice.thanhTien);
               }
-              
+
               // Tiếp tục cập nhật hóa đơn với phiGiaoHang mới
               this.continueUpdateInvoice(invoiceData, customerId || null, saveButton);
             },
@@ -1918,7 +1955,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       };
       this.pendingSaveAfterShippingAdjustment = true; // Đánh dấu cần tiếp tục lưu sau khi xử lý modal
       this.showShippingFeeAdjustmentModal = true;
-      
+
       // Reset button state
       if (saveButton) {
         saveButton.disabled = false;
@@ -1945,8 +1982,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       tongTien: this.editingInvoice.tongTien ? Number(this.editingInvoice.tongTien) : 0,
       tienGiamGia: this.editingInvoice.tienGiamGia ? Number(this.editingInvoice.tienGiamGia) : 0,
       thanhTien: this.editingInvoice.thanhTien ? Number(this.editingInvoice.thanhTien) : 0,
-      phiGiaoHang: this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null 
-        ? Number(this.editingInvoice.phiGiaoHang) 
+      phiGiaoHang: this.editingInvoice.phiGiaoHang !== undefined && this.editingInvoice.phiGiaoHang !== null
+        ? Number(this.editingInvoice.phiGiaoHang)
         : (this.invoice?.phiGiaoHang || 0),
       nhanVienId: this.editingInvoice.nhanVienId ? Number(this.editingInvoice.nhanVienId) : undefined,
       khachHangId: customerId || this.editingInvoice.khachHangId ? Number(customerId || this.editingInvoice.khachHangId) : undefined,
@@ -1983,8 +2020,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (isOnlineOrder) {
       const editNote = '[ĐÃ CHỈNH SỬA]';
       if (!invoiceData.ghiChu || !invoiceData.ghiChu.includes(editNote)) {
-        invoiceData.ghiChu = invoiceData.ghiChu 
-          ? `${editNote} ${invoiceData.ghiChu}` 
+        invoiceData.ghiChu = invoiceData.ghiChu
+          ? `${editNote} ${invoiceData.ghiChu}`
           : editNote;
       }
     }
@@ -2005,7 +2042,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           tienGiamGia: invoiceData.tienGiamGia,
           thanhTien: invoiceData.thanhTien
         });
-        
+
         this.hoaDonService.updateHoaDonNew(this.invoiceId, invoiceData).subscribe({
           next: (updatedInvoice: any) => {
             console.log('✅ Invoice updated successfully from API:', updatedInvoice);
@@ -2021,22 +2058,22 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
             if (updatedInvoice) {
               // Đảm bảo phiGiaoHang được convert sang number
               if (updatedInvoice.phiGiaoHang !== undefined && updatedInvoice.phiGiaoHang !== null) {
-                updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string' 
-                  ? parseFloat(updatedInvoice.phiGiaoHang) 
+                updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string'
+                  ? parseFloat(updatedInvoice.phiGiaoHang)
                   : Number(updatedInvoice.phiGiaoHang);
               }
-              
+
               // Đảm bảo thanhTien cũng được cập nhật nếu phiGiaoHang thay đổi
               if (updatedInvoice.thanhTien !== undefined && updatedInvoice.thanhTien !== null) {
-                updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string' 
-                  ? parseFloat(updatedInvoice.thanhTien) 
+                updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string'
+                  ? parseFloat(updatedInvoice.thanhTien)
                   : Number(updatedInvoice.thanhTien);
               }
-              
+
               // Cập nhật invoice object để hiển thị ngay
               this.invoice = { ...updatedInvoice }; // Tạo object mới để trigger change detection
               this.cdr.detectChanges();
-              
+
               console.log('🔄 Updated invoice object immediately:', {
                 phiGiaoHang: updatedInvoice.phiGiaoHang,
                 thanhTien: updatedInvoice.thanhTien,
@@ -2074,18 +2111,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               this.editingInvoice = null;
               // Tắt auto-refresh để chỉ gọi API 1 lần duy nhất
               // this.startAutoRefresh(); // Resume auto-refresh
-              
+
               // Thông báo thành công - backend sẽ tự động gửi email nếu có thay đổi và có email khách hàng
               if (editingEmail && editingEmail.trim() !== '') {
                 this.showToast('Cập nhật hóa đơn thành công! Email thông báo các thay đổi đã được gửi đến khách hàng.', 'success');
               } else {
                 this.showToast('Cập nhật hóa đơn thành công!', 'success');
               }
-              
+
               // Force change detection một lần nữa để đảm bảo UI cập nhật
               // Đảm bảo invoice object được cập nhật lại từ server
               this.cdr.detectChanges();
-              
+
               // ✅ QUAN TRỌNG: Reload lại một lần nữa từ DB để đảm bảo dữ liệu đồng bộ hoàn toàn
               setTimeout(() => {
                 console.log('🔄 Final reload from DB to ensure data sync...');
@@ -2171,48 +2208,48 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       next: (updatedInvoice) => {
         console.log('✅ Shipping fee adjusted successfully:', updatedInvoice);
         console.log('💰 Updated shipping fee (phiGiaoHang):', updatedInvoice.phiGiaoHang);
-        
+
         // Cập nhật invoice ngay lập tức với dữ liệu từ response để hiển thị ngay
         if (updatedInvoice) {
           // Đảm bảo phiGiaoHang được convert sang number
           if (updatedInvoice.phiGiaoHang !== undefined && updatedInvoice.phiGiaoHang !== null) {
-            updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string' 
-              ? parseFloat(updatedInvoice.phiGiaoHang) 
+            updatedInvoice.phiGiaoHang = typeof updatedInvoice.phiGiaoHang === 'string'
+              ? parseFloat(updatedInvoice.phiGiaoHang)
               : Number(updatedInvoice.phiGiaoHang);
           }
-          
+
           // Đảm bảo thanhTien cũng được cập nhật nếu phiGiaoHang thay đổi
           if (updatedInvoice.thanhTien !== undefined && updatedInvoice.thanhTien !== null) {
-            updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string' 
-              ? parseFloat(updatedInvoice.thanhTien) 
+            updatedInvoice.thanhTien = typeof updatedInvoice.thanhTien === 'string'
+              ? parseFloat(updatedInvoice.thanhTien)
               : Number(updatedInvoice.thanhTien);
           }
-          
+
           // Cập nhật editingInvoice với phiGiaoHang mới để tiếp tục lưu
           if (this.editingInvoice) {
             this.editingInvoice.phiGiaoHang = updatedInvoice.phiGiaoHang;
             this.editingInvoice.thanhTien = updatedInvoice.thanhTien;
           }
-          
+
           // Cập nhật invoice object để hiển thị ngay (tạo object mới để trigger change detection)
           this.invoice = { ...updatedInvoice };
           this.cdr.detectChanges();
-          
+
           console.log('🔄 Updated invoice object immediately after shipping fee adjustment:', {
             phiGiaoHang: updatedInvoice.phiGiaoHang,
             thanhTien: updatedInvoice.thanhTien
           });
         }
-        
+
         this.savingStatus = false;
         this.closeShippingFeeAdjustmentModal();
-        
+
         const message = this.shippingFeeAdjustmentData.adjustmentType === 'REFUND'
           ? `Đã hoàn phí ship thành công. Số tiền ${this.formatCurrency(this.shippingFeeAdjustmentData.adjustmentAmount)} ₫ sẽ được hoàn trả trong vòng 3-5 ngày làm việc.`
           : `Đã tăng phụ phí ship thành công. Khách hàng cần thanh toán thêm ${this.formatCurrency(this.shippingFeeAdjustmentData.adjustmentAmount)} ₫.`;
-        
+
         this.showToast(message, 'success');
-        
+
         // ✅ Tự động tiếp tục lưu thay đổi nếu có flag
         if (shouldContinueSave) {
           console.log('🔄 Auto-continuing save after shipping fee adjustment...');
@@ -2253,10 +2290,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           } else {
             // Customer doesn't exist, create new one with unique email and phone
             const baseEmail = `${customerName.toLowerCase().replace(/\s+/g, '')}@example.com`;
-            
+
             // Lấy số điện thoại từ form nếu có, nếu không thì tạo unique
             let phoneNumber = '';
-            if (this.editingInvoice?.soDienThoaiKhachHang && 
+            if (this.editingInvoice?.soDienThoaiKhachHang &&
                 this.editingInvoice.soDienThoaiKhachHang.trim() !== '' &&
                 this.editingInvoice.soDienThoaiKhachHang.trim() !== 'Chưa có') {
               phoneNumber = this.editingInvoice.soDienThoaiKhachHang.trim();
@@ -2265,11 +2302,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               const timestamp = Date.now();
               phoneNumber = `TEMP_${timestamp}`;
             }
-            
+
             this.generateUniqueEmail(baseEmail).then((uniqueEmail) => {
               // ✅ BỎ QUA VALIDATE SỐ ĐIỆN THOẠI - Tạo khách hàng trực tiếp không cần check
               // (Theo yêu cầu: bỏ qua validate số điện thoại đã tồn tại)
-              
+
             const newCustomer = {
               tenKhachHang: customerName,
                 email: uniqueEmail,
@@ -2849,18 +2886,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   public getDerivedPaymentStatus(): 'pending' | 'paid' | 'cancelled' {
     const status = this.invoice?.trangThai;
     if (status === 'HUY') return 'cancelled';
-    
+
     // Nếu phương thức thanh toán là "Chuyển khoản ngân hàng" => trạng thái thanh toán là "Đã thanh toán"
     const paymentMethod = this.invoice?.phuongThucThanhToan || '';
     const paymentMethodLower = paymentMethod.toLowerCase();
-    if (paymentMethodLower === 'transfer' || 
-        paymentMethodLower === 'chuyển khoản' || 
+    if (paymentMethodLower === 'transfer' ||
+        paymentMethodLower === 'chuyển khoản' ||
         paymentMethodLower === 'chuyen khoan' ||
         paymentMethodLower === 'chuyển khoản ngân hàng' ||
         paymentMethodLower === 'chuyen khoan ngan hang') {
       return 'paid';
     }
-    
+
     if (status === 'DA_GIAO_HANG') return 'paid';
     return 'pending';
   }
@@ -3079,14 +3116,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     this.loadingProvinces = true;
     console.log('🔄 Loading provinces from local data...');
-    
+
     try {
       // Sử dụng dữ liệu local từ sub-vn package thay vì gọi API
       this.provinces = provincesData as any as Array<{ code: string; name: string }>;
       this.loadingProvinces = false;
       console.log('✅ Loaded provinces from local data:', this.provinces.length);
       this.cdr.detectChanges();
-      
+
       // Nếu đang trong edit mode và có địa chỉ, load districts sau khi provinces load xong
       if (this.isEditMode && this.editingInvoice?.tinhThanh) {
         setTimeout(() => {
@@ -3102,7 +3139,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.loadingProvinces = false;
           console.log('✅ Loaded provinces from API (fallback):', this.provinces.length);
           this.cdr.detectChanges();
-          
+
           if (this.isEditMode && this.editingInvoice?.tinhThanh) {
             setTimeout(() => {
               this.findProvinceCodeAndLoadDistricts(this.editingInvoice?.tinhThanh || '');
@@ -3130,17 +3167,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     console.log('🔍 Finding province code for:', provinceName);
     console.log('   Available provinces:', this.provinces.length);
-    
+
     // Tìm province với nhiều cách matching
     const province = this.provinces.find(p => {
       const pName = p.name.trim().toLowerCase();
       const searchName = provinceName.trim().toLowerCase();
-      return pName === searchName || 
-             pName.includes(searchName) || 
+      return pName === searchName ||
+             pName.includes(searchName) ||
              searchName.includes(pName) ||
              pName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
     });
-    
+
     if (province) {
       console.log('✅ Found province:', province);
       this.selectedProvince = province.code;
@@ -3148,7 +3185,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.editingInvoice.tinhThanh = province.name;
       }
       this.loadDistrictsByProvince(province.code);
-      
+
       // Nếu đã có quận/huyện, tìm và load wards
       if (this.editingInvoice?.quanHuyen) {
         // Đợi districts load xong
@@ -3156,8 +3193,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           const district = this.districts.find(d => {
             const dName = d.name.trim().toLowerCase();
             const searchName = (this.editingInvoice?.quanHuyen || '').trim().toLowerCase();
-            return dName === searchName || 
-                   dName.includes(searchName) || 
+            return dName === searchName ||
+                   dName.includes(searchName) ||
                    searchName.includes(dName) ||
                    dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
           });
@@ -3168,15 +3205,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               this.editingInvoice.quanHuyen = district.name;
             }
             this.loadWardsByDistrict(district.code);
-            
+
             // Nếu đã có phường/xã, tìm và set selectedWard
             if (this.editingInvoice?.phuongXa) {
               setTimeout(() => {
                 const ward = this.wards.find(w => {
                   const wName = w.name.trim().toLowerCase();
                   const searchName = (this.editingInvoice?.phuongXa || '').trim().toLowerCase();
-                  return wName === searchName || 
-                         wName.includes(searchName) || 
+                  return wName === searchName ||
+                         wName.includes(searchName) ||
                          searchName.includes(wName) ||
                          wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
                 });
@@ -3235,14 +3272,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.districts = allDistricts.filter((d) => d.province_code === provinceCode);
       this.loadingDistricts = false;
       console.log('✅ Loaded districts from local data:', this.districts.length);
-      
+
       // Nếu đã có quận/huyện trong editingInvoice, tìm và load wards
       if (this.editingInvoice?.quanHuyen) {
         const district = this.districts.find(d => {
           const dName = d.name.trim().toLowerCase();
           const searchName = (this.editingInvoice?.quanHuyen || '').trim().toLowerCase();
-          return dName === searchName || 
-                 dName.includes(searchName) || 
+          return dName === searchName ||
+                 dName.includes(searchName) ||
                  searchName.includes(dName) ||
                  dName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
         });
@@ -3260,7 +3297,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.districts = districts || [];
           this.loadingDistricts = false;
           console.log('✅ Loaded districts from API (fallback):', this.districts.length);
-          
+
           if (this.editingInvoice?.quanHuyen) {
             const district = districts.find(d => d.name === this.editingInvoice?.quanHuyen);
             if (district) {
@@ -3305,14 +3342,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.wards = allWards.filter((w) => w.district_code === districtCode);
       this.loadingWards = false;
       console.log('✅ Loaded wards from local data:', this.wards.length);
-      
+
       // Nếu đã có phường/xã trong editingInvoice, tìm và set selectedWard
       if (this.editingInvoice?.phuongXa) {
         const ward = this.wards.find(w => {
           const wName = w.name.trim().toLowerCase();
           const searchName = (this.editingInvoice?.phuongXa || '').trim().toLowerCase();
-          return wName === searchName || 
-                 wName.includes(searchName) || 
+          return wName === searchName ||
+                 wName.includes(searchName) ||
                  searchName.includes(wName) ||
                  wName.replace(/\s+/g, '') === searchName.replace(/\s+/g, '');
         });
@@ -3329,7 +3366,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.wards = wards || [];
           this.loadingWards = false;
           console.log('✅ Loaded wards from API (fallback):', this.wards.length);
-          
+
           if (this.editingInvoice?.phuongXa) {
             const ward = wards.find(w => w.name === this.editingInvoice?.phuongXa);
             if (ward) {
@@ -3357,13 +3394,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.editingInvoice.tinhThanh = province.name;
       this.selectedProvince = provinceCode;
       this.loadDistrictsByProvince(provinceCode);
-      
+
       // Reset district và ward
       this.editingInvoice.quanHuyen = '';
       this.editingInvoice.phuongXa = '';
       this.selectedDistrict = '';
       this.selectedWard = '';
-      
+
       // Tự động tính lại phí ship
       this.calculateShippingFeeOnAddressChange();
     }
@@ -3378,11 +3415,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       this.editingInvoice.quanHuyen = district.name;
       this.selectedDistrict = districtCode;
       this.loadWardsByDistrict(districtCode);
-      
+
       // Reset ward
       this.editingInvoice.phuongXa = '';
       this.selectedWard = '';
-      
+
       // Tự động tính lại phí ship
       this.calculateShippingFeeOnAddressChange();
     }
@@ -3396,7 +3433,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     if (ward && this.editingInvoice) {
       this.editingInvoice.phuongXa = ward.name;
       this.selectedWard = wardCode;
-      
+
       // Tự động tính lại phí ship
       this.calculateShippingFeeOnAddressChange();
     }
@@ -3417,10 +3454,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       province: this.editingInvoice.tinhThanh,
       to_district_id: 0, // Sẽ được tính từ tên quận/huyện
       to_ward_code: this.selectedWard || '',
-      weight: this.invoice?.khoiLuong ? Math.round(this.invoice.khoiLuong * 1000) : 1000,
-      length: this.invoice?.chieuDai || 20,
-      width: this.invoice?.chieuRong || 20,
-      height: this.invoice?.chieuCao || 20,
+      weight: 8000, // Fix cứng: 8 kg = 8000 gram
+      length: 5, // Fix cứng: chiều dài = 5 cm
+      width: 7, // Fix cứng: chiều rộng = 7 cm
+      height: 8, // Fix cứng: chiều cao = 8 cm
       insurance_value: this.invoice?.tongTien || 0
     };
 
@@ -3428,7 +3465,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       next: (ghnResponse) => {
         console.log('✅ GHN API response:', ghnResponse);
         this.calculatingShippingFee = false;
-        
+
         if (ghnResponse && ghnResponse.code === 200 && ghnResponse.data) {
           const newShippingFee = ghnResponse.data.total || 0;
           if (this.editingInvoice) {
@@ -4547,15 +4584,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Xác nhận với người dùng
     const currentStatusLabel = this.getStatusLabel(this.invoice.trangThai);
     const newStatusLabel = this.getStatusLabel(this.selectedStatus);
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn đổi trạng thái từ "${currentStatusLabel}" sang "${newStatusLabel}"?`
-    );
-
-    if (!confirmed) {
-      console.log('❌ User cancelled status change');
-      return;
+    if (window.confirm(`Bạn có chắc chắn muốn đổi trạng thái từ "${currentStatusLabel}" sang "${newStatusLabel}"?`)) {
+      this.updateStatusConfirmed();
     }
+    return;
+  }
 
+  private updateStatusConfirmed(): void {
     // Gọi phương thức cập nhật trạng thái hiện có
     this.onStatusChangeFromTimeline(this.selectedStatus);
   }
@@ -4712,15 +4747,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Xác nhận với người dùng
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"?\n\n` +
-      `Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`
-    );
-
-    if (!confirmed) {
-      return;
+    if (window.confirm(`Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"? Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`)) {
+      this.updateInvoiceStatusConfirmed(newStatus, statusMessage);
     }
+    return;
+  }
 
+  private updateInvoiceStatusConfirmed(newStatus: string, statusMessage: string): void {
     this.savingStatus = true;
 
     // Cập nhật trạng thái
@@ -4774,7 +4807,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     // Xác nhận với khách hàng
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng sản phẩm sẽ được hoàn lại vào kho.')) {
+    if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng sản phẩm sẽ được hoàn lại vào kho.')) {
+      this.cancelOrderConfirmed();
+    }
+    return;
+  }
+
+  private cancelOrderConfirmed(): void {
+    if (!this.invoice || !this.invoice.id) {
       return;
     }
 
@@ -4803,14 +4843,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           this.loadInvoiceDetail();
         }, 1000);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('❌ Error cancelling order:', error);
         this.savingStatus = false;
 
         let errorMessage = 'Không thể hủy đơn hàng. Vui lòng thử lại!';
-        if (error.error?.message) {
+        if (error?.error?.message) {
           errorMessage = error.error.message;
-        } else if (error.message) {
+        } else if (error?.message) {
           errorMessage = error.message;
         }
 
@@ -4825,10 +4865,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   resetConfirmInvoiceForm(): void {
     this.confirmInvoiceData = {
       ngayDuKienGiao: '',
-      khoiLuong: null,
-      chieuDai: null,
-      chieuRong: null,
-      chieuCao: null,
+      khoiLuong: 8, // Fix cứng: 8 kg
+      chieuDai: 5, // Fix cứng: 5 cm
+      chieuRong: 7, // Fix cứng: 7 cm
+      chieuCao: 8, // Fix cứng: 8 cm
       phiGiaoHang: 0,
       nguoiChiuPhi: 'nguoi_gui',
     };
@@ -5267,7 +5307,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.hoaDonService.updateTrangThaiHoaDon(this.invoice.id, 'HUY').subscribe({
           next: (updatedInvoice) => {
             console.log('✅ Invoice status updated to HUY:', updatedInvoice);
-            
+
             // Bước 2: Nếu đơn hàng đã thanh toán, xử lý hoàn tiền
             if (currentInvoice.ngayThanhToan) {
               console.log('💰 Processing refund for paid invoice...');
@@ -5276,13 +5316,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                 refundReason: cancelNote || 'Hủy đơn hàng',
                 refundMethod: 'original_method' as const
               };
-              
+
               if (!this.invoice || !this.invoice.id) {
                 this.savingStatus = false;
                 this.showToast('Không tìm thấy hóa đơn', 'error');
                 return;
               }
-              
+
               this.hoaDonService.refundInvoice(this.invoice.id, refundRequest).subscribe({
                 next: (refundedInvoice) => {
                   console.log('✅ Refund processed successfully:', refundedInvoice);
@@ -5332,5 +5372,259 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         this.showToast('Lỗi khi tải thông tin hóa đơn', 'error');
       }
     });
+  }
+
+  /**
+   * Bắt đầu chỉnh sửa địa chỉ trong view (cho trạng thái CHO_XAC_NHAN)
+   */
+  startEditAddress(): void {
+    if (!this.invoice) return;
+
+    this.isEditingAddress = true;
+    // Khởi tạo editingAddress từ invoice hiện tại
+    this.editingAddress = {
+      diaChiChiTiet: this.invoice.diaChiChiTiet || '',
+      selectedProvinceCode: '',
+      selectedDistrictCode: '',
+      selectedWardCode: '',
+      tinhThanh: this.invoice.tinhThanh || '',
+      quanHuyen: this.invoice.quanHuyen || '',
+      phuongXa: this.invoice.phuongXa || ''
+    };
+
+    // Load provinces nếu chưa có
+    if (this.provinces.length === 0) {
+      this.loadProvinces();
+    }
+
+    // Nếu có tỉnh, tìm code và load districts
+    if (this.editingAddress.tinhThanh) {
+      setTimeout(() => {
+        this.findProvinceCodeAndLoadDistrictsForAddress(this.editingAddress.tinhThanh);
+      }, 100);
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Hủy chỉnh sửa địa chỉ
+   */
+  cancelEditAddress(): void {
+    this.isEditingAddress = false;
+    this.editingAddress = {
+      diaChiChiTiet: '',
+      selectedProvinceCode: '',
+      selectedDistrictCode: '',
+      selectedWardCode: '',
+      tinhThanh: '',
+      quanHuyen: '',
+      phuongXa: ''
+    };
+    this.selectedSavedAddressId = '';
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Lưu địa chỉ đã cập nhật
+   */
+  saveAddressUpdate(): void {
+    if (!this.invoice || !this.editingAddress) return;
+
+    // Validate
+    if (!this.editingAddress.diaChiChiTiet || !this.editingAddress.tinhThanh || !this.editingAddress.quanHuyen) {
+      alert('Vui lòng nhập đầy đủ thông tin địa chỉ');
+      return;
+    }
+
+    this.savingAddress = true;
+
+    // Cập nhật invoice với địa chỉ mới
+    const updateData: any = {
+      diaChiChiTiet: this.editingAddress.diaChiChiTiet,
+      tinhThanh: this.editingAddress.tinhThanh,
+      quanHuyen: this.editingAddress.quanHuyen,
+      phuongXa: this.editingAddress.phuongXa || '',
+      diaChiGiaoHang: `${this.editingAddress.diaChiChiTiet}, ${this.editingAddress.phuongXa}, ${this.editingAddress.quanHuyen}, ${this.editingAddress.tinhThanh}`
+    };
+
+    this.hoaDonService.updateHoaDonNew(this.invoice.id, updateData).subscribe({
+      next: (updatedInvoice: any) => {
+        this.savingAddress = false;
+        alert('Cập nhật địa chỉ thành công!');
+        this.isEditingAddress = false;
+        this.loadInvoiceDetail(); // Reload để hiển thị địa chỉ mới
+        this.cdr.detectChanges();
+      },
+      error: (error: any) => {
+        console.error('❌ Error updating address:', error);
+        this.savingAddress = false;
+        alert('Có lỗi xảy ra khi cập nhật địa chỉ');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Áp dụng địa chỉ đã lưu vào editingAddress
+   */
+  applyAddressToEditingAddress(address: any): void {
+    if (!this.editingAddress || !address) return;
+    
+    this.editingAddress.diaChiChiTiet = address.diaChi || '';
+    this.editingAddress.tinhThanh = address.tinhThanh || '';
+    this.editingAddress.quanHuyen = address.quanHuyen || '';
+    this.editingAddress.phuongXa = address.phuongXa || '';
+
+    // Tìm province code và load districts
+    if (this.editingAddress.tinhThanh) {
+      setTimeout(() => {
+        if (this.editingAddress && this.editingAddress.tinhThanh) {
+          this.findProvinceCodeAndLoadDistrictsForAddress(this.editingAddress.tinhThanh);
+        }
+      }, 100);
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Tìm province code và load districts cho editingAddress
+   */
+  findProvinceCodeAndLoadDistrictsForAddress(provinceName: string): void {
+    if (!provinceName || provinceName.trim() === '' || !this.provinces || !this.editingAddress) return;
+
+    const province = this.provinces.find((p: Province) => {
+      const pName = p.name.trim().toLowerCase();
+      const searchName = provinceName.trim().toLowerCase();
+      return pName === searchName ||
+             pName.includes(searchName) ||
+             searchName.includes(pName);
+    });
+
+    if (province && this.editingAddress) {
+      this.editingAddress.selectedProvinceCode = province.code;
+      this.editingAddress.tinhThanh = province.name;
+      this.loadDistrictsByProvinceForAddress(province.code);
+
+      // Nếu đã có quận/huyện, tìm và load wards
+      if (this.editingAddress.quanHuyen && this.districts) {
+        setTimeout(() => {
+          if (this.editingAddress?.quanHuyen && this.districts) {
+            const district = this.districts.find((d: District) => {
+              const dName = d.name.trim().toLowerCase();
+              const searchName = this.editingAddress!.quanHuyen.trim().toLowerCase();
+              return dName === searchName || searchName.includes(dName);
+            });
+            if (district && this.editingAddress) {
+              this.editingAddress.selectedDistrictCode = district.code;
+              this.loadWardsByDistrictForAddress(district.code);
+            }
+          }
+        }, 500);
+      }
+    }
+  }
+
+  /**
+   * Load districts cho editingAddress (sử dụng lại method hiện có)
+   */
+  loadDistrictsByProvinceForAddress(provinceCode: string): void {
+    this.loadDistrictsByProvince(provinceCode);
+    // Cập nhật selectedDistrictCode từ districts đã load
+    if (this.editingAddress?.quanHuyen && this.districts && this.districts.length > 0) {
+      const district = this.districts.find((d: District) => {
+        const dName = d.name.trim().toLowerCase();
+        const searchName = this.editingAddress!.quanHuyen.trim().toLowerCase();
+        return dName === searchName || searchName.includes(dName);
+      });
+      if (district && this.editingAddress) {
+        this.editingAddress.selectedDistrictCode = district.code;
+        this.loadWardsByDistrictForAddress(district.code);
+      }
+    }
+  }
+
+  /**
+   * Load wards cho editingAddress (sử dụng lại method hiện có)
+   */
+  loadWardsByDistrictForAddress(districtCode: string): void {
+    this.loadWardsByDistrict(districtCode);
+    // Cập nhật selectedWardCode từ wards đã load
+    if (this.editingAddress?.phuongXa && this.wards && this.wards.length > 0) {
+      const ward = this.wards.find((w: Ward) => {
+        const wName = w.name.trim().toLowerCase();
+        const searchName = this.editingAddress!.phuongXa.trim().toLowerCase();
+        return wName === searchName || searchName.includes(wName);
+      });
+      if (ward && this.editingAddress) {
+        this.editingAddress.selectedWardCode = ward.code;
+      }
+    }
+  }
+
+  /**
+   * Xử lý khi chọn tỉnh trong form cập nhật địa chỉ
+   */
+  onProvinceChangeForAddress(): void {
+    if (!this.editingAddress?.selectedProvinceCode) {
+      if (this.editingAddress) {
+        this.editingAddress.selectedDistrictCode = '';
+        this.editingAddress.selectedWardCode = '';
+        this.editingAddress.tinhThanh = '';
+        this.editingAddress.quanHuyen = '';
+        this.editingAddress.phuongXa = '';
+      }
+      this.districts = [];
+      this.wards = [];
+      return;
+    }
+
+    if (!this.provinces) return;
+    const province = this.provinces.find((p: Province) => p.code === this.editingAddress!.selectedProvinceCode);
+    if (province && this.editingAddress) {
+      this.editingAddress.tinhThanh = province.name;
+      this.loadDistrictsByProvinceForAddress(province.code);
+    }
+  }
+
+  /**
+   * Xử lý khi chọn quận/huyện trong form cập nhật địa chỉ
+   */
+  onDistrictChangeForAddress(): void {
+    if (!this.editingAddress?.selectedDistrictCode) {
+      if (this.editingAddress) {
+        this.editingAddress.selectedWardCode = '';
+        this.editingAddress.quanHuyen = '';
+        this.editingAddress.phuongXa = '';
+      }
+      this.wards = [];
+      return;
+    }
+
+    if (!this.districts) return;
+    const district = this.districts.find((d: District) => d.code === this.editingAddress!.selectedDistrictCode);
+    if (district && this.editingAddress) {
+      this.editingAddress.quanHuyen = district.name;
+      this.loadWardsByDistrictForAddress(district.code);
+    }
+  }
+
+  /**
+   * Xử lý khi chọn phường/xã trong form cập nhật địa chỉ
+   */
+  onWardChangeForAddress(): void {
+    if (!this.editingAddress?.selectedWardCode) {
+      if (this.editingAddress) {
+        this.editingAddress.phuongXa = '';
+      }
+      return;
+    }
+
+    if (!this.wards) return;
+    const ward = this.wards.find((w: Ward) => w.code === this.editingAddress!.selectedWardCode);
+    if (ward && this.editingAddress) {
+      this.editingAddress.phuongXa = ward.name;
+    }
   }
 }

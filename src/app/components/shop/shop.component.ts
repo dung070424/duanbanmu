@@ -422,12 +422,12 @@ export class ShopComponent implements OnInit, OnDestroy {
   // Không cần filter products nữa vì không hiển thị sản phẩm trên trang chủ
   // Method này đã được loại bỏ
 
-  addToCart(product: SanPhamResponse): void {
+  async addToCart(product: SanPhamResponse): Promise<void> {
     // Lấy chi tiết sản phẩm đầu tiên (hoặc có thể cho user chọn size/color)
     this.chiTietSanPhamService.getBySanPhamId(product.id).subscribe({
-      next: (chiTietList) => {
+      next: async (chiTietList) => {
         if (!chiTietList || chiTietList.length === 0) {
-          alert('Sản phẩm này hiện không có chi tiết. Vui lòng liên hệ cửa hàng!');
+          this.showToast('Sản phẩm này hiện không có chi tiết. Vui lòng liên hệ cửa hàng!', 'warning');
           return;
         }
 
@@ -436,20 +436,20 @@ export class ShopComponent implements OnInit, OnDestroy {
           chiTietList.find((ct) => ct.trangThai && parseInt(ct.soLuongTon) > 0) || chiTietList[0];
 
         if (!chiTiet) {
-          alert('Sản phẩm này hiện không có sẵn!');
+          this.showToast('Sản phẩm này hiện không có sẵn!', 'warning');
           return;
         }
 
         // Kiểm tra số lượng tồn
         const stock = parseInt(chiTiet.soLuongTon) || 0;
         if (stock <= 0) {
-          alert('Sản phẩm này đã hết hàng!');
+          this.showToast('Sản phẩm này đã hết hàng!', 'warning');
           return;
         }
 
         // Cảnh báo nếu sắp hết hàng (còn ít hơn 5 sản phẩm)
         if (stock <= 5) {
-          const confirmAdd = confirm(
+          const confirmAdd = await this.showConfirm(
             `⚠️ Cảnh báo: Sản phẩm chỉ còn ${stock} cái trong kho.\n\nBạn có muốn thêm vào giỏ hàng không?`
           );
           if (!confirmAdd) {
@@ -515,14 +515,14 @@ export class ShopComponent implements OnInit, OnDestroy {
           // Phát sự kiện để header component cập nhật
           window.dispatchEvent(new Event('cartUpdated'));
           
-          alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+          this.showToast(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`, 'success');
           return;
         }
 
         // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
         this.getOrCreateCart().then((cartId) => {
           if (!cartId) {
-            alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
+            this.showToast('Không thể tạo giỏ hàng. Vui lòng thử lại!', 'error');
             return;
           }
 
@@ -546,7 +546,7 @@ export class ShopComponent implements OnInit, OnDestroy {
               // Phát sự kiện để header component cập nhật
               window.dispatchEvent(new Event('cartUpdated'));
               
-              alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+              this.showToast(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`, 'success');
             },
             error: (error) => {
               console.error('Error adding to cart:', error);
@@ -554,14 +554,14 @@ export class ShopComponent implements OnInit, OnDestroy {
                 error.error?.error ||
                 error.message ||
                 'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
-              alert(errorMsg);
+              this.showToast(errorMsg, 'error');
             },
           });
         });
       },
       error: (error) => {
         console.error('Error loading product details:', error);
-        alert('Không thể tải thông tin sản phẩm. Vui lòng thử lại!');
+        this.showToast('Không thể tải thông tin sản phẩm. Vui lòng thử lại!', 'error');
       },
     });
   }
@@ -687,7 +687,7 @@ export class ShopComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('❌ Error creating cart:', error);
         const errorMsg = error.error?.message || error.message || 'Không thể tạo giỏ hàng';
-        alert(`Lỗi: ${errorMsg}`);
+        this.showToast(`Lỗi: ${errorMsg}`, 'error');
         resolve(null);
       },
     });
@@ -860,14 +860,14 @@ export class ShopComponent implements OnInit, OnDestroy {
       console.log('   - savedCart length:', savedCart.length);
 
       this.updateCartCount();
-      alert(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`);
+      this.showToast(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`, 'success');
       return;
     }
 
     // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
     this.getOrCreateCart().then((cartId) => {
       if (!cartId) {
-        alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
+        this.showToast('Không thể tạo giỏ hàng. Vui lòng thử lại!', 'error');
         return;
       }
 
@@ -885,7 +885,7 @@ export class ShopComponent implements OnInit, OnDestroy {
       this.hoaDonChoService.addItemToCart(cartId, gioHangItem).subscribe({
         next: (updatedCart) => {
           this.updateCartCount();
-          alert(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`);
+          this.showToast(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`, 'success');
         },
         error: (error) => {
           console.error('Error adding to cart:', error);
@@ -1099,5 +1099,157 @@ export class ShopComponent implements OnInit, OnDestroy {
       this.router.navigate(['/shop']);
       this.cdr.detectChanges();
     }
+  }
+
+  /**
+   * Hiển thị toast notification ở giữa màn hình (không dùng class)
+   */
+  showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
+    const toast = document.createElement('div');
+    const colors: { [key: string]: string } = {
+      success: '#28a745',
+      error: '#dc3545',
+      warning: '#ffc107',
+      info: '#17a2b8'
+    };
+    const icons: { [key: string]: string } = {
+      success: '✓',
+      error: '✕',
+      warning: '⚠',
+      info: 'ℹ'
+    };
+    
+    toast.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: ${colors[type]};
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 10000;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 400px;
+      text-align: center;
+      animation: fadeIn 0.3s ease-out;
+    `;
+    
+    toast.innerHTML = `
+      <span style="font-size: 18px;">${icons[type]}</span>
+      <span>${message}</span>
+    `;
+    
+    if (!document.getElementById('toast-animations')) {
+      const style = document.createElement('style');
+      style.id = 'toast-animations';
+      style.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translate(-50%, -60%); }
+          to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; transform: translate(-50%, -50%); }
+          to { opacity: 0; transform: translate(-50%, -40%); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'fadeOut 0.3s ease-out';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  /**
+   * Hiển thị confirm dialog ở giữa màn hình (không dùng class)
+   */
+  showConfirm(message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease-out;
+      `;
+      
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+      `;
+      
+      dialog.innerHTML = `
+        <div style="margin-bottom: 20px; font-size: 16px; color: #333;">${message}</div>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="confirm-yes" style="
+            padding: 10px 24px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+          ">Xác nhận</button>
+          <button id="confirm-no" style="
+            padding: 10px 24px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+          ">Hủy</button>
+        </div>
+      `;
+      
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      
+      const removeDialog = () => {
+        overlay.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => overlay.remove(), 200);
+      };
+      
+      dialog.querySelector('#confirm-yes')?.addEventListener('click', () => {
+        resolve(true);
+        removeDialog();
+      });
+      
+      dialog.querySelector('#confirm-no')?.addEventListener('click', () => {
+        resolve(false);
+        removeDialog();
+      });
+      
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          resolve(false);
+          removeDialog();
+        }
+      });
+    });
   }
 }
