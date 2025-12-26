@@ -49,7 +49,7 @@ export class ManufacturersComponent implements OnInit {
   // Track which fields have been touched by user
   touchedFields: Set<string> = new Set();
 
-  constructor(private manufacturerApi: ManufacturerApiService, private cdr: ChangeDetectorRef) {}
+  constructor(private manufacturerApi: ManufacturerApiService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.fetchManufacturers();
@@ -128,15 +128,15 @@ export class ManufacturersComponent implements OnInit {
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisiblePages = 5;
-    let startPage = Math.max(1, this.currentPage + 1 - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+    let startPage = Math.max(0, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages - 1, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      startPage = Math.max(0, endPage - maxVisiblePages + 1);
     }
 
     for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
+      pages.push(i + 1);
     }
     return pages;
   }

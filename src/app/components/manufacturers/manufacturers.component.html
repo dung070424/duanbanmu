@@ -12,13 +12,8 @@
           <label class="filter-label">Tìm kiếm</label>
           <div class="search-input-wrapper">
             <i class="bi bi-search search-icon"></i>
-            <input
-              type="text"
-              class="search-input"
-              placeholder="Mã, tên nhà sản xuất..."
-              [(ngModel)]="searchTerm"
-              (input)="onSearchChange()"
-            />
+            <input type="text" class="search-input" placeholder="Tên nhà sản xuất..." [(ngModel)]="searchTerm"
+              (input)="onSearchChange()" />
           </div>
         </div>
 
@@ -26,118 +21,74 @@
           <label class="filter-label">Trạng thái</label>
           <div class="radio-group">
             <label class="radio-item">
-              <input
-                type="radio"
-                name="status"
-                value="all"
-                [(ngModel)]="selectedStatus"
-                (change)="onStatusChange()"
-                checked
-              />
+              <input type="radio" name="status" value="all" [(ngModel)]="selectedStatus" (change)="onStatusChange()" />
               <span class="radio-custom"></span>
               <span class="radio-text">Tất cả</span>
             </label>
             <label class="radio-item">
-              <input
-                type="radio"
-                name="status"
-                value="true"
-                [(ngModel)]="selectedStatus"
-                (change)="onStatusChange()"
-              />
+              <input type="radio" name="status" value="true" [(ngModel)]="selectedStatus" (change)="onStatusChange()" />
               <span class="radio-custom"></span>
               <span class="radio-text">Đang hoạt động</span>
             </label>
             <label class="radio-item">
-              <input
-                type="radio"
-                name="status"
-                value="false"
-                [(ngModel)]="selectedStatus"
-                (change)="onStatusChange()"
-              />
+              <input type="radio" name="status" value="false" [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()" />
               <span class="radio-custom"></span>
-              <span class="radio-text">Ngừng hoạt động</span>
+              <span class="radio-text">Ngừng</span>
             </label>
           </div>
         </div>
+      </div>
 
-        <div class="action-section">
-          <button class="reset-btn" (click)="resetFilter()">
-            <i class="bi bi-arrow-clockwise"></i>
-            Làm mới
-          </button>
+      <div class="info-and-actions">
+        <div class="total-customers">Tổng số: {{ totalElements }}</div>
+        <div class="action-buttons">
+          <button class="btn-reset" (click)="resetFilter()">Đặt lại bộ lọc</button>
+          <button class="btn-add" (click)="openAddModal()">Thêm Nhà Sản Xuất</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Danh Sách Màu Sắc Section -->
-  <div class="list-section">
-    <div class="list-header">
-      <div class="list-title">
-        <i class="bi bi-building"></i>
-        <h3>Danh sách nhà sản xuất</h3>
-      </div>
-      <button class="add-btn" (click)="openAddModal()">
-        <i class="bi bi-plus-circle"></i>
-        Thêm mới
-      </button>
+  <!-- Danh Sách Section -->
+  <div class="customer-list-section">
+    <div class="section-title">
+      <i class="bi bi-building"></i>
+      <h3>Danh Sách Nhà Sản Xuất</h3>
     </div>
 
-    <!-- Bảng Danh Sách -->
     <div class="table-container">
       <table class="data-table">
         <thead>
           <tr>
+            <th style="width: 60px">STT</th>
             <th>Tên nhà sản xuất</th>
             <th>Quốc gia</th>
             <th>Mô tả</th>
             <th>Trạng thái</th>
-            <th>Thao tác</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let manufacturer of filteredManufacturers; trackBy: trackByManufacturerId">
+          <tr *ngFor="let manufacturer of filteredManufacturers; let i = index; trackBy: trackByManufacturerId">
+            <td class="text-center">{{ currentPage * pageSize + i + 1 }}</td>
+            <td>{{ manufacturer.name }}</td>
+            <td>{{ manufacturer.country || '-' }}</td>
+            <td>{{ manufacturer.description || '-' }}</td>
             <td>
-              <div class="manufacturer-info">
-                <div class="manufacturer-name">{{ manufacturer.name }}</div>
-              </div>
-            </td>
-            <td>
-              <span class="country">{{ manufacturer.country || '-' }}</span>
-            </td>
-            <td>
-              <span class="description" [title]="manufacturer.description">
-                {{ manufacturer.description || '-' }}
-              </span>
-            </td>
-            <td>
-              <span class="status-badge" [class]="manufacturer.status ? 'active' : 'inactive'">
-                {{ manufacturer.status ? 'Hoạt động' : 'Ngừng' }}
+              <span class="status-badge" [class.active]="manufacturer.status" [class.inactive]="!manufacturer.status">
+                {{ manufacturer.status ? 'Đang hoạt động' : 'Ngừng' }}
               </span>
             </td>
             <td>
               <div class="action-buttons">
-                <button
-                  class="action-btn view-btn"
-                  (click)="viewManufacturer(manufacturer)"
-                  title="Xem chi tiết"
-                >
-                  <i class="bi bi-eye"></i>
-                </button>
-                <button
-                  class="action-btn edit-btn"
-                  (click)="openEditModal(manufacturer)"
-                  title="Chỉnh sửa"
-                >
+                <button class="btn-edit" (click)="openEditModal(manufacturer)" title="Chỉnh sửa">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button
-                  class="action-btn delete-btn"
-                  (click)="deleteManufacturer(manufacturer)"
-                  title="Xóa"
-                >
+                <button class="btn-view" (click)="viewManufacturer(manufacturer)" title="Xem chi tiết">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn-delete" (click)="deleteManufacturer(manufacturer)" title="Xóa">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
@@ -145,77 +96,59 @@
           </tr>
         </tbody>
       </table>
-    </div>
 
-    <!-- Phân Trang -->
-    <div class="pagination-section">
-      <div class="pagination-left">
-        <div class="page-size-control">
-          <label>Hiển thị</label>
-          <select class="page-size-select" [ngModel]="pageSize" (change)="onPageSizeChange($event)">
-            <option [ngValue]="5">5</option>
-            <option [ngValue]="10">10</option>
-            <option [ngValue]="20">20</option>
-            <option [ngValue]="50">50</option>
-          </select>
-          <span>mục / trang</span>
-        </div>
-      </div>
-
-      <div class="pagination-right">
-        <div>
-          <span>
-            Hiển thị {{ currentPage * pageSize + 1 }} -
-            {{ Math.min((currentPage + 1) * pageSize, totalElements) }} / {{ totalElements }} mục
-          </span>
-        </div>
-        <button class="pagination-btn" [disabled]="currentPage === 0" (click)="goToPage(0)">
-          <i class="bi bi-chevron-double-left"></i>
-        </button>
-        <button
-          class="pagination-btn"
-          [disabled]="currentPage === 0"
-          (click)="goToPage(currentPage - 1)"
-        >
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <button
-          *ngFor="let pageNum of getPageNumbers()"
-          class="pagination-btn"
-          [class.active]="pageNum - 1 === currentPage"
-          (click)="goToPage(pageNum - 1)"
-        >
-          {{ pageNum }}
-        </button>
-        <button
-          class="pagination-btn"
-          [disabled]="currentPage >= totalPages - 1"
-          (click)="goToPage(currentPage + 1)"
-        >
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <button
-          class="pagination-btn"
-          [disabled]="currentPage >= totalPages - 1"
-          (click)="goToPage(totalPages - 1)"
-        >
-          <i class="bi bi-chevron-double-right"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div *ngIf="filteredManufacturers.length === 0" class="empty-state">
-      <div class="empty-icon">
+      <!-- No data message -->
+      <div *ngIf="filteredManufacturers.length === 0" class="no-data-message">
         <i class="bi bi-building"></i>
+        <h4>Không tìm thấy dữ liệu nào</h4>
+        <p>Hãy thử thay đổi bộ lọc hoặc thêm mới</p>
       </div>
-      <h4>Không tìm thấy nhà sản xuất nào</h4>
-      <p>Hãy thử thay đổi bộ lọc hoặc thêm nhà sản xuất mới</p>
+    </div>
+  </div>
+
+  <!-- Pagination Section -->
+  <div class="pagination-section">
+    <div class="pagination-left">
+      <div class="page-size-control">
+        <label>Hiển thị</label>
+        <select class="page-size-select" [ngModel]="pageSize" (change)="changePageSize($any($event.target).value)">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+        <span>mục / trang</span>
+      </div>
+    </div>
+
+    <div class="pagination-right">
+      <div>
+        <span>
+          Hiển thị {{ currentPage * pageSize + 1 }} -
+          {{ Math.min((currentPage + 1) * pageSize, totalElements) }} / {{ totalElements }} mục
+        </span>
+      </div>
+      <button class="pagination-btn" [disabled]="currentPage === 0" (click)="goToPage(0)">
+        <i class="bi bi-chevron-double-left"></i>
+      </button>
+      <button class="pagination-btn" [disabled]="currentPage === 0" (click)="prevPage()">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button *ngFor="let pageNum of getPageNumbers()" class="pagination-btn"
+        [class.active]="pageNum - 1 === currentPage" (click)="goToPage(pageNum - 1)">
+        {{ pageNum }}
+      </button>
+      <button class="pagination-btn" [disabled]="currentPage >= totalPages - 1" (click)="nextPage()">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+      <button class="pagination-btn" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(totalPages - 1)">
+        <i class="bi bi-chevron-double-right"></i>
+      </button>
     </div>
   </div>
 </div>
 
-<!-- Modal thêm/sửa/xem nhà sản xuất -->
+<!-- Modal thêm/sửa/xem -->
 <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
@@ -232,53 +165,35 @@
           <div class="row g-3 mb-4">
             <div class="col-md-6">
               <label class="form-label fw-semibold">
-                <i class="bi bi-building me-1"></i>Tên nhà sản xuất
+                <i class="bi bi-building me-1"></i>Tên nhà sản xuất <span class="text-danger">*</span>
               </label>
-              <input
-                type="text"
-                class="form-control"
-                [class.is-invalid]="hasFieldError('name')"
-                [(ngModel)]="newManufacturer.name"
-                name="name"
-                [readonly]="isViewMode"
-                (blur)="markFieldTouched('name')"
-                placeholder="Nhập tên nhà sản xuất"
-              />
+              <input type="text" class="form-control" [class.is-invalid]="hasFieldError('name')"
+                [(ngModel)]="newManufacturer.name" name="name" [readonly]="isViewMode" (blur)="markFieldTouched('name')"
+                placeholder="Nhập tên nhà sản xuất" />
               <div *ngIf="hasFieldError('name')" class="invalid-feedback d-block">
                 {{ getFieldError('name') }}
               </div>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">
-                <i class="bi bi-globe me-1"></i>Quốc gia
+                <i class="bi bi-globe me-1"></i>Quốc gia <span class="text-danger">*</span>
               </label>
-              <input
-                type="text"
-                class="form-control"
-                [class.is-invalid]="hasFieldError('country')"
-                [(ngModel)]="newManufacturer.country"
-                name="country"
-                [readonly]="isViewMode"
-                (blur)="markFieldTouched('country')"
-                placeholder="Nhập quốc gia"
-              />
+              <input type="text" class="form-control" [class.is-invalid]="hasFieldError('country')"
+                [(ngModel)]="newManufacturer.country" name="country" [readonly]="isViewMode"
+                (blur)="markFieldTouched('country')" placeholder="Nhập quốc gia" />
               <div *ngIf="hasFieldError('country')" class="invalid-feedback d-block">
                 {{ getFieldError('country') }}
               </div>
             </div>
+
           </div>
 
           <div class="row g-3 mb-4">
-            <div class="col-md-6">
+            <div class="col-12">
               <label class="form-label fw-semibold">
                 <i class="bi bi-toggle-on me-1"></i>Trạng thái
               </label>
-              <select
-                class="form-select"
-                [(ngModel)]="newManufacturer.status"
-                name="status"
-                [disabled]="isViewMode"
-              >
+              <select class="form-control" [(ngModel)]="newManufacturer.status" name="status" [disabled]="isViewMode">
                 <option [ngValue]="true">Đang hoạt động</option>
                 <option [ngValue]="false">Ngừng</option>
               </select>
@@ -286,38 +201,26 @@
           </div>
 
           <div class="row g-3 mb-4">
-            <div class="col-md-12">
+            <div class="col-12">
               <label class="form-label fw-semibold">
                 <i class="bi bi-file-text me-1"></i>Mô tả
               </label>
-              <textarea
-                class="form-control"
-                [class.is-invalid]="hasFieldError('description')"
-                rows="4"
-                [(ngModel)]="newManufacturer.description"
-                name="description"
-                [readonly]="isViewMode"
-                (blur)="markFieldTouched('description')"
-                placeholder="Nhập mô tả nhà sản xuất"
-              ></textarea>
+              <textarea class="form-control" rows="4" [(ngModel)]="newManufacturer.description" name="description"
+                [readonly]="isViewMode" (blur)="markFieldTouched('description')"
+                [class.is-invalid]="hasFieldError('description')" placeholder="Nhập mô tả..."></textarea>
               <div *ngIf="hasFieldError('description')" class="invalid-feedback d-block">
                 {{ getFieldError('description') }}
               </div>
             </div>
           </div>
+
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">
           {{ isViewMode ? 'Đóng' : 'Hủy' }}
         </button>
-        <button
-          *ngIf="!isViewMode"
-          type="button"
-          class="btn btn-primary"
-          (click)="saveManufacturer()"
-        >
-          <i class="bi bi-check-lg me-1"></i>
+        <button *ngIf="!isViewMode" type="button" class="btn btn-primary" (click)="saveManufacturer()">
           {{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}
         </button>
       </div>
@@ -326,45 +229,27 @@
 </div>
 
 <!-- Modal xác nhận xóa -->
-<div
-  class="modal fade"
-  [class.show]="showDeleteModal"
-  [style.display]="showDeleteModal ? 'block' : 'none'"
->
+<div class="modal fade" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header text-white">
-        <h5 class="modal-title">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          Xác nhận xóa
-        </h5>
-        <button
-          type="button"
-          class="btn-close btn-close-white"
-          (click)="closeDeleteModal()"
-        ></button>
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận xóa</h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
       </div>
       <div class="modal-body">
-        <div class="text-center">
-          <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem"></i>
-          <h5 class="mt-3">Bạn có chắc chắn muốn xóa?</h5>
-          <p class="text-muted">
-            Nhà sản xuất <strong>"{{ manufacturerToDelete?.name }}"</strong> sẽ bị xóa vĩnh viễn.
-          </p>
-          <p class="text-danger fw-semibold">Hành động này không thể hoàn tác!</p>
-        </div>
+        <p>
+          Bạn có chắc chắn muốn xóa nhà sản xuất
+          <strong>{{ manufacturerToDelete?.name }}</strong> không?
+        </p>
+        <p class="text-danger">Hành động này không thể hoàn tác!</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">
-          <i class="bi bi-x-lg me-1"></i>Hủy
-        </button>
-        <button type="button" class="btn btn-danger" (click)="confirmDelete()">
-          <i class="bi bi-trash me-1"></i>Xóa
-        </button>
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Hủy</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDelete()">Xóa</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Backdrop -->
+<!-- Overlay -->
 <div *ngIf="showModal || showDeleteModal" class="modal-backdrop fade show"></div>

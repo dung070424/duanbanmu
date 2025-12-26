@@ -58,7 +58,7 @@ export class CongNgheAnToanComponent implements OnInit {
   // Math for template
   Math = Math;
 
-  constructor(private api: CongNgheAnToanApiService, private cdr: ChangeDetectorRef) {}
+  constructor(private api: CongNgheAnToanApiService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.fetch(0);
@@ -90,7 +90,7 @@ export class CongNgheAnToanComponent implements OnInit {
           console.error('Error fetching data:', error);
           alert(
             'Lỗi khi tải dữ liệu: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
+            (error.error?.message || error.message || 'Không thể kết nối đến server')
           );
         },
       });
@@ -247,7 +247,7 @@ export class CongNgheAnToanComponent implements OnInit {
           console.error('Cập nhật thất bại:', error);
           alert(
             'Lỗi khi cập nhật công nghệ an toàn: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
+            (error.error?.message || error.message || 'Không thể kết nối đến server')
           );
         },
       });
@@ -262,7 +262,7 @@ export class CongNgheAnToanComponent implements OnInit {
           console.error('Thêm mới thất bại:', error);
           alert(
             'Lỗi khi thêm mới công nghệ an toàn: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
+            (error.error?.message || error.message || 'Không thể kết nối đến server')
           );
         },
       });
@@ -282,7 +282,7 @@ export class CongNgheAnToanComponent implements OnInit {
         console.error('Xóa thất bại:', error);
         alert(
           'Lỗi khi xóa công nghệ an toàn: ' +
-            (error.error?.message || error.message || 'Không thể kết nối đến server')
+          (error.error?.message || error.message || 'Không thể kết nối đến server')
         );
       },
     });
@@ -338,5 +338,21 @@ export class CongNgheAnToanComponent implements OnInit {
 
   getStatusClass(trangThai: boolean): string {
     return trangThai ? 'badge-success' : 'badge-danger';
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(0, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages - 1, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(0, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i + 1);
+    }
+    return pages;
   }
 }
