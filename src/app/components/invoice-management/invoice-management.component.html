@@ -695,47 +695,11 @@
         </div>
 
         <form>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label required">Ngày dự kiến giao *</label>
-                <input type="date" class="form-control" [(ngModel)]="confirmInvoiceData.ngayDuKienGiao"
-                  name="ngayDuKienGiao" [min]="getTodayDate()" required />
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label class="form-label required">Khối lượng (kg) *</label>
-                <input type="number" class="form-control" [(ngModel)]="confirmInvoiceData.khoiLuong" name="khoiLuong"
-                  min="0" step="0.01" placeholder="0.00" required />
-              </div>
-            </div>
-          </div>
-
+          <!-- Shipping Info Removed as per request -->
           <div class="row">
             <div class="col-12">
-              <label class="form-label required">Kích thước (cm) *</label>
-            </div>
-            <div class="col-md-4">
-              <div class="mb-3">
-                <label class="form-label small">Chiều dài</label>
-                <input type="number" class="form-control" [(ngModel)]="confirmInvoiceData.chieuDai" name="chieuDai"
-                  min="0" step="0.1" placeholder="0.0" required />
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="mb-3">
-                <label class="form-label small">Chiều rộng</label>
-                <input type="number" class="form-control" [(ngModel)]="confirmInvoiceData.chieuRong" name="chieuRong"
-                  min="0" step="0.1" placeholder="0.0" required />
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="mb-3">
-                <label class="form-label small">Chiều cao</label>
-                <input type="number" class="form-control" [(ngModel)]="confirmInvoiceData.chieuCao" name="chieuCao"
-                  min="0" step="0.1" placeholder="0.0" required />
-              </div>
+              <p class="text-muted fst-italic">Thông tin vận chuyển (Ngày giao, Khối lượng, Kích thước) đã được ẩn và sẽ
+                sử dụng giá trị mặc định.</p>
             </div>
           </div>
 

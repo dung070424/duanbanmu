@@ -3212,11 +3212,11 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
    */
   resetConfirmInvoiceForm(): void {
     this.confirmInvoiceData = {
-      ngayDuKienGiao: '',
-      khoiLuong: null,
-      chieuDai: null,
-      chieuRong: null,
-      chieuCao: null,
+      ngayDuKienGiao: new Date().toISOString().split('T')[0], // Default to today
+      khoiLuong: 0,
+      chieuDai: 0,
+      chieuRong: 0,
+      chieuCao: 0,
       phiGiaoHang: 30000,
       nguoiChiuPhi: 'nguoi_gui',
     };
@@ -3249,18 +3249,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     }
 
     // Validate form
-    if (!this.confirmInvoiceData.ngayDuKienGiao) {
-      this.showToast('Vui lòng nhập ngày dự kiến giao', 'warning');
-      return;
-    }
-
-    if (!this.confirmInvoiceData.khoiLuong || this.confirmInvoiceData.khoiLuong <= 0) {
-      this.showToast('Vui lòng nhập khối lượng hợp lệ', 'warning');
-      return;
-    }
-
-    if (!this.confirmInvoiceData.chieuDai || !this.confirmInvoiceData.chieuRong || !this.confirmInvoiceData.chieuCao) {
-      this.showToast('Vui lòng nhập đầy đủ kích thước (dài, rộng, cao)', 'warning');
+    // Validation for shipping fee only
+    if (this.confirmInvoiceData.phiGiaoHang < 0) {
+      this.showToast('Phí giao hàng không hợp lệ', 'warning');
       return;
     }
 
@@ -3314,11 +3305,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
           trangThai: 'DA_XAC_NHAN', // Cập nhật trạng thái từ "CHỜ XÁC NHẬN" sang "ĐÃ XÁC NHẬN"
 
           // Thông tin vận chuyển mới
-          ngayDuKienGiao: new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString(),
-          khoiLuong: this.confirmInvoiceData.khoiLuong,
-          chieuDai: this.confirmInvoiceData.chieuDai,
-          chieuRong: this.confirmInvoiceData.chieuRong,
-          chieuCao: this.confirmInvoiceData.chieuCao,
+          // Thông tin vận chuyển mới (Sử dụng giá trị mặc định hoặc từ form hidden)
+          ngayDuKienGiao: this.confirmInvoiceData.ngayDuKienGiao ? new Date(this.confirmInvoiceData.ngayDuKienGiao).toISOString() : new Date().toISOString(),
+          khoiLuong: this.confirmInvoiceData.khoiLuong || 0,
+          chieuDai: this.confirmInvoiceData.chieuDai || 0,
+          chieuRong: this.confirmInvoiceData.chieuRong || 0,
+          chieuCao: this.confirmInvoiceData.chieuCao || 0,
           phiGiaoHang: this.confirmInvoiceData.phiGiaoHang,
           nguoiChiuPhi: this.confirmInvoiceData.nguoiChiuPhi,
         };
