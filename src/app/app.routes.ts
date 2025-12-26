@@ -81,8 +81,7 @@ export const routes: Routes = [
   {
     path: 'customer/orders',
     component: CustomerOrdersComponent,
-    canActivate: [AuthGuard, roleGuard],
-    data: { roles: ['CUSTOMER'] },
+    // Bỏ guard để cho phép xem đơn hàng khi chưa đăng nhập (load từ localStorage)
   },
   {
     path: 'customer/orders/:id',

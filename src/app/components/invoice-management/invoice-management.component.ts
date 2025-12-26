@@ -933,8 +933,20 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   // Helper for templates: get derived payment status from invoice
   // QUAN TRỌNG: Normalize status để handle cả "HUY" và "DA_HUY"
+  // QUAN TRỌNG: Đơn hàng online (viTriBanHang = "Online" hoặc nhanVienId = null) luôn có trạng thái "Đã thanh toán"
   getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
     if (!invoice || !invoice.trangThai) return 'pending';
+    
+    // Kiểm tra nếu là đơn hàng online thì luôn trả về 'paid'
+    const isOnlineOrder = invoice.viTriBanHang === 'Online' || 
+                         invoice.nhanVienId === null || 
+                         invoice.nhanVienId === undefined ||
+                         (invoice.phuongThucThanhToan && invoice.phuongThucThanhToan.toLowerCase().includes('online'));
+    
+    if (isOnlineOrder) {
+      return 'paid';
+    }
+    
     // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
     const normalizedStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
     if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';

@@ -1,0 +1,39 @@
+<!-- Notification Toast -->
+<div *ngIf="notification" class="notification-toast" [class]="'notification-' + notification.type">
+  <div class="notification-content">
+    <div class="notification-icon">
+      <i class="fas" [ngClass]="getNotificationIcon()"></i>
+    </div>
+    <div class="notification-body">
+      <div class="notification-title" *ngIf="notification.title">{{ notification.title }}</div>
+      <div class="notification-message">{{ notification.message }}</div>
+    </div>
+    <button class="notification-close" (click)="closeNotification()" type="button">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Confirmation Dialog -->
+<div *ngIf="confirmDialog" class="confirm-dialog-overlay" (click)="handleConfirm(false)">
+  <div class="confirm-dialog" (click)="$event.stopPropagation()">
+    <div class="confirm-header">
+      <h3 *ngIf="confirmDialog.config.title">{{ confirmDialog.config.title }}</h3>
+      <button class="confirm-close" (click)="handleConfirm(false)" type="button">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="confirm-body">
+      <p>{{ confirmDialog.config.message }}</p>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn-confirm" (click)="handleConfirm(true)" type="button">
+        {{ confirmDialog.config.confirmText || 'Xác nhận' }}
+      </button>
+      <button class="btn-cancel" (click)="handleConfirm(false)" type="button">
+        {{ confirmDialog.config.cancelText || 'Hủy' }}
+      </button>
+    </div>
+  </div>
+</div>
+

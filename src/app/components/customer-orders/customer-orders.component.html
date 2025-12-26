@@ -82,36 +82,100 @@
         </div>
 
         <div class="order-body">
-          <!-- Danh sách sản phẩm -->
-          <div class="order-products" *ngIf="order.danhSachSanPham && order.danhSachSanPham.length > 0">
+          <!-- Danh sách sản phẩm - Ưu tiên danhSachChiTiet (từ backend), fallback về danhSachSanPham -->
+          <div class="order-products" *ngIf="(order.danhSachChiTiet && order.danhSachChiTiet.length > 0) || (order.danhSachSanPham && order.danhSachSanPham.length > 0)">
             <h4><i class="fas fa-box"></i> Sản phẩm trong đơn hàng:</h4>
             <div class="products-list">
-              <div *ngFor="let product of order.danhSachSanPham" class="product-item">
+              <!-- Hiển thị từ danhSachChiTiet (backend format) -->
+              <ng-container *ngIf="order.danhSachChiTiet && order.danhSachChiTiet.length > 0">
+                <div *ngFor="let product of order.danhSachChiTiet" class="product-item">
                 <div class="product-info">
                   <img 
                     *ngIf="product.anhSanPham" 
                     [src]="product.anhSanPham" 
-                    [alt]="product.tenSanPham"
+                    [alt]="product.tenSanPham || 'Sản phẩm'"
                     class="product-image"
                   />
+                  <div *ngIf="!product.anhSanPham" class="product-image-placeholder">
+                    <i class="fas fa-image"></i>
+                  </div>
                   <div class="product-details">
                     <h5>{{ product.tenSanPham || 'N/A' }}</h5>
-                    <p class="product-meta" *ngIf="product.mauSac || product.kichThuoc">
-                      <span *ngIf="product.mauSac">Màu: {{ product.mauSac }}</span>
-                      <span *ngIf="product.kichThuoc"> | Size: {{ product.kichThuoc }}</span>
-                    </p>
-                    <p class="product-code" *ngIf="product.maSanPham">
-                      Mã: {{ product.maSanPham }}
-                    </p>
+                    <div class="product-meta-details">
+                      <p class="product-meta" *ngIf="product.maSanPham">
+                        <i class="fas fa-barcode"></i> Mã: <strong>{{ product.maSanPham }}</strong>
+                      </p>
+                      <p class="product-meta" *ngIf="product.mauSac">
+                        <i class="fas fa-palette"></i> Màu: 
+                        <span class="color-badge" *ngIf="product.mauSac">{{ product.mauSac }}</span>
+                      </p>
+                      <p class="product-meta" *ngIf="product.kichThuoc">
+                        <i class="fas fa-ruler"></i> Kích thước: <strong>{{ product.kichThuoc }}</strong>
+                      </p>
+                      <p class="product-meta" *ngIf="product.nhaSanXuat">
+                        <i class="fas fa-industry"></i> Nhà sản xuất: <strong>{{ product.nhaSanXuat }}</strong>
+                      </p>
+                      <p class="product-meta" *ngIf="product.donGia">
+                        <i class="fas fa-tag"></i> Đơn giá: <strong>{{ formatCurrency(product.donGia) }}</strong>
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div class="product-quantity">
+                  <span class="quantity-label">Số lượng</span>
                   <span class="quantity">x{{ product.soLuong || 1 }}</span>
                 </div>
                 <div class="product-price">
-                  {{ formatCurrency(product.thanhTien || (product.donGia * (product.soLuong || 1))) }}
+                  <span class="price-label">Thành tiền</span>
+                  <span class="price-value">{{ formatCurrency(product.thanhTien || (product.donGia * (product.soLuong || 1))) }}</span>
                 </div>
               </div>
+              </ng-container>
+              <!-- Fallback về danhSachSanPham nếu không có danhSachChiTiet -->
+              <ng-container *ngIf="(!order.danhSachChiTiet || order.danhSachChiTiet.length === 0) && order.danhSachSanPham && order.danhSachSanPham.length > 0">
+                <div *ngFor="let product of order.danhSachSanPham" class="product-item">
+                  <div class="product-info">
+                    <img 
+                      *ngIf="product.anhSanPham" 
+                      [src]="product.anhSanPham" 
+                      [alt]="product.tenSanPham || 'Sản phẩm'"
+                      class="product-image"
+                    />
+                    <div *ngIf="!product.anhSanPham" class="product-image-placeholder">
+                      <i class="fas fa-image"></i>
+                    </div>
+                    <div class="product-details">
+                      <h5>{{ product.tenSanPham || 'N/A' }}</h5>
+                      <div class="product-meta-details">
+                        <p class="product-meta" *ngIf="product.maSanPham">
+                          <i class="fas fa-barcode"></i> Mã: <strong>{{ product.maSanPham }}</strong>
+                        </p>
+                        <p class="product-meta" *ngIf="product.mauSac">
+                          <i class="fas fa-palette"></i> Màu: 
+                          <span class="color-badge" *ngIf="product.mauSac">{{ product.mauSac }}</span>
+                        </p>
+                        <p class="product-meta" *ngIf="product.kichThuoc">
+                          <i class="fas fa-ruler"></i> Kích thước: <strong>{{ product.kichThuoc }}</strong>
+                        </p>
+                        <p class="product-meta" *ngIf="product.nhaSanXuat">
+                          <i class="fas fa-industry"></i> Nhà sản xuất: <strong>{{ product.nhaSanXuat }}</strong>
+                        </p>
+                        <p class="product-meta" *ngIf="product.donGia">
+                          <i class="fas fa-tag"></i> Đơn giá: <strong>{{ formatCurrency(product.donGia) }}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="product-quantity">
+                    <span class="quantity-label">Số lượng</span>
+                    <span class="quantity">x{{ product.soLuong || 1 }}</span>
+                  </div>
+                  <div class="product-price">
+                    <span class="price-label">Thành tiền</span>
+                    <span class="price-value">{{ formatCurrency(product.thanhTien || (product.donGia * (product.soLuong || 1))) }}</span>
+                  </div>
+                </div>
+              </ng-container>
             </div>
           </div>
 
@@ -140,7 +204,20 @@
               <span class="label">Giảm giá:</span>
               <span class="value discount">-{{ formatCurrency(order.tienGiamGia) }}</span>
             </div>
-            <div class="summary-item">
+            <!-- Phí vận chuyển với logo GHTK -->
+            <div class="summary-item" *ngIf="order.phiGiaoHang && order.phiGiaoHang > 0">
+              <div class="d-flex align-items-center gap-2">
+                <img
+                  src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                  alt="Giao Hàng Tiết Kiệm"
+                  class="shipping-logo"
+                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
+                />
+                <span class="label">Phí vận chuyển:</span>
+              </div>
+              <span class="value shipping-fee">{{ formatCurrency(order.phiGiaoHang) }}</span>
+            </div>
+            <div class="summary-item final-total">
               <span class="label">Thành tiền:</span>
               <span class="value final-price">{{ formatCurrency(order.thanhTien || 0) }}</span>
             </div>

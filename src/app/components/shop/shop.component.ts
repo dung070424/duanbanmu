@@ -12,6 +12,8 @@ import { CustomerService } from '../../services/customer.service';
 import { ChatbotComponent } from './chatbot/chatbot.component';
 import { ShopHeaderComponent } from './shared/shop-header.component';
 import { ShopFooterComponent } from './shared/shop-footer.component';
+import { NotificationComponent } from './shared/notification.component';
+import { NotificationService } from './shared/notification.service';
 import { Subscription } from 'rxjs';
 import { distinctUntilChanged, skip } from 'rxjs/operators';
 
@@ -42,6 +44,7 @@ interface HomepageNews {
     ChatbotComponent,
     ShopHeaderComponent,
     ShopFooterComponent,
+    NotificationComponent,
   ],
   templateUrl: './shop.component.html',
   styleUrls: ['./shop.component.scss'],
@@ -83,7 +86,8 @@ export class ShopComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private customerService: CustomerService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notificationService: NotificationService
   ) {
     // Không gọi loadCart() trong constructor - sẽ gọi trong ngOnInit
   }
@@ -427,7 +431,7 @@ export class ShopComponent implements OnInit, OnDestroy {
     this.chiTietSanPhamService.getBySanPhamId(product.id).subscribe({
       next: (chiTietList) => {
         if (!chiTietList || chiTietList.length === 0) {
-          alert('Sản phẩm này hiện không có chi tiết. Vui lòng liên hệ cửa hàng!');
+          this.notificationService.warning('Sản phẩm này hiện không có chi tiết. Vui lòng liên hệ cửa hàng!');
           return;
         }
 
@@ -436,31 +440,50 @@ export class ShopComponent implements OnInit, OnDestroy {
           chiTietList.find((ct) => ct.trangThai && parseInt(ct.soLuongTon) > 0) || chiTietList[0];
 
         if (!chiTiet) {
-          alert('Sản phẩm này hiện không có sẵn!');
+          this.notificationService.warning('Sản phẩm này hiện không có sẵn!');
           return;
         }
 
         // Kiểm tra số lượng tồn
         const stock = parseInt(chiTiet.soLuongTon) || 0;
         if (stock <= 0) {
-          alert('Sản phẩm này đã hết hàng!');
+          this.notificationService.warning('Sản phẩm này đã hết hàng!');
           return;
-        }
-
-        // Cảnh báo nếu sắp hết hàng (còn ít hơn 5 sản phẩm)
-        if (stock <= 5) {
-          const confirmAdd = confirm(
-            `⚠️ Cảnh báo: Sản phẩm chỉ còn ${stock} cái trong kho.\n\nBạn có muốn thêm vào giỏ hàng không?`
-          );
-          if (!confirmAdd) {
-            return;
-          }
         }
 
         const price = parseFloat(chiTiet.giaBan) || product.giaBan || 0;
 
-        // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
-        if (!this.authService.isLoggedIn()) {
+        // Cảnh báo nếu sắp hết hàng (còn ít hơn 5 sản phẩm)
+        if (stock <= 5) {
+          this.notificationService.confirm({
+            title: '⚠️ Cảnh báo',
+            message: `Sản phẩm chỉ còn ${stock} cái trong kho.\n\nBạn có muốn thêm vào giỏ hàng không?`,
+            confirmText: 'Thêm vào giỏ',
+            cancelText: 'Hủy'
+          }).then((confirmed) => {
+            if (!confirmed) {
+              return;
+            }
+            this.addToCartAfterConfirm(product, chiTiet, price);
+          });
+          return;
+        }
+        
+        this.addToCartAfterConfirm(product, chiTiet, price);
+      },
+      error: (error) => {
+        console.error('Error loading product details:', error);
+        this.notificationService.error('Không thể tải thông tin sản phẩm. Vui lòng thử lại!');
+      },
+    });
+  }
+
+  /**
+   * Thêm sản phẩm vào giỏ hàng sau khi đã xác nhận
+   */
+  private addToCartAfterConfirm(product: SanPhamResponse, chiTiet: any, price: number): void {
+    // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
+    if (!this.authService.isLoggedIn()) {
           console.log('🛒 addToCart - User not logged in, saving to temp_cart');
 
           const tempCartItem: any = {
@@ -515,14 +538,14 @@ export class ShopComponent implements OnInit, OnDestroy {
           // Phát sự kiện để header component cập nhật
           window.dispatchEvent(new Event('cartUpdated'));
           
-          alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+          this.notificationService.success(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
           return;
         }
 
         // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
         this.getOrCreateCart().then((cartId) => {
           if (!cartId) {
-            alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
+            this.notificationService.error('Không thể tạo giỏ hàng. Vui lòng thử lại!');
             return;
           }
 
@@ -546,7 +569,7 @@ export class ShopComponent implements OnInit, OnDestroy {
               // Phát sự kiện để header component cập nhật
               window.dispatchEvent(new Event('cartUpdated'));
               
-              alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+              this.notificationService.success(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
             },
             error: (error) => {
               console.error('Error adding to cart:', error);
@@ -554,16 +577,10 @@ export class ShopComponent implements OnInit, OnDestroy {
                 error.error?.error ||
                 error.message ||
                 'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
-              alert(errorMsg);
+              this.notificationService.error(errorMsg);
             },
           });
         });
-      },
-      error: (error) => {
-        console.error('Error loading product details:', error);
-        alert('Không thể tải thông tin sản phẩm. Vui lòng thử lại!');
-      },
-    });
   }
 
   getOrCreateCart(): Promise<number | null> {
@@ -687,7 +704,7 @@ export class ShopComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('❌ Error creating cart:', error);
         const errorMsg = error.error?.message || error.message || 'Không thể tạo giỏ hàng';
-        alert(`Lỗi: ${errorMsg}`);
+        this.notificationService.error(`Lỗi: ${errorMsg}`);
         resolve(null);
       },
     });
@@ -860,14 +877,14 @@ export class ShopComponent implements OnInit, OnDestroy {
       console.log('   - savedCart length:', savedCart.length);
 
       this.updateCartCount();
-      alert(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`);
+      this.notificationService.success(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`);
       return;
     }
 
     // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
     this.getOrCreateCart().then((cartId) => {
       if (!cartId) {
-        alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
+        this.notificationService.error('Không thể tạo giỏ hàng. Vui lòng thử lại!');
         return;
       }
 
@@ -885,7 +902,7 @@ export class ShopComponent implements OnInit, OnDestroy {
       this.hoaDonChoService.addItemToCart(cartId, gioHangItem).subscribe({
         next: (updatedCart) => {
           this.updateCartCount();
-          alert(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`);
+          this.notificationService.success(`Đã thêm "${cartItem.productName}" (x${cartItem.quantity}) vào giỏ hàng!`);
         },
         error: (error) => {
           console.error('Error adding to cart:', error);
@@ -893,7 +910,7 @@ export class ShopComponent implements OnInit, OnDestroy {
             error.error?.error ||
             error.message ||
             'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
-          alert(errorMsg);
+          this.notificationService.error(errorMsg);
         },
       });
     });
@@ -1077,27 +1094,34 @@ export class ShopComponent implements OnInit, OnDestroy {
         console.log('✅ Navigation to profile successful:', success);
         if (!success) {
           console.error('❌ Navigation returned false');
-          alert('Không thể truy cập trang profile. Vui lòng kiểm tra lại quyền truy cập!');
+          this.notificationService.error('Không thể truy cập trang profile. Vui lòng kiểm tra lại quyền truy cập!');
         }
       },
       (error) => {
         console.error('❌ Navigation to profile failed:', error);
-        alert('Không thể truy cập trang profile. Vui lòng thử lại!');
+        this.notificationService.error('Không thể truy cập trang profile. Vui lòng thử lại!');
       }
     );
   }
 
   logout(): void {
-    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-      this.authService.logout();
-      this.customerName = '';
-      this.cartCount = 0;
-      // Clear cart data
-      localStorage.removeItem('temp_cart');
-      localStorage.removeItem('current_cart_id');
-      // Redirect to shop
-      this.router.navigate(['/shop']);
-      this.cdr.detectChanges();
-    }
+    this.notificationService.confirm({
+      title: 'Xác nhận đăng xuất',
+      message: 'Bạn có chắc chắn muốn đăng xuất?',
+      confirmText: 'Đăng xuất',
+      cancelText: 'Hủy'
+    }).then((confirmed) => {
+      if (confirmed) {
+        this.authService.logout();
+        this.customerName = '';
+        this.cartCount = 0;
+        // Clear cart data
+        localStorage.removeItem('temp_cart');
+        localStorage.removeItem('current_cart_id');
+        // Redirect to shop
+        this.router.navigate(['/shop']);
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

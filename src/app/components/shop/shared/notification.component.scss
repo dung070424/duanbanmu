@@ -1,0 +1,252 @@
+// Notification Toast Styles
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  min-width: 320px;
+  max-width: 500px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  animation: slideDown 0.3s ease-out;
+  border-left: 4px solid;
+
+  &.notification-success {
+    border-left-color: #10b981;
+  }
+
+  &.notification-error {
+    border-left-color: #ef4444;
+  }
+
+  &.notification-warning {
+    border-left-color: #f59e0b;
+  }
+
+  &.notification-info {
+    border-left-color: #3b82f6;
+  }
+
+  .notification-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+
+    .notification-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 14px;
+
+      .notification-success & {
+        background: #d1fae5;
+        color: #10b981;
+      }
+
+      .notification-error & {
+        background: #fee2e2;
+        color: #ef4444;
+      }
+
+      .notification-warning & {
+        background: #fef3c7;
+        color: #f59e0b;
+      }
+
+      .notification-info & {
+        background: #dbeafe;
+        color: #3b82f6;
+      }
+    }
+
+    .notification-body {
+      flex: 1;
+      min-width: 0;
+
+      .notification-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: #111827;
+        margin-bottom: 4px;
+      }
+
+      .notification-message {
+        font-size: 14px;
+        color: #6b7280;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+    }
+
+    .notification-close {
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f3f4f6;
+        color: #111827;
+      }
+    }
+  }
+}
+
+// Confirmation Dialog Styles
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  backdrop-filter: blur(4px);
+}
+
+.confirm-dialog {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  min-width: 400px;
+  max-width: 500px;
+  animation: scaleIn 0.2s ease-out;
+  overflow: hidden;
+
+  .confirm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .confirm-close {
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s;
+      width: 32px;
+      height: 32px;
+
+      &:hover {
+        background: #f3f4f6;
+        color: #111827;
+      }
+    }
+  }
+
+  .confirm-body {
+    padding: 24px;
+    
+    p {
+      margin: 0;
+      font-size: 15px;
+      color: #6b7280;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    justify-content: flex-end;
+
+    button {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &.btn-confirm {
+        background: #f4a11a;
+        color: #fff;
+
+        &:hover {
+          background: #e09115;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(244, 161, 26, 0.3);
+        }
+      }
+
+      &.btn-cancel {
+        background: #f3f4f6;
+        color: #6b7280;
+
+        &:hover {
+          background: #e5e7eb;
+          color: #111827;
+        }
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
