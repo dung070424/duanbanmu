@@ -299,26 +299,12 @@
         </header>
         <div class="card-body">
           <div class="info-row">
-            <span class="label">Ngày dự kiến giao</span>
-            <span class="value">{{ invoice.ngayDuKienGiao ? formatDate(invoice.ngayDuKienGiao) : 'Chưa cập nhật'
-              }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Phí giao hàng</span>
-            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }}</span>
-          </div>
-          <div class="info-row">
             <span class="label">Khối lượng</span>
-            <span class="value">{{ invoice.khoiLuong ? invoice.khoiLuong + ' kg' : 'Chưa cập nhật' }}</span>
+            <span class="value">5 kg</span>
           </div>
           <div class="info-row">
             <span class="label">Kích thước</span>
-            <span class="value">
-              <ng-container *ngIf="invoice.chieuDai || invoice.chieuRong || invoice.chieuCao; else sizeFallback">
-                {{ invoice.chieuDai || 0 }} x {{ invoice.chieuRong || 0 }} x {{ invoice.chieuCao || 0 }} cm
-              </ng-container>
-              <ng-template #sizeFallback>Chưa cập nhật</ng-template>
-            </span>
+            <span class="value">4 x 3 cm</span>
           </div>
           <div class="divider"></div>
           <div class="info-row">
@@ -354,6 +340,8 @@
               <th>Sản phẩm</th>
               <th>Thuộc tính</th>
               <th class="text-center">Số lượng</th>
+              <th class="text-center">Khối lượng</th>
+              <th class="text-center">Kích thước</th>
               <th class="text-end">Đơn giá</th>
               <th class="text-end">Giảm giá</th>
               <th class="text-end">Thành tiền</th>
@@ -361,7 +349,7 @@
           </thead>
           <tbody>
             <tr *ngIf="!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0">
-              <td colspan="7" class="text-center py-4 text-muted">
+              <td colspan="9" class="text-center py-4 text-muted">
                 <i class="fas fa-inbox me-2"></i>Chưa có sản phẩm nào trong hóa đơn này
               </td>
             </tr>
@@ -392,6 +380,8 @@
                 </div>
               </td>
               <td class="text-center">{{ product.soLuong }}</td>
+              <td class="text-center">5 kg</td>
+              <td class="text-center">4 x 3 cm</td>
               <td class="text-end">{{ formatCurrency(product.donGia) }}</td>
               <td class="text-end">
                 <span *ngIf="product.giamGia && product.giamGia > 0" class="text-danger">
