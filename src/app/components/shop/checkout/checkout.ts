@@ -1407,12 +1407,13 @@ export class CheckoutComponent implements OnInit {
         console.log('✅ Order created successfully, redirecting to order history...');
 
         // QUAN TRỌNG: Khi chưa đăng nhập, KHÔNG lưu vào localStorage
-        // Chuyển đến trang tra cứu đơn hàng với mã hóa đơn trong query params
+        // Chuyển đến trang tra cứu đơn hàng với thông báo yêu cầu nhập mã từ email
         if (!this.authService.isLoggedIn()) {
-          console.log('✅ Guest user - redirecting to order lookup with order code:', hoaDon.maHoaDon);
-          // Chuyển đến trang tra cứu với mã hóa đơn (mã này sẽ được gửi qua email)
+          console.log('✅ Guest user - redirecting to order lookup page');
+          // Chuyển đến trang tra cứu với flag orderPlaced để hiển thị thông báo
+          // KHÔNG truyền orderCode để không tự động tra cứu
           this.router.navigate(['/customer/orders'], {
-            queryParams: { orderCode: hoaDon.maHoaDon }
+            queryParams: { orderPlaced: 'true' }
           });
         } else {
           // Khi đã đăng nhập, chuyển đến trang đơn hàng với order ID

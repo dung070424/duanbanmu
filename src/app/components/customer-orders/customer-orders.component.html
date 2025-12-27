@@ -26,6 +26,20 @@
             <p>Nhập mã hóa đơn để xem thông tin chi tiết đơn hàng của bạn</p>
           </div>
           
+          <!-- Thông báo sau khi đặt hàng thành công -->
+          <div *ngIf="showOrderPlacedMessage" class="order-placed-message">
+            <div class="message-content">
+              <i class="fas fa-envelope-circle-check"></i>
+              <div class="message-text">
+                <h4>Đặt hàng thành công!</h4>
+                <p>Nhập đầy đủ mã đơn hàng của bạn đã được gửi qua email để tra cứu đơn hàng.</p>
+              </div>
+              <button class="btn-close-message" (click)="showOrderPlacedMessage = false" title="Đóng">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          
           <div class="lookup-form">
             <div class="search-box-large">
               <i class="fas fa-receipt search-icon"></i>
@@ -34,12 +48,14 @@
                 class="search-input-large"
                 [(ngModel)]="orderCodeSearch"
                 (keyup.enter)="searchOrderByCode()"
-                placeholder="Nhập mã hóa đơn (ví dụ: HD1766765567608_z16zztql8)"
+                placeholder="Nhập đầy đủ mã hóa đơn (ví dụ: HD1766765567608_z16zztql8)"
+                minlength="10"
+                [attr.aria-describedby]="searchError ? 'search-error-help' : null"
               />
               <button
                 class="btn-search-order"
                 (click)="searchOrderByCode()"
-                [disabled]="isSearching || !orderCodeSearch || orderCodeSearch.trim() === ''"
+                [disabled]="isSearching || !orderCodeSearch || orderCodeSearch.trim() === '' || orderCodeSearch.trim().length < 10"
                 type="button"
               >
                 <i class="fas fa-search" *ngIf="!isSearching"></i>
@@ -48,9 +64,13 @@
               </button>
             </div>
             
-            <div *ngIf="searchError" class="search-error">
+            <div *ngIf="searchError" class="search-error" id="search-error-help">
               <i class="fas fa-exclamation-circle"></i>
               {{ searchError }}
+            </div>
+            <div *ngIf="orderCodeSearch && orderCodeSearch.trim().length > 0 && orderCodeSearch.trim().length < 10" class="search-warning">
+              <i class="fas fa-info-circle"></i>
+              Mã hóa đơn phải có ít nhất 10 ký tự. Vui lòng nhập đầy đủ mã hóa đơn.
             </div>
           </div>
 

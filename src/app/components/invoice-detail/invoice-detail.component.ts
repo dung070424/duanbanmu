@@ -4605,6 +4605,51 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Xác định trạng thái của một bước trong thanh trạng thái
+   */
+  getStepStatus(stepKey: string, currentStatus: string): 'completed' | 'active' | 'pending' | 'cancelled' {
+    // Nếu đơn hàng bị hủy
+    if (currentStatus === 'HUY' || currentStatus === 'DA_HUY') {
+      if (stepKey === 'HUY') {
+        return 'cancelled';
+      }
+      // Các bước khác đều ở trạng thái pending khi đơn hàng bị hủy
+      return 'pending';
+    }
+
+    // Bỏ qua bước "Hủy" nếu đơn hàng không bị hủy
+    if (stepKey === 'HUY') {
+      return 'pending';
+    }
+
+    // Xác định thứ tự các bước (không tính bước Hủy)
+    const stepOrder: { [key: string]: number } = {
+      'CHO_XAC_NHAN': 1,
+      'DA_XAC_NHAN': 2,
+      'DANG_GIAO_HANG': 3,
+      'DA_GIAO_HANG': 4
+    };
+
+    const currentOrder = stepOrder[currentStatus] || 0;
+    const stepOrderValue = stepOrder[stepKey] || 0;
+
+    if (stepOrderValue < currentOrder) {
+      return 'completed';
+    } else if (stepOrderValue === currentOrder) {
+      return 'active';
+    } else {
+      return 'pending';
+    }
+  }
+
+  /**
+   * Kiểm tra xem bước có phải là trạng thái hiện tại không
+   */
+  isCurrentStep(stepKey: string, currentStatus: string): boolean {
+    return stepKey === currentStatus || (stepKey === 'HUY' && currentStatus === 'DA_HUY');
+  }
+
+  /**
    * Xử lý khi trạng thái thay đổi
    */
   onStatusChange(): void {

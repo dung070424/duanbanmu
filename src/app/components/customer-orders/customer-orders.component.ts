@@ -31,6 +31,7 @@ export class CustomerOrdersComponent implements OnInit {
   searchedOrder: HoaDonDTO | null = null;
   isSearching = false;
   searchError = '';
+  showOrderPlacedMessage = false; // Hiển thị thông báo sau khi đặt hàng thành công
 
   constructor(
     private hoaDonService: HoaDonService,
@@ -49,14 +50,10 @@ export class CustomerOrdersComponent implements OnInit {
     // KHÔNG load đơn hàng từ localStorage, người dùng phải nhập mã hóa đơn để tra cứu
     if (!this.authService.isLoggedIn()) {
       this.isLoading = false;
-      // Kiểm tra query params để tự động điền mã hóa đơn nếu có
-      const orderCode = this.activatedRoute.snapshot.queryParams['orderCode'];
-      if (orderCode) {
-        this.orderCodeSearch = orderCode;
-        // Tự động tra cứu nếu có mã trong query params
-        setTimeout(() => {
-          this.searchOrderByCode();
-        }, 500);
+      // Kiểm tra query params để hiển thị thông báo sau khi đặt hàng thành công
+      const orderPlaced = this.activatedRoute.snapshot.queryParams['orderPlaced'];
+      if (orderPlaced === 'true') {
+        this.showOrderPlacedMessage = true;
         // Xóa query param sau khi đã sử dụng
         this.router.navigate([], {
           relativeTo: this.activatedRoute,
@@ -64,6 +61,7 @@ export class CustomerOrdersComponent implements OnInit {
           replaceUrl: true
         });
       }
+      // KHÔNG tự động tra cứu đơn hàng - người dùng phải nhập mã từ email
       return;
     }
     
@@ -341,10 +339,22 @@ export class CustomerOrdersComponent implements OnInit {
 
   /**
    * Tra cứu đơn hàng theo mã hóa đơn (cho khách hàng chưa đăng nhập)
+   * Yêu cầu nhập đầy đủ mã hóa đơn và chỉ hiển thị khi khớp chính xác
    */
   searchOrderByCode(): void {
-    if (!this.orderCodeSearch || this.orderCodeSearch.trim() === '') {
+    const trimmedCode = this.orderCodeSearch?.trim() || '';
+    
+    // Validation: Kiểm tra mã hóa đơn không được rỗng
+    if (!trimmedCode) {
       this.searchError = 'Vui lòng nhập mã hóa đơn';
+      this.searchedOrder = null;
+      return;
+    }
+
+    // Validation: Kiểm tra độ dài tối thiểu (mã hóa đơn thường có ít nhất 10 ký tự)
+    if (trimmedCode.length < 10) {
+      this.searchError = 'Mã hóa đơn phải có ít nhất 10 ký tự. Vui lòng nhập đầy đủ mã hóa đơn.';
+      this.searchedOrder = null;
       return;
     }
 
@@ -352,11 +362,24 @@ export class CustomerOrdersComponent implements OnInit {
     this.searchError = '';
     this.searchedOrder = null;
 
-    this.hoaDonService.searchOrderByCode(this.orderCodeSearch.trim()).subscribe({
+    this.hoaDonService.searchOrderByCode(trimmedCode).subscribe({
       next: (order: HoaDonDTO) => {
-        this.searchedOrder = order;
-        this.isSearching = false;
-        this.cdr.detectChanges();
+        // Kiểm tra xem mã hóa đơn có khớp chính xác không
+        const searchCode = trimmedCode.toLowerCase();
+        const orderCode = order.maHoaDon?.toLowerCase() || '';
+        
+        if (orderCode === searchCode) {
+          // Khớp chính xác - hiển thị đơn hàng
+          this.searchedOrder = order;
+          this.isSearching = false;
+          this.cdr.detectChanges();
+        } else {
+          // Không khớp chính xác - báo lỗi
+          this.searchError = 'Không tìm thấy đơn hàng với mã này. Vui lòng nhập đầy đủ và chính xác mã hóa đơn.';
+          this.searchedOrder = null;
+          this.isSearching = false;
+          this.cdr.detectChanges();
+        }
       },
       error: (error) => {
         console.error('❌ Error searching order:', error);
