@@ -178,8 +178,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     { value: 'CHO_XAC_NHAN', label: 'Chờ xác nhận' },
     { value: 'DA_XAC_NHAN', label: 'Đã xác nhận' },
     { value: 'DANG_GIAO_HANG', label: 'Đang giao hàng' },
-    { value: 'DA_GIAO_HANG', label: 'Đã giao hàng' },
-    { value: 'HUY', label: 'Hủy' },
+    { value: 'DA_GIAO_HANG', label: 'Đã hoàn thành' },
+    { value: 'HUY', label: 'Đã hủy' },
   ];
 
   paymentStatusOptions = [
@@ -313,14 +313,6 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
             returnedItems: response.content.length,
             selectedStatus: this.selectedStatus
           });
-          // Debug: Log status của các invoice được trả về
-          if (this.selectedStatus && this.selectedStatus !== 'all' && response.content.length > 0) {
-            const statusCounts = response.content.reduce((acc: any, inv: any) => {
-              acc[inv.trangThai] = (acc[inv.trangThai] || 0) + 1;
-              return acc;
-            }, {});
-            console.log('🔍 Invoice statuses in response (filtered by ' + this.selectedStatus + '):', statusCounts);
-          }
         } else if (response.hoaDonList) {
           this.paginatedInvoices = response.hoaDonList;
           this.totalItems = response.totalItems || 0;
@@ -651,12 +643,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Đếm từ allInvoices để có số chính xác
     const invoicesToCount = this.allInvoices.length > 0 ? this.allInvoices : this.paginatedInvoices;
     // Normalize status để so sánh: cả "HUY" và "DA_HUY" đều được coi là "HUY"
-    // QUAN TRỌNG: CHỈ đếm đúng status, không normalize CHO_XAC_NHAN và DA_XAC_NHAN
     return invoicesToCount.filter(invoice => {
-      // Normalize chỉ cho HUY/DA_HUY
       const invoiceStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
       const statusNormalized = (status === 'DA_HUY' || status === 'HUY') ? 'HUY' : status;
-      // So sánh chính xác, không normalize CHO_XAC_NHAN và DA_XAC_NHAN
       return invoiceStatus === statusNormalized;
     }).length;
   }
@@ -686,6 +675,18 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   clearDateFilter(): void {
     this.startDate = '';
+    this.endDate = '';
+    this.currentPage = 1;
+    this.loadHoaDon();
+  }
+
+  clearStartDate(): void {
+    this.startDate = '';
+    this.currentPage = 1;
+    this.loadHoaDon();
+  }
+
+  clearEndDate(): void {
     this.endDate = '';
     this.currentPage = 1;
     this.loadHoaDon();
@@ -893,9 +894,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       CHO_XAC_NHAN: 'Chờ xác nhận',
       DA_XAC_NHAN: 'Đã xác nhận',
       DANG_GIAO_HANG: 'Đang giao hàng',
-      DA_GIAO_HANG: 'Đã giao hàng',
-      HUY: 'Hủy',
-      DA_HUY: 'Hủy', // Backward compatible
+      DA_GIAO_HANG: 'Đã hoàn thành',
+      HUY: 'Đã hủy',
+      DA_HUY: 'Đã hủy', // Backward compatible
     };
     return statusMap[normalizedStatus] || status;
   }
@@ -944,20 +945,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   // Helper for templates: get derived payment status from invoice
   // QUAN TRỌNG: Normalize status để handle cả "HUY" và "DA_HUY"
-  // QUAN TRỌNG: Đơn hàng online (viTriBanHang = "Online" hoặc nhanVienId = null) luôn có trạng thái "Đã thanh toán"
   getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
     if (!invoice || !invoice.trangThai) return 'pending';
-    
-    // Kiểm tra nếu là đơn hàng online thì luôn trả về 'paid'
-    const isOnlineOrder = invoice.viTriBanHang === 'Online' || 
-                         invoice.nhanVienId === null || 
-                         invoice.nhanVienId === undefined ||
-                         (invoice.phuongThucThanhToan && invoice.phuongThucThanhToan.toLowerCase().includes('online'));
-    
-    if (isOnlineOrder) {
-      return 'paid';
-    }
-    
     // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
     const normalizedStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
     if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';

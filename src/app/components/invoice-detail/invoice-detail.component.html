@@ -166,7 +166,19 @@
       <div class="status-label">{{ getStatusLabel(invoice.trangThai) }}</div>
     </div>
 
-    <!-- Nút hủy đơn hàng cho khách hàng đã bị vô hiệu hóa -->
+    <!-- Nút hủy đơn hàng cho khách hàng (chỉ hiển thị khi trạng thái là CHO_XAC_NHAN) -->
+    <div class="customer-cancel-section"
+      *ngIf="invoice && invoice.trangThai === 'CHO_XAC_NHAN' && authService.hasRole('CUSTOMER')">
+
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-outline-danger btn-lg" (click)="cancelOrderByCustomer()"
+          [disabled]="savingStatus">
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="savingStatus" role="status"></span>
+          <i class="bi bi-x-circle me-2" *ngIf="!savingStatus"></i>
+          {{ savingStatus ? 'Đang xử lý...' : 'Hủy đơn hàng' }}
+        </button>
+      </div>
+    </div>
 
     <!-- Form xác nhận hóa đơn REMOVED as per request -->
 
@@ -300,11 +312,11 @@
         <div class="card-body">
           <div class="info-row">
             <span class="label">Khối lượng</span>
-            <span class="value">5 kg</span>
+            <span class="value">4 kg</span>
           </div>
           <div class="info-row">
             <span class="label">Kích thước</span>
-            <span class="value">4 x 3 cm</span>
+            <span class="value">5 x 3 cm</span>
           </div>
           <div class="divider"></div>
           <div class="info-row">
@@ -314,10 +326,6 @@
           <div class="info-row">
             <span class="label">Giảm giá</span>
             <span class="value text-danger">-{{ formatCurrency(invoice.tienGiamGia || 0) }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Phí vận chuyển</span>
-            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }}</span>
           </div>
           <div class="info-row total">
             <span class="label">Thành tiền</span>
@@ -340,8 +348,6 @@
               <th>Sản phẩm</th>
               <th>Thuộc tính</th>
               <th class="text-center">Số lượng</th>
-              <th class="text-center">Khối lượng</th>
-              <th class="text-center">Kích thước</th>
               <th class="text-end">Đơn giá</th>
               <th class="text-end">Giảm giá</th>
               <th class="text-end">Thành tiền</th>
@@ -349,7 +355,7 @@
           </thead>
           <tbody>
             <tr *ngIf="!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0">
-              <td colspan="9" class="text-center py-4 text-muted">
+              <td colspan="7" class="text-center py-4 text-muted">
                 <i class="fas fa-inbox me-2"></i>Chưa có sản phẩm nào trong hóa đơn này
               </td>
             </tr>
@@ -380,8 +386,6 @@
                 </div>
               </td>
               <td class="text-center">{{ product.soLuong }}</td>
-              <td class="text-center">5 kg</td>
-              <td class="text-center">4 x 3 cm</td>
               <td class="text-end">{{ formatCurrency(product.donGia) }}</td>
               <td class="text-end">
                 <span *ngIf="product.giamGia && product.giamGia > 0" class="text-danger">
@@ -402,10 +406,6 @@
         <div class="summary-row" *ngIf="invoice.tienGiamGia && invoice.tienGiamGia > 0">
           <span>Giảm giá</span>
           <strong class="text-danger">-{{ formatCurrency(invoice.tienGiamGia) }}</strong>
-        </div>
-        <div class="summary-row" *ngIf="invoice.phiGiaoHang && invoice.phiGiaoHang > 0">
-          <span>Phí vận chuyển</span>
-          <strong>{{ formatCurrency(invoice.phiGiaoHang) }}</strong>
         </div>
         <div class="summary-row total">
           <span>Thành tiền</span>
