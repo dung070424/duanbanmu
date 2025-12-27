@@ -558,139 +558,258 @@
       <div class="modal-overlay" (click)="cancelOrderConfirmation()"></div>
       <div class="modal-content">
         <div class="modal-header">
-          <h2><i class="fas fa-check-circle"></i> Xác nhận đơn hàng</h2>
-          <button class="btn-close" (click)="cancelOrderConfirmation()">
+          <div class="header-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h2>Xác nhận đơn hàng</h2>
+          <p class="header-subtitle">Vui lòng kiểm tra lại thông tin trước khi xác nhận</p>
+          <button class="btn-close" (click)="cancelOrderConfirmation()" title="Đóng">
             <i class="fas fa-times"></i>
           </button>
         </div>
 
         <div class="modal-body">
-          <!-- Order Summary -->
-          <div class="order-summary-section">
-            <h3>Danh sách sản phẩm</h3>
-            <table class="order-table">
-              <thead>
-                <tr>
-                  <th>Sản phẩm</th>
-                  <th>Số lượng</th>
-                  <th>Giá</th>
-                  <th>Thành tiền</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of orderSummary.products">
-                  <td>{{ item.tenSanPham }}</td>
-                  <td>{{ item.soLuong }}</td>
-                  <td>{{ formatCurrency(item.donGia) }}</td>
-                  <td>{{ formatCurrency(item.thanhTien) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <div class="order-summary-grid">
+            <!-- Product List Section -->
+            <div class="order-summary-section product-list-section">
+              <div class="section-header">
+                <i class="fas fa-box-open"></i>
+                <h3>Danh sách sản phẩm</h3>
+                <span class="product-count">{{ orderSummary.products?.length || 0 }} sản phẩm</span>
+              </div>
+              <div class="product-cards-list">
+                <div class="product-card" *ngFor="let item of orderSummary.products; let i = index">
+                  <div class="product-info-main">
+                    <div class="product-image-wrapper" *ngIf="item.anhSanPham">
+                      <img
+                        [src]="getProductImageUrl(item.anhSanPham)"
+                        [alt]="item.tenSanPham"
+                        class="product-thumbnail"
+                        (error)="handleImageError($event)"
+                      />
+                    </div>
+                    <div class="product-details-info">
+                      <div class="product-name">{{ item.tenSanPham }}</div>
+                      <div class="product-specs" *ngIf="item.mauSac || item.kichThuoc || item.maSanPham">
+                        <span class="product-spec" *ngIf="item.maSanPham">
+                          <i class="fas fa-barcode"></i>
+                          Mã: <strong>{{ item.maSanPham }}</strong>
+                        </span>
+                        <span class="product-spec" *ngIf="item.mauSac">
+                          <i class="fas fa-palette"></i>
+                          Màu: <strong>{{ item.mauSac }}</strong>
+                        </span>
+                        <span class="product-spec" *ngIf="item.kichThuoc">
+                          <i class="fas fa-ruler"></i>
+                          Kích thước: <strong>{{ item.kichThuoc }}</strong>
+                        </span>
+                      </div>
+                      <div class="product-price-info">
+                        <span class="unit-price">{{ formatCurrency(item.donGia) }} / sản phẩm</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="product-quantity-price">
+                    <div class="quantity-display">
+                      <i class="fas fa-shopping-cart"></i>
+                      <span class="quantity-value">x{{ item.soLuong }}</span>
+                    </div>
+                    <div class="price-display">
+                      <span class="price-label">Thành tiền:</span>
+                      <span class="price-value">{{ formatCurrency(item.thanhTien) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <!-- Delivery Info -->
-          <div class="order-summary-section">
-            <h3>Thông tin giao hàng</h3>
-            <div class="info-block">
-              <p>
-                <strong>Người nhận:</strong> {{ orderSummary.billingInfo.firstName }}
-                {{ orderSummary.billingInfo.lastName }}
-              </p>
-              <p><strong>Số điện thoại:</strong> {{ orderSummary.billingInfo.phone }}</p>
-              <p><strong>Email:</strong> {{ orderSummary.billingInfo.email }}</p>
-              <p *ngIf="orderSummary.billingInfo.fullAddress">
-                <strong>Địa chỉ đầy đủ:</strong> {{ orderSummary.billingInfo.fullAddress }}
-              </p>
-              <div *ngIf="!orderSummary.billingInfo.fullAddress">
-                <p *ngIf="orderSummary.billingInfo.addressDetail">
-                  <strong>Địa chỉ chi tiết:</strong> {{ orderSummary.billingInfo.addressDetail }}
-                </p>
-                <p *ngIf="orderSummary.billingInfo.ward">
-                  <strong>Phường/Xã:</strong> {{ orderSummary.billingInfo.ward }}
-                </p>
-                <p *ngIf="orderSummary.billingInfo.district">
-                  <strong>Quận/Huyện:</strong> {{ orderSummary.billingInfo.district }}
-                </p>
-                <p *ngIf="orderSummary.billingInfo.province">
-                  <strong>Tỉnh/Thành phố:</strong> {{ orderSummary.billingInfo.province }}
-                </p>
-                <p *ngIf="orderSummary.billingInfo.address && orderSummary.billingInfo.city">
-                  <strong>Địa chỉ:</strong> {{ orderSummary.billingInfo.address }},
-                  {{ orderSummary.billingInfo.city }}
-                </p>
+            <!-- Delivery Info Section -->
+            <div class="order-summary-section delivery-info-section">
+              <div class="section-header">
+                <i class="fas fa-truck"></i>
+                <h3>Thông tin giao hàng</h3>
+              </div>
+              <div class="info-block">
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Người nhận</span>
+                    <span class="value">{{ orderSummary.billingInfo.firstName }} {{ orderSummary.billingInfo.lastName }}</span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="fas fa-phone"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Số điện thoại</span>
+                    <span class="value">{{ orderSummary.billingInfo.phone }}</span>
+                  </div>
+                </div>
+                <div class="info-item" *ngIf="orderSummary.billingInfo.email">
+                  <div class="info-icon">
+                    <i class="fas fa-envelope"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Email</span>
+                    <span class="value">{{ orderSummary.billingInfo.email }}</span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Địa chỉ</span>
+                    <span class="value">
+                      <ng-container *ngIf="orderSummary.billingInfo.fullAddress">
+                        {{ orderSummary.billingInfo.fullAddress }}
+                      </ng-container>
+                      <ng-container *ngIf="!orderSummary.billingInfo.fullAddress">
+                        {{ orderSummary.billingInfo.addressDetail }}
+                        <span *ngIf="orderSummary.billingInfo.ward">, {{ orderSummary.billingInfo.ward }}</span>
+                        <span *ngIf="orderSummary.billingInfo.district">, {{ orderSummary.billingInfo.district }}</span>
+                        <span *ngIf="orderSummary.billingInfo.province">, {{ orderSummary.billingInfo.province }}</span>
+                        <span *ngIf="orderSummary.billingInfo.address && orderSummary.billingInfo.city">
+                          {{ orderSummary.billingInfo.address }}, {{ orderSummary.billingInfo.city }}
+                        </span>
+                      </ng-container>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Info Section -->
+            <div class="order-summary-section payment-info-section">
+              <div class="section-header">
+                <i class="fas fa-credit-card"></i>
+                <h3>Phương thức thanh toán</h3>
+              </div>
+              <div class="info-block">
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Phương thức</span>
+                    <span class="value">
+                      {{ orderSummary.paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt khi nhận hàng' }}
+                    </span>
+                  </div>
+                </div>
+                <div *ngIf="orderSummary.paymentMethod === 'transfer'" class="bank-details">
+                  <div class="info-item">
+                    <div class="info-icon">
+                      <i class="fas fa-bank"></i>
+                    </div>
+                    <div class="info-text">
+                      <span class="label">Ngân hàng</span>
+                      <span class="value">{{ orderSummary.bankInfo.bankName }}</span>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-icon">
+                      <i class="fas fa-hashtag"></i>
+                    </div>
+                    <div class="info-text">
+                      <span class="label">Số tài khoản</span>
+                      <span class="value account-number">{{ orderSummary.bankInfo.accountNumber }}</span>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-icon">
+                      <i class="fas fa-user-tag"></i>
+                    </div>
+                    <div class="info-text">
+                      <span class="label">Chủ tài khoản</span>
+                      <span class="value">{{ orderSummary.bankInfo.accountName }}</span>
+                    </div>
+                  </div>
+                  <div class="info-item" *ngIf="orderSummary.transactionCode">
+                    <div class="info-icon">
+                      <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="info-text">
+                      <span class="label">Mã giao dịch</span>
+                      <span class="value transaction-code"><code>{{ orderSummary.transactionCode }}</code></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Notes Section -->
+            <div *ngIf="orderSummary.orderNotes" class="order-summary-section order-notes-section">
+              <div class="section-header">
+                <i class="fas fa-sticky-note"></i>
+                <h3>Ghi chú đơn hàng</h3>
+              </div>
+              <div class="info-block">
+                <p class="notes-text">{{ orderSummary.orderNotes }}</p>
               </div>
             </div>
           </div>
 
-          <!-- Payment Info -->
-          <div class="order-summary-section">
-            <h3>Phương thức thanh toán</h3>
-            <div class="info-block">
-              <p>
-                <strong>Phương thức:</strong>
-                {{
-                  orderSummary.paymentMethod === 'transfer'
-                    ? 'Chuyển khoản ngân hàng'
-                    : 'Tiền mặt khi nhận hàng'
-                }}
-              </p>
-              <div *ngIf="orderSummary.paymentMethod === 'transfer'">
-                <p><strong>Ngân hàng:</strong> {{ orderSummary.bankInfo.bankName }}</p>
-                <p><strong>Số tài khoản:</strong> {{ orderSummary.bankInfo.accountNumber }}</p>
-                <p><strong>Chủ tài khoản:</strong> {{ orderSummary.bankInfo.accountName }}</p>
-                <p>
-                  <strong>Mã giao dịch:</strong> <code>{{ orderSummary.transactionCode }}</code>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Order Notes -->
-          <div *ngIf="orderSummary.orderNotes" class="order-summary-section">
-            <h3>Ghi chú đơn hàng</h3>
-            <p>{{ orderSummary.orderNotes }}</p>
-          </div>
-
-          <!-- Total -->
-          <div class="order-total">
+          <!-- Total Summary -->
+          <div class="order-total-summary">
             <div class="total-row">
-              <span>Tổng phụ:</span>
-              <span>{{ formatCurrency(orderSummary.subtotal) }}</span>
+              <span class="label">Tổng phụ</span>
+              <span class="value">{{ formatCurrency(orderSummary.subtotal) }}</span>
             </div>
-            <div *ngIf="orderSummary.discount > 0" class="total-row">
-              <span>Giảm giá sản phẩm:</span>
-              <span>-{{ formatCurrency(orderSummary.discount) }}</span>
+            <div *ngIf="orderSummary.discount > 0" class="total-row discount-row">
+              <span class="label">
+                <i class="fas fa-tag"></i>
+                Giảm giá sản phẩm
+              </span>
+              <span class="value text-danger">-{{ formatCurrency(orderSummary.discount) }}</span>
             </div>
-            <div *ngIf="orderSummary.couponDiscount > 0" class="total-row">
-              <span>
-                Giảm giá (mã):
+            <div *ngIf="orderSummary.couponDiscount > 0" class="total-row coupon-row">
+              <span class="label">
+                <i class="fas fa-ticket-alt"></i>
+                Giảm giá (mã)
                 <div class="applied-coupons-list" *ngIf="orderSummary.appliedCoupons && orderSummary.appliedCoupons.length > 0">
                   <small *ngFor="let c of orderSummary.appliedCoupons" class="coupon-badge">
                     {{ c.code }}
                   </small>
                 </div>
               </span>
-              <span class="text-danger">-{{ formatCurrency(orderSummary.couponDiscount) }}</span>
+              <span class="value text-danger">-{{ formatCurrency(orderSummary.couponDiscount) }}</span>
             </div>
-            <div *ngIf="orderSummary.shippingFee > 0" class="total-row">
-              <span>Phí vận chuyển:</span>
-              <span>{{ formatCurrency(orderSummary.shippingFee) }}</span>
+            <div *ngIf="orderSummary.shippingFee > 0" class="total-row shipping-row">
+              <span class="label">
+                <img
+                  src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                  alt="Giao Hàng Tiết Kiệm"
+                  class="shipping-logo"
+                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
+                />
+                <i class="fas fa-shipping-fast"></i>
+                Phí vận chuyển
+              </span>
+              <span class="value">{{ formatCurrency(orderSummary.shippingFee) }}</span>
             </div>
-            <div class="total-row total">
-              <span><strong>Tổng cộng:</strong></span>
-              <span
-                ><strong>{{ formatCurrency(orderSummary.total) }}</strong></span
-              >
+            <div class="total-row final-total">
+              <span class="label">
+                <i class="fas fa-calculator"></i>
+                Tổng cộng
+              </span>
+              <span class="value">{{ formatCurrency(orderSummary.total) }}</span>
             </div>
           </div>
         </div>
 
         <div class="modal-footer">
           <button class="btn-cancel" (click)="cancelOrderConfirmation()">
-            <i class="fas fa-times"></i> Hủy
+            <i class="fas fa-times"></i>
+            <span>Hủy</span>
           </button>
           <button class="btn-confirm" (click)="confirmAndPlaceOrder()" [disabled]="isSubmitting">
-            <i class="fas fa-check"></i> {{ isSubmitting ? 'Đang xử lý...' : 'Xác nhận đặt hàng' }}
+            <i class="fas fa-check" *ngIf="!isSubmitting"></i>
+            <span class="spinner-border spinner-border-sm" *ngIf="isSubmitting" role="status"></span>
+            <span>{{ isSubmitting ? 'Đang xử lý...' : 'Xác nhận đặt hàng' }}</span>
           </button>
         </div>
       </div>
@@ -953,4 +1072,7 @@
   <app-shop-footer></app-shop-footer>
 
   <app-chatbot></app-chatbot>
+
+  <!-- Notification Component -->
+  <app-notification></app-notification>
 </div>

@@ -178,8 +178,8 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     { value: 'CHO_XAC_NHAN', label: 'Chờ xác nhận' },
     { value: 'DA_XAC_NHAN', label: 'Đã xác nhận' },
     { value: 'DANG_GIAO_HANG', label: 'Đang giao hàng' },
-    { value: 'DA_GIAO_HANG', label: 'Đã giao hàng' },
-    { value: 'HUY', label: 'Hủy' },
+    { value: 'DA_GIAO_HANG', label: 'Đã hoàn thành' },
+    { value: 'HUY', label: 'Đã hủy' },
   ];
 
   paymentStatusOptions = [
@@ -680,6 +680,18 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     this.loadHoaDon();
   }
 
+  clearStartDate(): void {
+    this.startDate = '';
+    this.currentPage = 1;
+    this.loadHoaDon();
+  }
+
+  clearEndDate(): void {
+    this.endDate = '';
+    this.currentPage = 1;
+    this.loadHoaDon();
+  }
+
   clearSearch(): void {
     this.searchTerm = '';
     this.currentPage = 1;
@@ -740,7 +752,7 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       totalAmount: 'tongTien',
       status: 'trangThai',
       paymentStatus: 'ngayThanhToan',
-      paymentMethod: 'viTriBanHang',
+      paymentMethod: 'phuongThucThanhToan',
       createdAt: 'ngayTao',
     };
 
@@ -882,9 +894,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       CHO_XAC_NHAN: 'Chờ xác nhận',
       DA_XAC_NHAN: 'Đã xác nhận',
       DANG_GIAO_HANG: 'Đang giao hàng',
-      DA_GIAO_HANG: 'Đã giao hàng',
-      HUY: 'Hủy',
-      DA_HUY: 'Hủy', // Backward compatible
+      DA_GIAO_HANG: 'Đã hoàn thành',
+      HUY: 'Đã hủy',
+      DA_HUY: 'Đã hủy', // Backward compatible
     };
     return statusMap[normalizedStatus] || status;
   }
@@ -933,13 +945,42 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
 
   // Helper for templates: get derived payment status from invoice
   // QUAN TRỌNG: Normalize status để handle cả "HUY" và "DA_HUY"
+  // QUAN TRỌNG: Đơn hàng chuyển khoản luôn hiển thị "đã thanh toán"
   getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
     if (!invoice || !invoice.trangThai) return 'pending';
+    
     // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
     const normalizedStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
-    if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';
+    
+    // Nếu đơn hàng bị hủy, luôn trả về 'cancelled' (ưu tiên cao nhất)
     if (normalizedStatus === 'HUY') return 'cancelled';
+    
+    // ✅ QUAN TRỌNG: Nếu phương thức thanh toán là chuyển khoản, luôn hiển thị "đã thanh toán"
+    if (this.isTransferPayment(invoice.phuongThucThanhToan)) {
+      return 'paid';
+    }
+    
+    // Logic cũ: Nếu đã giao hàng thì đã thanh toán
+    if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';
+    
     return 'pending';
+  }
+  
+  /**
+   * Kiểm tra xem phương thức thanh toán có phải là chuyển khoản không
+   */
+  private isTransferPayment(method?: string | null): boolean {
+    if (!method) return false;
+    
+    const methodLower = method.toLowerCase().trim();
+    
+    // Kiểm tra các cách viết khác nhau của "chuyển khoản"
+    return methodLower === 'transfer' || 
+           methodLower === 'chuyển khoản' || 
+           methodLower === 'chuyen khoan' ||
+           methodLower.includes('chuyển khoản') ||
+           methodLower.includes('chuyen khoan') ||
+           methodLower.includes('transfer');
   }
 
   getPaymentMethodLabel(method?: string | null): string {

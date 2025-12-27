@@ -145,8 +145,32 @@
     </div>
 
     <!-- Status Progress Bar -->
-
-
+    <div class="status-section" *ngIf="invoice">
+      <h3>
+        <i class="bi bi-list-check"></i>
+        Trạng thái đơn hàng
+      </h3>
+      <div class="status-progress">
+        <div class="status-steps">
+          <div 
+            *ngFor="let step of statusSteps" 
+            class="status-step"
+            [ngClass]="{
+              'completed': getStepStatus(step.key, invoice.trangThai) === 'completed',
+              'active': getStepStatus(step.key, invoice.trangThai) === 'active',
+              'current': isCurrentStep(step.key, invoice.trangThai),
+              'pending': getStepStatus(step.key, invoice.trangThai) === 'pending',
+              'cancelled': getStepStatus(step.key, invoice.trangThai) === 'cancelled'
+            }"
+          >
+            <div class="step-circle">
+              <i [ngClass]="step.iconClass"></i>
+            </div>
+            <div class="step-text">{{ step.label }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 
     <!-- Invoice Status Timeline (chỉ hiển thị khi trạng thái là Đang Giao Hàng) -->
@@ -311,26 +335,12 @@
         </header>
         <div class="card-body">
           <div class="info-row">
-            <span class="label">Ngày dự kiến giao</span>
-            <span class="value">{{ invoice.ngayDuKienGiao ? formatDate(invoice.ngayDuKienGiao) : 'Chưa cập nhật'
-              }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Phí giao hàng</span>
-            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }}</span>
-          </div>
-          <div class="info-row">
             <span class="label">Khối lượng</span>
-            <span class="value">{{ invoice.khoiLuong ? invoice.khoiLuong + ' kg' : 'Chưa cập nhật' }}</span>
+            <span class="value">4 kg</span>
           </div>
           <div class="info-row">
             <span class="label">Kích thước</span>
-            <span class="value">
-              <ng-container *ngIf="invoice.chieuDai || invoice.chieuRong || invoice.chieuCao; else sizeFallback">
-                {{ invoice.chieuDai || 0 }} x {{ invoice.chieuRong || 0 }} x {{ invoice.chieuCao || 0 }} cm
-              </ng-container>
-              <ng-template #sizeFallback>Chưa cập nhật</ng-template>
-            </span>
+            <span class="value">5 x 3 cm</span>
           </div>
           <div class="divider"></div>
           <div class="info-row">
@@ -340,10 +350,6 @@
           <div class="info-row">
             <span class="label">Giảm giá</span>
             <span class="value text-danger">-{{ formatCurrency(invoice.tienGiamGia || 0) }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Phí vận chuyển</span>
-            <span class="value">{{ formatCurrency(invoice.phiGiaoHang || 0) }}</span>
           </div>
           <div class="info-row total">
             <span class="label">Thành tiền</span>
@@ -424,10 +430,6 @@
         <div class="summary-row" *ngIf="invoice.tienGiamGia && invoice.tienGiamGia > 0">
           <span>Giảm giá</span>
           <strong class="text-danger">-{{ formatCurrency(invoice.tienGiamGia) }}</strong>
-        </div>
-        <div class="summary-row" *ngIf="invoice.phiGiaoHang && invoice.phiGiaoHang > 0">
-          <span>Phí vận chuyển</span>
-          <strong>{{ formatCurrency(invoice.phiGiaoHang) }}</strong>
         </div>
         <div class="summary-row total">
           <span>Thành tiền</span>

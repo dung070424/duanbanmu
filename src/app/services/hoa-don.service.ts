@@ -553,6 +553,47 @@ export class HoaDonService {
   }
 
   // Customer orders methods
+  /**
+   * Tra cứu đơn hàng theo mã hóa đơn (cho khách hàng chưa đăng nhập)
+   */
+  searchOrderByCode(orderCode: string): Observable<HoaDonDTO> {
+    const params = new HttpParams()
+      .set('page', '0')
+      .set('size', '1')
+      .set('keyword', orderCode.trim());
+    
+    return this.http.get<any>(`${this.apiUrl}/page`, { params }).pipe(
+      map((response: any) => {
+        if (response.content && Array.isArray(response.content) && response.content.length > 0) {
+          const order = response.content[0];
+          
+          // Map danhSachChiTiet sang danhSachSanPham
+          if (order.danhSachChiTiet && Array.isArray(order.danhSachChiTiet)) {
+            order.danhSachSanPham = order.danhSachChiTiet.map((item: any) => ({
+              id: item.id,
+              chiTietSanPhamId: item.chiTietSanPhamId,
+              tenSanPham: item.tenSanPham,
+              maSanPham: item.maSanPham,
+              mauSac: item.mauSac,
+              kichThuoc: item.kichThuoc,
+              nhaSanXuat: item.nhaSanXuat,
+              soLuong: item.soLuong,
+              donGia: item.donGia ? Number(item.donGia) : 0,
+              giamGia: item.giamGia ? Number(item.giamGia) : 0,
+              thanhTien: item.thanhTien ? Number(item.thanhTien) : 0,
+              anhSanPham: item.anhSanPham,
+              sanPhamId: item.chiTietSanPhamId
+            }));
+          }
+          
+          return order as HoaDonDTO;
+        } else {
+          throw new Error('Không tìm thấy đơn hàng với mã này');
+        }
+      })
+    );
+  }
+
   getCustomerOrders(page: number = 0, size: number = 10): Observable<any> {
     const params = new HttpParams()
       .set('page', page.toString())

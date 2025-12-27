@@ -25,10 +25,17 @@ export class CustomerOrdersComponent implements OnInit {
   totalElements = 0;
   pageSize = 10;
   searchTerm: string = ''; // Tìm kiếm theo mã đơn hàng
+  
+  // Tra cứu đơn hàng (cho khách hàng chưa đăng nhập)
+  orderCodeSearch: string = '';
+  searchedOrder: HoaDonDTO | null = null;
+  isSearching = false;
+  searchError = '';
+  showOrderPlacedMessage = false; // Hiển thị thông báo sau khi đặt hàng thành công
 
   constructor(
     private hoaDonService: HoaDonService,
-    private authService: AuthService,
+    public authService: AuthService, // Changed to public để dùng trong template
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private location: Location,
@@ -36,17 +43,29 @@ export class CustomerOrdersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // QUAN TRỌNG: Cho phép xem lịch sử đơn hàng nếu đã đăng nhập (không nhất thiết phải có role CUSTOMER)
-    // Vì có thể user đã đăng nhập nhưng chưa có role CUSTOMER
+    console.log('📋 Customer Orders Component initialized');
+    console.log('📋 User logged in:', this.authService.isLoggedIn());
+    
+    // QUAN TRỌNG: Khi chưa đăng nhập, CHỈ hiển thị view tra cứu đơn hàng
+    // KHÔNG load đơn hàng từ localStorage, người dùng phải nhập mã hóa đơn để tra cứu
     if (!this.authService.isLoggedIn()) {
-      // Nếu chưa đăng nhập, redirect đến shop login
-      this.router.navigate(['/shop/login'], {
-        queryParams: { returnUrl: '/customer/orders' }
-      });
+      this.isLoading = false;
+      // Kiểm tra query params để hiển thị thông báo sau khi đặt hàng thành công
+      const orderPlaced = this.activatedRoute.snapshot.queryParams['orderPlaced'];
+      if (orderPlaced === 'true') {
+        this.showOrderPlacedMessage = true;
+        // Xóa query param sau khi đã sử dụng
+        this.router.navigate([], {
+          relativeTo: this.activatedRoute,
+          queryParams: {},
+          replaceUrl: true
+        });
+      }
+      // KHÔNG tự động tra cứu đơn hàng - người dùng phải nhập mã từ email
       return;
     }
     
-    // Set isLoading = true khi bắt đầu load
+    // Nếu đã đăng nhập, load đơn hàng từ API
     this.isLoading = true;
     
     // Kiểm tra query params để highlight đơn hàng vừa tạo
@@ -67,7 +86,7 @@ export class CustomerOrdersComponent implements OnInit {
       this.loadOrders();
     }
     
-    // Auto refresh orders every 30 seconds to update status
+    // Auto refresh orders every 30 seconds to update status (chỉ khi đã đăng nhập)
     setInterval(() => {
       if (!this.isLoading) { // Chỉ refresh nếu không đang load
         this.loadOrders();
@@ -82,62 +101,119 @@ export class CustomerOrdersComponent implements OnInit {
     }
     this.error = '';
 
-    console.log('📋 Loading customer orders, page:', this.currentPage, 'size:', this.pageSize);
+    // Nếu đã đăng nhập, load từ API
+    if (this.authService.isLoggedIn()) {
+      console.log('📋 Loading customer orders from API, page:', this.currentPage, 'size:', this.pageSize);
 
-    this.hoaDonService.getCustomerOrders(this.currentPage, this.pageSize).subscribe({
-      next: (response: any) => {
-        console.log('✅ Customer orders response:', {
-          contentLength: response.content?.length || 0,
-          totalElements: response.totalElements || 0,
-          totalPages: response.totalPages || 0,
-          currentPage: response.currentPage || 0
-        });
-        
-        if (response.content && Array.isArray(response.content)) {
-          this.orders = response.content;
-          this.totalPages = response.totalPages || 0;
-          this.totalElements = response.totalElements || 0;
-          this.filterOrders(); // Áp dụng filter sau khi load
-          console.log('✅ Loaded', this.orders.length, 'orders');
-        } else {
+      this.hoaDonService.getCustomerOrders(this.currentPage, this.pageSize).subscribe({
+        next: (response: any) => {
+          console.log('✅ Customer orders response:', {
+            contentLength: response.content?.length || 0,
+            totalElements: response.totalElements || 0,
+            totalPages: response.totalPages || 0,
+            currentPage: response.currentPage || 0
+          });
+          
+          if (response.content && Array.isArray(response.content)) {
+            this.orders = response.content;
+            this.totalPages = response.totalPages || 0;
+            this.totalElements = response.totalElements || 0;
+            this.filterOrders(); // Áp dụng filter sau khi load
+            console.log('✅ Loaded', this.orders.length, 'orders from API');
+          } else {
+            this.orders = [];
+            this.filteredOrders = [];
+            this.totalPages = 0;
+            this.totalElements = 0;
+            console.log('⚠️ No orders found or invalid response format');
+          }
+          
+          this.isLoading = false;
+          
+          // Force change detection để đảm bảo UI được cập nhật
+          this.cdr.detectChanges();
+          
+          // Gọi callback nếu có (để highlight đơn hàng mới)
+          if (callback) {
+            setTimeout(() => callback(), 100); // Đợi một chút để DOM render
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error loading customer orders:', error);
+          this.error = 'Không thể tải danh sách đơn hàng. Vui lòng thử lại!';
           this.orders = [];
           this.filteredOrders = [];
-          this.totalPages = 0;
-          this.totalElements = 0;
-          console.log('⚠️ No orders found or invalid response format');
+          this.isLoading = false;
+          
+          // Force change detection để đảm bảo UI được cập nhật
+          this.cdr.detectChanges();
+          
+          // Vẫn gọi callback nếu có lỗi
+          if (callback) {
+            callback();
+          }
         }
-        
-        this.isLoading = false;
-        
-        // Force change detection để đảm bảo UI được cập nhật
-        this.cdr.detectChanges();
-        
-        // Gọi callback nếu có (để highlight đơn hàng mới)
-        if (callback) {
-          setTimeout(() => callback(), 100); // Đợi một chút để DOM render
-        }
-      },
-      error: (error) => {
-        console.error('❌ Error loading customer orders:', error);
-        this.error = 'Không thể tải danh sách đơn hàng. Vui lòng thử lại!';
+      });
+    } else {
+      // QUAN TRỌNG: Khi chưa đăng nhập, KHÔNG load từ localStorage
+      // Người dùng phải tra cứu bằng mã hóa đơn
+      console.log('📋 User not logged in - showing order lookup view only');
+      this.orders = [];
+      this.filteredOrders = [];
+      this.totalElements = 0;
+      this.totalPages = 0;
+      this.isLoading = false;
+      this.cdr.detectChanges();
+      
+      // Gọi callback nếu có
+      if (callback) {
+        setTimeout(() => callback(), 100);
+      }
+    }
+  }
+
+  /**
+   * Load đơn hàng từ localStorage (cho khách hàng chưa đăng nhập)
+   */
+  private loadOrdersFromLocalStorage(): void {
+    try {
+      const storedOrders = localStorage.getItem('guest_orders');
+      if (storedOrders) {
+        const orders = JSON.parse(storedOrders);
+        // Sắp xếp theo ngày tạo (mới nhất trước)
+        this.orders = orders.sort((a: HoaDonDTO, b: HoaDonDTO) => {
+          const dateA = new Date(a.ngayTao).getTime();
+          const dateB = new Date(b.ngayTao).getTime();
+          return dateB - dateA;
+        });
+        this.totalElements = this.orders.length;
+        this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+        this.filterOrders();
+        console.log('✅ Loaded', this.orders.length, 'orders from localStorage');
+      } else {
         this.orders = [];
         this.filteredOrders = [];
-        this.isLoading = false;
-        
-        // Force change detection để đảm bảo UI được cập nhật
-        this.cdr.detectChanges();
-        
-        // Vẫn gọi callback nếu có lỗi
-        if (callback) {
-          callback();
-        }
+        this.totalElements = 0;
+        this.totalPages = 0;
+        console.log('⚠️ No orders found in localStorage');
       }
-    });
+    } catch (error) {
+      console.error('❌ Error loading orders from localStorage:', error);
+      this.orders = [];
+      this.filteredOrders = [];
+      this.totalElements = 0;
+      this.totalPages = 0;
+    }
   }
 
   onPageChange(page: number): void {
     this.currentPage = page;
-    this.loadOrders();
+    if (this.authService.isLoggedIn()) {
+      this.loadOrders();
+    } else {
+      // Với localStorage, chỉ cần filter lại
+      this.filterOrders();
+    }
   }
 
   viewOrderDetail(orderId: number): void {
@@ -216,17 +292,33 @@ export class CustomerOrdersComponent implements OnInit {
   }
 
   /**
-   * Lọc đơn hàng theo mã đơn hàng
+   * Lọc đơn hàng theo mã đơn hàng và áp dụng pagination
    */
   filterOrders(): void {
+    let filtered: HoaDonDTO[] = [];
+    
+    // Lọc theo search term
     if (!this.searchTerm || this.searchTerm.trim() === '') {
-      this.filteredOrders = [...this.orders];
+      filtered = [...this.orders];
     } else {
       const searchLower = this.searchTerm.toLowerCase().trim();
-      this.filteredOrders = this.orders.filter(order => 
+      filtered = this.orders.filter(order => 
         order.maHoaDon?.toLowerCase().includes(searchLower)
       );
     }
+    
+    // Áp dụng pagination cho localStorage orders (khi chưa đăng nhập)
+    if (!this.authService.isLoggedIn()) {
+      const startIndex = this.currentPage * this.pageSize;
+      const endIndex = startIndex + this.pageSize;
+      this.filteredOrders = filtered.slice(startIndex, endIndex);
+      this.totalElements = filtered.length;
+      this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+    } else {
+      // Với API, filteredOrders đã được pagination từ backend
+      this.filteredOrders = filtered;
+    }
+    
     this.cdr.detectChanges();
   }
 
@@ -243,6 +335,69 @@ export class CustomerOrdersComponent implements OnInit {
   clearSearch(): void {
     this.searchTerm = '';
     this.filterOrders();
+  }
+
+  /**
+   * Tra cứu đơn hàng theo mã hóa đơn (cho khách hàng chưa đăng nhập)
+   * Yêu cầu nhập đầy đủ mã hóa đơn và chỉ hiển thị khi khớp chính xác
+   */
+  searchOrderByCode(): void {
+    const trimmedCode = this.orderCodeSearch?.trim() || '';
+    
+    // Validation: Kiểm tra mã hóa đơn không được rỗng
+    if (!trimmedCode) {
+      this.searchError = 'Vui lòng nhập mã hóa đơn';
+      this.searchedOrder = null;
+      return;
+    }
+
+    // Validation: Kiểm tra độ dài tối thiểu (mã hóa đơn thường có ít nhất 10 ký tự)
+    if (trimmedCode.length < 10) {
+      this.searchError = 'Mã hóa đơn phải có ít nhất 10 ký tự. Vui lòng nhập đầy đủ mã hóa đơn.';
+      this.searchedOrder = null;
+      return;
+    }
+
+    this.isSearching = true;
+    this.searchError = '';
+    this.searchedOrder = null;
+
+    this.hoaDonService.searchOrderByCode(trimmedCode).subscribe({
+      next: (order: HoaDonDTO) => {
+        // Kiểm tra xem mã hóa đơn có khớp chính xác không
+        const searchCode = trimmedCode.toLowerCase();
+        const orderCode = order.maHoaDon?.toLowerCase() || '';
+        
+        if (orderCode === searchCode) {
+          // Khớp chính xác - hiển thị đơn hàng
+          this.searchedOrder = order;
+          this.isSearching = false;
+          this.cdr.detectChanges();
+        } else {
+          // Không khớp chính xác - báo lỗi
+          this.searchError = 'Không tìm thấy đơn hàng với mã này. Vui lòng nhập đầy đủ và chính xác mã hóa đơn.';
+          this.searchedOrder = null;
+          this.isSearching = false;
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error searching order:', error);
+        this.searchError = error.error?.message || 'Không tìm thấy đơn hàng với mã này. Vui lòng kiểm tra lại mã hóa đơn!';
+        this.searchedOrder = null;
+        this.isSearching = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Xóa kết quả tra cứu
+   */
+  clearSearchResult(): void {
+    this.orderCodeSearch = '';
+    this.searchedOrder = null;
+    this.searchError = '';
   }
 
   /**
