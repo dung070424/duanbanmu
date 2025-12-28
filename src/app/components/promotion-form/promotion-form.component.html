@@ -34,7 +34,7 @@
         <div class="form-group">
           <label for="maDotGiamGia">Mã đợt giảm giá</label>
           <input type="text" id="maDotGiamGia" class="form-control" [(ngModel)]="promotionData.maDotGiamGia"
-            placeholder="Mã tự động" readonly />
+            placeholder="Mã tự động hoặc nhập tay" />
         </div>
 
         <div class="form-group">
@@ -452,6 +452,25 @@
     <div class="confirm-modal-footer">
       <button class="btn btn-secondary" (click)="onCancelSubmit()">Hủy</button>
       <button class="btn btn-primary" (click)="onConfirmSubmit()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Confirmation Modal -->
+<div class="confirm-modal-overlay" *ngIf="showCancelModal">
+  <div class="confirm-modal">
+    <div class="confirm-modal-header">
+      <h3>Xác nhận hủy</h3>
+      <button class="btn-close" (click)="onCloseCancelModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="confirm-modal-body">
+      <p>Bạn có chắc chắn muốn hủy? Tất cả dữ liệu đã nhập sẽ bị xóa.</p>
+    </div>
+    <div class="confirm-modal-footer">
+      <button class="btn btn-secondary" (click)="onCloseCancelModal()">Không</button>
+      <button class="btn btn-primary" (click)="onConfirmCancel()">Có, Hủy</button>
     </div>
   </div>
 </div>

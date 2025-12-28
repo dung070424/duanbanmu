@@ -121,6 +121,7 @@ export class PromotionFormComponent implements OnInit {
 
   // Confirmation Modal
   showConfirmModal = false;
+  showCancelModal = false;
 
   constructor(
     private dotGiamGiaService: DotGiamGiaService,
@@ -788,55 +789,61 @@ export class PromotionFormComponent implements OnInit {
   }
 
   // Reset form - Hủy tất cả dữ liệu đã nhập
+  // Reset form - Hủy tất cả dữ liệu đã nhập
   onCancel() {
-    // Hiển thị confirm dialog
-    const confirmed = confirm('Bạn có chắc chắn muốn hủy? Tất cả dữ liệu đã nhập sẽ bị xóa.');
+    this.showCancelModal = true;
+  }
 
-    if (confirmed) {
-      // Reset promotion data
-      this.promotionData = {
-        maDotGiamGia: '',
-        tenDotGiamGia: '',
-        giaTriGiamGia: 0,
-        loaiDotGiamGia: '',
-        soTien: 0,
-        ngayBatDau: '',
-        ngayKetThuc: '',
-        moTa: '',
-        selectedProducts: []
-      };
+  onCloseCancelModal() {
+    this.showCancelModal = false;
+  }
 
-      // Clear validation errors
-      this.clearValidationErrors();
+  onConfirmCancel() {
+    this.showCancelModal = false;
 
-      // Reset selected products
-      this.products.forEach(product => {
-        product.selected = false;
-      });
+    // Reset promotion data
+    this.promotionData = {
+      maDotGiamGia: '',
+      tenDotGiamGia: '',
+      giaTriGiamGia: 0,
+      loaiDotGiamGia: '',
+      soTien: 0,
+      ngayBatDau: '',
+      ngayKetThuc: '',
+      moTa: '',
+      selectedProducts: []
+    };
 
-      // Reset detail products selection
-      this.detailProducts.forEach(product => {
-        product.selected = false;
-      });
+    // Clear validation errors
+    this.clearValidationErrors();
 
-      // Clear selected product for detail view
-      this.selectedProductForDetail = null;
+    // Reset selected products
+    this.products.forEach(product => {
+      product.selected = false;
+    });
 
-      // Reset filters
-      this.detailFilterProduct = '';
-      this.detailFilterLoaiMu = '';
-      this.detailFilterColor = '';
-      this.applyDetailFilters();
+    // Reset detail products selection
+    this.detailProducts.forEach(product => {
+      product.selected = false;
+    });
 
-      // Generate new promotion code
-      this.generatePromotionCode();
+    // Clear selected product for detail view
+    this.selectedProductForDetail = null;
 
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Reset filters
+    this.detailFilterProduct = '';
+    this.detailFilterLoaiMu = '';
+    this.detailFilterColor = '';
+    this.applyDetailFilters();
 
-      // Show success message
-      console.log('✅ Form đã được reset');
-    }
+    // Generate new promotion code
+    this.generatePromotionCode();
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Show success message
+    console.log('✅ Form đã được reset');
   }
 
   formatCurrency(amount: number): string {

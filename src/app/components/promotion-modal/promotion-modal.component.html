@@ -1,87 +1,188 @@
 <div class="modal-overlay" *ngIf="isVisible" (click)="onBackdropClick($event)">
   <div class="modal-container" [class.edit-mode]="isEditMode">
-    <button class="close-btn" (click)="onClose()">
+
+    <!-- Edit Mode Header -->
+    <div class="modal-header-custom" *ngIf="isEditMode">
+      <h3>{{ isViewMode ? 'Chi tiết Phiếu Giảm Giá' : 'Chỉnh sửa Phiếu Giảm Giá' }}</h3>
+      <button class="close-btn-custom" (click)="onClose()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Add Mode Close Button (Standard) -->
+    <button class="close-btn" (click)="onClose()" *ngIf="!isEditMode">
       <i class="bi bi-x"></i>
     </button>
 
-    <div class="modal-body">
+    <div class="modal-body" [class.edit-mode-body]="isEditMode">
       <div class="modal-content-layout">
         <!-- Left Panel: Thông Tin Đợt Giảm Giá -->
-        <div class="left-panel">
-          <div class="panel-header">
+        <div class="left-panel" [class.full-width]="isEditMode">
+          <div class="panel-header" *ngIf="!isEditMode">
             <i class="bi bi-info-circle"></i>
             <h4>Thông Tin Đợt Giảm Giá</h4>
           </div>
 
           <form (ngSubmit)="onSave()">
-            <div class="form-group">
-              <label for="code">Mã đợt giảm giá</label>
-              <input type="text" id="code" class="form-control" [(ngModel)]="formData.code" name="code"
-                placeholder="Mã tự động" [readonly]="true" required />
-            </div>
-
-            <div class="form-group">
-              <label for="name">Tên đợt giảm giá</label>
-              <input type="text" id="name" class="form-control" [(ngModel)]="formData.name" name="name"
-                placeholder="Nhập tên đợt giảm giá" [readonly]="isViewMode" required />
-            </div>
-
-            <div class="form-group">
-              <label for="discountType">Loại giảm giá</label>
-              <select id="discountType" class="form-control" [(ngModel)]="formData.discountType" name="discountType"
-                [disabled]="isViewMode" required>
-                <option value="">Chọn loại giảm giá</option>
-                <option value="PHAN_TRAM">Phần trăm (%)</option>
-                <option value="SO_TIEN">Số tiền (VND)</option>
-              </select>
-            </div>
-
-            <!-- Hiển thị khi chọn Phần trăm -->
-            <div class="form-group" *ngIf="formData.discountType === 'PHAN_TRAM'">
-              <label for="discountValue">Giá trị giảm giá (%)</label>
-              <input type="number" id="discountValue" class="form-control" [(ngModel)]="formData.discountValue"
-                name="discountValue" placeholder="Nhập % giảm giá (0-100)" min="0" max="100" [readonly]="isViewMode"
-                [required]="formData.discountType === 'PHAN_TRAM'" />
-            </div>
-
-            <!-- Hiển thị khi chọn Số tiền -->
-            <div class="form-group" *ngIf="formData.discountType === 'SO_TIEN'">
-              <label for="maxDiscountAmount">Số tiền giảm (VND)</label>
-              <input type="number" id="maxDiscountAmount" class="form-control" [(ngModel)]="formData.maxDiscountAmount"
-                name="maxDiscountAmount" placeholder="Nhập số tiền giảm" min="0" [readonly]="isViewMode"
-                [required]="formData.discountType === 'SO_TIEN'" />
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="startDate">Ngày bắt đầu</label>
-                <div class="date-input-group">
-                  <input type="date" id="startDate" class="form-control" [(ngModel)]="formData.startDate"
-                    name="startDate" [readonly]="isViewMode" required />
-                  <i class="bi bi-calendar3"></i>
+            <!-- Edit Mode Grid Layout -->
+            <div class="form-grid" *ngIf="isEditMode">
+              <div class="form-row-grid">
+                <div class="form-group">
+                  <label for="code">Mã Phiếu</label>
+                  <input type="text" id="code" class="form-control" [(ngModel)]="formData.code" name="code"
+                    placeholder="Mã tự động" [readonly]="true" required />
+                </div>
+                <div class="form-group">
+                  <label for="name">Tên Phiếu</label>
+                  <input type="text" id="name" class="form-control" [(ngModel)]="formData.name" name="name"
+                    placeholder="Nhập tên đợt giảm giá" [readonly]="isViewMode" required />
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="endDate">Ngày kết thúc</label>
-                <div class="date-input-group">
-                  <input type="date" id="endDate" class="form-control" [(ngModel)]="formData.endDate" name="endDate"
-                    [readonly]="isViewMode" required />
-                  <i class="bi bi-calendar3"></i>
+              <div class="form-row-grid">
+                <div class="form-group">
+                  <label for="discountType">Loại Giảm Giá</label>
+                  <select id="discountType" class="form-control" [(ngModel)]="formData.discountType" name="discountType"
+                    [disabled]="isViewMode" required>
+                    <option value="">Chọn loại giảm giá</option>
+                    <option value="PHAN_TRAM">Phần trăm (%)</option>
+                    <option value="SO_TIEN">Số tiền (VND)</option>
+                  </select>
+                </div>
+                <!-- Placeholder for Status if needed, strictly sticking to existing fields per user req -->
+                <div class="form-group">
+                  <label for="status">Trạng thái</label>
+                  <select id="status" class="form-control" [(ngModel)]="formData.status" name="status"
+                    [disabled]="isViewMode">
+                    <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group" *ngIf="formData.discountType === 'PHAN_TRAM'">
+                <label for="discountValue">Giá trị giảm</label>
+                <div class="input-with-suffix">
+                  <input type="number" id="discountValue" class="form-control" [(ngModel)]="formData.discountValue"
+                    name="discountValue" placeholder="0" min="0" max="100" [readonly]="isViewMode"
+                    [required]="formData.discountType === 'PHAN_TRAM'" />
+                  <span class="suffix">%</span>
+                </div>
+              </div>
+
+              <div class="form-group" *ngIf="formData.discountType === 'SO_TIEN'">
+                <label for="maxDiscountAmount">Giá trị giảm</label>
+                <div class="input-with-suffix">
+                  <input type="number" id="maxDiscountAmount" class="form-control"
+                    [(ngModel)]="formData.maxDiscountAmount" name="maxDiscountAmount" placeholder="0" min="0"
+                    [readonly]="isViewMode" [required]="formData.discountType === 'SO_TIEN'" />
+                  <span class="suffix">VND</span>
+                </div>
+              </div>
+
+              <div class="form-row-grid">
+                <div class="form-group">
+                  <label for="startDate">Ngày bắt đầu</label>
+                  <div class="date-input-group">
+                    <input type="date" id="startDate" class="form-control" [(ngModel)]="formData.startDate"
+                      name="startDate" [readonly]="isViewMode" required />
+                    <i class="bi bi-calendar3"></i>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="endDate">Ngày kết thúc</label>
+                  <div class="date-input-group">
+                    <input type="date" id="endDate" class="form-control" [(ngModel)]="formData.endDate" name="endDate"
+                      [readonly]="isViewMode" required />
+                    <i class="bi bi-calendar3"></i>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="form-actions" [ngClass]="{'edit-mode-actions': isEditMode}">
-              <button type="button" class="btn btn-secondary" (click)="onClose()">
-                <i class="bi bi-arrow-left"></i>
-                Quay Về
-              </button>
-              <button type="submit" class="btn" [ngClass]="isEditMode ? 'btn-update' : 'btn-success'"
-                [disabled]="isViewMode">
-                <i [ngClass]="isEditMode ? 'bi bi-check-circle' : 'bi bi-plus'"></i>
-                {{ isEditMode ? 'Cập Nhật' : 'Thêm' }}
-              </button>
+            <!-- Standard Add Mode Layout (Preserved) -->
+            <div *ngIf="!isEditMode">
+              <div class="form-group">
+                <label for="code">Mã đợt giảm giá</label>
+                <input type="text" id="code" class="form-control" [(ngModel)]="formData.code" name="code"
+                  placeholder="Mã tự động" [readonly]="true" required />
+              </div>
+
+              <div class="form-group">
+                <label for="name">Tên đợt giảm giá</label>
+                <input type="text" id="name" class="form-control" [(ngModel)]="formData.name" name="name"
+                  placeholder="Nhập tên đợt giảm giá" [readonly]="isViewMode" required />
+              </div>
+
+              <div class="form-group">
+                <label for="discountType">Loại giảm giá</label>
+                <select id="discountType" class="form-control" [(ngModel)]="formData.discountType" name="discountType"
+                  [disabled]="isViewMode" required>
+                  <option value="">Chọn loại giảm giá</option>
+                  <option value="PHAN_TRAM">Phần trăm (%)</option>
+                  <option value="SO_TIEN">Số tiền (VND)</option>
+                </select>
+              </div>
+
+              <!-- Hiển thị khi chọn Phần trăm -->
+              <div class="form-group" *ngIf="formData.discountType === 'PHAN_TRAM'">
+                <label for="discountValue">Giá trị giảm giá (%)</label>
+                <input type="number" id="discountValue" class="form-control" [(ngModel)]="formData.discountValue"
+                  name="discountValue" placeholder="Nhập % giảm giá (0-100)" min="0" max="100" [readonly]="isViewMode"
+                  [required]="formData.discountType === 'PHAN_TRAM'" />
+              </div>
+
+              <!-- Hiển thị khi chọn Số tiền -->
+              <div class="form-group" *ngIf="formData.discountType === 'SO_TIEN'">
+                <label for="maxDiscountAmount">Số tiền giảm (VND)</label>
+                <input type="number" id="maxDiscountAmount" class="form-control"
+                  [(ngModel)]="formData.maxDiscountAmount" name="maxDiscountAmount" placeholder="Nhập số tiền giảm"
+                  min="0" [readonly]="isViewMode" [required]="formData.discountType === 'SO_TIEN'" />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="startDate">Ngày bắt đầu</label>
+                  <div class="date-input-group">
+                    <input type="date" id="startDate" class="form-control" [(ngModel)]="formData.startDate"
+                      name="startDate" [readonly]="isViewMode" required />
+                    <i class="bi bi-calendar3"></i>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="endDate">Ngày kết thúc</label>
+                  <div class="date-input-group">
+                    <input type="date" id="endDate" class="form-control" [(ngModel)]="formData.endDate" name="endDate"
+                      [readonly]="isViewMode" required />
+                    <i class="bi bi-calendar3"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions Footer -->
+            <div class="form-actions" [ngClass]="{'edit-mode-actions': isEditMode}" *ngIf="!isViewMode">
+              <!-- Edit Mode Actions -->
+              <ng-container *ngIf="isEditMode">
+                <button type="button" class="btn btn-secondary" (click)="onClose()">
+                  Hủy
+                </button>
+                <button type="submit" class="btn btn-primary-custom" [disabled]="isViewMode">
+                  Cập nhật
+                </button>
+              </ng-container>
+
+              <!-- Add Mode Actions -->
+              <ng-container *ngIf="!isEditMode">
+                <button type="button" class="btn btn-secondary" (click)="onClose()">
+                  <i class="bi bi-arrow-left"></i>
+                  Quay Về
+                </button>
+                <button type="submit" class="btn btn-success">
+                  <i class="bi bi-plus"></i>
+                  Thêm
+                </button>
+              </ng-container>
             </div>
           </form>
         </div>

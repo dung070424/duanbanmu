@@ -718,3 +718,128 @@ textarea.form-control {
     opacity: 1;
   }
 }
+
+// Custom Header for Edit Mode
+.modal-header-custom {
+  background: #febc49; // Yellow header
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px 12px 0 0;
+
+  h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .close-btn-custom {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// Edit Mode Body
+.modal-body.edit-mode-body {
+  padding: 25px;
+
+  .modal-content-layout {
+    min-height: auto; // Allow content to determine height in edit mode
+    display: block; // Stack content
+  }
+
+  .left-panel {
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 0;
+
+    &.full-width {
+      flex: none;
+      width: 100%;
+    }
+  }
+}
+
+// Edit Mode Grid Layout
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; // Vertical gap between rows or independent fields
+}
+
+.form-row-grid {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+
+  .form-group {
+    flex: 1;
+    margin-bottom: 0; // Reset margin bottom since we use gap
+  }
+}
+
+// Input with Suffix
+.input-with-suffix {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .form-control {
+    padding-right: 45px; // Make space for suffix
+  }
+
+  .suffix {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-left: 1px solid #ced4da;
+    border-radius: 0 6px 6px 0;
+    color: #febc49; // Orange/Yellow text
+    font-weight: 600;
+    font-size: 13px;
+    pointer-events: none;
+  }
+}
+
+// Custom Primary Button (Blue)
+.btn-primary-custom {
+  background-color: #0d6efd; // Bootstrap Blue
+  color: white;
+  border: none;
+  font-weight: 500;
+  padding: 8px 24px;
+  border-radius: 4px;
+
+  &:hover:not(:disabled) {
+    background-color: #0b5ed7;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.25);
+  }
+
+  &:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+  }
+}
