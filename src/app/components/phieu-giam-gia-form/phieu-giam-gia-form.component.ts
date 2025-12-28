@@ -13,11 +13,11 @@ import { PhieuGiamGiaRequest, KhachHang } from '../../interfaces/phieu-giam-gia.
   styleUrls: ['./phieu-giam-gia-form.component.scss']
 })
 export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
-  
+
   private phieuGiamGiaService = inject(PhieuGiamGiaService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
-  
+
   // Form data
   phieuCode = '';
   phieuName = '';
@@ -34,17 +34,17 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   // Suggested codes
   suggestedCodes: string[] = [];
   showSuggestions = false;
-  
+
   // Loading states
   isLoading = false;
   isSaving = false;
-  
+
   // Error handling
   errorMessage = '';
   successMessage = '';
   private successTimeout: any;
   private errorTimeout: any;
-  
+
   // Validation errors
   validationErrors: { [key: string]: string } = {};
 
@@ -53,7 +53,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   selectedCustomers: KhachHang[] = [];
   customers: KhachHang[] = [];
   filteredCustomers: KhachHang[] = [];
-  
+
   // Pagination
   currentPage = 1;
   itemsPerPage = 5;
@@ -65,7 +65,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     const endIndex = startIndex + this.itemsPerPage;
     return this.filteredCustomers.slice(startIndex, endIndex);
   }
-  
+
   // Filter options
   filterGender: boolean | null = null;
   filterStatus: boolean | null = null;
@@ -82,21 +82,21 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   initializeForm() {
     // Generate suggested codes
     this.generateSuggestedCodes();
-    
+
     // Set default dates
     const today = new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
-    
+
     this.startDate = this.formatDateForInput(today);
     this.endDate = this.formatDateForInput(nextMonth);
-    
+
     // Tự động tính trạng thái khi khởi tạo form
     this.updateTrangThaiOnDateChange();
   }
 
   loadCustomers() {
     this.isLoading = true;
-    
+
     this.phieuGiamGiaService.getAllCustomers().subscribe({
       next: (response: any) => {
         try {
@@ -113,7 +113,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
             this.customers = [];
             this.filteredCustomers = [];
           }
-          
+
           // Trigger change detection một cách an toàn
           this.cdr.markForCheck();
         } catch (error) {
@@ -150,9 +150,9 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
       filterPurchaseRange: this.filterPurchaseRange,
       filterPointRange: this.filterPointRange
     });
-    
+
     let result = [...this.customers];
-    
+
     // Apply search term filter
     if (this.searchTerm && this.searchTerm.trim()) {
       const searchLower = this.searchTerm.toLowerCase();
@@ -164,53 +164,53 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
       );
       console.log('After search filter:', result.length);
     }
-    
+
     // Apply gender filter
     if (this.filterGender !== null && this.filterGender !== undefined) {
       const beforeCount = result.length;
       result = result.filter(customer => customer.gioiTinh === this.filterGender);
       console.log(`After gender filter (${this.filterGender}):`, result.length, '(was', beforeCount, ')');
     }
-    
+
     // Apply status filter
     if (this.filterStatus !== null && this.filterStatus !== undefined) {
       const beforeCount = result.length;
       result = result.filter(customer => customer.trangThai === this.filterStatus);
       console.log(`After status filter (${this.filterStatus}):`, result.length, '(was', beforeCount, ')');
     }
-    
+
     // Apply age range filter
     if (this.filterAgeRange && this.filterAgeRange.trim()) {
       const beforeCount = result.length;
       result = result.filter(customer => this.isInAgeRange(customer));
       console.log(`After age range filter (${this.filterAgeRange}):`, result.length, '(was', beforeCount, ')');
     }
-    
+
     // Apply purchase range filter
     if (this.filterPurchaseRange && this.filterPurchaseRange.trim()) {
       const beforeCount = result.length;
       result = result.filter(customer => this.isInPurchaseRange(customer));
       console.log(`After purchase range filter (${this.filterPurchaseRange}):`, result.length, '(was', beforeCount, ')');
     }
-    
+
     // Apply point range filter
     if (this.filterPointRange && this.filterPointRange.trim()) {
       const beforeCount = result.length;
       result = result.filter(customer => this.isInPointRange(customer));
       console.log(`After point range filter (${this.filterPointRange}):`, result.length, '(was', beforeCount, ')');
     }
-    
+
     this.filteredCustomers = result;
     console.log('Final filtered customers:', this.filteredCustomers.length);
     console.log('=== filterCustomers end ===');
-    
+
     // Reset về trang 1 khi filter thay đổi
     this.currentPage = 1;
-    
+
     // Trigger change detection để cập nhật UI
     this.cdr.markForCheck();
   }
-  
+
   // Pagination methods
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
@@ -218,95 +218,95 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
     }
   }
-  
+
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
       this.cdr.markForCheck();
     }
   }
-  
+
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
       this.cdr.markForCheck();
     }
   }
-  
+
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxPages = Math.min(5, this.totalPages); // Hiển thị tối đa 5 số trang
     let startPage = Math.max(1, this.currentPage - Math.floor(maxPages / 2));
     let endPage = Math.min(this.totalPages, startPage + maxPages - 1);
-    
+
     // Điều chỉnh nếu gần cuối
     if (endPage - startPage < maxPages - 1) {
       startPage = Math.max(1, endPage - maxPages + 1);
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
     return pages;
   }
-  
+
   // Helper method for pagination info
   getEndIndex(): number {
     return Math.min(this.currentPage * this.itemsPerPage, this.filteredCustomers.length);
   }
-  
+
   // Helper method to check if customer is in age range
   isInAgeRange(customer: KhachHang): boolean {
     if (!customer.ngaySinh) {
       console.log('Customer has no birth date:', customer.tenKhachHang);
       return false;
     }
-    
+
     const today = new Date();
     const birthDate = new Date(customer.ngaySinh);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     const [minAge, maxAge] = this.filterAgeRange.split('-').map(Number);
     const inRange = age >= minAge && age <= maxAge;
-    
+
     if (!inRange) {
       console.log(`Customer ${customer.tenKhachHang} age ${age} not in range ${minAge}-${maxAge}`);
     }
-    
+
     return inRange;
   }
-  
+
   // Helper method to check if customer is in purchase range
   isInPurchaseRange(customer: KhachHang): boolean {
     const purchaseCount = customer.soLanMua || 0;
     const [min, max] = this.filterPurchaseRange.split('-').map(Number);
     const inRange = purchaseCount >= min && purchaseCount <= max;
-    
+
     if (!inRange) {
       console.log(`Customer ${customer.tenKhachHang} purchases ${purchaseCount} not in range ${min}-${max}`);
     }
-    
+
     return inRange;
   }
-  
+
   // Helper method to check if customer is in point range
   isInPointRange(customer: KhachHang): boolean {
     const points = customer.diemTichLuy || 0;
     const [min, max] = this.filterPointRange.split('-').map(Number);
     const inRange = points >= min && points <= max;
-    
+
     if (!inRange) {
       console.log(`Customer ${customer.tenKhachHang} points ${points} not in range ${min}-${max}`);
     }
-    
+
     return inRange;
   }
-  
+
   // Clear all filters
   clearAllFilters() {
     this.searchTerm = '';
@@ -317,7 +317,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     this.filterPointRange = '';
     this.filterCustomers();
   }
-  
+
   // Toggle filter options visibility
   toggleFilterOptions() {
     this.showFilterOptions = !this.showFilterOptions;
@@ -355,29 +355,30 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     return this.selectedCustomers.some(c => c.id === customer.id);
   }
 
+  // Confirmation Modal
+  showConfirmModal = false;
+
   // Save phiếu giảm giá
   savePhieuGiamGia() {
     // Clear messages trước
     this.clearSuccessMessage();
     this.clearErrorMessage();
-    
+
     if (!this.validateForm()) {
       this.showErrorMessage('Vui lòng kiểm tra lại thông tin nhập vào!');
       return;
     }
 
-    // Thông báo xác nhận trước khi thêm mới
-    const confirmMessage = this.isPublic 
-      ? `Bạn có chắc chắn muốn tạo phiếu giảm giá công khai "${this.phieuName}" không?`
-      : `Bạn có chắc chắn muốn tạo phiếu giảm giá cá nhân "${this.phieuName}" cho ${this.selectedCustomers.length} khách hàng không?`;
-    
-    const confirmed = window.confirm(confirmMessage);
-    
-    if (!confirmed) {
-      // Người dùng nhấn Hủy - không thực hiện thêm mới
-      console.log('Người dùng đã hủy thao tác thêm phiếu giảm giá');
-      return;
-    }
+    // Hiển thị modal xác nhận
+    this.showConfirmModal = true;
+  }
+
+  onCancelSave() {
+    this.showConfirmModal = false;
+  }
+
+  onConfirmSave() {
+    this.showConfirmModal = false;
 
     // Người dùng đã xác nhận - tiếp tục thêm mới
     this.isSaving = true;
@@ -406,21 +407,21 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     this.phieuGiamGiaService.createPhieuGiamGia(requestBody).subscribe({
       next: (response) => {
         console.log('Save success:', response);
-        
+
         this.isSaving = false;
-        
+
         // Hiển thị toast message phù hợp với chế độ
         if (this.isPublic) {
           this.showSuccessMessage('Tạo phiếu giảm giá công khai thành công!');
         } else {
           this.showSuccessMessage(`Tạo phiếu giảm giá cá nhân thành công cho ${this.selectedCustomers.length} khách hàng! Email thông báo đang được gửi.`);
         }
-        
+
         // Navigate to phiếu giảm giá list page after 2 seconds
         setTimeout(() => {
           this.router.navigate(['/phieu-giam-gia']);
         }, 2000);
-        
+
         // Reset form sau 500ms để user còn thấy thông báo
         setTimeout(() => {
           this.resetForm();
@@ -479,7 +480,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     // Validate Giá trị giảm (maxDiscount) theo loại phiếu
     // Convert phieuType về boolean để đảm bảo so sánh chính xác
     const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
-    
+
     if (this.maxDiscount === null || this.maxDiscount === undefined) {
       this.validationErrors['maxDiscount'] = 'Giá trị giảm không được để trống';
       isValid = false;
@@ -564,7 +565,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
       const start = new Date(this.startDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       if (isNaN(start.getTime())) {
         this.validationErrors['startDate'] = 'Ngày bắt đầu không hợp lệ';
         isValid = false;
@@ -580,13 +581,13 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
       isValid = false;
     } else {
       const end = new Date(this.endDate);
-      
+
       if (isNaN(end.getTime())) {
         this.validationErrors['endDate'] = 'Ngày kết thúc không hợp lệ';
         isValid = false;
       } else if (this.startDate) {
         const start = new Date(this.startDate);
-        
+
         if (end <= start) {
           this.validationErrors['endDate'] = 'Ngày kết thúc phải sau ngày bắt đầu';
           isValid = false;
@@ -784,12 +785,12 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     const now = new Date();
     const startDate = new Date(this.startDate);
     const endDate = new Date(this.endDate);
-    
+
     // Set thời gian về 00:00:00 để so sánh chính xác ngày
     now.setHours(0, 0, 0, 0);
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(0, 0, 0, 0);
-    
+
     if (now < startDate) {
       // Ngày hiện tại < ngày bắt đầu → Sắp diễn ra
       return 'sap_dien_ra';
@@ -816,14 +817,14 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
 
   onPhieuTypeChange() {
     console.log('onPhieuTypeChange - phieuType value:', this.phieuType, 'type:', typeof this.phieuType);
-    
+
     // Xóa lỗi liên quan khi đổi loại
     this.clearFieldError('maxDiscount');
     this.clearFieldError('minDiscount');
-    
+
     // Convert phieuType về boolean để đảm bảo so sánh chính xác
     const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
-    
+
     // Nếu chuyển sang phần trăm thì ẩn và reset minDiscount
     if (!isMoneyType) {
       this.minDiscount = 0;
@@ -836,7 +837,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   validateMaxDiscount() {
     // Xóa lỗi cũ trước
     this.clearFieldError('maxDiscount');
-    
+
     // Nếu trường rỗng hoặc = 0, không validate (sẽ validate khi submit)
     if (!this.maxDiscount || this.maxDiscount === 0) {
       return;
@@ -844,7 +845,7 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
 
     // Convert phieuType về boolean để đảm bảo so sánh chính xác
     const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
-    
+
     console.log('validateMaxDiscount - phieuType:', this.phieuType, 'isMoneyType:', isMoneyType, 'maxDiscount:', this.maxDiscount);
 
     if (this.maxDiscount === null || this.maxDiscount === undefined) {
@@ -872,15 +873,15 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   validateMinDiscount() {
     // Xóa lỗi cũ trước
     this.clearFieldError('minDiscount');
-    
+
     // Convert phieuType về boolean để đảm bảo so sánh chính xác
     const isMoneyType = this.phieuType === true || (this.phieuType as any) === 'true';
-    
+
     // Chỉ validate khi là Tiền mặt
     if (!isMoneyType) {
       return;
     }
-    
+
     // Nếu trường rỗng hoặc = 0, không validate (sẽ validate khi submit)
     if (this.minDiscount === null || this.minDiscount === undefined || this.minDiscount === 0) {
       return;
@@ -913,13 +914,13 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
   generateAndFillCode() {
     // Tạo mã mới
     const newCode = this.phieuGiamGiaService.generatePhieuCode();
-    
+
     // Điền vào ô input
     this.phieuCode = newCode;
-    
+
     // Clear error nếu có
     this.clearFieldError('phieuCode');
-    
+
     console.log('Generated code:', newCode);
   }
 
@@ -964,23 +965,23 @@ export class PhieuGiamGiaFormComponent implements OnInit, OnDestroy {
     this.quantity = 0;
     this.trangThai = 'sap_dien_ra';
     this.isPublic = true;
-    
+
     const today = new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
     this.startDate = this.formatDateForInput(today);
     this.endDate = this.formatDateForInput(nextMonth);
-    
+
     this.validationErrors = {};
     this.errorMessage = '';
     this.successMessage = '';
-    
+
     // Reset customer data
     this.selectedCustomers = [];
     this.searchTerm = '';
     this.filteredCustomers = [...this.customers]; // Reset filtered customers to show all
-    
+
     this.generateSuggestedCodes();
-    
+
     // Trigger change detection để cập nhật UI
     this.cdr.markForCheck();
   }

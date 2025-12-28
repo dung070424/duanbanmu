@@ -12,13 +12,8 @@
         <label>Tìm kiếm phiếu</label>
         <div class="search-input-group">
           <i class="bi bi-search search-icon"></i>
-          <input
-            type="text"
-            [(ngModel)]="searchTerm"
-            (input)="applyFilters()"
-            placeholder="Mã phiếu, tên phiếu..."
-            class="search-input"
-          />
+          <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()" placeholder="Mã phiếu, tên phiếu..."
+            class="search-input" />
         </div>
       </div>
 
@@ -45,19 +40,9 @@
       <div class="filter-group">
         <label>Khoảng thời gian</label>
         <div class="date-range-inline">
-          <input
-            type="date"
-            [(ngModel)]="startDate"
-            (change)="applyFilters()"
-            class="date-input-inline"
-          />
+          <input type="date" [(ngModel)]="startDate" (change)="applyFilters()" class="date-input-inline" />
           <span class="date-separator-inline">đến</span>
-          <input
-            type="date"
-            [(ngModel)]="endDate"
-            (change)="applyFilters()"
-            class="date-input-inline"
-          />
+          <input type="date" [(ngModel)]="endDate" (change)="applyFilters()" class="date-input-inline" />
         </div>
       </div>
 
@@ -84,12 +69,7 @@
       <i class="bi bi-table section-icon"></i>
       <h3 class="section-title">Danh Sách Phiếu Giảm Giá</h3>
       <div class="header-actions">
-        <button
-          class="btn-refresh"
-          (click)="refreshData()"
-          [disabled]="loading"
-          title="Làm mới dữ liệu"
-        >
+        <button class="btn-refresh" (click)="refreshData()" [disabled]="loading" title="Làm mới dữ liệu">
           <i class="bi bi-arrow-clockwise" [class.spinning]="loading"></i>
         </button>
         <span class="item-count">{{ totalItems }} phiếu giảm giá</span>
@@ -145,28 +125,15 @@
             <td>{{ formatDate(phieu.ngayBatDau) }}</td>
             <td>{{ formatDate(phieu.ngayKetThuc) }}</td>
             <td class="actions">
-              <div
-                class="toggle-switch"
-                [class.active]="phieu.trangThai"
-                [class.updating]="phieu.isUpdating"
-              >
-                <input
-                  type="checkbox"
-                  [checked]="phieu.trangThai"
-                  (click)="toggleStatus(phieu, $event)"
-                  class="toggle-input"
-                  [disabled]="phieu.isUpdating"
-                />
+              <div class="toggle-switch" [class.active]="phieu.trangThai" [class.updating]="phieu.isUpdating">
+                <input type="checkbox" [checked]="phieu.trangThai" (click)="toggleStatus(phieu, $event)"
+                  class="toggle-input" [disabled]="phieu.isUpdating" />
                 <span class="toggle-slider">
                   <span *ngIf="phieu.isUpdating" class="loading-spinner"></span>
                 </span>
               </div>
-              <button
-                class="btn-edit"
-                (click)="editPhieuGiamGia(phieu)"
-                title="Chỉnh sửa"
-                [disabled]="phieu.isUpdating"
-              >
+              <button class="btn-edit" (click)="editPhieuGiamGia(phieu)" title="Chỉnh sửa"
+                [disabled]="phieu.isUpdating">
                 <i class="bi bi-pencil"></i>
               </button>
             </td>
@@ -194,13 +161,8 @@
 
       <!-- Page Numbers -->
       <div class="page-numbers">
-        <button
-          *ngFor="let page of getPageNumbers()"
-          class="page-number-btn"
-          [class.active]="page === currentPage"
-          [disabled]="page === '...'"
-          (click)="onPageNumberClick(page)"
-        >
+        <button *ngFor="let page of getPageNumbers()" class="page-number-btn" [class.active]="page === currentPage"
+          [disabled]="page === '...'" (click)="onPageNumberClick(page)">
           {{ page }}
         </button>
       </div>
@@ -209,9 +171,7 @@
         <i class="bi bi-chevron-right"></i>
       </button>
 
-      <span class="page-info"
-        >Trang {{ currentPage }} / {{ totalPages }} ({{ totalItems }} phiếu)</span
-      >
+      <span class="page-info">Trang {{ currentPage }} / {{ totalPages }} ({{ totalItems }} phiếu)</span>
     </div>
   </div>
 
@@ -229,11 +189,7 @@
 
       <div class="modal-body">
         <!-- General error message -->
-        <div
-          *ngIf="hasEditFieldError('general')"
-          class="alert alert-danger"
-          style="margin-bottom: 20px"
-        >
+        <div *ngIf="hasEditFieldError('general')" class="alert alert-danger" style="margin-bottom: 20px">
           <i class="bi bi-exclamation-triangle"></i>
           {{ getEditFieldError('general') }}
         </div>
@@ -242,31 +198,18 @@
           <div class="form-row">
             <div class="form-group">
               <label>Mã Phiếu</label>
-              <input
-                type="text"
-                [(ngModel)]="editForm.maPhieu"
-                class="form-control disabled-input"
-                [class.is-invalid]="hasEditFieldError('maPhieu')"
-                name="maPhieu"
-                readonly
-                disabled
-                title="Mã phiếu không thể chỉnh sửa"
-              />
+              <input type="text" [(ngModel)]="editForm.maPhieu" class="form-control disabled-input"
+                [class.is-invalid]="hasEditFieldError('maPhieu')" name="maPhieu" readonly disabled
+                title="Mã phiếu không thể chỉnh sửa" />
               <div *ngIf="hasEditFieldError('maPhieu')" class="invalid-feedback">
                 {{ getEditFieldError('maPhieu') }}
               </div>
             </div>
             <div class="form-group">
               <label>Tên Phiếu</label>
-              <input
-                type="text"
-                [(ngModel)]="editForm.tenPhieuGiamGia"
-                class="form-control"
-                [class.is-invalid]="hasEditFieldError('tenPhieuGiamGia')"
-                name="tenPhieuGiamGia"
-                (blur)="onEditFieldBlur('tenPhieuGiamGia')"
-                (input)="onEditFieldChange('tenPhieuGiamGia')"
-              />
+              <input type="text" [(ngModel)]="editForm.tenPhieuGiamGia" class="form-control"
+                [class.is-invalid]="hasEditFieldError('tenPhieuGiamGia')" name="tenPhieuGiamGia"
+                (blur)="onEditFieldBlur('tenPhieuGiamGia')" (input)="onEditFieldChange('tenPhieuGiamGia')" />
               <div *ngIf="hasEditFieldError('tenPhieuGiamGia')" class="invalid-feedback">
                 {{ getEditFieldError('tenPhieuGiamGia') }}
               </div>
@@ -276,23 +219,14 @@
           <div class="form-row">
             <div class="form-group">
               <label>Loại Giảm Giá</label>
-              <select
-                [(ngModel)]="editForm.loaiPhieuGiamGia"
-                class="form-control"
-                name="loaiPhieuGiamGia"
-              >
+              <select [(ngModel)]="editForm.loaiPhieuGiamGia" class="form-control" name="loaiPhieuGiamGia">
                 <option [ngValue]="true">Tiền mặt</option>
                 <option [ngValue]="false">Phần trăm</option>
               </select>
             </div>
             <div class="form-group">
               <label>Trạng thái</label>
-              <select
-                [(ngModel)]="editForm.trangThai"
-                class="form-control disabled-input"
-                name="trangThai"
-                disabled
-              >
+              <select [(ngModel)]="editForm.trangThai" class="form-control disabled-input" name="trangThai" disabled>
                 <option value="sap_dien_ra">Sắp diễn ra</option>
                 <option value="dang_dien_ra">Đang diễn ra</option>
                 <option value="ket_thuc">Kết thúc</option>
@@ -304,15 +238,9 @@
             <div class="form-group">
               <label>Giá trị giảm</label>
               <div class="input-group">
-                <input
-                  type="number"
-                  [(ngModel)]="editForm.giaTriGiam"
-                  class="form-control"
-                  [class.is-invalid]="hasEditFieldError('giaTriGiam')"
-                  name="giaTriGiam"
-                  min="0"
-                  (blur)="onEditFieldBlur('giaTriGiam')"
-                />
+                <input type="number" [(ngModel)]="editForm.giaTriGiam" class="form-control"
+                  [class.is-invalid]="hasEditFieldError('giaTriGiam')" name="giaTriGiam" min="0"
+                  (blur)="onEditFieldBlur('giaTriGiam')" />
                 <span class="input-group-text">{{ editForm.loaiPhieuGiamGia ? 'VND' : '%' }}</span>
               </div>
               <div *ngIf="hasEditFieldError('giaTriGiam')" class="invalid-feedback">
@@ -322,15 +250,9 @@
             <div class="form-group" *ngIf="editForm.loaiPhieuGiamGia">
               <label>Giá trị tối thiểu</label>
               <div class="input-group">
-                <input
-                  type="number"
-                  [(ngModel)]="editForm.giaTriToiThieu"
-                  class="form-control"
-                  [class.is-invalid]="hasEditFieldError('giaTriToiThieu')"
-                  name="giaTriToiThieu"
-                  min="0"
-                  (blur)="onEditFieldBlur('giaTriToiThieu')"
-                />
+                <input type="number" [(ngModel)]="editForm.giaTriToiThieu" class="form-control"
+                  [class.is-invalid]="hasEditFieldError('giaTriToiThieu')" name="giaTriToiThieu" min="0"
+                  (blur)="onEditFieldBlur('giaTriToiThieu')" />
                 <span class="input-group-text">{{ editForm.loaiPhieuGiamGia ? 'VND' : '%' }}</span>
               </div>
               <div *ngIf="hasEditFieldError('giaTriToiThieu')" class="invalid-feedback">
@@ -343,15 +265,9 @@
             <div class="form-group" *ngIf="editForm.loaiPhieuGiamGia">
               <label>Số tiền tối đa</label>
               <div class="input-group">
-                <input
-                  type="number"
-                  [(ngModel)]="editForm.soTienToiDa"
-                  class="form-control"
-                  [class.is-invalid]="hasEditFieldError('soTienToiDa')"
-                  name="soTienToiDa"
-                  min="0"
-                  (blur)="onEditFieldBlur('soTienToiDa')"
-                />
+                <input type="number" [(ngModel)]="editForm.soTienToiDa" class="form-control"
+                  [class.is-invalid]="hasEditFieldError('soTienToiDa')" name="soTienToiDa" min="0"
+                  (blur)="onEditFieldBlur('soTienToiDa')" />
                 <span class="input-group-text">VND</span>
               </div>
               <div *ngIf="hasEditFieldError('soTienToiDa')" class="invalid-feedback">
@@ -361,15 +277,9 @@
             <div class="form-group">
               <label>Hóa đơn tối thiểu</label>
               <div class="input-group">
-                <input
-                  type="number"
-                  [(ngModel)]="editForm.hoaDonToiThieu"
-                  class="form-control"
-                  [class.is-invalid]="hasEditFieldError('hoaDonToiThieu')"
-                  name="hoaDonToiThieu"
-                  min="0"
-                  (blur)="onEditFieldBlur('hoaDonToiThieu')"
-                />
+                <input type="number" [(ngModel)]="editForm.hoaDonToiThieu" class="form-control"
+                  [class.is-invalid]="hasEditFieldError('hoaDonToiThieu')" name="hoaDonToiThieu" min="0"
+                  (blur)="onEditFieldBlur('hoaDonToiThieu')" />
                 <span class="input-group-text">VND</span>
               </div>
               <div *ngIf="hasEditFieldError('hoaDonToiThieu')" class="invalid-feedback">
@@ -381,15 +291,9 @@
           <div class="form-row">
             <div class="form-group">
               <label>Số lượng</label>
-              <input
-                type="number"
-                [(ngModel)]="editForm.soLuongDung"
-                class="form-control"
-                [class.is-invalid]="hasEditFieldError('soLuongDung')"
-                name="soLuongDung"
-                min="0"
-                (blur)="onEditFieldBlur('soLuongDung')"
-              />
+              <input type="number" [(ngModel)]="editForm.soLuongDung" class="form-control"
+                [class.is-invalid]="hasEditFieldError('soLuongDung')" name="soLuongDung" min="0"
+                (blur)="onEditFieldBlur('soLuongDung')" />
               <div *ngIf="hasEditFieldError('soLuongDung')" class="invalid-feedback">
                 {{ getEditFieldError('soLuongDung') }}
               </div>
@@ -397,22 +301,10 @@
             <div class="form-group">
               <label>Khách Hàng</label>
               <div class="input-group">
-                <input
-                  type="text"
-                  [(ngModel)]="editForm.khachHang"
-                  class="form-control"
-                  name="khachHang"
-                  placeholder="Tên khách hàng (nếu có)"
-                  readonly
-                  title="Thông tin khách hàng (chỉ xem)"
-                />
-                <button
-                  type="button"
-                  class="btn-edit-customer"
-                  (click)="openEditCustomerModal()"
-                  *ngIf="editingPhieu?.isPublic === false"
-                  title="Chỉnh sửa khách hàng"
-                >
+                <input type="text" [(ngModel)]="editForm.khachHang" class="form-control" name="khachHang"
+                  placeholder="Tên khách hàng (nếu có)" readonly title="Thông tin khách hàng (chỉ xem)" />
+                <button type="button" class="btn-edit-customer" (click)="openEditCustomerModal()"
+                  *ngIf="editingPhieu?.isPublic === false" title="Chỉnh sửa khách hàng">
                   <i class="bi bi-pencil"></i>
                 </button>
               </div>
@@ -422,35 +314,20 @@
           <div class="form-row">
             <div class="form-group">
               <label>Ngày bắt đầu</label>
-              <input
-                type="date"
-                [(ngModel)]="editForm.ngayBatDau"
-                class="form-control"
-                [class.is-invalid]="hasEditFieldError('ngayBatDau')"
-                name="ngayBatDau"
-                required
-                [attr.min]="minStartDate"
-                [attr.max]="editForm.ngayKetThuc || null"
-                (blur)="onEditFieldBlur('ngayBatDau')"
-                (change)="onEditDateChange()"
-              />
+              <input type="date" [(ngModel)]="editForm.ngayBatDau" class="form-control"
+                [class.is-invalid]="hasEditFieldError('ngayBatDau')" name="ngayBatDau" required
+                [attr.min]="minStartDate" [attr.max]="editForm.ngayKetThuc || null"
+                (blur)="onEditFieldBlur('ngayBatDau')" (change)="onEditDateChange()" />
               <div *ngIf="hasEditFieldError('ngayBatDau')" class="invalid-feedback">
                 {{ getEditFieldError('ngayBatDau') }}
               </div>
             </div>
             <div class="form-group">
               <label>Ngày kết thúc</label>
-              <input
-                type="date"
-                [(ngModel)]="editForm.ngayKetThuc"
-                class="form-control"
-                [class.is-invalid]="hasEditFieldError('ngayKetThuc')"
-                name="ngayKetThuc"
-                required
-                [attr.min]="editForm.ngayBatDau || null"
-                (blur)="onEditFieldBlur('ngayKetThuc')"
-                (change)="onEditDateChange()"
-              />
+              <input type="date" [(ngModel)]="editForm.ngayKetThuc" class="form-control"
+                [class.is-invalid]="hasEditFieldError('ngayKetThuc')" name="ngayKetThuc" required
+                [attr.min]="editForm.ngayBatDau || null" (blur)="onEditFieldBlur('ngayKetThuc')"
+                (change)="onEditDateChange()" />
               <div *ngIf="hasEditFieldError('ngayKetThuc')" class="invalid-feedback">
                 {{ getEditFieldError('ngayKetThuc') }}
               </div>
@@ -460,29 +337,14 @@
       </div>
 
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="closeEditModal()"
-          [disabled]="isUpdating"
-        >
+        <button type="button" class="btn btn-secondary" (click)="closeEditModal()" [disabled]="isUpdating">
           Hủy
         </button>
-        <button
-          type="button"
-          class="btn btn-warning"
-          (click)="testValidation()"
-          style="margin-right: 10px"
-          *ngIf="false"
-        >
+        <button type="button" class="btn btn-warning" (click)="testValidation()" style="margin-right: 10px"
+          *ngIf="false">
           Test Validation
         </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="updatePhieuGiamGia()"
-          [disabled]="isUpdating"
-        >
+        <button type="button" class="btn btn-primary" (click)="updatePhieuGiamGia()" [disabled]="isUpdating">
           <span *ngIf="isUpdating" class="spinner-border spinner-border-sm" role="status"></span>
           {{ isUpdating ? 'Đang cập nhật...' : 'Cập nhật' }}
         </button>
@@ -521,26 +383,23 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    *ngFor="let customer of paginatedAvailableCustomers; let i = index"
-                    (click)="selectCustomerForEdit(customer)"
-                    class="customer-row-edit"
-                    title="Click để chọn khách hàng"
-                  >
+                  <tr *ngFor="let customer of paginatedAvailableCustomers; let i = index"
+                    (click)="selectCustomerForEdit(customer)" class="customer-row-edit"
+                    title="Click để chọn khách hàng">
                     <td>
                       {{
-                        (currentPageAvailableCustomers - 1) * itemsPerPageAvailableCustomers + i + 1
+                      (currentPageAvailableCustomers - 1) * itemsPerPageAvailableCustomers + i + 1
                       }}
                     </td>
                     <td>{{ customer.maKhachHang }}</td>
                     <td>{{ customer.tenKhachHang }}</td>
                     <td>
                       {{
-                        customer.gioiTinh === true
-                          ? 'Nam'
-                          : customer.gioiTinh === false
-                          ? 'Nữ'
-                          : 'N/A'
+                      customer.gioiTinh === true
+                      ? 'Nam'
+                      : customer.gioiTinh === false
+                      ? 'Nữ'
+                      : 'N/A'
                       }}
                     </td>
                     <td>{{ customer.ngaySinh || 'N/A' }}</td>
@@ -557,49 +416,33 @@
               </table>
             </div>
             <!-- Pagination for available customers table -->
-            <div
-              class="pagination-container"
-              *ngIf="availableCustomersForEdit.length > 0 && totalPagesAvailableCustomers > 1"
-            >
+            <div class="pagination-container"
+              *ngIf="availableCustomersForEdit.length > 0 && totalPagesAvailableCustomers > 1">
               <div class="pagination-info">
                 Hiển thị {{ getStartIndexAvailableCustomers() }} -
                 {{ getEndIndexAvailableCustomers() }}
                 / {{ availableCustomersForEdit.length }} khách hàng
               </div>
               <div class="pagination-controls">
-                <button
-                  class="pagination-btn"
-                  [disabled]="currentPageAvailableCustomers === 1"
-                  (click)="goToPageAvailableCustomers(1)"
-                  title="Trang đầu"
-                >
+                <button class="pagination-btn" [disabled]="currentPageAvailableCustomers === 1"
+                  (click)="goToPageAvailableCustomers(1)" title="Trang đầu">
                   <i class="bi bi-chevron-double-left"></i>
                 </button>
-                <button
-                  class="pagination-btn"
-                  [disabled]="currentPageAvailableCustomers === 1"
-                  (click)="prevPageAvailableCustomers()"
-                  title="Trang trước"
-                >
+                <button class="pagination-btn" [disabled]="currentPageAvailableCustomers === 1"
+                  (click)="prevPageAvailableCustomers()" title="Trang trước">
                   <i class="bi bi-chevron-left"></i>
                 </button>
                 <span class="pagination-page-info">
                   Trang {{ currentPageAvailableCustomers }} / {{ totalPagesAvailableCustomers }}
                 </span>
-                <button
-                  class="pagination-btn"
+                <button class="pagination-btn"
                   [disabled]="currentPageAvailableCustomers >= totalPagesAvailableCustomers"
-                  (click)="nextPageAvailableCustomers()"
-                  title="Trang sau"
-                >
+                  (click)="nextPageAvailableCustomers()" title="Trang sau">
                   <i class="bi bi-chevron-right"></i>
                 </button>
-                <button
-                  class="pagination-btn"
+                <button class="pagination-btn"
                   [disabled]="currentPageAvailableCustomers >= totalPagesAvailableCustomers"
-                  (click)="goToPageAvailableCustomers(totalPagesAvailableCustomers)"
-                  title="Trang cuối"
-                >
+                  (click)="goToPageAvailableCustomers(totalPagesAvailableCustomers)" title="Trang cuối">
                   <i class="bi bi-chevron-double-right"></i>
                 </button>
               </div>
@@ -625,22 +468,19 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    *ngFor="let customer of selectedCustomersForEdit; let i = index"
-                    (click)="deselectCustomerForEdit(customer)"
-                    class="customer-row-edit selected-row-edit"
-                    title="Click để bỏ chọn khách hàng"
-                  >
+                  <tr *ngFor="let customer of selectedCustomersForEdit; let i = index"
+                    (click)="deselectCustomerForEdit(customer)" class="customer-row-edit selected-row-edit"
+                    title="Click để bỏ chọn khách hàng">
                     <td>{{ i + 1 }}</td>
                     <td>{{ customer.maKhachHang }}</td>
                     <td>{{ customer.tenKhachHang }}</td>
                     <td>
                       {{
-                        customer.gioiTinh === true
-                          ? 'Nam'
-                          : customer.gioiTinh === false
-                          ? 'Nữ'
-                          : 'N/A'
+                      customer.gioiTinh === true
+                      ? 'Nam'
+                      : customer.gioiTinh === false
+                      ? 'Nữ'
+                      : 'N/A'
                       }}
                     </td>
                     <td>{{ customer.ngaySinh || 'N/A' }}</td>
@@ -664,12 +504,8 @@
         <button type="button" class="btn btn-secondary" (click)="closeEditCustomerModal()">
           Hủy
         </button>
-        <button
-          type="button"
-          class="btn btn-warning"
-          (click)="saveEditCustomer()"
-          title="Lưu tạm thời. Nhấn 'Cập nhật' ở modal chỉnh sửa phiếu giảm giá để lưu vào database."
-        >
+        <button type="button" class="btn btn-warning" (click)="saveEditCustomer()"
+          title="Lưu tạm thời. Nhấn 'Cập nhật' ở modal chỉnh sửa phiếu giảm giá để lưu vào database.">
           Lưu Tạm Thời
         </button>
       </div>
@@ -704,6 +540,34 @@
       <button class="toast-close" (click)="clearErrorMessage()">
         <i class="bi bi-x"></i>
       </button>
+    </div>
+  </div>
+
+  <!-- Confirm Update Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmUpdateModal" style="z-index: 1060;">
+    <div class="modal-content" (click)="$event.stopPropagation()" style="max-width: 450px;">
+      <div class="modal-header" style="background-color: #febc49; color: white;">
+        <h4 style="margin: 0; font-size: 18px;">Xác nhận cập nhật</h4>
+        <button type="button" class="btn-close" (click)="onCancelUpdate()">
+          <i class="bi bi-x-lg" style="color: white;"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p>Bạn có chắc chắn muốn cập nhật thông tin phiếu giảm giá <strong>"{{ editForm.tenPhieuGiamGia }}"</strong>
+          không?</p>
+        <p class="text-secondary small" *ngIf="pendingCustomerIdsForEdit !== null">
+          <i class="bi bi-info-circle"></i> Sẽ cập nhật danh sách khách hàng cho phiếu này.
+        </p>
+      </div>
+      <div class="modal-footer" style="padding: 15px 20px; border-top: 1px solid #eee;">
+        <button type="button" class="btn btn-secondary" (click)="onCancelUpdate()">Hủy</button>
+        <button type="button" class="btn btn-primary" (click)="onConfirmUpdate()"
+          style="background-color: #febc49; border-color: #febc49;">
+          <span *ngIf="isUpdating" class="spinner-border spinner-border-sm me-2" role="status"
+            aria-hidden="true"></span>
+          Xác nhận
+        </button>
+      </div>
     </div>
   </div>
 </div>
