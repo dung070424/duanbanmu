@@ -7,12 +7,8 @@
         <div class="d-flex gap-2">
           <div class="flex-grow-1 position-relative">
             <i class="bi bi-search position-absolute ms-3 mt-3 text-muted"></i>
-            <input
-              class="form-control ps-5"
-              type="text"
-              placeholder="Tìm kiếm hóa đơn..."
-              [(ngModel)]="invoiceSearch"
-            />
+            <input class="form-control ps-5" type="text" placeholder="Tìm kiếm hóa đơn..."
+              [(ngModel)]="invoiceSearch" />
           </div>
           <button class="btn btn-primary" (click)="createNewInvoice()">Tạo hóa đơn</button>
         </div>
@@ -23,23 +19,14 @@
         <h6 class="mb-2 section-title">Hóa đơn chờ</h6>
         <div class="text-muted small" *ngIf="pendingInvoices.length === 0">Chưa có hóa đơn chờ</div>
         <div class="d-flex flex-wrap gap-2" *ngIf="pendingInvoices.length > 0">
-          <div
-            class="pending-item"
-            *ngFor="let inv of pendingInvoices"
-            [class.active]="activePendingInvoiceId === inv.id"
-          >
-            <button
-              class="btn btn-outline-secondary btn-sm"
-              [class.active]="activePendingInvoiceId === inv.id"
-              (click)="loadPending(inv)"
-            >
+          <div class="pending-item" *ngFor="let inv of pendingInvoices"
+            [class.active]="activePendingInvoiceId === inv.id">
+            <button class="btn btn-outline-secondary btn-sm" [class.active]="activePendingInvoiceId === inv.id"
+              (click)="loadPending(inv)">
               {{ inv.maHoaDonCho }} - {{ inv.danhSachGioHang?.length || 0 }} sp
             </button>
-            <button
-              class="btn btn-light btn-sm pending-delete"
-              (click)="deletePending(inv, $event)"
-              title="Xóa hóa đơn chờ"
-            >
+            <button class="btn btn-light btn-sm pending-delete" (click)="deletePending(inv, $event)"
+              title="Xóa hóa đơn chờ">
               <i class="bi bi-x-lg"></i>
             </button>
           </div>
@@ -68,12 +55,7 @@
               <tr *ngFor="let item of cart; let i = index">
                 <td>{{ i + 1 }}</td>
                 <td>
-                  <img
-                    *ngIf="item.imageUrl"
-                    [src]="item.imageUrl"
-                    alt="{{ item.productName }}"
-                    class="product-thumb"
-                  />
+                  <img *ngIf="item.imageUrl" [src]="item.imageUrl" alt="{{ item.productName }}" class="product-thumb" />
                   <div *ngIf="!item.imageUrl" class="product-thumb"></div>
                 </td>
                 <td>
@@ -81,11 +63,7 @@
                 </td>
                 <td>
                   <div class="d-flex align-items-center gap-2">
-                    <span
-                      class="color-dot"
-                      *ngIf="item.colorCode"
-                      [style.background]="item.colorCode"
-                    ></span>
+                    <span class="color-dot" *ngIf="item.colorCode" [style.background]="item.colorCode"></span>
                     <span>{{ item.colorLabel || '—' }}</span>
                   </div>
                 </td>
@@ -94,30 +72,19 @@
                 </td>
                 <td class="text-center">
                   <div class="qty">
-                    <button
-                      class="btn-qty"
-                      (click)="updateCartQuantity(item.productId, item.quantity - 1)"
-                    >
+                    <button class="btn-qty" (click)="updateCartQuantity(item.productId, item.quantity - 1)">
                       -
                     </button>
-                    <input
-                      class="qty-input"
-                      [value]="item.quantity"
-                      (change)="updateCartQuantity(item.productId, $event.target.value)"
-                    />
-                    <button
-                      class="btn-qty"
-                      (click)="updateCartQuantity(item.productId, item.quantity + 1)"
-                    >
+                    <input class="qty-input" [value]="item.quantity"
+                      (change)="updateCartQuantity(item.productId, $event.target.value)" />
+                    <button class="btn-qty" (click)="updateCartQuantity(item.productId, item.quantity + 1)">
                       +
                     </button>
                   </div>
                 </td>
                 <td>
                   <ng-container *ngIf="hasSpecialUnitPrice(item); else normalUnitPrice">
-                    <div
-                      class="d-flex flex-column flex-sm-row gap-1 align-items-start align-items-sm-center"
-                    >
+                    <div class="d-flex flex-column flex-sm-row gap-1 align-items-start align-items-sm-center">
                       <span class="text-muted text-decoration-line-through">
                         {{ formatCurrency(getOriginalUnitPriceDisplay(item)) }}
                       </span>
@@ -158,18 +125,10 @@
         </div>
         <div class="d-flex flex-wrap gap-2 mb-3">
           <div class="flex-grow-1">
-            <input
-              class="form-control"
-              placeholder="Tìm sản phẩm..."
-              [(ngModel)]="productSearchTerm"
-              (input)="filterProducts()"
-            />
+            <input class="form-control" placeholder="Tìm sản phẩm..." [(ngModel)]="productSearchTerm"
+              (input)="filterProducts()" />
           </div>
-          <select
-            class="form-select w-auto"
-            [(ngModel)]="selectedColor"
-            (change)="filterProducts()"
-          >
+          <select class="form-select w-auto" [(ngModel)]="selectedColor" (change)="filterProducts()">
             <option value="all">Tất cả màu sắc</option>
             <option *ngFor="let c of colorOptions" [value]="c">{{ c }}</option>
           </select>
@@ -177,11 +136,7 @@
             <option value="all">Tất cả kích thước</option>
             <option *ngFor="let r of ramOptions" [value]="r">{{ r }}</option>
           </select>
-          <select
-            class="form-select w-auto"
-            [(ngModel)]="selectedStorage"
-            (change)="filterProducts()"
-          >
+          <select class="form-select w-auto" [(ngModel)]="selectedStorage" (change)="filterProducts()">
             <option value="all">Tất cả trọng lượng</option>
             <option *ngFor="let s of storageOptions" [value]="s">{{ s }}</option>
           </select>
@@ -207,12 +162,7 @@
               <tr *ngFor="let p of pagedProducts; let i = index">
                 <td>{{ (productPage - 1) * productPageSize + i + 1 }}</td>
                 <td>
-                  <img
-                    *ngIf="p.imageUrl"
-                    [src]="p.imageUrl"
-                    alt="{{ p.name }}"
-                    class="product-thumb"
-                  />
+                  <img *ngIf="p.imageUrl" [src]="p.imageUrl" alt="{{ p.name }}" class="product-thumb" />
                   <div *ngIf="!p.imageUrl" class="product-thumb"></div>
                 </td>
                 <td>{{ p.name }}</td>
@@ -225,19 +175,14 @@
                 <td>{{ p.stock }}</td>
                 <td class="text-success fw-semibold">{{ formatCurrency(p.price) }}</td>
                 <td>
-                  <button
-                    class="btn-edit"
-                    (click)="addToCart(p)"
-                    [disabled]="!isInvoiceCreated || p.stock <= 0"
+                  <button class="btn-edit" (click)="addToCart(p)" [disabled]="!isInvoiceCreated || p.stock <= 0"
                     [title]="
                       !isInvoiceCreated
                         ? 'Vui lòng tạo hóa đơn trước'
                         : p.stock > 0
                         ? 'Thêm vào giỏ'
                         : 'Sản phẩm tạm hết hàng'
-                    "
-                    [class.disabled]="!isInvoiceCreated || p.stock <= 0"
-                  >
+                    " [class.disabled]="!isInvoiceCreated || p.stock <= 0">
                     <i class="bi bi-cart-plus"></i>
                   </button>
                 </td>
@@ -249,11 +194,8 @@
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Hiển thị</span>
-            <select
-              class="form-select form-select-sm w-auto"
-              [value]="productPageSize"
-              (change)="onChangeProductPageSize($event)"
-            >
+            <select class="form-select form-select-sm w-auto" [value]="productPageSize"
+              (change)="onChangeProductPageSize($event)">
               <option>5</option>
               <option>10</option>
               <option>20</option>
@@ -287,25 +229,14 @@
         <div *ngIf="cart.length > 0">
           <div class="input-group mb-1 position-relative">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input
-              class="form-control"
-              placeholder="Tìm kiếm khách hàng, sđt..."
-              [(ngModel)]="customerSearch"
-              (input)="onCustomerSearchChange()"
-              autocomplete="off"
-            />
+            <input class="form-control" placeholder="Tìm kiếm khách hàng, sđt..." [(ngModel)]="customerSearch"
+              (input)="onCustomerSearchChange()" autocomplete="off" />
             <!-- dropdown results -->
-            <div
-              class="list-group position-absolute w-100"
-              style="top: 100%; z-index: 1051; max-height: 240px; overflow: auto"
-              *ngIf="customerResults.length > 0"
-            >
-              <button
-                type="button"
+            <div class="list-group position-absolute w-100"
+              style="top: 100%; z-index: 1051; max-height: 240px; overflow: auto" *ngIf="customerResults.length > 0">
+              <button type="button"
                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                *ngFor="let c of customerResults"
-                (click)="selectCustomer(c)"
-              >
+                *ngFor="let c of customerResults" (click)="selectCustomer(c)">
                 <span>{{ c.name }}</span>
                 <span class="text-muted small">{{ c.phone }}</span>
               </button>
@@ -319,11 +250,8 @@
             <label class="form-label">Số điện thoại</label>
             <input class="form-control" [(ngModel)]="newSale.customerPhone" />
           </div>
-          <button
-            class="btn btn-yellow w-100"
-            (click)="quickAddCustomer()"
-            [disabled]="!newSale.customerName || !newSale.customerPhone || customerCreating"
-          >
+          <button class="btn btn-yellow w-100" (click)="quickAddCustomer()"
+            [disabled]="!newSale.customerName || !newSale.customerPhone || customerCreating">
             Thêm khách hàng
           </button>
         </div>
@@ -340,12 +268,8 @@
           <h6 class="mb-2 section-title">
             Bàn giao hàng
             <span class="form-switch ms-2 align-middle">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                [(ngModel)]="isDelivery"
-                (change)="onDeliveryToggleChange()"
-              />
+              <input class="form-check-input" type="checkbox" [(ngModel)]="isDelivery"
+                (change)="onDeliveryToggleChange()" />
             </span>
           </h6>
         </div>
@@ -359,48 +283,31 @@
           <div class="d-flex justify-content-between mb-1">
             <span>Tạm tính</span><span>{{ formatCurrency(cartSubtotal) }}</span>
           </div>
-          <div class="d-flex justify-content-between mb-1">
-            <span>Giảm giá</span
-            ><span class="text-danger">-{{ formatCurrency(cartDiscount) }}</span>
+          <div class="d-flex justify-content-between mb-1" *ngIf="cartDiscount > 0">
+            <span>Giảm giá</span>
+            <span class="text-danger">-{{ formatCurrency(cartDiscount) }}</span>
           </div>
           <div class="mb-2" *ngIf="isDelivery">
             <div class="d-flex justify-content-between align-items-center">
               <div class="d-flex align-items-center gap-2">
-                <img
-                  src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
-                  alt="Giao Hàng Tiết Kiệm"
-                  class="shipping-logo"
-                  style="height: 36px; width: auto"
-                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
-                />
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                  alt="Giao Hàng Tiết Kiệm" class="shipping-logo" style="height: 36px; width: auto"
+                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;" />
                 <span>Phí giao hàng</span>
               </div>
               <div class="input-group input-group-sm shipping-fee-group">
                 <span class="input-group-text">₫</span>
-                <input
-                  class="form-control text-end"
-                  type="number"
-                  min="0"
-                  [ngModel]="shippingFee"
+                <input class="form-control text-end" type="number" min="0" [ngModel]="shippingFee"
                   (ngModelChange)="onShippingFeeChange($event); shippingFeeAutoCalculated = false"
-                  [disabled]="isCalculatingShippingFee"
-                  placeholder="0"
-                />
+                  [disabled]="isCalculatingShippingFee" placeholder="0" />
                 <span class="input-group-text" *ngIf="isCalculatingShippingFee">
-                  <span
-                    class="spinner-border spinner-border-sm"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 </span>
               </div>
             </div>
             <div class="text-muted small text-end mt-1">
               <span *ngIf="isCalculatingShippingFee" class="text-info">Đang tính phí...</span>
-              <span
-                *ngIf="!isCalculatingShippingFee && shippingFeeAutoCalculated"
-                class="text-success"
-              >
+              <span *ngIf="!isCalculatingShippingFee && shippingFeeAutoCalculated" class="text-success">
                 {{ formatCurrency(shippingFee) }} (Tự động)
               </span>
               <span *ngIf="!isCalculatingShippingFee && !shippingFeeAutoCalculated">
@@ -425,11 +332,7 @@
                 <span class="input-group-text">
                   <i class="bi bi-geo-alt"></i>
                 </span>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedSavedAddressId"
-                  (change)="onSelectSavedAddress()"
-                >
+                <select class="form-select" [(ngModel)]="selectedSavedAddressId" (change)="onSelectSavedAddress()">
                   <option [ngValue]="''">-- Chọn địa chỉ --</option>
                   <option *ngFor="let a of customerAddresses" [ngValue]="a.id + ''">
                     {{ a.diaChiChiTiet }}, {{ a.phuongXa }}, {{ a.quanHuyen }}, {{ a.tinhThanh }}
@@ -437,10 +340,8 @@
                   <option [ngValue]="'new'">+ Nhập địa chỉ mới</option>
                 </select>
               </div>
-              <div
-                class="selected-address-preview mt-2"
-                *ngIf="customerSavedAddress && selectedSavedAddressId !== 'new'"
-              >
+              <div class="selected-address-preview mt-2"
+                *ngIf="customerSavedAddress && selectedSavedAddressId !== 'new'">
                 <div class="fw-semibold text-primary">Địa chỉ giao hàng</div>
                 <div class="text-dark">
                   {{ customerSavedAddress }}
@@ -457,58 +358,36 @@
             <div class="row g-2">
               <div class="col-12 col-md-6">
                 <label class="form-label mb-1">Tỉnh/Thành</label>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedProvinceCode"
-                  (change)="onProvinceChange()"
-                >
+                <select class="form-select" [(ngModel)]="selectedProvinceCode" (change)="onProvinceChange()">
                   <option [ngValue]="''">-- Chọn tỉnh/thành --</option>
                   <option *ngFor="let p of provinces" [ngValue]="p.code">{{ p.name }}</option>
                 </select>
               </div>
               <div class="col-12 col-md-6">
                 <label class="form-label mb-1">Quận/Huyện</label>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedDistrictCode"
-                  (change)="onDistrictChange()"
-                >
+                <select class="form-select" [(ngModel)]="selectedDistrictCode" (change)="onDistrictChange()">
                   <option [ngValue]="''">-- Chọn quận/huyện --</option>
                   <option *ngFor="let d of districts" [ngValue]="d.code">{{ d.name }}</option>
                 </select>
               </div>
               <div class="col-12 col-md-6">
                 <label class="form-label mb-1">Phường/Xã</label>
-                <select
-                  class="form-select"
-                  [(ngModel)]="selectedWardCode"
-                  (change)="onWardChange()"
-                >
+                <select class="form-select" [(ngModel)]="selectedWardCode" (change)="onWardChange()">
                   <option [ngValue]="''">-- Chọn phường/xã --</option>
                   <option *ngFor="let w of wards" [ngValue]="w.code">{{ w.name }}</option>
                 </select>
               </div>
               <div class="col-12 col-md-6">
                 <label class="form-label mb-1">Địa chỉ chi tiết</label>
-                <input
-                  class="form-control"
-                  type="text"
-                  [(ngModel)]="addressDetail"
-                  (input)="composeShippingAddress()"
-                  placeholder="Số nhà, đường, toà nhà..."
-                />
+                <input class="form-control" type="text" [(ngModel)]="addressDetail" (input)="composeShippingAddress()"
+                  placeholder="Số nhà, đường, toà nhà..." />
               </div>
             </div>
             <div class="form-text mt-1">
               Địa chỉ đầy đủ: <b>{{ shippingAddress || '—' }}</b>
             </div>
             <label class="form-label mb-1 mt-2">Ghi chú giao hàng (tuỳ chọn)</label>
-            <input
-              class="form-control"
-              type="text"
-              [(ngModel)]="shippingNote"
-              placeholder="Ghi chú cho shipper"
-            />
+            <input class="form-control" type="text" [(ngModel)]="shippingNote" placeholder="Ghi chú cho shipper" />
           </div>
 
           <!-- Coupon select -->
@@ -518,17 +397,10 @@
               <div class="d-flex mb-2 align-items-center">
                 <div class="ms-auto" style="max-width: 720px; width: 100%">
                   <div class="input-group input-group-sm">
-                    <input
-                      class="form-control rounded-pill"
-                      placeholder="Nhập mã và Enter"
-                      [(ngModel)]="couponCode"
-                      (keyup.enter)="applyCoupon()"
-                    />
-                    <button
-                      class="btn btn-outline-secondary ms-2 rounded-pill"
-                      *ngIf="appliedCoupon"
-                      (click)="removeCoupon()"
-                    >
+                    <input class="form-control rounded-pill" placeholder="Nhập mã và Enter" [(ngModel)]="couponCode"
+                      (keyup.enter)="applyCoupon()" />
+                    <button class="btn btn-outline-secondary ms-2 rounded-pill" *ngIf="appliedCoupon"
+                      (click)="removeCoupon()">
                       Bỏ
                     </button>
                   </div>
@@ -536,11 +408,8 @@
               </div>
               <div class="voucher-list-container">
                 <div class="voucher-list">
-                  <div
-                    class="voucher-card"
-                    *ngFor="let v of displayedVouchers; let i = index"
-                    [ngClass]="{ best: i < 3 }"
-                  >
+                  <div class="voucher-card" *ngFor="let v of displayedVouchers; let i = index"
+                    [ngClass]="{ best: i < 3 }">
                     <div class="voucher-header">
                       <span class="code-chip">{{ v.code }}</span>
                       <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
@@ -564,29 +433,18 @@
                     </div>
                     <div class="voucher-actions">
                       <label class="form-check m-0">
-                        <input
-                          type="radio"
-                          class="form-check-input"
-                          name="voucherChoice"
-                          [checked]="appliedCoupon?.code === v.code"
-                          (click)="applyCouponFromSuggestion(v)"
-                        />
+                        <input type="radio" class="form-check-input" name="voucherChoice"
+                          [checked]="appliedCoupon?.code === v.code" (click)="applyCouponFromSuggestion(v)" />
                         <span>Chọn</span>
                       </label>
                     </div>
                   </div>
                 </div>
                 <!-- Nút xem thêm nếu có nhiều phiếu giảm giá -->
-                <div
-                  class="voucher-more-action"
-                  *ngIf="allVouchers.length > maxDisplayedVouchers && allVouchers.length > 0"
-                >
-                  <button
-                    type="button"
-                    class="btn btn-link btn-sm p-0 text-primary fw-bold"
-                    (click)="openVoucherModal()"
-                    title="Xem tất cả phiếu giảm giá"
-                  >
+                <div class="voucher-more-action"
+                  *ngIf="allVouchers.length > maxDisplayedVouchers && allVouchers.length > 0">
+                  <button type="button" class="btn btn-link btn-sm p-0 text-primary fw-bold"
+                    (click)="openVoucherModal()" title="Xem tất cả phiếu giảm giá">
                     <i class="bi bi-three-dots"></i> Xem thêm
                     {{ allVouchers.length - maxDisplayedVouchers }} phiếu giảm giá khác...
                   </button>
@@ -612,23 +470,13 @@
               <label class="form-label mb-1">Hình thức thanh toán</label>
               <div class="d-flex gap-3">
                 <label class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="pm"
-                    value="cash"
-                    [(ngModel)]="checkoutPaymentMethod"
-                  />
+                  <input class="form-check-input" type="radio" name="pm" value="cash"
+                    [(ngModel)]="checkoutPaymentMethod" />
                   <span class="ms-1">Tiền mặt</span>
                 </label>
                 <label class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="pm"
-                    value="transfer"
-                    [(ngModel)]="checkoutPaymentMethod"
-                  />
+                  <input class="form-check-input" type="radio" name="pm" value="transfer"
+                    [(ngModel)]="checkoutPaymentMethod" />
                   <span class="ms-1">Chuyển khoản</span>
                 </label>
               </div>
@@ -637,13 +485,8 @@
             <!-- Cash payment -->
             <div class="mt-2" *ngIf="checkoutPaymentMethod === 'cash'">
               <label class="form-label mb-1">Tiền khách đưa</label>
-              <input
-                class="form-control"
-                type="number"
-                min="0"
-                [(ngModel)]="cashReceived"
-                placeholder="Nhập số tiền khách đưa"
-              />
+              <input class="form-control" type="number" min="0" [(ngModel)]="cashReceived"
+                placeholder="Nhập số tiền khách đưa" />
               <div class="d-flex justify-content-between mt-2" *ngIf="cashReceived !== null">
                 <span>Tiền trả lại</span>
                 <span class="fw-semibold">{{ formatCurrency(changeDue) }}</span>
@@ -656,11 +499,7 @@
             </div>
           </ng-container>
 
-          <button
-            class="btn btn-yellow w-100 mt-3"
-            (click)="confirmPayment()"
-            [disabled]="isPayButtonDisabled()"
-          >
+          <button class="btn btn-yellow w-100 mt-3" (click)="confirmPayment()" [disabled]="isPayButtonDisabled()">
             Thanh toán
           </button>
         </div>
@@ -670,9 +509,7 @@
 </div>
 
 <!-- Modal QR chuyển khoản -->
-<div
-  *ngIf="showTransferQrModal"
-  style="
+<div *ngIf="showTransferQrModal" style="
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
@@ -680,8 +517,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  "
->
+  ">
   <div class="card p-3" style="width: 380px; max-width: 92vw">
     <h6 class="mb-2">Quét QR để chuyển khoản</h6>
     <div class="text-muted small mb-2">Vui lòng quét mã bên dưới để chuyển khoản đúng số tiền.</div>
@@ -725,26 +561,15 @@
 </div>
 
 <!-- Toast top-right (no dependency on utility classes) -->
-<div
-  style="position: fixed; top: 12px; right: 12px; z-index: 50000; min-width: 260px"
-  *ngIf="toastVisible"
->
-  <div
-    class="toast show text-white"
-    [ngClass]="{
+<div style="position: fixed; top: 12px; right: 12px; z-index: 50000; min-width: 260px" *ngIf="toastVisible">
+  <div class="toast show text-white" [ngClass]="{
       'bg-success': toastType === 'success',
       'bg-warning': toastType === 'warning',
       'bg-danger': toastType === 'error'
-    }"
-    role="alert"
-  >
+    }" role="alert">
     <div class="d-flex align-items-center px-3 py-2" style="border-radius: 6px">
       <div class="me-2">{{ toastMessage }}</div>
-      <button
-        type="button"
-        class="btn-close btn-close-white ms-auto"
-        (click)="toastVisible = false"
-      ></button>
+      <button type="button" class="btn-close btn-close-white ms-auto" (click)="toastVisible = false"></button>
     </div>
   </div>
 </div>
@@ -761,21 +586,14 @@
     <div class="modal-body">
       <!-- Tìm kiếm phiếu giảm giá -->
       <div class="mb-3">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Tìm kiếm theo mã, giá trị giảm, đơn tối thiểu..."
-          [(ngModel)]="voucherModalSearchTerm"
-        />
+        <input type="text" class="form-control" placeholder="Tìm kiếm theo mã, giá trị giảm, đơn tối thiểu..."
+          [(ngModel)]="voucherModalSearchTerm" />
       </div>
 
       <!-- Danh sách phiếu giảm giá -->
       <div class="voucher-modal-list">
-        <div
-          class="voucher-card"
-          *ngFor="let v of filteredVouchersForModal; let i = index"
-          [ngClass]="{ best: i === 0 }"
-        >
+        <div class="voucher-card" *ngFor="let v of filteredVouchersForModal; let i = index"
+          [ngClass]="{ best: i === 0 }">
           <div class="voucher-header">
             <span class="code-chip">{{ v.code }}</span>
             <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
@@ -799,13 +617,8 @@
           </div>
           <div class="voucher-actions">
             <label class="form-check m-0">
-              <input
-                type="radio"
-                class="form-check-input"
-                name="voucherChoiceModal"
-                [checked]="appliedCoupon?.code === v.code"
-                (click)="applyCouponFromModal(v)"
-              />
+              <input type="radio" class="form-check-input" name="voucherChoiceModal"
+                [checked]="appliedCoupon?.code === v.code" (click)="applyCouponFromModal(v)" />
               <span>Chọn</span>
             </label>
           </div>

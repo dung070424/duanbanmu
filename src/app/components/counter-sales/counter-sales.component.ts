@@ -143,6 +143,8 @@ export class CounterSalesComponent implements OnInit {
 
   // Internal flag tránh vòng lặp khi vừa refresh voucher vừa tính lại tổng tiền
   private isRefreshingVouchers: boolean = false;
+  // Flag để đánh dấu người dùng đã tự tay bỏ voucher, không tự động apply lại
+  private voucherManuallyRemoved: boolean = false;
 
   /**
    * Lưu mapping phiếu giảm giá theo từng hóa đơn chờ.
@@ -189,10 +191,10 @@ export class CounterSalesComponent implements OnInit {
     message: string;
     onConfirm: (() => void) | null;
   } = {
-    visible: false,
-    message: '',
-    onConfirm: null,
-  };
+      visible: false,
+      message: '',
+      onConfirm: null,
+    };
 
   // Form data
   newSale: Partial<CounterSale> = {
@@ -400,7 +402,7 @@ export class CounterSalesComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private diaChiKhachHangService: DiaChiKhachHangService,
     private ghnService: GHNService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadSampleData();
@@ -781,9 +783,8 @@ export class CounterSalesComponent implements OnInit {
 
           return {
             id: chiTietId,
-            code: `${productId}-${r.kichThuocId || r.kich_thuoc_id}-${
-              r.mauSacId || r.mau_sac_id
-            }-${trongLuongTen}`,
+            code: `${productId}-${r.kichThuocId || r.kich_thuoc_id}-${r.mauSacId || r.mau_sac_id
+              }-${trongLuongTen}`,
             name: r.sanPhamTen || r.san_pham_ten || '',
             category: undefined,
             price: this.parsePrice(r.giaBan || r.gia_ban),
@@ -867,7 +868,7 @@ export class CounterSalesComponent implements OnInit {
         this.filterProducts();
         this.showToast(
           'Lỗi khi tải danh sách sản phẩm: ' +
-            (err.error?.message || err.message || 'Không xác định'),
+          (err.error?.message || err.message || 'Không xác định'),
           'error'
         );
       },
@@ -938,18 +939,23 @@ export class CounterSalesComponent implements OnInit {
     const code = this.generateSaleNumber();
     const hoaDonChoData: Partial<HoaDonCho> = {
       maHoaDonCho: code,
-      khachHangId: this.newSale.customerId,
-      tenKhachHang: this.newSale.customerName,
-      soDienThoaiKhachHang: this.newSale.customerPhone,
+      khachHangId: undefined, // Reset customer info for new invoice
+      tenKhachHang: undefined,
+      soDienThoaiKhachHang: undefined,
       nhanVienId: this.newSale.staffId,
       tenNhanVien: this.newSale.staffName,
       trangThai: 'DANG_CHO',
-      ghiChu: this.newSale.notes,
+      ghiChu: '',
     };
 
     this.hoaDonChoService.createHoaDonCho(hoaDonChoData).subscribe({
       next: (created: HoaDonCho) => {
         const newId = created.id || null;
+        // Reset local customer state immediately
+        this.newSale.customerId = undefined;
+        this.newSale.customerName = '';
+        this.newSale.customerPhone = '';
+
         this.switchCurrentInvoice(newId);
 
         // Thêm hóa đơn mới vào danh sách ngay lập tức để hiển thị ngay
@@ -1042,17 +1048,13 @@ export class CounterSalesComponent implements OnInit {
         this.calculateCartTotal();
         // Enable adding products to cart when loading pending invoice
         this.isInvoiceCreated = true;
+        // Reset flag manual remove khi chuyển hóa đơn
+        this.voucherManuallyRemoved = false;
 
-        // Update customer info if available
-        if (hoaDonCho.khachHangId) {
-          this.newSale.customerId = hoaDonCho.khachHangId;
-        }
-        if (hoaDonCho.tenKhachHang) {
-          this.newSale.customerName = hoaDonCho.tenKhachHang;
-        }
-        if (hoaDonCho.soDienThoaiKhachHang) {
-          this.newSale.customerPhone = hoaDonCho.soDienThoaiKhachHang;
-        }
+        // Update customer info (Reset if null)
+        this.newSale.customerId = hoaDonCho.khachHangId || undefined;
+        this.newSale.customerName = hoaDonCho.tenKhachHang || '';
+        this.newSale.customerPhone = hoaDonCho.soDienThoaiKhachHang || '';
       },
       error: (err) => {
         this.showToast(
@@ -1301,7 +1303,7 @@ export class CounterSalesComponent implements OnInit {
         const v = res?.data || res?.result || res;
         if (v) this.couponResults = [this.mapVoucher(v)];
       },
-      error: () => {},
+      error: () => { },
     });
     // tìm kiếm gần đúng
     this.phieuGiamGiaService.searchPhieuGiamGia(code).subscribe({
@@ -1316,14 +1318,35 @@ export class CounterSalesComponent implements OnInit {
     const mapped = this.mapVoucher(v);
     this.appliedCoupon = mapped;
     this.couponCode = mapped.code;
+    this.voucherManuallyRemoved = false; // Reset flag vì người dùng đã chọn lại
     this.couponResults = [];
 
     // Tính số tiền giảm theo voucher hiện tại
     const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
     const discount = this.computeVoucherDiscount(mapped, base);
 
-    // Nếu đang làm việc với hóa đơn chờ, lưu snapshot xuống backend
+    // Cập nhật ngay lập tức discount để UI hiển thị đúng
+    this.couponDiscount = discount;
+
+    // Nếu đang làm việc với hóa đơn chờ, cập nhật snapshot local trước rồi gọi API sau
     if (this.currentHoaDonChoId) {
+      // 1. Cập nhật local pending invoice để calculateCartTotal dùng số liệu mới ngay lập tức
+      const idx = this.pendingInvoices.findIndex((x) => x.id === this.currentHoaDonChoId);
+      if (idx !== -1) {
+        this.pendingInvoices[idx] = {
+          ...this.pendingInvoices[idx],
+          voucherCode: mapped.code,
+          voucherDiscountAmount: discount,
+          voucherType: mapped.type as any,
+          voucherValue: mapped.value,
+          voucherMaxDiscount: mapped.maxDiscount,
+        };
+      }
+
+      // 2. Tính lại tổng tiền ngay lập tức
+      this.calculateCartTotal();
+
+      // 3. Gọi API để đồng bộ xuống backend (background sync)
       const payload: Partial<HoaDonCho> = {
         voucherCode: mapped.code,
         voucherDiscountAmount: discount,
@@ -1334,31 +1357,17 @@ export class CounterSalesComponent implements OnInit {
 
       this.hoaDonChoService.updateHoaDonCho(this.currentHoaDonChoId, payload).subscribe({
         next: (updated: HoaDonCho) => {
-          // Cập nhật lại danh sách hóa đơn chờ (đặc biệt là snapshot voucher)
-          const idx = this.pendingInvoices.findIndex((x) => x.id === updated.id);
-          if (idx !== -1) {
-            this.pendingInvoices[idx] = {
-              ...this.pendingInvoices[idx],
-              voucherCode: updated.voucherCode,
-              voucherDiscountAmount: updated.voucherDiscountAmount,
-              voucherType: updated.voucherType as any,
-              voucherValue: updated.voucherValue || mapped.value,
-              voucherMaxDiscount: updated.voucherMaxDiscount || mapped.maxDiscount,
-            };
-          }
-
-          this.couponDiscount = updated.voucherDiscountAmount || discount;
-          this.calculateCartTotal();
+          console.log('✅ Updated invoice voucher snapshot:', updated.id);
+          // Không cần làm gì thêm vì đã update local rồi
         },
-        error: () => {
-          // Nếu lỗi, vẫn tính tạm trên FE để không chặn luồng
-          this.couponDiscount = discount;
-          this.calculateCartTotal();
-        },
+        error: (err) => {
+          console.error('❌ Failed to update invoice voucher snapshot:', err);
+          this.showToast('Lỗi cập nhật phiếu giảm giá vào hóa đơn chờ', 'warning');
+          // Có thể revert nếu cần thiết, nhưng hiện tại ưu tiên trải nghiệm mượt mà
+        }
       });
     } else {
       // Trường hợp chưa có hóa đơn chờ (giỏ tạm), chỉ tính trên FE
-      this.couponDiscount = discount;
       this.calculateCartTotal();
     }
   }
@@ -1383,6 +1392,38 @@ export class CounterSalesComponent implements OnInit {
   removeCoupon(): void {
     this.appliedCoupon = null;
     this.couponCode = '';
+    this.couponDiscount = 0;
+    this.voucherManuallyRemoved = true; // Đánh dấu đã bỏ tay
+
+    // Nếu đang có invoice snapshot, phải xóa snapshot đi để calculateCartTotal không lôi lại
+    if (this.currentHoaDonChoId) {
+      // 1. Update local
+      const idx = this.pendingInvoices.findIndex((x) => x.id === this.currentHoaDonChoId);
+      if (idx !== -1) {
+        this.pendingInvoices[idx] = {
+          ...this.pendingInvoices[idx],
+          voucherCode: null as any,
+          voucherDiscountAmount: null as any,
+          voucherType: null as any,
+          voucherValue: null as any,
+          voucherMaxDiscount: null as any,
+        };
+      }
+
+      // 2. Update BE
+      const payload: Partial<HoaDonCho> = {
+        voucherCode: null as any,
+        voucherDiscountAmount: null as any,
+        voucherType: null as any,
+        voucherValue: null as any,
+        voucherMaxDiscount: null as any,
+      };
+      this.hoaDonChoService.updateHoaDonCho(this.currentHoaDonChoId, payload).subscribe({
+        next: () => console.log('✅ Removed voucher snapshot from pending invoice'),
+        error: (e) => console.error('❌ Failed to remove voucher snapshot', e)
+      });
+    }
+
     this.calculateCartTotal();
   }
 
@@ -1398,8 +1439,7 @@ export class CounterSalesComponent implements OnInit {
       if (typeof v.loaiPhieuGiamGia === 'boolean') {
         voucherType = v.loaiPhieuGiamGia ? 'FIXED' : 'PERCENT';
         console.log(
-          `🎫 Mapping voucher ${v.code ?? v.maPhieu}: loaiPhieuGiamGia=${
-            v.loaiPhieuGiamGia
+          `🎫 Mapping voucher ${v.code ?? v.maPhieu}: loaiPhieuGiamGia=${v.loaiPhieuGiamGia
           } (boolean) → type=${voucherType}`
         );
       } else {
@@ -1411,8 +1451,7 @@ export class CounterSalesComponent implements OnInit {
           voucherType = 'PERCENT';
         }
         console.log(
-          `🎫 Mapping voucher ${
-            v.code ?? v.maPhieu
+          `🎫 Mapping voucher ${v.code ?? v.maPhieu
           }: loaiPhieuGiamGia="${typeStr}" (string) → type=${voucherType}`
         );
       }
@@ -1436,8 +1475,7 @@ export class CounterSalesComponent implements OnInit {
         voucherType = 'PERCENT';
       }
       console.log(
-        `🎫 Mapping voucher ${
-          v.code ?? v.maPhieu
+        `🎫 Mapping voucher ${v.code ?? v.maPhieu
         }: loaiGiam/kieuGiam="${typeStr}" → type=${voucherType}`
       );
     } else {
@@ -1992,48 +2030,74 @@ export class CounterSalesComponent implements OnInit {
   private refreshVoucherSuggestions(): void {
     const base = Math.max(0, this.cartSubtotal - this.cartDiscount);
     const customerId = this.newSale.customerId;
-    const collected: any[] = [];
 
     console.log('🔄 Refreshing voucher suggestions, base:', base, 'customerId:', customerId);
 
-    // lấy mã chung đang hoạt động
-    this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
-      next: (res: any) => {
-        const general = (res?.data || res?.content || res || []) as any[];
-        console.log('📋 Received active vouchers from API:', general.length, 'items');
-        console.log('📋 First voucher sample:', general[0]);
-        collected.push(...general);
+    // Bước 1: Lấy danh sách phiếu giảm giá cá nhân (để biết phiếu nào là private)
+    this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+      next: (persResponse: any) => {
+        const privateMappings = persResponse?.data || persResponse?.content || persResponse || [];
+        const privateCouponIds = new Set<number>();
+        const myCouponIds = new Set<number>();
 
-        if (customerId) {
-          // lấy toàn bộ mã cá nhân rồi lọc theo khách hàng hiện tại
-          this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
-            next: (pers: any) => {
-              const raw = pers?.data || pers?.content || pers || [];
-              const personal = (Array.isArray(raw) ? raw : [])
-                .filter((r: any) => (r?.khachHangId ?? r?.khachHang?.id) === customerId)
-                .map((r: any) => r?.phieuGiamGia || r?.voucher || r);
-              console.log(
-                '📋 Personal vouchers for customer',
-                customerId,
-                ':',
-                personal.length,
-                'items'
-              );
-              this.computeVoucherLists([...collected, ...personal], base);
-            },
-            error: () => {
-              console.log('⚠️ Error loading personal vouchers, using general vouchers only');
-              this.computeVoucherLists(collected, base);
-            },
+        // Xây dựng danh sách ID phiếu private và ID phiếu của khách hiện tại
+        if (Array.isArray(privateMappings)) {
+          privateMappings.forEach((r: any) => {
+            if (r.phieuGiamGiaId) {
+              privateCouponIds.add(r.phieuGiamGiaId);
+              // Nếu phiếu này thuộc về khách hàng hiện tại
+              if (customerId && (r.khachHangId === customerId || r.khachHang?.id === customerId)) {
+                myCouponIds.add(r.phieuGiamGiaId);
+              }
+            }
           });
-        } else {
-          this.computeVoucherLists(collected, base);
         }
+
+        console.log(`📋 Found ${privateCouponIds.size} private coupons, ${myCouponIds.size} belong to current customer.`);
+
+        // Bước 2: Lấy danh sách tất cả phiếu đang hoạt động
+        this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
+          next: (res: any) => {
+            const allActive = (res?.data || res?.content || res || []) as any[];
+            console.log('📋 Received all active vouchers:', allActive.length);
+
+            const filteredVouchers: any[] = [];
+
+            allActive.forEach(coupon => {
+              const isPrivate = privateCouponIds.has(coupon.id);
+
+              if (!isPrivate) {
+                // Phiếu công khai (không nằm trong danh sách cá nhân) -> Ai cũng thấy
+                filteredVouchers.push(coupon);
+              } else {
+                // Phiếu cá nhân -> Chỉ thấy nếu thuộc về khách hàng hiện tại
+                if (customerId && myCouponIds.has(coupon.id)) {
+                  filteredVouchers.push(coupon);
+                }
+              }
+            });
+
+            console.log('✅ Final filtered vouchers list:', filteredVouchers.length);
+            this.computeVoucherLists(filteredVouchers, base);
+          },
+          error: (err) => {
+            console.error('❌ Error loading active vouchers:', err);
+            this.computeVoucherLists([], base);
+          }
+        });
       },
       error: (err) => {
-        console.error('❌ Error loading active vouchers:', err);
-        this.computeVoucherLists([], base);
-      },
+        console.error('⚠️ Error loading private mappings, falling back to public only logic if possible or showing all', err);
+        // Fallback: Nếu không load được mapping cá nhân, gọi API lấy phiếu công khai (nếu có) hoặc lấy active (chấp nhận rủi ro)
+        // Ở đây ta gọi active và hiển thị hết (fail-soft) hoặc gọi API public
+        this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
+          next: (res: any) => {
+            const general = (res?.data || res?.content || res || []) as any[];
+            this.computeVoucherLists(general, base);
+          },
+          error: (e) => this.computeVoucherLists([], base)
+        });
+      }
     });
   }
 
@@ -2085,7 +2149,8 @@ export class CounterSalesComponent implements OnInit {
     const topVoucher = this.bestVoucher;
     if (topVoucher) {
       // Chỉ tự động áp dụng nếu CHƯA có voucher nào được chọn
-      if (!this.appliedCoupon) {
+      // VÀ người dùng chưa từng tự tay bỏ voucher (tránh việc bỏ xong lại tự nhảy vào)
+      if (!this.appliedCoupon && !this.voucherManuallyRemoved) {
         // Dùng cùng luồng với khi user click chọn voucher
         this.applyCouponFromSuggestion(topVoucher);
       } else {
@@ -2338,14 +2403,14 @@ export class CounterSalesComponent implements OnInit {
           } as any;
           this.diaChiKhachHangService
             .createDiaChi(addressToSave)
-            .subscribe({ next: () => {}, error: () => {} });
+            .subscribe({ next: () => { }, error: () => { } });
         }
 
         // Xóa hóa đơn chờ nếu có
         if (this.currentHoaDonChoId) {
           this.hoaDonChoService.deleteHoaDonCho(this.currentHoaDonChoId).subscribe({
-            next: () => {},
-            error: () => {},
+            next: () => { },
+            error: () => { },
           });
         }
 
@@ -2398,9 +2463,8 @@ export class CounterSalesComponent implements OnInit {
       accountName: this.qrAccountName,
     });
     // VietQR image API
-    return `https://img.vietqr.io/image/${this.qrBankCode}-${
-      this.qrAccount
-    }-compact.png?${params.toString()}`;
+    return `https://img.vietqr.io/image/${this.qrBankCode}-${this.qrAccount
+      }-compact.png?${params.toString()}`;
   }
 
   getStatusClass(status: string): string {
@@ -2919,7 +2983,7 @@ export class CounterSalesComponent implements OnInit {
           }
         }, 200);
       }
-    } catch {}
+    } catch { }
   }
 
   shouldShowShippingAddress(): boolean {
