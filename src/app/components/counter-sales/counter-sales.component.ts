@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { finalize } from 'rxjs/operators';
 import { ProductApiService } from '../../services/product-api.service';
 import {
   ChiTietSanPhamApiService,
@@ -145,6 +146,8 @@ export class CounterSalesComponent implements OnInit {
   private isRefreshingVouchers: boolean = false;
   // Flag để đánh dấu người dùng đã tự tay bỏ voucher, không tự động apply lại
   private voucherManuallyRemoved: boolean = false;
+  // Flag hiển thị form thêm mới khách hàng
+  showAddCustomerForm: boolean = false;
 
   /**
    * Lưu mapping phiếu giảm giá theo từng hóa đơn chờ.
@@ -1227,48 +1230,54 @@ export class CounterSalesComponent implements OnInit {
       return;
     }
     this.customerCreating = true;
-    // kiểm tra tồn tại theo SĐT trước khi tạo
-    this.khachHangService.checkSoDienThoaiExists(phoneDigits).subscribe({
-      next: (exists) => {
-        if (exists) {
-          this.showToast('Khách hàng này đã tồn tại', 'warning');
-          this.customerCreating = false;
-        } else {
-          // Tạo email tạm unique từ số điện thoại và timestamp để tránh trùng
-          const timestamp = Date.now();
-          const tempEmail = `kh${phoneDigits}${timestamp}@temp.local`;
-          const payload: any = {
-            tenKhachHang: name,
-            soDienThoai: phoneDigits,
-            email: tempEmail,
-            trangThai: true,
-          };
-          this.khachHangService.createKhachHang(payload).subscribe({
-            next: (res: any) => {
-              const id = res?.id ?? 0;
-              this.newSale.customerId = id;
-              this.customerSearch = `${name} - ${phoneDigits}`;
-              this.customerResults = [];
-              this.showToast('Thêm mới khách hàng thành công', 'success', 3500);
-              this.customerCreating = false;
-              this.refreshVoucherSuggestions();
-            },
-            error: (err) => {
-              const errorMsg =
-                err?.error?.message ||
-                err?.message ||
-                'Không thể thêm khách hàng. Vui lòng thử lại.';
-              this.showToast(errorMsg, 'error');
-              this.customerCreating = false;
-            },
-          });
-        }
-      },
-      error: () => {
+
+    const payload: any = {
+      tenKhachHang: name,
+      soDienThoai: phoneDigits,
+      trangThai: true,
+      gioiTinh: true
+    };
+
+    console.log('creating customer...', payload);
+
+    this.khachHangService.createKhachHang(payload)
+      .pipe(finalize(() => {
         this.customerCreating = false;
-        this.showToast('Không thể kiểm tra số điện thoại.', 'error');
-      },
-    });
+      }))
+      .subscribe({
+        next: (res: any) => {
+          // Populate customer data from response
+          this.newSale.customerId = res?.id ?? 0;
+          this.newSale.customerName = res?.tenKhachHang || name;
+          this.newSale.customerPhone = res?.soDienThoai || phoneDigits;
+          this.customerSearch = `${this.newSale.customerName} - ${this.newSale.customerPhone}`;
+          this.customerResults = [];
+          this.showAddCustomerForm = false;
+
+          // Force change detection to update UI immediately
+          this.cdr.detectChanges();
+
+          this.showToast('Thêm mới khách hàng thành công', 'success', 3500);
+          this.refreshVoucherSuggestions();
+        },
+        error: (err) => {
+          console.error('Create customer failed:', err);
+          let errorMsg = 'Không thể thêm khách hàng.';
+          if (err?.status === 409 || err?.error?.message?.includes('tồn tại') || err?.message?.includes('tồn tại')) {
+            errorMsg = 'Khách hàng (SĐT/Email) đã tồn tại.';
+          } else if (err?.error?.message) {
+            errorMsg = err.error.message;
+          }
+          this.showToast(errorMsg, 'error');
+        },
+      });
+  }
+
+  removeCustomer(): void {
+    this.newSale.customerId = undefined;
+    this.newSale.customerName = '';
+    this.newSale.customerPhone = '';
+    this.refreshVoucherSuggestions();
   }
 
   private toastTimeoutRef: any;
