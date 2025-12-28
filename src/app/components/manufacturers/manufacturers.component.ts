@@ -160,6 +160,8 @@ export class ManufacturersComponent implements OnInit {
     this.isViewMode = false;
   }
 
+  errorMessage: string = '';
+
   saveManufacturer() {
     // Mark all fields as touched when user tries to submit
     this.touchedFields.add('name');
@@ -201,6 +203,17 @@ export class ManufacturersComponent implements OnInit {
       return;
     }
 
+    const errorHandler = (err: any) => {
+      console.error('API Error:', err);
+      if (err?.status === 409 || err?.error?.message?.includes('exist') || err?.error?.message?.includes('tồn tại')) {
+        this.errorMessage = 'Tên nhà sản xuất đã tồn tại trong hệ thống.';
+      } else {
+        this.errorMessage =
+          (err?.error && (err.error.message || err.error.error)) ||
+          'Đã có lỗi xảy ra. Vui lòng thử lại sau.';
+      }
+    };
+
     if (this.isEditMode && this.selectedManufacturer) {
       this.manufacturerApi
         .update(this.selectedManufacturer.id, {
@@ -214,10 +227,7 @@ export class ManufacturersComponent implements OnInit {
             this.fetchManufacturers(0);
             this.closeModal();
           },
-          error: (err) => {
-            console.error(err);
-            console.error('Cập nhật nhà sản xuất thất bại.');
-          },
+          error: errorHandler,
         });
     } else {
       // Gọi API BE tạo mới và refresh danh sách
@@ -233,10 +243,7 @@ export class ManufacturersComponent implements OnInit {
             this.fetchManufacturers(0);
             this.closeModal();
           },
-          error: (err) => {
-            console.error(err);
-            console.error('Thêm nhà sản xuất thất bại.');
-          },
+          error: errorHandler,
         });
     }
   }
@@ -392,5 +399,6 @@ export class ManufacturersComponent implements OnInit {
 
   resetTouchedFields() {
     this.touchedFields.clear();
+    this.errorMessage = '';
   }
 }

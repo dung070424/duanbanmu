@@ -12,13 +12,8 @@
           <label class="filter-label">Tìm kiếm</label>
           <div class="search-input-wrapper">
             <i class="bi bi-search search-icon"></i>
-            <input
-              type="text"
-              class="search-input"
-              placeholder="Mã, tên kích thước..."
-              [(ngModel)]="searchTerm"
-              (input)="onSearchChange()"
-            />
+            <input type="text" class="search-input" placeholder="Mã, tên kích thước..." [(ngModel)]="searchTerm"
+              (input)="onSearchChange()" />
           </div>
         </div>
 
@@ -26,36 +21,19 @@
           <label class="filter-label">Trạng thái</label>
           <div class="radio-group">
             <label class="radio-item">
-              <input
-                type="radio"
-                name="status"
-                value="all"
-                [(ngModel)]="selectedStatus"
-                (change)="onStatusChange()"
-                checked
-              />
+              <input type="radio" name="status" value="all" [(ngModel)]="selectedStatus" (change)="onStatusChange()"
+                checked />
               <span class="radio-custom"></span>
               <span class="radio-text">Tất cả</span>
             </label>
             <label class="radio-item">
-              <input
-                type="radio"
-                name="status"
-                value="true"
-                [(ngModel)]="selectedStatus"
-                (change)="onStatusChange()"
-              />
+              <input type="radio" name="status" value="true" [(ngModel)]="selectedStatus" (change)="onStatusChange()" />
               <span class="radio-custom"></span>
               <span class="radio-text">Đang hoạt động</span>
             </label>
             <label class="radio-item">
-              <input
-                type="radio"
-                name="status"
-                value="false"
-                [(ngModel)]="selectedStatus"
-                (change)="onStatusChange()"
-              />
+              <input type="radio" name="status" value="false" [(ngModel)]="selectedStatus"
+                (change)="onStatusChange()" />
               <span class="radio-custom"></span>
               <span class="radio-text">Ngừng</span>
             </label>
@@ -156,26 +134,14 @@
       <button class="pagination-btn" [disabled]="currentPage === 0" (click)="prevPage()">
         <i class="bi bi-chevron-left"></i>
       </button>
-      <button
-        *ngFor="let pageNum of getPageNumbers()"
-        class="pagination-btn"
-        [class.active]="pageNum - 1 === currentPage"
-        (click)="goToPage(pageNum - 1)"
-      >
+      <button *ngFor="let pageNum of getPageNumbers()" class="pagination-btn"
+        [class.active]="pageNum - 1 === currentPage" (click)="goToPage(pageNum - 1)">
         {{ pageNum }}
       </button>
-      <button
-        class="pagination-btn"
-        [disabled]="currentPage >= totalPages - 1"
-        (click)="nextPage()"
-      >
+      <button class="pagination-btn" [disabled]="currentPage >= totalPages - 1" (click)="nextPage()">
         <i class="bi bi-chevron-right"></i>
       </button>
-      <button
-        class="pagination-btn"
-        [disabled]="currentPage >= totalPages - 1"
-        (click)="goToPage(totalPages - 1)"
-      >
+      <button class="pagination-btn" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(totalPages - 1)">
         <i class="bi bi-chevron-double-right"></i>
       </button>
     </div>
@@ -196,21 +162,18 @@
       </div>
       <div class="modal-body">
         <form>
+          <div *ngIf="errorMessage" class="alert alert-danger mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ errorMessage }}
+          </div>
           <div class="row g-3 mb-4">
             <div class="col-md-6">
               <label class="form-label fw-semibold">
                 <i class="bi bi-aspect-ratio me-1"></i>Tên kích thước
               </label>
-              <input
-                type="text"
-                class="form-control"
-                [class.is-invalid]="hasFieldError('name')"
-                [(ngModel)]="newItem.name"
-                name="name"
-                [readonly]="isViewMode"
-                (blur)="markFieldTouched('name')"
-                placeholder="Nhập tên kích thước"
-              />
+              <input type="text" class="form-control" [class.is-invalid]="hasFieldError('name')"
+                [(ngModel)]="newItem.name" name="name" [readonly]="isViewMode" (blur)="markFieldTouched('name')"
+                placeholder="Nhập tên kích thước" />
               <div *ngIf="hasFieldError('name')" class="invalid-feedback d-block">
                 {{ getFieldError('name') }}
               </div>
@@ -219,12 +182,7 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-toggle-on me-1"></i>Trạng thái
               </label>
-              <select
-                class="form-control"
-                [(ngModel)]="newItem.status"
-                name="status"
-                [disabled]="isViewMode"
-              >
+              <select class="form-control" [(ngModel)]="newItem.status" name="status" [disabled]="isViewMode">
                 <option [ngValue]="true">Đang hoạt động</option>
                 <option [ngValue]="false">Ngừng</option>
               </select>
@@ -236,16 +194,9 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-file-text me-1"></i>Mô tả
               </label>
-              <textarea
-                class="form-control"
-                [class.is-invalid]="hasFieldError('description')"
-                rows="3"
-                [(ngModel)]="newItem.description"
-                name="description"
-                [readonly]="isViewMode"
-                (blur)="markFieldTouched('description')"
-                placeholder="Nhập mô tả kích thước"
-              ></textarea>
+              <textarea class="form-control" [class.is-invalid]="hasFieldError('description')" rows="3"
+                [(ngModel)]="newItem.description" name="description" [readonly]="isViewMode"
+                (blur)="markFieldTouched('description')" placeholder="Nhập mô tả kích thước"></textarea>
               <div *ngIf="hasFieldError('description')" class="invalid-feedback d-block">
                 {{ getFieldError('description') }}
               </div>
@@ -266,11 +217,7 @@
 </div>
 
 <!-- Modal xác nhận xóa -->
-<div
-  class="modal fade"
-  [class.show]="showDeleteModal"
-  [style.display]="showDeleteModal ? 'block' : 'none'"
->
+<div class="modal fade" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">

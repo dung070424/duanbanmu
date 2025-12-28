@@ -42,7 +42,7 @@ export class OriginsComponent implements OnInit {
   // Track which fields have been touched by user
   touchedFields: Set<string> = new Set();
 
-  constructor(private api: OriginApiService, private cdr: ChangeDetectorRef) {}
+  constructor(private api: OriginApiService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.fetch();
@@ -137,6 +137,8 @@ export class OriginsComponent implements OnInit {
     this.selected = null;
   }
 
+  errorMessage: string = '';
+
   save() {
     // Mark all fields as touched when user tries to submit
     this.touchedFields.add('tenXuatXu');
@@ -169,23 +171,26 @@ export class OriginsComponent implements OnInit {
       moTa: this.form.moTa,
       trangThai: this.form.trangThai,
     };
+
+    const errorHandler = (err: any) => {
+      console.error('API Error:', err);
+      if (err?.status === 409 || err?.error?.message?.includes('exist') || err?.error?.message?.includes('tồn tại')) {
+        this.errorMessage = 'Tên xuất xứ đã tồn tại trong hệ thống.';
+      } else {
+        this.errorMessage =
+          (err?.error && (err.error.message || err.error.error)) ||
+          'Đã có lỗi xảy ra. Vui lòng thử lại sau.';
+        console.error(this.errorMessage);
+      }
+    };
+
     if (this.isEditMode && this.selected) {
       this.api.update(this.selected.id, payload).subscribe({
         next: () => {
           this.fetch(this.page); // Giữ nguyên trang hiện tại
           this.closeModal();
         },
-        error: (err) => {
-          console.error(err);
-          const msg =
-            (err?.error && (err.error.message || err.error.error)) ||
-            (err?.status === 409
-              ? 'Tên xuất xứ đã tồn tại, vui lòng dùng tên khác.'
-              : err?.status === 400
-              ? 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.'
-              : 'Cập nhật xuất xứ thất bại');
-          console.error(msg);
-        },
+        error: errorHandler,
       });
     } else {
       this.api.create(payload).subscribe({
@@ -193,17 +198,7 @@ export class OriginsComponent implements OnInit {
           this.fetch(0); // Về trang đầu sau khi tạo mới
           this.closeModal();
         },
-        error: (err) => {
-          console.error(err);
-          const msg =
-            (err?.error && (err.error.message || err.error.error)) ||
-            (err?.status === 409
-              ? 'Tên xuất xứ đã tồn tại, vui lòng dùng tên khác.'
-              : err?.status === 400
-              ? 'Dữ liệu không hợp lệ, vui lòng nhập tên xuất xứ.'
-              : 'Thêm xuất xứ thất bại');
-          console.error(msg);
-        },
+        error: errorHandler,
       });
     }
   }
@@ -281,6 +276,7 @@ export class OriginsComponent implements OnInit {
 
   resetTouchedFields() {
     this.touchedFields.clear();
+    this.errorMessage = '';
   }
 
   // New methods for the updated UI

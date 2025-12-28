@@ -193,6 +193,7 @@ export class CongNgheAnToanComponent implements OnInit {
       trangThai: true,
     };
     this.touchedFields.clear();
+    this.errorMessage = '';
   }
 
   openDeleteModal(item: CongNgheAnToanResponse): void {
@@ -204,6 +205,8 @@ export class CongNgheAnToanComponent implements OnInit {
     this.showDeleteModal = false;
     this.itemToDelete = null;
   }
+
+  errorMessage: string = '';
 
   save(): void {
     // Mark all fields as touched for validation
@@ -226,7 +229,7 @@ export class CongNgheAnToanComponent implements OnInit {
 
     // Hiển thị lỗi nếu có
     if (validationErrors.length > 0) {
-      alert('Vui lòng kiểm tra lại thông tin:\n' + validationErrors.join('\n'));
+      // Không hiển thị alert, chỉ mark fields as touched để hiển thị validation errors
       return;
     }
 
@@ -236,35 +239,32 @@ export class CongNgheAnToanComponent implements OnInit {
       trangThai: this.form.trangThai,
     };
 
+    const errorHandler = (err: any) => {
+      console.error('API Error:', err);
+      if (err?.status === 409 || err?.error?.message?.includes('exist') || err?.error?.message?.includes('tồn tại')) {
+        this.errorMessage = 'Tên công nghệ an toàn đã tồn tại trong hệ thống.';
+      } else {
+        this.errorMessage =
+          (err?.error && (err.error.message || err.error.error)) ||
+          'Đã có lỗi xảy ra. Vui lòng thử lại sau.';
+      }
+    };
+
     if (this.isEditMode && this.form.id) {
       this.api.update(this.form.id, payload).subscribe({
         next: () => {
-          alert('Cập nhật công nghệ an toàn thành công!');
           this.fetch(this.currentPage);
           this.closeModal();
         },
-        error: (error) => {
-          console.error('Cập nhật thất bại:', error);
-          alert(
-            'Lỗi khi cập nhật công nghệ an toàn: ' +
-            (error.error?.message || error.message || 'Không thể kết nối đến server')
-          );
-        },
+        error: errorHandler,
       });
     } else {
       this.api.create(payload).subscribe({
         next: () => {
-          alert('Thêm mới công nghệ an toàn thành công!');
           this.fetch(0);
           this.closeModal();
         },
-        error: (error) => {
-          console.error('Thêm mới thất bại:', error);
-          alert(
-            'Lỗi khi thêm mới công nghệ an toàn: ' +
-            (error.error?.message || error.message || 'Không thể kết nối đến server')
-          );
-        },
+        error: errorHandler,
       });
     }
   }

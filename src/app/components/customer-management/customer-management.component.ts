@@ -125,7 +125,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     private khachHangService: KhachHangService,
     private diaChiKhachHangService: DiaChiKhachHangService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     console.log('Customer Management Component initialized');
@@ -756,7 +756,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
           if (!hasAddressToSave) {
             // Không có địa chỉ nào để lưu
             const successMessage = 'Thêm khách hàng thành công! (0/0 địa chỉ được lưu)';
-            alert(successMessage);
+            // alert(successMessage);
             this.closeModal();
             this.refreshAfterSave();
           }
@@ -765,7 +765,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
           const successMessage = this.isEditMode
             ? 'Cập nhật khách hàng thành công!'
             : 'Thêm khách hàng thành công!';
-          alert(successMessage);
+          // alert(successMessage);
 
           // Close modal
           this.closeModal();
@@ -1057,10 +1057,10 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       macDinh: address.macDinh,
       trangThai: address.trangThai,
     };
-    
+
     // Load location data based on existing address
     this.loadLocationDataFromAddress(address);
-    
+
     this.showAddressModal = true;
     this.cdr.detectChanges();
   }
@@ -1082,7 +1082,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         // Load districts for this province
         const allDistricts = districtsData as any as District[];
         this.districts = allDistricts.filter((d) => d.province_code === this.selectedTinhCode);
-        
+
         // Find district code by name
         if (address.quanHuyen) {
           const district = this.districts.find((d) => d.name === address.quanHuyen);
@@ -1091,7 +1091,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             // Load wards for this district
             const allWards = wardsData as any as Ward[];
             this.wards = allWards.filter((w) => w.district_code === this.selectedQuanCode);
-            
+
             // Find ward code by name
             if (address.phuongXa) {
               const ward = this.wards.find((w) => w.name === address.phuongXa);
@@ -1170,7 +1170,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       const successMessage = this.isEditAddressMode
         ? 'Cập nhật địa chỉ thành công!'
         : 'Thêm địa chỉ thành công!';
-      alert(successMessage);
+      // alert(successMessage);
       this.closeAddressModal();
       this.cdr.detectChanges();
       return;
@@ -1190,7 +1190,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       this.addressList.push(newAddress);
 
       const successMessage = 'Thêm địa chỉ thành công!';
-      alert(successMessage);
+      // alert(successMessage);
       this.closeAddressModal();
       this.cdr.detectChanges();
       return;
@@ -1216,7 +1216,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         const successMessage = this.isEditAddressMode
           ? 'Cập nhật địa chỉ thành công!'
           : 'Thêm địa chỉ thành công!';
-        alert(successMessage);
+        // alert(successMessage);
         this.closeAddressModal();
 
         // Update addressList immediately for edit mode
@@ -1312,7 +1312,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       if (index !== -1) {
         this.pendingAddresses.splice(index, 1);
         this.updateAddressListFromPending();
-        alert('Xóa địa chỉ thành công!');
+        // alert('Xóa địa chỉ thành công!');
         this.cdr.detectChanges();
       }
       return;
@@ -1331,7 +1331,8 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.loading = false;
-          alert('Xóa địa chỉ thành công!');
+          // alert('Xóa địa chỉ thành công!');
+
 
           // Update addressList immediately for edit mode
           if (this.isEditMode && this.selectedKhachHang?.id) {
@@ -1374,7 +1375,8 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.loading = false;
-          alert('Đặt địa chỉ mặc định thành công!');
+          // alert('Đặt địa chỉ mặc định thành công!');
+
 
           // Reload address list based on context
           if (this.showAddressList) {
@@ -1425,7 +1427,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     this.wards = [];
     this.selectedQuanCode = '';
     this.selectedXaCode = '';
-    
+
     // Update addressForm.tinhThanh with province name
     if (this.selectedTinhCode) {
       const province = this.provinces.find((p) => p.code === this.selectedTinhCode);
@@ -1445,7 +1447,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       ? allWards.filter((w) => w.district_code === this.selectedQuanCode)
       : [];
     this.selectedXaCode = '';
-    
+
     // Update addressForm.quanHuyen with district name
     if (this.selectedQuanCode) {
       const district = this.districts.find((d) => d.code === this.selectedQuanCode);
@@ -1459,7 +1461,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
 
   onWardChange(code: string): void {
     this.selectedXaCode = code || '';
-    
+
     // Update addressForm.phuongXa with ward name
     if (this.selectedXaCode) {
       const ward = this.wards.find((w) => w.code === this.selectedXaCode);
@@ -1499,7 +1501,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
     if (this.pendingAddresses.length === 0) {
       // Không có địa chỉ tạm thời, đóng modal
       const successMessage = 'Thêm khách hàng thành công!';
-      alert(successMessage);
+      // alert(successMessage);
       this.closeModal();
       this.refreshAfterSave();
       return;
@@ -1524,7 +1526,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             if (completedCount === totalCount) {
               // Tất cả địa chỉ đã được lưu
               const successMessage = `Thêm khách hàng thành công! (${totalCount}/${totalCount} địa chỉ được lưu)`;
-              alert(successMessage);
+              // alert(successMessage);
               this.closeModal();
               this.refreshAfterSave();
             }
@@ -1534,10 +1536,9 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             completedCount++;
             if (completedCount === totalCount) {
               // Vẫn đóng modal dù có lỗi
-              const successMessage = `Thêm khách hàng thành công! (${
-                totalCount - 1
-              }/${totalCount} địa chỉ được lưu)`;
-              alert(successMessage);
+              const successMessage = `Thêm khách hàng thành công! (${totalCount - 1
+                }/${totalCount} địa chỉ được lưu)`;
+              // alert(successMessage);
               this.closeModal();
               this.refreshAfterSave();
             }
@@ -1585,7 +1586,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
           } else {
             // Chỉ có địa chỉ mặc định
             const successMessage = 'Thêm khách hàng thành công! (1/1 địa chỉ được lưu)';
-            alert(successMessage);
+            // alert(successMessage);
             this.closeModal();
             this.refreshAfterSave();
           }
@@ -1600,7 +1601,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
           } else {
             // Không có địa chỉ nào được lưu
             const successMessage = 'Thêm khách hàng thành công! (0/1 địa chỉ được lưu)';
-            alert(successMessage);
+            // alert(successMessage);
             this.closeModal();
             this.refreshAfterSave();
           }
@@ -1614,7 +1615,7 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
       // Không có địa chỉ tạm thời, đóng modal
       const totalAddresses = defaultAddressCount;
       const successMessage = `Thêm khách hàng thành công! (${defaultAddressCount}/${totalAddresses} địa chỉ được lưu)`;
-      alert(successMessage);
+      // alert(successMessage);
       this.closeModal();
       this.refreshAfterSave();
       return;
@@ -1639,10 +1640,9 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             completedCount++;
             if (completedCount === totalCount) {
               // Tất cả địa chỉ đã được lưu
-              const successMessage = `Thêm khách hàng thành công! (${
-                defaultAddressCount + totalCount
-              }/${totalAddresses} địa chỉ được lưu)`;
-              alert(successMessage);
+              const successMessage = `Thêm khách hàng thành công! (${defaultAddressCount + totalCount
+                }/${totalAddresses} địa chỉ được lưu)`;
+              // alert(successMessage);
               this.closeModal();
               this.refreshAfterSave();
             }
@@ -1652,10 +1652,9 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
             completedCount++;
             if (completedCount === totalCount) {
               // Vẫn đóng modal dù có lỗi
-              const successMessage = `Thêm khách hàng thành công! (${
-                defaultAddressCount + totalCount - 1
-              }/${totalAddresses} địa chỉ được lưu)`;
-              alert(successMessage);
+              const successMessage = `Thêm khách hàng thành công! (${defaultAddressCount + totalCount - 1
+                }/${totalAddresses} địa chỉ được lưu)`;
+              // alert(successMessage);
               this.closeModal();
               this.refreshAfterSave();
             }
@@ -1823,10 +1822,10 @@ export class CustomerManagementComponent implements OnInit, OnDestroy {
         macDinh: address.macDinh || false,
         trangThai: address.trangThai || true,
       };
-      
+
       // Load location data based on existing address
       this.loadLocationDataFromAddress(this.selectedAddress);
-      
+
       this.isEditAddressMode = true;
       this.showAddressModal = true;
       this.cdr.detectChanges();

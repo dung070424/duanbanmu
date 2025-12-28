@@ -14,13 +14,8 @@
               <label class="filter-label">Tìm kiếm</label>
               <div class="search-input-wrapper">
                 <i class="bi bi-search search-icon"></i>
-                <input
-                  type="text"
-                  class="search-input"
-                  placeholder="Mã, tên, nhà sản xuất..."
-                  [(ngModel)]="searchTerm"
-                  (input)="onSearchChange()"
-                />
+                <input type="text" class="search-input" placeholder="Mã, tên, nhà sản xuất..." [(ngModel)]="searchTerm"
+                  (input)="onSearchChange()" />
               </div>
             </div>
 
@@ -28,36 +23,20 @@
               <label class="filter-label">Trạng thái</label>
               <div class="radio-group">
                 <label class="radio-item">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="all"
-                    [(ngModel)]="selectedStatus"
-                    (change)="onStatusChange()"
-                    checked
-                  />
+                  <input type="radio" name="status" value="all" [(ngModel)]="selectedStatus" (change)="onStatusChange()"
+                    checked />
                   <span class="radio-custom"></span>
                   <span class="radio-text">Tất cả</span>
                 </label>
                 <label class="radio-item">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="Đang bán"
-                    [(ngModel)]="selectedStatus"
-                    (change)="onStatusChange()"
-                  />
+                  <input type="radio" name="status" value="Đang bán" [(ngModel)]="selectedStatus"
+                    (change)="onStatusChange()" />
                   <span class="radio-custom"></span>
                   <span class="radio-text">Đang bán</span>
                 </label>
                 <label class="radio-item">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="Ngừng bán"
-                    [(ngModel)]="selectedStatus"
-                    (change)="onStatusChange()"
-                  />
+                  <input type="radio" name="status" value="Ngừng bán" [(ngModel)]="selectedStatus"
+                    (change)="onStatusChange()" />
                   <span class="radio-custom"></span>
                   <span class="radio-text">Ngừng bán</span>
                 </label>
@@ -107,9 +86,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  *ngFor="let product of filteredProducts; trackBy: trackByProductId; let i = index"
-                >
+                <tr *ngFor="let product of filteredProducts; trackBy: trackByProductId; let i = index">
                   <td>{{ page * size + i + 1 }}</td>
                   <td>
                     <span class="customer-code" *ngIf="product.code">{{ product.code }}</span>
@@ -139,43 +116,29 @@
                     {{ getPriceRangeDisplay(product) }}
                   </td>
                   <td>
-                    <span
-                      *ngIf="product.totalQuantity !== null && product.totalQuantity !== undefined"
-                    >
+                    <span *ngIf="product.totalQuantity !== null && product.totalQuantity !== undefined">
                       {{ product.totalQuantity }}
                     </span>
-                    <span
-                      class="no-data"
-                      *ngIf="product.totalQuantity === null || product.totalQuantity === undefined"
-                      >-</span
-                    >
+                    <span class="no-data"
+                      *ngIf="product.totalQuantity === null || product.totalQuantity === undefined">-</span>
                   </td>
 
                   <td>
-                    <span
-                      class="status-badge"
-                      [class.active]="
+                    <span class="status-badge" [class.active]="
                         product.status === 'Đang bán' || product.status === 'Đang bán'
-                      "
-                      [class.inactive]="
+                      " [class.inactive]="
                         product.status === 'Ngừng bán' || product.status === 'Ngừng bán'
-                      "
-                    >
+                      ">
                       {{
-                        product.status === 'Đang bán' || product.status === 'Đang bán'
-                          ? 'Đang bán'
-                          : 'Ngừng bán'
+                      product.status === 'Đang bán' || product.status === 'Đang bán'
+                      ? 'Đang bán'
+                      : 'Ngừng bán'
                       }}
                     </span>
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <button
-                        *ngIf="isAdmin"
-                        class="btn-edit"
-                        (click)="openEditModal(product)"
-                        title="Chỉnh sửa"
-                      >
+                      <button *ngIf="isAdmin" class="btn-edit" (click)="openEditModal(product)" title="Chỉnh sửa">
                         <i class="bi bi-pencil"></i>
                       </button>
                       <button class="btn-view" (click)="viewProduct(product)" title="Xem chi tiết">
@@ -194,15 +157,8 @@
       <div class="pagination-container">
         <div class="pagination-left">
           <span class="pagination-label">Hiển thị</span>
-          <input
-            type="number"
-            class="page-size-input"
-            [(ngModel)]="size"
-            (change)="changePageSize(+$event.target.value)"
-            min="1"
-            max="100"
-            value="5"
-          />
+          <input type="number" class="page-size-input" [(ngModel)]="size"
+            (change)="changePageSize(+$event.target.value)" min="1" max="100" value="5" />
           <span class="pagination-label">mục / trang</span>
         </div>
 
@@ -219,26 +175,14 @@
           <button class="pagination-btn" [disabled]="page === 0" (click)="goToPage(page - 1)">
             <i class="bi bi-chevron-left"></i>
           </button>
-          <button
-            *ngFor="let pageNum of getPageNumbers()"
-            class="pagination-btn page-number"
-            [class.active]="pageNum === page + 1"
-            (click)="goToPage(pageNum - 1)"
-          >
+          <button *ngFor="let pageNum of getPageNumbers()" class="pagination-btn page-number"
+            [class.active]="pageNum === page + 1" (click)="goToPage(pageNum - 1)">
             {{ pageNum }}
           </button>
-          <button
-            class="pagination-btn"
-            [disabled]="page === totalPages - 1"
-            (click)="goToPage(page + 1)"
-          >
+          <button class="pagination-btn" [disabled]="page === totalPages - 1" (click)="goToPage(page + 1)">
             <i class="bi bi-chevron-right"></i>
           </button>
-          <button
-            class="pagination-btn"
-            [disabled]="page === totalPages - 1"
-            (click)="goToPage(totalPages - 1)"
-          >
+          <button class="pagination-btn" [disabled]="page === totalPages - 1" (click)="goToPage(totalPages - 1)">
             <i class="bi bi-chevron-double-right"></i>
           </button>
         </div>
@@ -286,16 +230,9 @@
               </label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
-                <input
-                  type="text"
-                  class="form-control"
-                  [class.is-invalid]="hasFieldError('code')"
-                  [(ngModel)]="newProduct.code"
-                  name="code"
-                  placeholder="Nhập mã sản phẩm"
-                  [readonly]="isViewMode || isEditMode"
-                  (blur)="markFieldTouched('code')"
-                />
+                <input type="text" class="form-control" [class.is-invalid]="hasFieldError('code')"
+                  [(ngModel)]="newProduct.code" name="code" placeholder="Nhập mã sản phẩm"
+                  [readonly]="isViewMode || isEditMode" (blur)="markFieldTouched('code')" />
                 <div *ngIf="hasFieldError('code')" class="invalid-feedback">
                   {{ getCodeError() }}
                 </div>
@@ -307,16 +244,9 @@
               </label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-tag"></i></span>
-                <input
-                  type="text"
-                  class="form-control"
-                  [class.is-invalid]="hasFieldError('name')"
-                  [(ngModel)]="newProduct.name"
-                  name="name"
-                  placeholder="Nhập tên sản phẩm"
-                  [readonly]="isViewMode"
-                  (blur)="markFieldTouched('name')"
-                />
+                <input type="text" class="form-control" [class.is-invalid]="hasFieldError('name')"
+                  [(ngModel)]="newProduct.name" name="name" placeholder="Nhập tên sản phẩm" [readonly]="isViewMode"
+                  (blur)="markFieldTouched('name')" />
                 <div *ngIf="hasFieldError('name')" class="invalid-feedback">
                   {{ getNameError() }}
                 </div>
@@ -331,12 +261,7 @@
               <label class="form-label fw-semibold">Trạng thái</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
-                <select
-                  class="form-select"
-                  [(ngModel)]="newProduct.status"
-                  name="status"
-                  [disabled]="isViewMode"
-                >
+                <select class="form-select" [(ngModel)]="newProduct.status" name="status" [disabled]="isViewMode">
                   <option value="Đang bán">Đang bán</option>
                   <option value="Ngừng bán">Ngừng bán</option>
                 </select>
@@ -357,17 +282,11 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-shield me-1"></i>Loại mũ bảo hiểm
               </label>
-              <app-searchable-dropdown
-                [options]="loaiMuOptions"
-                [selectedValue]="newProduct.loaiMuBaoHiemId"
-                [placeholder]="'-- Chọn loại mũ bảo hiểm --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
-                [addButtonTitle]="'Thêm loại mũ bảo hiểm mới'"
-                [class.is-invalid]="hasDropdownError('loaiMuBaoHiemId')"
+              <app-searchable-dropdown [options]="loaiMuOptions" [selectedValue]="newProduct.loaiMuBaoHiemId"
+                [placeholder]="'-- Chọn loại mũ bảo hiểm --'" [disabled]="isViewMode" [showAddButton]="true"
+                [addButtonTitle]="'Thêm loại mũ bảo hiểm mới'" [class.is-invalid]="hasDropdownError('loaiMuBaoHiemId')"
                 (selectionChange)="onSelect('loaiMuBaoHiemId', $event)"
-                (addButtonClick)="openQuickAddModal('loaiMuBaoHiem')"
-              ></app-searchable-dropdown>
+                (addButtonClick)="openQuickAddModal('loaiMuBaoHiem')"></app-searchable-dropdown>
               <div *ngIf="hasDropdownError('loaiMuBaoHiemId')" class="invalid-feedback d-block">
                 Vui lòng chọn loại mũ bảo hiểm
               </div>
@@ -376,17 +295,11 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-building me-1"></i>Nhà sản xuất
               </label>
-              <app-searchable-dropdown
-                [options]="nsxOptions"
-                [selectedValue]="newProduct.nhaSanXuatId"
-                [placeholder]="'-- Chọn nhà sản xuất --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
-                [addButtonTitle]="'Thêm nhà sản xuất mới'"
-                [class.is-invalid]="hasDropdownError('nhaSanXuatId')"
+              <app-searchable-dropdown [options]="nsxOptions" [selectedValue]="newProduct.nhaSanXuatId"
+                [placeholder]="'-- Chọn nhà sản xuất --'" [disabled]="isViewMode" [showAddButton]="true"
+                [addButtonTitle]="'Thêm nhà sản xuất mới'" [class.is-invalid]="hasDropdownError('nhaSanXuatId')"
                 (selectionChange)="onSelect('nhaSanXuatId', $event)"
-                (addButtonClick)="openQuickAddModal('nhaSanXuat')"
-              ></app-searchable-dropdown>
+                (addButtonClick)="openQuickAddModal('nhaSanXuat')"></app-searchable-dropdown>
               <div *ngIf="hasDropdownError('nhaSanXuatId')" class="invalid-feedback d-block">
                 Vui lòng chọn nhà sản xuất
               </div>
@@ -398,17 +311,11 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-layers me-1"></i>Chất liệu vỏ
               </label>
-              <app-searchable-dropdown
-                [options]="chatLieuOptions"
-                [selectedValue]="newProduct.chatLieuVoId"
-                [placeholder]="'-- Chọn chất liệu vỏ --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
-                [addButtonTitle]="'Thêm chất liệu vỏ mới'"
-                [class.is-invalid]="hasDropdownError('chatLieuVoId')"
+              <app-searchable-dropdown [options]="chatLieuOptions" [selectedValue]="newProduct.chatLieuVoId"
+                [placeholder]="'-- Chọn chất liệu vỏ --'" [disabled]="isViewMode" [showAddButton]="true"
+                [addButtonTitle]="'Thêm chất liệu vỏ mới'" [class.is-invalid]="hasDropdownError('chatLieuVoId')"
                 (selectionChange)="onSelect('chatLieuVoId', $event)"
-                (addButtonClick)="openQuickAddModal('chatLieuVo')"
-              ></app-searchable-dropdown>
+                (addButtonClick)="openQuickAddModal('chatLieuVo')"></app-searchable-dropdown>
               <div *ngIf="hasDropdownError('chatLieuVoId')" class="invalid-feedback d-block">
                 Vui lòng chọn chất liệu vỏ
               </div>
@@ -421,17 +328,11 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-geo-alt me-1"></i>Xuất xứ
               </label>
-              <app-searchable-dropdown
-                [options]="xuatXuOptions"
-                [selectedValue]="newProduct.xuatXuId"
-                [placeholder]="'-- Chọn xuất xứ --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
-                [addButtonTitle]="'Thêm xuất xứ mới'"
-                [class.is-invalid]="hasDropdownError('xuatXuId')"
+              <app-searchable-dropdown [options]="xuatXuOptions" [selectedValue]="newProduct.xuatXuId"
+                [placeholder]="'-- Chọn xuất xứ --'" [disabled]="isViewMode" [showAddButton]="true"
+                [addButtonTitle]="'Thêm xuất xứ mới'" [class.is-invalid]="hasDropdownError('xuatXuId')"
                 (selectionChange)="onSelect('xuatXuId', $event)"
-                (addButtonClick)="openQuickAddModal('xuatXu')"
-              ></app-searchable-dropdown>
+                (addButtonClick)="openQuickAddModal('xuatXu')"></app-searchable-dropdown>
               <div *ngIf="hasDropdownError('xuatXuId')" class="invalid-feedback d-block">
                 Vui lòng chọn xuất xứ
               </div>
@@ -440,17 +341,11 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-box me-1"></i>Kiểu dáng mũ
               </label>
-              <app-searchable-dropdown
-                [options]="kieuDangOptions"
-                [selectedValue]="newProduct.kieuDangMuId"
-                [placeholder]="'-- Chọn kiểu dáng mũ --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
-                [addButtonTitle]="'Thêm kiểu dáng mũ mới'"
-                [class.is-invalid]="hasDropdownError('kieuDangMuId')"
+              <app-searchable-dropdown [options]="kieuDangOptions" [selectedValue]="newProduct.kieuDangMuId"
+                [placeholder]="'-- Chọn kiểu dáng mũ --'" [disabled]="isViewMode" [showAddButton]="true"
+                [addButtonTitle]="'Thêm kiểu dáng mũ mới'" [class.is-invalid]="hasDropdownError('kieuDangMuId')"
                 (selectionChange)="onSelect('kieuDangMuId', $event)"
-                (addButtonClick)="openQuickAddModal('kieuDangMu')"
-              ></app-searchable-dropdown>
+                (addButtonClick)="openQuickAddModal('kieuDangMu')"></app-searchable-dropdown>
               <div *ngIf="hasDropdownError('kieuDangMuId')" class="invalid-feedback d-block">
                 Vui lòng chọn kiểu dáng mũ
               </div>
@@ -462,17 +357,12 @@
               <label class="form-label fw-semibold">
                 <i class="bi bi-shield-check me-1"></i>Công nghệ an toàn
               </label>
-              <app-searchable-dropdown
-                [options]="congNgheOptions"
-                [selectedValue]="newProduct.congNgheAnToanId"
-                [placeholder]="'-- Chọn công nghệ an toàn --'"
-                [disabled]="isViewMode"
-                [showAddButton]="true"
+              <app-searchable-dropdown [options]="congNgheOptions" [selectedValue]="newProduct.congNgheAnToanId"
+                [placeholder]="'-- Chọn công nghệ an toàn --'" [disabled]="isViewMode" [showAddButton]="true"
                 [addButtonTitle]="'Thêm công nghệ an toàn mới'"
                 [class.is-invalid]="hasDropdownError('congNgheAnToanId')"
                 (selectionChange)="onSelect('congNgheAnToanId', $event)"
-                (addButtonClick)="openQuickAddModal('congNgheAnToan')"
-              ></app-searchable-dropdown>
+                (addButtonClick)="openQuickAddModal('congNgheAnToan')"></app-searchable-dropdown>
               <div *ngIf="hasDropdownError('congNgheAnToanId')" class="invalid-feedback d-block">
                 Vui lòng chọn công nghệ an toàn
               </div>
@@ -510,31 +400,21 @@
                   <td>{{ getKichThuocTenById(v.kichThuocId) }}</td>
                   <td>
                     {{ getMauSacTenById(v.mauSacId) }}
-                    <span
-                      *ngIf="getMauSacMaById(v.mauSacId)"
-                      class="d-inline-block ms-1"
-                      [style.background]="getMauSacMaById(v.mauSacId)"
-                      style="
+                    <span *ngIf="getMauSacMaById(v.mauSacId)" class="d-inline-block ms-1"
+                      [style.background]="getMauSacMaById(v.mauSacId)" style="
                         border: 1px solid #aaa;
                         width: 16px;
                         height: 16px;
                         border-radius: 50%;
                         vertical-align: middle;
                         display: inline-block;
-                      "
-                    ></span>
+                      "></span>
                   </td>
                   <td>{{ v.trongLuongTen || 'N/A' }}</td>
                   <td>
                     <ng-container *ngIf="!isViewMode; else priceView">
-                      <input
-                        type="text"
-                        class="form-control"
-                        name="giaBan_{{ i }}"
-                        [(ngModel)]="v.giaBan"
-                        [ngModelOptions]="{ standalone: true }"
-                        (input)="castVersionNumber(i, 'giaBan')"
-                      />
+                      <input type="text" class="form-control" name="giaBan_{{ i }}" [(ngModel)]="v.giaBan"
+                        [ngModelOptions]="{ standalone: true }" (input)="castVersionNumber(i, 'giaBan')" />
                     </ng-container>
                     <ng-template #priceView>
                       {{ v.giaBan }}
@@ -542,14 +422,8 @@
                   </td>
                   <td>
                     <ng-container *ngIf="!isViewMode; else qtyView">
-                      <input
-                        type="text"
-                        class="form-control"
-                        name="soLuongTon_{{ i }}"
-                        [(ngModel)]="v.soLuongTon"
-                        [ngModelOptions]="{ standalone: true }"
-                        (input)="castVersionNumber(i, 'soLuongTon')"
-                      />
+                      <input type="text" class="form-control" name="soLuongTon_{{ i }}" [(ngModel)]="v.soLuongTon"
+                        [ngModelOptions]="{ standalone: true }" (input)="castVersionNumber(i, 'soLuongTon')" />
                     </ng-container>
                     <ng-template #qtyView>
                       {{ v.soLuongTon }}
@@ -557,35 +431,20 @@
                   </td>
                   <td>
                     <div class="variant-image-cell">
-                      <div
-                        class="variant-image-preview"
-                        *ngIf="v.anhSanPham; else modalNoVariantImage"
-                      >
+                      <div class="variant-image-preview" *ngIf="v.anhSanPham; else modalNoVariantImage">
                         <img [src]="v.anhSanPham" alt="Ảnh biến thể" class="variant-image-thumb" />
                       </div>
                       <ng-template #modalNoVariantImage>
                         <div class="variant-image-placeholder text-muted">Chưa có ảnh</div>
                       </ng-template>
                       <div *ngIf="!isViewMode" class="variant-image-actions">
-                        <input
-                          type="file"
-                          class="d-none"
-                          id="modalVariantImage_{{ i }}"
-                          accept="image/*"
-                          (change)="onVariantImageSelected($event, i)"
-                        />
-                        <label
-                          for="modalVariantImage_{{ i }}"
-                          class="btn btn-outline-primary btn-sm"
-                        >
+                        <input type="file" class="d-none" id="modalVariantImage_{{ i }}" accept="image/*"
+                          (change)="onVariantImageSelected($event, i)" />
+                        <label for="modalVariantImage_{{ i }}" class="btn btn-outline-primary btn-sm">
                           <i class="bi bi-upload me-1"></i>Chọn ảnh
                         </label>
-                        <button
-                          type="button"
-                          class="btn btn-outline-danger btn-sm ms-2"
-                          *ngIf="v.anhSanPham"
-                          (click)="removeVariantImage(i)"
-                        >
+                        <button type="button" class="btn btn-outline-danger btn-sm ms-2" *ngIf="v.anhSanPham"
+                          (click)="removeVariantImage(i)">
                           <i class="bi bi-trash me-1"></i>Xóa
                         </button>
                       </div>
@@ -595,11 +454,7 @@
                     </div>
                   </td>
                   <td>
-                    <span
-                      class="status-badge"
-                      [class.active]="v.trangThai"
-                      [class.inactive]="!v.trangThai"
-                    >
+                    <span class="status-badge" [class.active]="v.trangThai" [class.inactive]="!v.trangThai">
                       {{ v.trangThai ? 'Đang bán' : 'Ngừng bán' }}
                     </span>
                   </td>
@@ -617,14 +472,8 @@
           </div>
 
           <div class="mb-3">
-            <textarea
-              class="form-control"
-              rows="4"
-              [(ngModel)]="newProduct.description"
-              name="description"
-              placeholder="Nhập mô tả chi tiết về sản phẩm..."
-              [readonly]="isViewMode"
-            ></textarea>
+            <textarea class="form-control" rows="4" [(ngModel)]="newProduct.description" name="description"
+              placeholder="Nhập mô tả chi tiết về sản phẩm..." [readonly]="isViewMode"></textarea>
           </div>
         </form>
       </div>
@@ -632,13 +481,8 @@
         <button type="button" class="btn btn-secondary px-4" (click)="closeModal()">
           <i class="bi bi-x-circle me-1"></i>{{ isViewMode ? 'Đóng' : 'Hủy' }}
         </button>
-        <button
-          *ngIf="!isViewMode"
-          type="button"
-          class="btn btn-primary px-4"
-          [disabled]="!canSubmit()"
-          (click)="saveProduct()"
-        >
+        <button *ngIf="!isViewMode" type="button" class="btn btn-primary px-4" [disabled]="!canSubmit()"
+          (click)="saveProduct()">
           <i class="bi bi-check-circle me-1"></i>{{ isEditMode ? 'Cập nhật' : 'Thêm mới' }}
         </button>
       </div>
@@ -647,11 +491,7 @@
 </div>
 
 <!-- Modal xác nhận xóa -->
-<div
-  class="modal fade"
-  [class.show]="showDeleteModal"
-  [style.display]="showDeleteModal ? 'block' : 'none'"
->
+<div class="modal fade" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -672,13 +512,28 @@
   </div>
 </div>
 
+<!-- Modal xác nhận chung -->
+<div class="modal fade" [class.show]="showConfirmModal" [style.display]="showConfirmModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ confirmModalTitle }}</h5>
+        <button type="button" class="btn-close" (click)="closeConfirmModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p>{{ confirmModalMessage }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeConfirmModal()">Hủy</button>
+        <button type="button" class="btn btn-primary" (click)="onConfirm()">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Overlay cho modal -->
-<div *ngIf="showModal || showDeleteModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showModal || showDeleteModal || showConfirmModal" class="modal-backdrop fade show"></div>
 
 <!-- Quick Add Modal -->
-<app-quick-add-modal
-  [show]="showQuickAddModal"
-  [type]="quickAddModalType"
-  (close)="onQuickAddClose()"
-  (save)="onQuickAddSave($event)"
-></app-quick-add-modal>
+<app-quick-add-modal [show]="showQuickAddModal" [type]="quickAddModalType" (close)="onQuickAddClose()"
+  (save)="onQuickAddSave($event)"></app-quick-add-modal>

@@ -39,6 +39,7 @@
   gap: 0.5rem;
   align-items: center;
 }
+
 /* Helmets Management Component Styles - Font Synchronization */
 
 .container-fluid {
@@ -46,40 +47,60 @@
   min-height: 100vh;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  
+
   // Ensure all text elements inherit the same font
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     font-family: inherit;
   }
-  
+
   // Standardize font weights
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 600;
   }
-  
-  p, span, div, td, th, label, input, textarea, select {
+
+  p,
+  span,
+  div,
+  td,
+  th,
+  label,
+  input,
+  textarea,
+  select {
     font-weight: 400;
   }
-  
+
   .btn {
     font-weight: 500;
   }
-  
+
   .badge {
     font-weight: 500;
   }
-  
+
   // Remove bold from data values
-  .text-success, .text-primary, .text-danger, .text-warning, .text-info {
+  .text-success,
+  .text-primary,
+  .text-danger,
+  .text-warning,
+  .text-info {
     font-weight: 400 !important;
   }
-  
+
   .fw-bold {
     font-weight: 500 !important;
   }
-  
+
   // Currency and number formatting
-  .currency, .number {
+  .currency,
+  .number {
     font-variant-numeric: tabular-nums;
     font-weight: 400;
   }
@@ -220,11 +241,11 @@
   transition: all 0.2s;
 }
 
-.radio-item input[type='radio']:checked + .radio-custom {
+.radio-item input[type='radio']:checked+.radio-custom {
   background-color: #febc49;
 }
 
-.radio-item input[type='radio']:checked + .radio-custom::after {
+.radio-item input[type='radio']:checked+.radio-custom::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -366,12 +387,14 @@
 }
 
 .status-badge.active {
-  background-color: #d4edda; /* match @colors */
+  background-color: #d4edda;
+  /* match @colors */
   color: #155724;
 }
 
 .status-badge.inactive {
-  background-color: #f8d7da; /* match @colors */
+  background-color: #f8d7da;
+  /* match @colors */
   color: #721c24;
 }
 
@@ -419,11 +442,11 @@
   border-radius: 50%;
 }
 
-input:checked + .toggle-slider {
+input:checked+.toggle-slider {
   background-color: #28a745;
 }
 
-input:checked + .toggle-slider:before {
+input:checked+.toggle-slider:before {
   transform: translateX(20px);
 }
 
@@ -637,7 +660,7 @@ input:checked + .toggle-slider:before {
   z-index: 1050;
 }
 
-.modal-dialog {
+.modal-dialog.modal-xl {
   max-width: 90vw;
 }
 
@@ -650,7 +673,8 @@ input:checked + .toggle-slider:before {
 .modal-header {
   border-bottom: 1px solid #e9ecef;
   padding: 1rem 1.5rem;
-  background-color: #febc49 !important; /* Thay đổi thành màu vàng cam */
+  background-color: #febc49 !important;
+  /* Thay đổi thành màu vàng cam */
 }
 
 .modal-header .modal-title {
@@ -658,7 +682,8 @@ input:checked + .toggle-slider:before {
 }
 
 .modal-header .btn-close {
-  filter: brightness(0) invert(1); /* Đảm bảo icon close màu trắng */
+  filter: brightness(0) invert(1);
+  /* Đảm bảo icon close màu trắng */
 }
 
 .modal-body {
@@ -672,21 +697,26 @@ input:checked + .toggle-slider:before {
 
 /* ===== MODAL CONTENT STYLES - ORANGE THEME ===== */
 .section-title h6 {
-  color: #febc49 !important; /* Thay đổi thành màu vàng cam */
+  color: #febc49 !important;
+  /* Thay đổi thành màu vàng cam */
 }
 
 .section-title h6 i {
-  color: #febc49 !important; /* Thay đổi icon màu vàng cam */
+  color: #febc49 !important;
+  /* Thay đổi icon màu vàng cam */
 }
 
 .form-label {
-  color: #000000 !important; /* Thay đổi label màu đen */
+  color: #000000 !important;
+  /* Thay đổi label màu đen */
   font-weight: 600;
 }
 
 .form-control:focus {
-  border-color: #febc49 !important; /* Thay đổi focus border màu vàng cam */
-  box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important; /* Thay đổi focus shadow màu vàng cam */
+  border-color: #febc49 !important;
+  /* Thay đổi focus border màu vàng cam */
+  box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important;
+  /* Thay đổi focus shadow màu vàng cam */
 }
 
 .form-control::placeholder {
@@ -697,7 +727,8 @@ input:checked + .toggle-slider:before {
 .input-group-text {
   background-color: #f8f9fa;
   border-color: #ced4da;
-  color: #000000 !important; /* Thay đổi icon trong input màu vàng cam */
+  color: #000000 !important;
+  /* Thay đổi icon trong input màu vàng cam */
 }
 
 /* Radio buttons màu vàng cam */
@@ -712,7 +743,8 @@ input:checked + .toggle-slider:before {
 }
 
 .form-check-label {
-  color: #000000 !important; /* Thay đổi label radio màu đen */
+  color: #000000 !important;
+  /* Thay đổi label radio màu đen */
 }
 
 /* File input button màu vàng cam */
@@ -891,4 +923,3 @@ input:checked + .toggle-slider:before {
     justify-content: center;
   }
 }
-

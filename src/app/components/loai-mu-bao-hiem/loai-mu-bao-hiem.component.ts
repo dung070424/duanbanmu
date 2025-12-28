@@ -201,6 +201,8 @@ export class LoaiMuBaoHiemComponent implements OnInit {
     this.editingItem = null;
   }
 
+  errorMessage: string = '';
+
   save() {
     // Mark all fields as touched when user tries to submit
     this.touchedFields.add('tenLoai');
@@ -247,12 +249,14 @@ export class LoaiMuBaoHiemComponent implements OnInit {
         this.loadData();
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('Error saving:', error);
-        if (error.status === 409) {
-          console.error('Tên loại mũ bảo hiểm đã tồn tại');
+      error: (err: any) => {
+        console.error('API Error:', err);
+        if (err?.status === 409 || err?.error?.message?.includes('exist') || err?.error?.message?.includes('tồn tại')) {
+          this.errorMessage = 'Tên loại mũ bảo hiểm đã tồn tại trong hệ thống.';
         } else {
-          console.error('Có lỗi xảy ra khi lưu dữ liệu');
+          this.errorMessage =
+            (err?.error && (err.error.message || err.error.error)) ||
+            'Đã có lỗi xảy ra. Vui lòng thử lại sau.';
         }
       },
     });
@@ -348,6 +352,7 @@ export class LoaiMuBaoHiemComponent implements OnInit {
 
   resetTouchedFields() {
     this.touchedFields.clear();
+    this.errorMessage = '';
   }
 
   // New methods for the updated UI

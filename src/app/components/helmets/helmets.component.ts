@@ -140,6 +140,12 @@ export class HelmetsComponent implements OnInit {
     updatedAt: new Date(),
   };
 
+  // Confirmation Modal State
+  showConfirmModal: boolean = false;
+  confirmModalTitle: string = '';
+  confirmModalMessage: string = '';
+  pendingAction: (() => void) | null = null;
+
   // Track which fields have been touched by user
   touchedFields: Set<string> = new Set();
 
@@ -162,7 +168,7 @@ export class HelmetsComponent implements OnInit {
     private helmetVersionApi: HelmetVersionApiService,
     private sizeApi: SizeApiService,
     private authService: AuthService
-  ) {}
+  ) { }
 
   // Kiểm tra quyền ADMIN để hiển thị các nút thêm/sửa/xóa
   get isAdmin(): boolean {
@@ -187,7 +193,7 @@ export class HelmetsComponent implements OnInit {
         this.nsxOptions = this.nsxList.map((x) => ({ id: x.id, name: x.tenNhaSanXuat }));
         this.cdr.detectChanges();
       },
-      error: (error) => {},
+      error: (error) => { },
     });
     this.productApi.getChatLieuVoAll().subscribe((res: any) => {
       this.chatLieuList = (res.content || []).map((x: any) => ({
@@ -281,8 +287,8 @@ export class HelmetsComponent implements OnInit {
             anhSanPham: p.anhSanPham ?? null,
             avgPrice:
               (p as any).giaTrungBinh !== undefined &&
-              (p as any).giaTrungBinh !== null &&
-              String((p as any).giaTrungBinh).trim() !== ''
+                (p as any).giaTrungBinh !== null &&
+                String((p as any).giaTrungBinh).trim() !== ''
                 ? Number((p as any).giaTrungBinh)
                 : null,
             totalQuantity:
@@ -295,8 +301,8 @@ export class HelmetsComponent implements OnInit {
                 : (null as any),
             quantity:
               p.soLuongTon !== undefined &&
-              p.soLuongTon !== null &&
-              String(p.soLuongTon).trim() !== ''
+                p.soLuongTon !== null &&
+                String(p.soLuongTon).trim() !== ''
                 ? Number(p.soLuongTon)
                 : (null as any),
             status: p.trangThai ? 'Đang bán' : 'Ngừng bán',
@@ -369,7 +375,7 @@ export class HelmetsComponent implements OnInit {
                 }
                 this.cdr.detectChanges();
               },
-              error: () => {},
+              error: () => { },
             });
           });
         },
@@ -656,66 +662,70 @@ export class HelmetsComponent implements OnInit {
         congNgheAnToanId: Number(this.newProduct.congNgheAnToanId),
       } as any;
 
-      this.productApi.update(this.selectedProduct.id, payloadUpdate).subscribe({
-        next: () => {
-          // Đồng bộ phiên bản sau khi cập nhật sản phẩm
-          const sanPhamId = this.selectedProduct!.id;
-          const toNum = (v: any) => {
-            if (v === null || v === undefined) return 0;
-            if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-            let s = String(v).trim().replace(/\s+/g, '').replace(/,/g, '');
-            const firstDot = s.indexOf('.');
-            const lastDot = s.lastIndexOf('.');
-            if (firstDot !== -1 && lastDot !== -1 && firstDot !== lastDot) s = s.replace(/\./g, '');
-            const n = Number(s);
-            return Number.isFinite(n) ? n : 0;
-          };
-          let pending = this.helmetVersions.length;
-          if (pending === 0) {
-            this.fetchProducts();
-            this.closeModal();
-            return;
-          }
-          this.helmetVersions.forEach((v) => {
-            const versionPayload: any = {
-              sanPhamId,
-              kichThuocId: toNum(v.kichThuocId),
-              mauSacId: toNum(v.mauSacId),
-              trongLuongId: toNum(v.trongLuongId),
-              giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
-              soLuongTon:
-                v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-              trangThai: v.trangThai !== false,
-              anhSanPham: v.anhSanPham || null,
+      const updateAction = () => {
+        this.productApi.update(this.selectedProduct!.id, payloadUpdate).subscribe({
+          next: () => {
+            // Đồng bộ phiên bản sau khi cập nhật sản phẩm
+            const sanPhamId = this.selectedProduct!.id;
+            const toNum = (v: any) => {
+              if (v === null || v === undefined) return 0;
+              if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+              let s = String(v).trim().replace(/\s+/g, '').replace(/,/g, '');
+              const firstDot = s.indexOf('.');
+              const lastDot = s.lastIndexOf('.');
+              if (firstDot !== -1 && lastDot !== -1 && firstDot !== lastDot) s = s.replace(/\./g, '');
+              const n = Number(s);
+              return Number.isFinite(n) ? n : 0;
             };
-            if (v.id) {
-              this.helmetVersionApi.update(v.id, versionPayload).subscribe({
-                next: done,
-                error: done,
-              });
-            } else {
-              this.helmetVersionApi.create(versionPayload).subscribe({
-                next: done,
-                error: done,
-              });
+            let pending = this.helmetVersions.length;
+            if (pending === 0) {
+              this.fetchProducts();
+              this.closeModal();
+              return;
             }
-          });
-          const self = this;
-          function done() {
-            pending--;
-            if (pending <= 0) {
-              self.fetchProducts();
-              self.closeModal();
+            this.helmetVersions.forEach((v) => {
+              const versionPayload: any = {
+                sanPhamId,
+                kichThuocId: toNum(v.kichThuocId),
+                mauSacId: toNum(v.mauSacId),
+                trongLuongId: toNum(v.trongLuongId),
+                giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+                soLuongTon:
+                  v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+                trangThai: v.trangThai !== false,
+                anhSanPham: v.anhSanPham || null,
+              };
+              if (v.id) {
+                this.helmetVersionApi.update(v.id, versionPayload).subscribe({
+                  next: done,
+                  error: done,
+                });
+              } else {
+                this.helmetVersionApi.create(versionPayload).subscribe({
+                  next: done,
+                  error: done,
+                });
+              }
+            });
+            const self = this;
+            function done() {
+              pending--;
+              if (pending <= 0) {
+                self.fetchProducts();
+                self.closeModal();
+              }
             }
-          }
-        },
-        error: (err) => {
-          const msg =
-            (err?.error && (err.error.message || err.error.error)) ||
-            'Cập nhật thất bại. Vui lòng kiểm tra dữ liệu.';
-          alert(msg);
-        },
-      });
+          },
+          error: (err) => {
+            const msg =
+              (err?.error && (err.error.message || err.error.error)) ||
+              'Cập nhật thất bại. Vui lòng kiểm tra dữ liệu.';
+            alert(msg);
+          },
+        });
+      };
+
+      this.openConfirmModal('Xác nhận', 'Bạn có muốn cập nhật sản phẩm này không?', updateAction);
       return;
     }
 
@@ -736,29 +746,32 @@ export class HelmetsComponent implements OnInit {
       congNgheAnToanId: toId(this.newProduct.congNgheAnToanId),
     } as any;
 
-    this.productApi.create(payload).subscribe({
-      next: () => {
-        this.fetchProducts();
-        this.closeModal();
-      },
-      error: (err) => {
-        if (err?.status === 409) {
-          // Xóa thông báo lỗi mã sản phẩm trùng lặp
-          return;
-        }
-        if (err?.status === 400) {
-          const msg400 =
+    const createAction = () => {
+      this.productApi.create(payload).subscribe({
+        next: () => {
+          this.fetchProducts();
+          this.closeModal();
+        },
+        error: (err) => {
+          if (err?.status === 409) {
+            return;
+          }
+          if (err?.status === 400) {
+            const msg400 =
+              (err?.error && (err.error.message || err.error.error)) ||
+              'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các danh mục và giá trị bắt buộc.';
+            alert(msg400);
+            return;
+          }
+          const msg =
             (err?.error && (err.error.message || err.error.error)) ||
-            'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các danh mục và giá trị bắt buộc.';
-          alert(msg400);
-          return;
-        }
-        const msg =
-          (err?.error && (err.error.message || err.error.error)) ||
-          'Thêm mới thất bại. Vui lòng kiểm tra dữ liệu (mã SP không trùng, giá > 0).';
-        alert(msg);
-      },
-    });
+            'Thêm mới thất bại. Vui lòng kiểm tra dữ liệu (mã SP không trùng, giá > 0).';
+          alert(msg);
+        },
+      });
+    };
+
+    this.openConfirmModal('Xác nhận', 'Bạn có muốn thêm mới sản phẩm này không?', createAction);
   }
 
   // Ép kiểu số khi người dùng nhập giá/số lượng trong bảng phiên bản
@@ -796,6 +809,28 @@ export class HelmetsComponent implements OnInit {
   closeDeleteModal() {
     this.showDeleteModal = false;
     this.productToDelete = null;
+  }
+
+  // Confirmation Modal Logic
+  openConfirmModal(title: string, message: string, action: () => void) {
+    this.confirmModalTitle = title;
+    this.confirmModalMessage = message;
+    this.pendingAction = action;
+    this.showConfirmModal = true;
+  }
+
+
+
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.pendingAction = null;
+  }
+
+  onConfirm() {
+    if (this.pendingAction) {
+      this.pendingAction();
+    }
+    this.closeConfirmModal();
   }
 
   openAddModal() {
@@ -838,7 +873,7 @@ export class HelmetsComponent implements OnInit {
       error: (error) => {
         alert(
           'Lỗi khi tải danh sách loại mũ bảo hiểm: ' +
-            (error.message || 'Không thể kết nối đến server')
+          (error.message || 'Không thể kết nối đến server')
         );
       },
     });
@@ -1119,7 +1154,7 @@ export class HelmetsComponent implements OnInit {
         error: (error) => {
           alert(
             'Lỗi khi thêm mới Loại mũ bảo hiểm: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
+            (error.error?.message || error.message || 'Không thể kết nối đến server')
           );
         },
       });
@@ -1139,7 +1174,7 @@ export class HelmetsComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Màu sắc: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -1160,7 +1195,7 @@ export class HelmetsComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Nhà sản xuất: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -1180,7 +1215,7 @@ export class HelmetsComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Chất liệu vỏ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -1201,7 +1236,7 @@ export class HelmetsComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Trọng lượng: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -1221,7 +1256,7 @@ export class HelmetsComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Xuất xứ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -1241,7 +1276,7 @@ export class HelmetsComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Kiểu dáng mũ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -1261,7 +1296,7 @@ export class HelmetsComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Công nghệ an toàn: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });

@@ -42,7 +42,7 @@ export class MaterialsComponent implements OnInit {
   // Track which fields have been touched by user
   touchedFields: Set<string> = new Set();
 
-  constructor(private api: MaterialApiService, private cdr: ChangeDetectorRef) {}
+  constructor(private api: MaterialApiService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.fetch();
@@ -99,6 +99,8 @@ export class MaterialsComponent implements OnInit {
     this.isViewMode = false;
   }
 
+  errorMessage: string = '';
+
   save() {
     // Mark all fields as touched when user tries to submit
     this.touchedFields.add('name');
@@ -126,6 +128,18 @@ export class MaterialsComponent implements OnInit {
       // Không hiển thị alert, chỉ mark fields as touched để hiển thị validation errors
       return;
     }
+
+    const errorHandler = (err: any) => {
+      console.error('API Error:', err);
+      if (err?.status === 409 || err?.error?.message?.includes('exist') || err?.error?.message?.includes('tồn tại')) {
+        this.errorMessage = 'Tên chất liệu đã tồn tại trong hệ thống.';
+      } else {
+        this.errorMessage =
+          (err?.error && (err.error.message || err.error.error)) ||
+          'Đã có lỗi xảy ra. Vui lòng thử lại sau.';
+      }
+    };
+
     if (this.isEditMode && this.selected) {
       this.api
         .update(this.selected.id, {
@@ -138,7 +152,7 @@ export class MaterialsComponent implements OnInit {
             this.fetch(0);
             this.closeModal();
           },
-          error: () => console.error('Cập nhật thất bại'),
+          error: errorHandler,
         });
     } else {
       this.api
@@ -152,7 +166,7 @@ export class MaterialsComponent implements OnInit {
             this.fetch(0);
             this.closeModal();
           },
-          error: () => console.error('Thêm mới thất bại'),
+          error: errorHandler,
         });
     }
   }
@@ -242,6 +256,7 @@ export class MaterialsComponent implements OnInit {
 
   resetTouchedFields() {
     this.touchedFields.clear();
+    this.errorMessage = '';
   }
 
   // New methods for the updated UI
