@@ -33,28 +33,15 @@
       <div class="form-content">
         <div class="form-group">
           <label for="maDotGiamGia">Mã đợt giảm giá</label>
-          <input
-            type="text"
-            id="maDotGiamGia"
-            class="form-control"
-            [(ngModel)]="promotionData.maDotGiamGia"
-            placeholder="Mã tự động"
-            readonly
-          />
+          <input type="text" id="maDotGiamGia" class="form-control" [(ngModel)]="promotionData.maDotGiamGia"
+            placeholder="Mã tự động" readonly />
         </div>
 
         <div class="form-group">
           <label for="tenDotGiamGia">Tên đợt giảm giá <span class="required">*</span></label>
-          <input
-            type="text"
-            id="tenDotGiamGia"
-            class="form-control"
-            [class.is-invalid]="validationErrors.tenDotGiamGia"
-            [(ngModel)]="promotionData.tenDotGiamGia"
-            (input)="clearFieldError('tenDotGiamGia')"
-            placeholder="Nhập tên đợt giảm giá"
-            [disabled]="loading"
-          />
+          <input type="text" id="tenDotGiamGia" class="form-control" [class.is-invalid]="validationErrors.tenDotGiamGia"
+            [(ngModel)]="promotionData.tenDotGiamGia" (input)="clearFieldError('tenDotGiamGia')"
+            placeholder="Nhập tên đợt giảm giá" [disabled]="loading" />
           <div class="error-message" *ngIf="validationErrors.tenDotGiamGia">
             <i class="bi bi-exclamation-circle"></i>
             {{ validationErrors.tenDotGiamGia }}
@@ -63,14 +50,9 @@
 
         <div class="form-group">
           <label for="loaiDotGiamGia">Loại giảm giá <span class="required">*</span></label>
-          <select
-            id="loaiDotGiamGia"
-            class="form-control"
-            [class.is-invalid]="validationErrors.loaiDotGiamGia"
+          <select id="loaiDotGiamGia" class="form-control" [class.is-invalid]="validationErrors.loaiDotGiamGia"
             [(ngModel)]="promotionData.loaiDotGiamGia"
-            (ngModelChange)="onDiscountTypeChange($event); clearFieldError('loaiDotGiamGia')"
-            [disabled]="loading"
-          >
+            (ngModelChange)="onDiscountTypeChange($event); clearFieldError('loaiDotGiamGia')" [disabled]="loading">
             <option value="">Chọn loại giảm giá</option>
             <option value="PHAN_TRAM">Phần trăm (%)</option>
             <option value="SO_TIEN">Số tiền (VND)</option>
@@ -82,19 +64,10 @@
         </div>
         <div class="form-group" *ngIf="promotionData.loaiDotGiamGia === 'PHAN_TRAM'">
           <label for="giaTriGiamGia">Giá trị giảm giá (%) <span class="required">*</span></label>
-          <input
-            type="number"
-            id="giaTriGiamGia"
-            class="form-control"
-            [class.is-invalid]="validationErrors.giaTriGiamGia"
-            [(ngModel)]="promotionData.giaTriGiamGia"
-            (ngModelChange)="onDiscountValueChange()"
-            (input)="clearFieldError('giaTriGiamGia')"
-            placeholder="Nhập % giảm giá (0-100)"
-            min="0"
-            max="100"
-            [disabled]="loading"
-          />
+          <input type="number" id="giaTriGiamGia" class="form-control"
+            [class.is-invalid]="validationErrors.giaTriGiamGia" [(ngModel)]="promotionData.giaTriGiamGia"
+            (ngModelChange)="onDiscountValueChange()" (input)="clearFieldError('giaTriGiamGia')"
+            placeholder="Nhập % giảm giá (0-100)" min="0" max="100" [disabled]="loading" />
           <div class="error-message" *ngIf="validationErrors.giaTriGiamGia">
             <i class="bi bi-exclamation-circle"></i>
             {{ validationErrors.giaTriGiamGia }}
@@ -110,18 +83,9 @@
           <label for="soTien">
             Số tiền giảm (VND) <span class="required">*</span>
           </label>
-          <input
-            type="number"
-            id="soTien"
-            class="form-control"
-            [class.is-invalid]="validationErrors.soTien"
-            [(ngModel)]="promotionData.soTien"
-            (ngModelChange)="onDiscountValueChange()"
-            (input)="clearFieldError('soTien')"
-            placeholder="Nhập số tiền giảm"
-            min="0"
-            [disabled]="loading"
-          />
+          <input type="number" id="soTien" class="form-control" [class.is-invalid]="validationErrors.soTien"
+            [(ngModel)]="promotionData.soTien" (ngModelChange)="onDiscountValueChange()"
+            (input)="clearFieldError('soTien')" placeholder="Nhập số tiền giảm" min="0" [disabled]="loading" />
           <div class="error-message" *ngIf="validationErrors.soTien">
             <i class="bi bi-exclamation-circle"></i>
             {{ validationErrors.soTien }}
@@ -137,15 +101,8 @@
             Ngày bắt đầu <span class="required">*</span>
           </label>
           <div class="date-input-group">
-            <input
-              type="date"
-              id="ngayBatDau"
-              class="form-control"
-              [class.is-invalid]="validationErrors.ngayBatDau"
-              [(ngModel)]="promotionData.ngayBatDau"
-              (change)="clearFieldError('ngayBatDau')"
-              [disabled]="loading"
-            />
+            <input type="date" id="ngayBatDau" class="form-control" [class.is-invalid]="validationErrors.ngayBatDau"
+              [(ngModel)]="promotionData.ngayBatDau" (change)="clearFieldError('ngayBatDau')" [disabled]="loading" />
             <!-- <i class="bi bi-calendar-plus"></i> -->
           </div>
           <div class="error-message" *ngIf="validationErrors.ngayBatDau">
@@ -159,15 +116,8 @@
             Ngày kết thúc <span class="required">*</span>
           </label>
           <div class="date-input-group">
-            <input
-              type="date"
-              id="ngayKetThuc"
-              class="form-control"
-              [class.is-invalid]="validationErrors.ngayKetThuc"
-              [(ngModel)]="promotionData.ngayKetThuc"
-              (change)="clearFieldError('ngayKetThuc')"
-              [disabled]="loading"
-            />
+            <input type="date" id="ngayKetThuc" class="form-control" [class.is-invalid]="validationErrors.ngayKetThuc"
+              [(ngModel)]="promotionData.ngayKetThuc" (change)="clearFieldError('ngayKetThuc')" [disabled]="loading" />
             <!-- <i class="bi bi-calendar-check"></i> -->
           </div>
           <div class="error-message" *ngIf="validationErrors.ngayKetThuc">
@@ -203,14 +153,8 @@
           <label>Tìm kiếm</label>
           <div class="search-input-group">
             <i class="bi bi-search"></i>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Tìm kiếm theo tên, mã..."
-              [(ngModel)]="searchTerm"
-              (keyup)="onSearch()"
-              [disabled]="loading"
-            />
+            <input type="text" class="form-control" placeholder="Tìm kiếm theo tên, mã..." [(ngModel)]="searchTerm"
+              (keyup)="onSearch()" [disabled]="loading" />
           </div>
         </div>
 
@@ -218,7 +162,8 @@
 
         <div class="filter-group">
           <label>Nhà sản xuất</label>
-          <select class="form-control" [(ngModel)]="selectedManufacturer" (change)="onManufacturerChange()" [disabled]="loading">
+          <select class="form-control" [(ngModel)]="selectedManufacturer" (change)="onManufacturerChange()"
+            [disabled]="loading">
             <option value="">Tất cả</option>
             <option *ngFor="let manufacturer of manufacturers" [value]="manufacturer">
               {{ manufacturer }}
@@ -231,53 +176,41 @@
       <div class="table-container">
         <table class="table">
           <thead>
-          <tr>
-            <th width="50px">
-              <input
-                type="checkbox"
-                (change)="onSelectAll()"
-                [checked]="isAllSelected()"
-              />
-            </th>
-            <th width="60px">STT</th>
-            <th width="100px">Mã</th>
-            <th>Tên SP</th>
-            <th width="120px">Hãng</th>
-            <th width="100px">Số lượng</th>
-          </tr>
+            <tr>
+              <th width="50px">
+                <input type="checkbox" (change)="onSelectAll()" [checked]="isAllSelected()" />
+              </th>
+              <th width="60px">STT</th>
+              <th width="100px">Mã</th>
+              <th>Tên SP</th>
+              <th width="120px">Hãng</th>
+              <th width="100px">Số lượng</th>
+            </tr>
           </thead>
           <tbody>
-          <tr
-            *ngFor="let product of getFilteredProducts(); let i = index"
-            (click)="onProductRowClick(product)"
-            [class.selected-row]="selectedProductForDetail?.id === product.id"
-            class="clickable-row"
-          >
-            <td (click)="$event.stopPropagation()">
-              <input
-                type="checkbox"
-                [checked]="product.selected"
-                (change)="onProductSelect(product)"
-              />
-            </td>
-            <td>{{ i + 1 }}</td>
-            <td>{{ product.maSanPham }}</td>
-            <td>{{ product.tenSanPham }}</td>
-            <td>{{ product.nhaSanXuatTen }}</td>
-            <td>{{ product.soLuongTon }}</td>
-          </tr>
-          <tr *ngIf="loading">
-            <td colspan="6" class="text-center">
-              <i class="bi bi-hourglass-split"></i>
-              Đang tải dữ liệu...
-            </td>
-          </tr>
-          <tr *ngIf="getFilteredProducts().length === 0 && !loading && !error">
-            <td colspan="6" class="text-center">
-              <i class="bi bi-inbox"></i>
-              Không có sản phẩm nào
-            </td>
-          </tr>
+            <tr *ngFor="let product of getFilteredProducts(); let i = index" (click)="onProductRowClick(product)"
+              [class.selected-row]="selectedProductForDetail?.id === product.id" class="clickable-row">
+              <td (click)="$event.stopPropagation()">
+                <input type="checkbox" [checked]="product.selected" (change)="onProductSelect(product)" />
+              </td>
+              <td>{{ i + 1 }}</td>
+              <td>{{ product.maSanPham }}</td>
+              <td>{{ product.tenSanPham }}</td>
+              <td>{{ product.nhaSanXuatTen }}</td>
+              <td>{{ product.soLuongTon }}</td>
+            </tr>
+            <tr *ngIf="loading">
+              <td colspan="6" class="text-center">
+                <i class="bi bi-hourglass-split"></i>
+                Đang tải dữ liệu...
+              </td>
+            </tr>
+            <tr *ngIf="getFilteredProducts().length === 0 && !loading && !error">
+              <td colspan="6" class="text-center">
+                <i class="bi bi-inbox"></i>
+                Không có sản phẩm nào
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -333,12 +266,8 @@
       <i class="bi bi-card-checklist"></i>
       <h3 *ngIf="!selectedProductForDetail">Danh Sách Chi Tiết Sản Phẩm</h3>
       <h3 *ngIf="selectedProductForDetail">Danh Sách Chi Tiết Sản Phẩm: {{ selectedProductForDetail.tenSanPham }}</h3>
-      <button
-        *ngIf="selectedProductForDetail"
-        class="btn-close-detail"
-        (click)="selectedProductForDetail = null"
-        title="Đóng chi tiết"
-      >
+      <button *ngIf="selectedProductForDetail" class="btn-close-detail" (click)="selectedProductForDetail = null"
+        title="Đóng chi tiết">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
@@ -399,7 +328,8 @@
       <div class="empty-state-content">
         <i class="bi bi-cursor"></i>
         <h4>Chưa chọn sản phẩm</h4>
-        <p>Vui lòng tích checkbox hoặc click vào một sản phẩm trong <strong>"Danh Sách Sản Phẩm"</strong> ở trên để xem chi tiết</p>
+        <p>Vui lòng tích checkbox hoặc click vào một sản phẩm trong <strong>"Danh Sách Sản Phẩm"</strong> ở trên để xem
+          chi tiết</p>
       </div>
     </div>
 
@@ -407,61 +337,56 @@
     <div class="detail-table-container" *ngIf="promotionData.selectedProducts.length > 0">
       <table class="table detail-table">
         <thead>
-        <tr>
-          <th width="50px">#</th>
-          <th width="60px">STT</th>
-          <th width="80px">Ảnh</th>
-          <th width="150px">Trùng</th>
-          <th>Sản phẩm & Màu sắc & Kích thước</th>
-          <th width="130px">Đơn giá gốc</th>
-          <th width="150px">Đơn giá sau giảm</th>
-        </tr>
+          <tr>
+            <th width="50px">#</th>
+            <th width="60px">STT</th>
+            <th width="80px">Ảnh</th>
+            <th width="150px">Trùng</th>
+            <th>Sản phẩm & Màu sắc & Kích thước</th>
+            <th width="130px">Đơn giá gốc</th>
+            <th width="150px">Đơn giá sau giảm</th>
+          </tr>
         </thead>
         <tbody>
-        <tr *ngFor="let detail of getFilteredDetailProducts(); let i = index">
-          <td>
-            <input
-              type="checkbox"
-              [(ngModel)]="detail.selected"
-            />
-          </td>
-          <td>{{ detailCurrentPage * detailItemsPerPage + i + 1 }}</td>
-          <td>
-            <img [src]="detail.imageUrl || 'assets/default-product.png'"
-                 alt="Product"
-                 class="product-image">
-          </td>
-          <td>
+          <tr *ngFor="let detail of getFilteredDetailProducts(); let i = index">
+            <td>
+              <input type="checkbox" [(ngModel)]="detail.selected" />
+            </td>
+            <td>{{ detailCurrentPage * detailItemsPerPage + i + 1 }}</td>
+            <td>
+              <img [src]="detail.imageUrl || 'assets/default-product.png'" alt="Product" class="product-image">
+            </td>
+            <td>
               <span class="status-badge" [ngClass]="getStatusClass(detail)">
                 {{ getStatusText(detail) }}
               </span>
-          </td>
-          <td class="product-info-cell">
-            <div class="product-name">{{ detail.productName }}</div>
-            <div class="product-specs">
-              <span class="spec-item color">{{ detail.color }}</span>
-              <span class="spec-separator">-</span>
-              <span class="spec-item loaimu">{{ detail.loaiMu }}</span>
-            </div>
-          </td>
-          <td class="price-cell">
-            <div class="original-price">{{ formatCurrency(detail.originalPrice) }}</div>
-          </td>
-          <td class="price-cell discounted">
-            <div class="discounted-price" [class.has-discount]="hasDiscount()">
-              {{ formatCurrency(calculateDiscountedPrice(detail.originalPrice)) }}
-            </div>
-            <div class="discount-amount" *ngIf="hasDiscount() && calculateDiscountAmount(detail.originalPrice) > 0">
-              <i class="bi bi-arrow-down"></i> -{{ formatCurrency(calculateDiscountAmount(detail.originalPrice)) }}
-            </div>
-          </td>
-        </tr>
-        <tr *ngIf="getFilteredDetailProducts().length === 0">
-          <td colspan="7" class="text-center empty-message">
-            <i class="bi bi-inbox"></i>
-            <span>Chưa có sản phẩm chi tiết nào</span>
-          </td>
-        </tr>
+            </td>
+            <td class="product-info-cell">
+              <div class="product-name">{{ detail.productName }}</div>
+              <div class="product-specs">
+                <span class="spec-item color">{{ detail.color }}</span>
+                <span class="spec-separator">-</span>
+                <span class="spec-item loaimu">{{ detail.loaiMu }}</span>
+              </div>
+            </td>
+            <td class="price-cell">
+              <div class="original-price">{{ formatCurrency(detail.originalPrice) }}</div>
+            </td>
+            <td class="price-cell discounted">
+              <div class="discounted-price" [class.has-discount]="hasDiscount()">
+                {{ formatCurrency(calculateDiscountedPrice(detail.originalPrice)) }}
+              </div>
+              <div class="discount-amount" *ngIf="hasDiscount() && calculateDiscountAmount(detail.originalPrice) > 0">
+                <i class="bi bi-arrow-down"></i> -{{ formatCurrency(calculateDiscountAmount(detail.originalPrice)) }}
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="getFilteredDetailProducts().length === 0">
+            <td colspan="7" class="text-center empty-message">
+              <i class="bi bi-inbox"></i>
+              <span>Chưa có sản phẩm chi tiết nào</span>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -485,34 +410,24 @@
           Hiển thị {{ getDetailPaginationStart() }} - {{ getDetailPaginationEnd() }} / {{ detailProducts.length }} mục
         </div>
         <div class="pagination-controls">
-          <button class="btn btn-pagination"
-                  (click)="detailFirstPage()"
-                  [disabled]="detailCurrentPage === 0"
-                  title="Trang đầu">
+          <button class="btn btn-pagination" (click)="detailFirstPage()" [disabled]="detailCurrentPage === 0"
+            title="Trang đầu">
             <i class="bi bi-chevron-double-left"></i>
           </button>
-          <button class="btn btn-pagination"
-                  (click)="detailPreviousPage()"
-                  [disabled]="detailCurrentPage === 0"
-                  title="Trang trước">
+          <button class="btn btn-pagination" (click)="detailPreviousPage()" [disabled]="detailCurrentPage === 0"
+            title="Trang trước">
             <i class="bi bi-chevron-left"></i>
           </button>
-          <button *ngFor="let page of getDetailPageNumbers()"
-                  class="btn btn-pagination"
-                  [class.active]="page === detailCurrentPage + 1"
-                  (click)="detailGoToPage(page - 1)">
+          <button *ngFor="let page of getDetailPageNumbers()" class="btn btn-pagination"
+            [class.active]="page === detailCurrentPage + 1" (click)="detailGoToPage(page - 1)">
             {{ page }}
           </button>
-          <button class="btn btn-pagination"
-                  (click)="detailNextPage()"
-                  [disabled]="detailCurrentPage >= getDetailTotalPages() - 1"
-                  title="Trang sau">
+          <button class="btn btn-pagination" (click)="detailNextPage()"
+            [disabled]="detailCurrentPage >= getDetailTotalPages() - 1" title="Trang sau">
             <i class="bi bi-chevron-right"></i>
           </button>
-          <button class="btn btn-pagination"
-                  (click)="detailLastPage()"
-                  [disabled]="detailCurrentPage >= getDetailTotalPages() - 1"
-                  title="Trang cuối">
+          <button class="btn btn-pagination" (click)="detailLastPage()"
+            [disabled]="detailCurrentPage >= getDetailTotalPages() - 1" title="Trang cuối">
             <i class="bi bi-chevron-double-right"></i>
           </button>
         </div>
@@ -520,4 +435,23 @@
     </div>
   </div>
 
+</div>
+
+<!-- Confirmation Modal -->
+<div class="confirm-modal-overlay" *ngIf="showConfirmModal">
+  <div class="confirm-modal">
+    <div class="confirm-modal-header">
+      <h3>Xác nhận</h3>
+      <button class="btn-close" (click)="onCancelSubmit()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="confirm-modal-body">
+      <p>Bạn có muốn thêm mới đợt giảm giá này không?</p>
+    </div>
+    <div class="confirm-modal-footer">
+      <button class="btn btn-secondary" (click)="onCancelSubmit()">Hủy</button>
+      <button class="btn btn-primary" (click)="onConfirmSubmit()">Xác nhận</button>
+    </div>
+  </div>
 </div>

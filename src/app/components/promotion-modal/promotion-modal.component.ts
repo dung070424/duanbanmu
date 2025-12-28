@@ -61,6 +61,9 @@ export class PromotionModalComponent {
   totalItems = 0;
   totalPages = 0;
 
+  // Confirmation Modal
+  showConfirmModal = false;
+
   // Sample data
   products: Product[] = [
     { id: '1', code: 'SP00001', name: 'Iphone 14', brand: 'Apple', quantity: 1, selected: false },
@@ -84,7 +87,7 @@ export class PromotionModalComponent {
     { value: 'Số tiền cố định', label: 'Số tiền cố định (₫)' },
     { value: 'Sản phẩm tặng', label: 'Sản phẩm tặng' },
   ];
-statusOptions = [
+  statusOptions = [
     { value: 'Chưa bắt đầu', label: 'Chưa bắt đầu' },
     { value: 'Sắp diễn ra', label: 'Sắp diễn ra' },
     { value: 'Đang hoạt động', label: 'Đang hoạt động' },
@@ -149,12 +152,18 @@ statusOptions = [
         this.formData.code = this.generatePromotionCode();
       }
 
-      // Show success message with entered data
-      this.showSuccessMessage();
-
-      this.save.emit(this.formData);
-      this.resetForm();
+      this.showConfirmModal = true;
     }
+  }
+
+  onCancelSave() {
+    this.showConfirmModal = false;
+  }
+
+  onConfirmSave() {
+    this.showConfirmModal = false;
+    this.save.emit(this.formData);
+    this.resetForm();
   }
 
   generatePromotionCode(): string {
@@ -163,22 +172,7 @@ statusOptions = [
     return `KM${timestamp}${random}`;
   }
 
-  showSuccessMessage() {
-    const message = `
-      Đã thêm đợt giảm giá thành công!
 
-      Thông tin đã nhập:
-      - Mã đợt: ${this.formData.code}
-      - Tên đợt: ${this.formData.name}
-      - Loại giảm giá: ${this.formData.discountType}
-      - Giá trị: ${this.formData.discountValue}
-      - Số tiền giảm: ${this.formData.maxDiscountAmount || 'Không có'}
-      - Ngày bắt đầu: ${this.formData.startDate}
-- Ngày kết thúc: ${this.formData.endDate}
-    `;
-
-    alert(message);
-  }
 
   validateForm(): boolean {
     // Basic validation
@@ -283,7 +277,7 @@ statusOptions = [
     const endIndex = startIndex + this.itemsPerPage;
     this.filteredProducts = this.filteredProducts.slice(startIndex, endIndex);
   }
-get startItem(): number {
+  get startItem(): number {
     return (this.currentPage - 1) * this.itemsPerPage + 1;
   }
 

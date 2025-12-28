@@ -56,6 +56,7 @@
     opacity: 0;
     transform: translateY(-50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -170,7 +171,7 @@
     gap: 8px;
     margin-bottom: 18px;
     padding-bottom: 12px;
-border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
 
     i {
       font-size: 18px;
@@ -272,7 +273,8 @@ border-bottom: 1px solid #dee2e6;
   width: 100%;
   border-collapse: collapse;
 
-  th, td {
+  th,
+  td {
     padding: 8px 10px;
     text-align: left;
     border-bottom: 1px solid #e9ecef;
@@ -354,7 +356,7 @@ border-bottom: 1px solid #dee2e6;
       &.active {
         background: #febc49;
         color: #212529;
-border-color: #febc49;
+        border-color: #febc49;
       }
 
       &:disabled {
@@ -524,7 +526,7 @@ textarea.form-control {
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-border: 1px solid transparent;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.3s ease;
   display: inline-flex;
@@ -579,5 +581,140 @@ border: 1px solid transparent;
       width: 100%;
       min-width: auto;
     }
+  }
+}
+
+// Confirmation Modal Styles
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000; // Higher z-index to be above the promotion modal
+  animation: fadeIn 0.2s ease-out;
+}
+
+.confirm-modal {
+  background: white;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+
+  .confirm-modal-header {
+    background: #febc49; // Yellow header
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+      margin: 0;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      display: block; // Reset flex display from global modal styles if needed
+    }
+
+    .btn-close {
+      position: static; // Reset absolute positioning
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 1;
+        background: none;
+        transform: none;
+      }
+    }
+  }
+
+  .confirm-modal-body {
+    padding: 30px 20px;
+    text-align: left;
+
+    p {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+  }
+
+  .confirm-modal-footer {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    border-top: 1px solid #eee;
+    background: white; // Ensure white background
+
+    .btn {
+      padding: 8px 24px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+
+      &:hover {
+        background: #5a6268;
+      }
+    }
+
+    .btn-primary {
+      background: #28a745;
+      background-color: #0d6efd; // Bootstrap primary blue
+      color: white;
+
+      &:hover {
+        background-color: #0b5ed7;
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

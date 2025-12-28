@@ -44,9 +44,9 @@ interface DetailProduct {
 interface PromotionFormData {
   maDotGiamGia: string;
   tenDotGiamGia: string;
-  giaTriGiamGia: number;
+  giaTriGiamGia: number | null;
   loaiDotGiamGia: string;
-  soTien: number;
+  soTien: number | null;
   ngayBatDau: string;
   ngayKetThuc: string;
   moTa: string;
@@ -88,13 +88,13 @@ export class PromotionFormComponent implements OnInit {
     ngayBatDau: string;
     ngayKetThuc: string;
   } = {
-    tenDotGiamGia: '',
-    loaiDotGiamGia: '',
-    giaTriGiamGia: '',
-    soTien: '',
-    ngayBatDau: '',
-    ngayKetThuc: ''
-  };
+      tenDotGiamGia: '',
+      loaiDotGiamGia: '',
+      giaTriGiamGia: '',
+      soTien: '',
+      ngayBatDau: '',
+      ngayKetThuc: ''
+    };
 
   // Filter criteria
   searchTerm = '';
@@ -109,15 +109,18 @@ export class PromotionFormComponent implements OnInit {
   // Detail products table data
   detailProducts: DetailProduct[] = [];
   filteredDetailProducts: DetailProduct[] = [];
-  
+
   // Detail table filters
   detailFilterProduct = '';
   detailFilterLoaiMu = '';
   detailFilterColor = '';
-  
+
   // Detail table pagination
   detailCurrentPage = 0;
   detailItemsPerPage = 5;
+
+  // Confirmation Modal
+  showConfirmModal = false;
 
   constructor(
     private dotGiamGiaService: DotGiamGiaService,
@@ -125,7 +128,7 @@ export class PromotionFormComponent implements OnInit {
     private chiTietSanPhamService: ChiTietSanPhamApiService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit() {
     console.log('Initializing promotion form component...');
@@ -137,7 +140,7 @@ export class PromotionFormComponent implements OnInit {
     this.loadPromotionList();
     this.loadDetailProducts(); // Load chi tiết sản phẩm
     this.cdr.detectChanges();
-    
+
     // Debug: Check data after a short delay
     setTimeout(() => {
       console.log('=== DEBUG: Data Status ===');
@@ -156,10 +159,11 @@ export class PromotionFormComponent implements OnInit {
   onDiscountTypeChange(value: string) {
     if (value === 'PHAN_TRAM') {
       // Xóa số tiền khi chọn giảm theo %
-      this.promotionData.soTien = undefined as any;
+      // Xóa số tiền khi chọn giảm theo %
+      this.promotionData.soTien = null;
     } else if (value === 'SO_TIEN') {
       // Xóa giá trị % khi chọn giảm theo số tiền
-      this.promotionData.giaTriGiamGia = undefined as any;
+      this.promotionData.giaTriGiamGia = null;
     }
     // Tính lại giá sau giảm cho tất cả sản phẩm chi tiết
     this.recalculateAllPrices();
@@ -191,10 +195,10 @@ export class PromotionFormComponent implements OnInit {
       size: 1000
     }).subscribe({
       next: (response: any) => {
-        
+
         // API trả về dữ liệu trực tiếp, không có wrapper
         const products = response.content || response;
-        
+
         this.products = products.map((product: any) => ({
           id: product.id,
           maSanPham: product.maSanPham || 'N/A',
@@ -211,7 +215,7 @@ export class PromotionFormComponent implements OnInit {
           discountedPrice: 800000, // Default discounted price
           duplicateCount: 0
         }));
-        
+
         this.extractManufacturers();
         this.applyFilters(); // Apply filters after loading products
         this.loading = false;
@@ -232,7 +236,7 @@ export class PromotionFormComponent implements OnInit {
         console.error('Error url:', error.url);
         console.error('Error name:', error.name);
         console.error('Error stack:', error.stack);
-        
+
         // Set error message based on error type
         if (error.status === 0) {
           console.error('🌐 Network error - CORS or server not running');
@@ -246,7 +250,7 @@ export class PromotionFormComponent implements OnInit {
         } else {
           this.error = `Lỗi API (${error.status}): ${error.message || error.statusText}`;
         }
-        
+
         // Clear products and show empty state
         this.products = [];
         this.filteredProducts = [];
@@ -263,11 +267,11 @@ export class PromotionFormComponent implements OnInit {
     console.log('🔄 Reloading data from database...');
     this.loading = true;
     this.error = null;
-    
+
     // Clear existing data
     this.products = [];
     this.filteredProducts = [];
-    
+
     // Reload from database
     this.loadProducts();
   }
@@ -296,7 +300,7 @@ export class PromotionFormComponent implements OnInit {
   loadDetailProducts() {
     console.log('Loading sản phẩm cho bảng chi tiết...');
     this.loading = true;
-    
+
     // Lấy từ bảng Sản Phẩm thay vì Chi Tiết Sản Phẩm
     this.productApiService.search({
       page: 0,
@@ -304,15 +308,15 @@ export class PromotionFormComponent implements OnInit {
     }).subscribe({
       next: (response: any) => {
         console.log('Sản phẩm response:', response);
-        
+
         const products = response.content || response;
         console.log('Total items from database:', products.length);
-        
+
         // Map dữ liệu từ API Sản Phẩm sang DetailProduct interface
         this.detailProducts = products.map((item: any, index: number) => {
           // Log giá từng sản phẩm để debug
           console.log(`Product ${index + 1} - ${item.tenSanPham}: Giá = ${item.giaBan}`);
-          
+
           return {
             id: item.id,
             maSanPham: item.maSanPham || 'N/A',
@@ -327,11 +331,11 @@ export class PromotionFormComponent implements OnInit {
             soLuongTon: item.soLuongTon || 0
           };
         });
-        
+
         // Initialize filtered products
         this.filteredDetailProducts = [...this.detailProducts];
         this.applyDetailFilters();
-        
+
         this.loading = false;
         console.log('✅ Loaded detail products from SanPham:', this.detailProducts.length);
         if (this.detailProducts.length > 0) {
@@ -350,7 +354,7 @@ export class PromotionFormComponent implements OnInit {
           message: error.message,
           url: error.url
         });
-        
+
         // Fallback to empty array if API fails
         this.detailProducts = [];
         this.filteredDetailProducts = [];
@@ -379,7 +383,7 @@ export class PromotionFormComponent implements OnInit {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    
+
     this.promotionData.maDotGiamGia = `KM${year}${month}${day}${hours}${minutes}${seconds}${random}`;
   }
 
@@ -418,15 +422,15 @@ export class PromotionFormComponent implements OnInit {
     if (this.searchTerm && this.searchTerm.trim()) {
       const searchTerm = this.searchTerm.toLowerCase().trim();
       console.log('Searching for:', searchTerm);
-      
+
       filtered = filtered.filter(product => {
         const matchesName = product.tenSanPham && product.tenSanPham.toLowerCase().includes(searchTerm);
         const matchesCode = product.maSanPham && product.maSanPham.toLowerCase().includes(searchTerm);
         const matchesManufacturer = product.nhaSanXuatTen && product.nhaSanXuatTen.toLowerCase().includes(searchTerm);
-        
+
         return matchesName || matchesCode || matchesManufacturer;
       });
-      
+
       console.log('After search filter:', filtered.length);
     }
 
@@ -446,7 +450,7 @@ export class PromotionFormComponent implements OnInit {
 
   onProductSelect(product: Product) {
     product.selected = !product.selected;
-    
+
     if (product.selected) {
       if (!this.promotionData.selectedProducts.includes(product.id)) {
         this.promotionData.selectedProducts.push(product.id);
@@ -457,7 +461,7 @@ export class PromotionFormComponent implements OnInit {
       this.detailFilterLoaiMu = '';
       this.detailFilterColor = '';
       this.onDetailFilterChange();
-      
+
       // Scroll xuống phần detail
       setTimeout(() => {
         const detailSection = document.querySelector('.product-detail-section');
@@ -509,7 +513,7 @@ export class PromotionFormComponent implements OnInit {
 
   calculateDiscountedPrice(originalPrice: number): number {
     if (!originalPrice) return 0;
-    
+
     if (this.promotionData.loaiDotGiamGia === 'PHAN_TRAM') {
       const discountPercent = this.promotionData.giaTriGiamGia || 0;
       return Math.round(originalPrice * (1 - discountPercent / 100));
@@ -546,10 +550,10 @@ export class PromotionFormComponent implements OnInit {
   onSelectAll() {
     const allSelected = this.isAllSelected();
     const filtered = this.getFilteredProducts();
-    
+
     filtered.forEach(product => {
       product.selected = !allSelected;
-      
+
       if (!allSelected) {
         if (!this.promotionData.selectedProducts.includes(product.id)) {
           this.promotionData.selectedProducts.push(product.id);
@@ -560,7 +564,7 @@ export class PromotionFormComponent implements OnInit {
         );
       }
     });
-    
+
     // Hiển thị tất cả chi tiết sản phẩm khi chọn tất cả
     if (!allSelected && filtered.length > 0) {
       this.selectedProductForDetail = null; // Không chọn sản phẩm cụ thể
@@ -569,7 +573,7 @@ export class PromotionFormComponent implements OnInit {
       this.detailFilterLoaiMu = '';
       this.detailFilterColor = '';
       this.onDetailFilterChange();
-      
+
       setTimeout(() => {
         const detailSection = document.querySelector('.product-detail-section');
         if (detailSection) {
@@ -588,7 +592,7 @@ export class PromotionFormComponent implements OnInit {
 
   selectAllProducts() {
     console.log('🔄 Selecting all products...');
-    
+
     const filtered = this.getFilteredProducts();
     filtered.forEach(product => {
       product.selected = true;
@@ -596,7 +600,7 @@ export class PromotionFormComponent implements OnInit {
         this.promotionData.selectedProducts.push(product.id);
       }
     });
-    
+
     // Hiển thị tất cả chi tiết sản phẩm
     if (filtered.length > 0) {
       this.selectedProductForDetail = null; // Không chọn sản phẩm cụ thể
@@ -605,7 +609,7 @@ export class PromotionFormComponent implements OnInit {
       this.detailFilterLoaiMu = '';
       this.detailFilterColor = '';
       this.onDetailFilterChange();
-      
+
       setTimeout(() => {
         const detailSection = document.querySelector('.product-detail-section');
         if (detailSection) {
@@ -617,14 +621,14 @@ export class PromotionFormComponent implements OnInit {
 
   deselectAllProducts() {
     console.log('🔄 Deselecting all products...');
-    
+
     this.getFilteredProducts().forEach(product => {
       product.selected = false;
       this.promotionData.selectedProducts = this.promotionData.selectedProducts.filter(
         id => id !== product.id
       );
     });
-    
+
     // Xóa hiển thị chi tiết khi bỏ chọn tất cả
     this.selectedProductForDetail = null;
     this.detailFilterProduct = '';
@@ -637,7 +641,15 @@ export class PromotionFormComponent implements OnInit {
     if (!this.validateForm()) {
       return;
     }
+    this.showConfirmModal = true;
+  }
 
+  onCancelSubmit() {
+    this.showConfirmModal = false;
+  }
+
+  onConfirmSubmit() {
+    this.showConfirmModal = false;
     this.loading = true;
     this.error = null;
 
@@ -645,8 +657,8 @@ export class PromotionFormComponent implements OnInit {
     const isPercent = this.promotionData.loaiDotGiamGia === 'PHAN_TRAM';
     const soTienNum = !isPercent
       ? (typeof this.promotionData.soTien === 'string'
-          ? parseInt(this.promotionData.soTien as any, 10)
-          : Number(this.promotionData.soTien || 0))
+        ? parseInt(this.promotionData.soTien as any, 10)
+        : Number(this.promotionData.soTien || 0))
       : 0;
     const giaTriDotGiamStr = isPercent
       ? String(this.promotionData.giaTriGiamGia ?? '0')
@@ -671,7 +683,7 @@ export class PromotionFormComponent implements OnInit {
     this.dotGiamGiaService.createDotGiamGia(request).subscribe({
       next: (response: any) => {
         if (response.success) {
-          alert('Tạo đợt giảm giá thành công!');
+          // Alert removed
           this.router.navigate(['/promotions']);
         } else {
           this.error = response.message;
@@ -692,7 +704,7 @@ export class PromotionFormComponent implements OnInit {
   validateForm(): boolean {
     // Reset all errors
     this.clearValidationErrors();
-    
+
     let isValid = true;
 
     // Validate tên đợt giảm giá
@@ -779,7 +791,7 @@ export class PromotionFormComponent implements OnInit {
   onCancel() {
     // Hiển thị confirm dialog
     const confirmed = confirm('Bạn có chắc chắn muốn hủy? Tất cả dữ liệu đã nhập sẽ bị xóa.');
-    
+
     if (confirmed) {
       // Reset promotion data
       this.promotionData = {
@@ -851,7 +863,7 @@ export class PromotionFormComponent implements OnInit {
   }
 
   // ========== Detail Product Table Methods ==========
-  
+
   // Filter methods for detail table
   getUniqueProductNames(): string[] {
     const names = new Set<string>();
@@ -954,18 +966,18 @@ export class PromotionFormComponent implements OnInit {
     const totalPages = this.getDetailTotalPages();
     const pages: number[] = [];
     const maxPagesToShow = 5;
-    
+
     let startPage = Math.max(1, this.detailCurrentPage + 1 - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-    
+
     if (endPage - startPage < maxPagesToShow - 1) {
       startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 
