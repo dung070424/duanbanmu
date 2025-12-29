@@ -153,6 +153,11 @@ export class HelmetsComponent implements OnInit {
   showQuickAddModal: boolean = false;
   quickAddModalType: string = '';
 
+  // Variant generation properties
+  selectedSizes: number[] = [];
+  selectedColors: number[] = [];
+  deletedVersionIds: number[] = [];
+
   constructor(
     private productApi: ProductApiService,
     private cdr: ChangeDetectorRef,
@@ -711,8 +716,25 @@ export class HelmetsComponent implements OnInit {
             function done() {
               pending--;
               if (pending <= 0) {
-                self.fetchProducts();
-                self.closeModal();
+                // After all variants are created/updated, delete removed variants
+                if (self.deletedVersionIds.length > 0) {
+                  let deletedCount = 0;
+                  self.deletedVersionIds.forEach((id) => {
+                    self.helmetVersionApi.delete(id).subscribe({
+                      next: () => {
+                        deletedCount++;
+                        if (deletedCount === self.deletedVersionIds.length) {
+                          self.fetchProducts();
+                          self.closeModal();
+                        }
+                      },
+                      error: (err) => console.error('Lỗi xóa biến thể:', err),
+                    });
+                  });
+                } else {
+                  self.fetchProducts();
+                  self.closeModal();
+                }
               }
             }
           },
@@ -907,8 +929,173 @@ export class HelmetsComponent implements OnInit {
     this.selectedProduct = product;
     this.newProduct = { ...product };
     this.showModal = true;
+    // Reset selected sizes/colors and deleted IDs
+    this.selectedSizes = [];
+    this.selectedColors = [];
+    this.deletedVersionIds = [];
     // Tải phiên bản sản phẩm khi mở sửa
     this.loadHelmetVersions(product.id);
+  }
+
+  // Generate/add variants based on selected sizes and colors
+  generateVariants() {
+    if (this.selectedSizes.length === 0 || this.selectedColors.length === 0) {
+      alert('Vui lòng chọn ít nhất một kích thước và một màu sắc!');
+      return;
+    }
+
+    // Chế độ thêm biến thể: giữ lại biến thể cũ, chỉ thêm mới
+    const existingVersions = this.helmetVersions || [];
+    let addedCount = 0;
+
+    this.selectedSizes.forEach((kichThuocId) => {
+      this.selectedColors.forEach((mauSacId) => {
+        // Kiểm tra xem biến thể này đã tồn tại chưa
+        const exists = existingVersions.find(
+          (v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId
+        );
+
+        // Nếu chưa tồn tại → thêm mới
+        if (!exists) {
+          this.helmetVersions.push({
+            kichThuocId,
+            mauSacId,
+            trongLuongId: null,
+            trongLuongTen: '',
+            giaBan: 0,
+            soLuongTon: 0,
+            trangThai: true,
+            anhSanPham: null,
+            imageFileName: null,
+          });
+          addedCount++;
+        }
+      });
+    });
+
+    // Thông báo cho người dùng
+    if (addedCount > 0) {
+      alert(`Đã thêm ${addedCount} biến thể mới!`);
+    } else {
+      alert('Không có biến thể mới nào được thêm. Tất cả các tổ hợp đã tồn tại.');
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  // Remove variant from list
+  removeVariant(index: number) {
+    const variant = this.helmetVersions[index];
+    if (variant && variant.id) {
+      // Nếu variant đã có ID (tồn tại trong DB), thêm vào danh sách xóa
+      this.deletedVersionIds.push(variant.id);
+    }
+    // Xóa khỏi mảng hiển thị
+    this.helmetVersions.splice(index, 1);
+    this.cdr.detectChanges();
+  }
+
+  // Update existing product
+  updateProduct() {
+    const payload = {
+      maSanPham: this.newProduct.code,
+      tenSanPham: this.newProduct.name,
+      trangThai: this.newProduct.status === 'Đang bán',
+      loaiMuBaoHiemId: this.newProduct.loaiMuBaoHiemId || undefined,
+      nhaSanXuatId: this.newProduct.nhaSanXuatId || undefined,
+      chatLieuVoId: this.newProduct.chatLieuVoId || undefined,
+      xuatXuId: this.newProduct.xuatXuId || undefined,
+      kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
+      congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
+      moTa: this.newProduct.description || '',
+    };
+
+    this.productApi.update(this.newProduct.id, payload as any).subscribe({
+      next: (response: any) => {
+        const sanPhamId = response.id || this.newProduct.id;
+
+        // Update/create variants
+        let completedVariants = 0;
+        const totalVariants = this.helmetVersions.length;
+
+        if (totalVariants === 0 && this.deletedVersionIds.length === 0) {
+          alert('Cập nhật sản phẩm thành công!');
+          this.closeModal();
+          this.fetchProducts();
+          return;
+        }
+
+        // Create or update variants
+        this.helmetVersions.forEach((v) => {
+          const versionPayload = {
+            sanPhamId,
+            kichThuocId: Number(v.kichThuocId),
+            mauSacId: Number(v.mauSacId),
+            trongLuongId: null,
+            trongLuongTen: v.trongLuongTen || null,
+            giaBan: String(v.giaBan || 0),
+            soLuongTon: String(v.soLuongTon || 0),
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
+          };
+
+          if (v.id) {
+            // Update existing variant
+            this.helmetVersionApi.update(v.id, versionPayload).subscribe({
+              next: () => {
+                completedVariants++;
+                if (completedVariants === totalVariants) {
+                  this.deleteRemovedVariants();
+                }
+              },
+              error: (err) => alert('Lỗi cập nhật biến thể: ' + (err.error?.message || err.message)),
+            });
+          } else {
+            // Create new variant
+            this.helmetVersionApi.create(versionPayload).subscribe({
+              next: () => {
+                completedVariants++;
+                if (completedVariants === totalVariants) {
+                  this.deleteRemovedVariants();
+                }
+              },
+              error: (err) => alert('Lỗi tạo biến thể: ' + (err.error?.message || err.message)),
+            });
+          }
+        });
+
+        // If no variants to update, just delete removed ones
+        if (totalVariants === 0) {
+          this.deleteRemovedVariants();
+        }
+      },
+      error: (err) => alert('Lỗi cập nhật sản phẩm: ' + (err.error?.message || err.message)),
+    });
+  }
+
+  // Delete removed variants from database
+  deleteRemovedVariants() {
+    if (this.deletedVersionIds.length === 0) {
+      alert('Cập nhật sản phẩm thành công!');
+      this.closeModal();
+      this.fetchProducts();
+      return;
+    }
+
+    let deletedCount = 0;
+    this.deletedVersionIds.forEach((id) => {
+      this.helmetVersionApi.delete(id).subscribe({
+        next: () => {
+          deletedCount++;
+          if (deletedCount === this.deletedVersionIds.length) {
+            alert('Cập nhật sản phẩm thành công!');
+            this.closeModal();
+            this.fetchProducts();
+          }
+        },
+        error: (err) => console.error('Lỗi xóa biến thể:', err),
+      });
+    });
   }
 
   formatPrice(price: any): string {

@@ -237,7 +237,7 @@ export class HelmetFormComponent implements OnInit {
     private congNgheAnToanApi: CongNgheAnToanApiService,
     private helmetVersionApi: HelmetVersionApiService,
     private sizeApi: SizeApiService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.generateProductCode();
@@ -270,8 +270,8 @@ export class HelmetFormComponent implements OnInit {
                 v.trangThai !== undefined
                   ? v.trangThai
                   : v.trang_thai !== undefined
-                  ? v.trang_thai
-                  : true,
+                    ? v.trang_thai
+                    : true,
               isNew: false,
               anhSanPham: v.anhSanPham || v.anh_san_pham || null,
               imageFileName: v.anhSanPham || v.anh_san_pham ? 'Ảnh hiện có' : null,
@@ -279,7 +279,7 @@ export class HelmetFormComponent implements OnInit {
           });
           this.cdr.detectChanges();
         },
-        error: (err) => {},
+        error: (err) => { },
       });
     }
   }
@@ -349,7 +349,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenLoai,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -362,7 +362,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.ten,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -375,7 +375,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenChatLieu,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -388,7 +388,7 @@ export class HelmetFormComponent implements OnInit {
           name: `${item.giaTriTrongLuong}g`,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -401,7 +401,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenXuatXu,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -414,7 +414,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenKieuDang,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -427,7 +427,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenCongNghe,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -440,7 +440,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenMau,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -595,7 +595,7 @@ export class HelmetFormComponent implements OnInit {
         error: (error) => {
           alert(
             'Lỗi khi thêm mới Loại mũ bảo hiểm: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
+            (error.error?.message || error.message || 'Không thể kết nối đến server')
           );
         },
       });
@@ -615,7 +615,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Màu sắc: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -636,7 +636,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Nhà sản xuất: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -656,7 +656,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Chất liệu vỏ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -677,7 +677,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Trọng lượng: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -697,7 +697,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Xuất xứ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -717,7 +717,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Kiểu dáng mũ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -737,7 +737,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Công nghệ an toàn: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -757,7 +757,7 @@ export class HelmetFormComponent implements OnInit {
           error: (error) => {
             alert(
               'Lỗi khi thêm mới Kích thước: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
+              (error.error?.message || error.message || 'Không thể kết nối đến server')
             );
           },
         });
@@ -798,39 +798,83 @@ export class HelmetFormComponent implements OnInit {
 
   // Sinh các phiên bản/biến thể dựa vào tổ hợp thuộc tính user chọn
   generateVariants() {
-    const oldVersions = this.helmetVersions || [];
-    this.helmetVersions = [];
     this.versionError = '';
     if (this.selectedSizes.length === 0 || this.selectedColors.length === 0) {
       this.versionError = 'Vui lòng chọn ít nhất một kích thước và một màu sắc để sinh phiên bản!';
       return;
     }
-    this.selectedSizes.forEach((kichThuocId) => {
-      this.selectedColors.forEach((mauSacId) => {
-        // Tìm bản ghi cũ (nếu có) theo kích thước và màu
-        const old = oldVersions.find((v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId);
-        this.helmetVersions.push({
-          kichThuocId,
-          mauSacId,
-          trongLuongId: null, // Không dùng ID nữa
-          trongLuongTen: old && typeof old.trongLuongTen !== 'undefined' ? old.trongLuongTen : '',
-          giaBan: String(
-            (old && typeof old.giaBan !== 'undefined' ? old.giaBan : this.priceAll) || ''
-          ),
-          soLuongTon: String(
-            (old && typeof old.soLuongTon !== 'undefined' ? old.soLuongTon : this.quantityAll) || ''
-          ),
-          trangThai: true, // default on
-          anhSanPham: old && typeof old.anhSanPham !== 'undefined' ? old.anhSanPham : null,
-          imageFileName:
-            old && typeof old.imageFileName !== 'undefined'
-              ? old.imageFileName
-              : old && old.anhSanPham
-              ? 'Ảnh hiện có'
-              : null,
+
+    // Kiểm tra xem đang ở chế độ CẬP NHẬT hay THÊM MỚI
+    const isUpdateMode = this.newProduct && this.newProduct.id > 0;
+
+    if (isUpdateMode) {
+      // CHẾ ĐỘ CẬP NHẬT: Giữ lại biến thể cũ, chỉ thêm biến thể mới
+      const existingVersions = this.helmetVersions || [];
+      let addedCount = 0;
+
+      this.selectedSizes.forEach((kichThuocId) => {
+        this.selectedColors.forEach((mauSacId) => {
+          // Kiểm tra xem biến thể này đã tồn tại chưa
+          const exists = existingVersions.find(
+            (v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId
+          );
+
+          // Nếu CHƯA tồn tại → thêm mới
+          if (!exists) {
+            this.helmetVersions.push({
+              kichThuocId,
+              mauSacId,
+              trongLuongId: null,
+              trongLuongTen: '',
+              giaBan: this.priceAll ? String(this.priceAll) : '',
+              soLuongTon: this.quantityAll ? String(this.quantityAll) : '',
+              trangThai: true,
+              anhSanPham: null,
+              imageFileName: null,
+            });
+            addedCount++;
+          }
         });
       });
-    });
+
+      // Thông báo cho người dùng
+      if (addedCount > 0) {
+        alert(`Đã thêm ${addedCount} biến thể mới!`);
+      } else {
+        alert('Không có biến thể mới nào được thêm. Tất cả các tổ hợp đã tồn tại.');
+      }
+    } else {
+      // CHẾ ĐỘ THÊM MỚI: Tạo lại toàn bộ biến thể
+      const oldVersions = this.helmetVersions || [];
+      this.helmetVersions = [];
+
+      this.selectedSizes.forEach((kichThuocId) => {
+        this.selectedColors.forEach((mauSacId) => {
+          // Tìm bản ghi cũ (nếu có) theo kích thước và màu
+          const old = oldVersions.find((v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId);
+          this.helmetVersions.push({
+            kichThuocId,
+            mauSacId,
+            trongLuongId: null,
+            trongLuongTen: old && typeof old.trongLuongTen !== 'undefined' ? old.trongLuongTen : '',
+            giaBan: String(
+              (old && typeof old.giaBan !== 'undefined' ? old.giaBan : this.priceAll) || ''
+            ),
+            soLuongTon: String(
+              (old && typeof old.soLuongTon !== 'undefined' ? old.soLuongTon : this.quantityAll) || ''
+            ),
+            trangThai: true,
+            anhSanPham: old && typeof old.anhSanPham !== 'undefined' ? old.anhSanPham : null,
+            imageFileName:
+              old && typeof old.imageFileName !== 'undefined'
+                ? old.imageFileName
+                : old && old.anhSanPham
+                  ? 'Ảnh hiện có'
+                  : null,
+          });
+        });
+      });
+    }
   }
 
   onPriceChangeAll() {
@@ -1036,11 +1080,11 @@ export class HelmetFormComponent implements OnInit {
             mauSacId: Number(v.mauSacId),
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
-             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+            giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
             soLuongTon:
               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-             trangThai: true,
-             anhSanPham: v.anhSanPham || null,
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
           };
           this.helmetVersionApi.create(versionPayload).subscribe({
             next: () => {
@@ -1138,10 +1182,10 @@ export class HelmetFormComponent implements OnInit {
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
-             soLuongTon:
-               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-             trangThai: true,
-             anhSanPham: v.anhSanPham || null,
+            soLuongTon:
+              v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
           };
           if (v.id) {
             this.helmetVersionApi.update(v.id, versionPayload).subscribe();
