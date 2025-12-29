@@ -15,6 +15,7 @@ export interface ChiTietSanPhamResponse {
   trongLuongId: number;
   trongLuongTen: string;
   giaBan: string;
+  giaSauGiam?: string | null;
   soLuongTon: string;
   trangThai: boolean;
   anhSanPham?: string | null;
@@ -37,7 +38,7 @@ export class ChiTietSanPhamApiService {
   // Dùng apiUrl (đã bao gồm prefix '/api') để khớp với BE mapping '/api/chi-tiet-san-pham'
   private baseUrl = environment.apiUrl + '/chi-tiet-san-pham';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   create(request: ChiTietSanPhamRequest): Observable<ChiTietSanPhamResponse> {
     return this.http.post<ChiTietSanPhamResponse>(this.baseUrl, request);

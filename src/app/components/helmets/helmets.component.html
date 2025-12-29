@@ -377,6 +377,30 @@
             </h6>
             <hr class="mt-2" />
           </div>
+
+          <!-- Chọn kích thước và màu sắc để thêm biến thể (chỉ hiển thị khi isEditMode) -->
+          <div *ngIf="isEditMode" class="row g-3 mb-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">CHỌN KÍCH THƯỚC</label>
+              <app-searchable-dropdown [options]="kichThuocOptions" [multiSelect]="true"
+                [selectedValues]="selectedSizes" [placeholder]="'-- Chọn kích thước --'" [showAddButton]="true"
+                [addButtonTitle]="'Thêm kích thước mới'" (addButtonClick)="openQuickAddModal('kichThuoc')"
+                (selectionChangeMulti)="selectedSizes = $event"></app-searchable-dropdown>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">CHỌN MÀU SẮC</label>
+              <app-searchable-dropdown [options]="mauSacOptions" [multiSelect]="true" [selectedValues]="selectedColors"
+                [placeholder]="'-- Chọn màu sắc --'" [showAddButton]="true" [addButtonTitle]="'Thêm màu sắc mới'"
+                (addButtonClick)="openQuickAddModal('mauSac')"
+                (selectionChangeMulti)="selectedColors = $event"></app-searchable-dropdown>
+            </div>
+            <div class="col-md-4">
+              <button type="button" class="btn btn-primary btn-sm" (click)="generateVariants()">
+                <i class="bi bi-plus-circle me-2"></i>Tạo lại biến thể
+              </button>
+            </div>
+          </div>
+
           <div *ngIf="!(helmetVersions && helmetVersions.length > 0)" class="alert alert-info py-2">
             <i class="bi bi-info-circle me-2"></i>Chưa có phiên bản cho sản phẩm này.
           </div>
@@ -392,6 +416,7 @@
                   <th>Số lượng</th>
                   <th>Ảnh biến thể</th>
                   <th>Trạng thái</th>
+                  <th *ngIf="!isViewMode">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -457,6 +482,11 @@
                     <span class="status-badge" [class.active]="v.trangThai" [class.inactive]="!v.trangThai">
                       {{ v.trangThai ? 'Đang bán' : 'Ngừng bán' }}
                     </span>
+                  </td>
+                  <td *ngIf="!isViewMode">
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removeVariant(i)" title="Xóa biến thể">
+                      <i class="bi bi-trash"></i>
+                    </button>
                   </td>
                 </tr>
               </tbody>

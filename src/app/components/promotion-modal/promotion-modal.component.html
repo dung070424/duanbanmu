@@ -17,7 +17,7 @@
     <div class="modal-body" [class.edit-mode-body]="isEditMode">
       <div class="modal-content-layout">
         <!-- Left Panel: Thông Tin Đợt Giảm Giá -->
-        <div class="left-panel" [class.full-width]="isEditMode">
+        <div class="left-panel">
           <div class="panel-header" *ngIf="!isEditMode">
             <i class="bi bi-info-circle"></i>
             <h4>Thông Tin Đợt Giảm Giá</h4>
@@ -160,35 +160,13 @@
               </div>
             </div>
 
-            <!-- Actions Footer -->
-            <div class="form-actions" [ngClass]="{'edit-mode-actions': isEditMode}" *ngIf="!isViewMode">
-              <!-- Edit Mode Actions -->
-              <ng-container *ngIf="isEditMode">
-                <button type="button" class="btn btn-secondary" (click)="onClose()">
-                  Hủy
-                </button>
-                <button type="submit" class="btn btn-primary-custom" [disabled]="isViewMode">
-                  Cập nhật
-                </button>
-              </ng-container>
-
-              <!-- Add Mode Actions -->
-              <ng-container *ngIf="!isEditMode">
-                <button type="button" class="btn btn-secondary" (click)="onClose()">
-                  <i class="bi bi-arrow-left"></i>
-                  Quay Về
-                </button>
-                <button type="submit" class="btn btn-success">
-                  <i class="bi bi-plus"></i>
-                  Thêm
-                </button>
-              </ng-container>
-            </div>
+            <!-- Actions removed from here -->
+            <div class="clearfix"></div>
           </form>
         </div>
 
         <!-- Right Panel: Danh Sách Sản Phẩm -->
-        <div class="right-panel" *ngIf="!isEditMode">
+        <div class="right-panel">
           <div class="panel-header">
             <i class="bi bi-grid-3x3-gap"></i>
             <h4>Danh Sách Sản Phẩm</h4>
@@ -202,49 +180,92 @@
                 (keyup)="onSearch()" />
             </div>
             <div class="filter-group">
-              <label>Hệ điều hành</label>
-              <select class="form-control" [(ngModel)]="selectedOS" (change)="onOSChange()">
+              <label>Màu sắc</label>
+              <select class="form-control" [(ngModel)]="selectedColor" (change)="onColorChange()">
                 <option value="">Tất cả</option>
-                <option *ngFor="let os of operatingSystems" [value]="os">
-                  {{ os }}
+                <option *ngFor="let color of colors" [value]="color">
+                  {{ color }}
                 </option>
               </select>
             </div>
 
             <div class="filter-group">
-              <label>Nhà sản xuất</label>
-              <select class="form-control" [(ngModel)]="selectedManufacturer" (change)="onManufacturerChange()">
+              <label>Kích thước</label>
+              <select class="form-control" [(ngModel)]="selectedSize" (change)="onSizeChange()">
                 <option value="">Tất cả</option>
-                <option *ngFor="let manufacturer of manufacturers" [value]="manufacturer">
-                  {{ manufacturer }}
+                <option *ngFor="let size of sizes" [value]="size">
+                  {{ size }}
                 </option>
               </select>
             </div>
           </div>
 
           <!-- Product Table -->
-          <div class="table-container">
+
+          <!-- Summary Bar -->
+          <div class="selection-summary-bar">
+            <div class="info-text">
+              <i class="bi bi-info-circle"></i>
+              Đã chọn <span class="highlight">{{ getSelectedCount() }}</span> sản phẩm từ danh sách
+            </div>
+            <div class="action-buttons">
+              <button type="button" class="btn btn-outline-primary btn-sm" (click)="selectAllProducts()">
+                <i class="bi bi-check-all"></i> Chọn tất cả
+              </button>
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="deselectAllProducts()">
+                <i class="bi bi-x-circle"></i> Bỏ chọn tất cả
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container rich-table">
             <table class="product-table">
               <thead>
                 <tr>
-                  <th><input type="checkbox" [(ngModel)]="selectAll" (change)="onSelectAll()" /></th>
-                  <th>STT</th>
-                  <th>Mã</th>
-                  <th>Tên SP</th>
-                  <th>Hãng</th>
-                  <th>Số lượng</th>
+                  <th class="text-center" style="width: 40px;">#</th>
+                  <th class="text-center" style="width: 50px;">STT</th>
+                  <th class="text-center" style="width: 80px;">ẢNH</th>
+                  <th class="text-center" style="width: 150px;">TRÙNG</th>
+                  <th>TÊN SẢN PHẨM</th>
+                  <th class="text-center">MÀU SẮC</th>
+                  <th class="text-center">KÍCH THƯỚC</th>
+                  <th class="text-right">ĐƠN GIÁ GỐC</th>
+                  <th class="text-right">ĐƠN GIÁ SAU GIẢM</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let product of filteredProducts; let i = index">
-                  <td>
+                <tr *ngFor="let product of paginatedProducts; let i = index" [class.selected-row]="product.selected"
+                  (click)="product.selected = !product.selected; onProductSelect(product)" style="cursor: pointer;">
+                  <td class="text-center" (click)="$event.stopPropagation()">
                     <input type="checkbox" [(ngModel)]="product.selected" (change)="onProductSelect(product)" />
                   </td>
-                  <td>{{ i + 1 }}</td>
-                  <td>{{ product.code }}</td>
-                  <td>{{ product.name }}</td>
-                  <td>{{ product.brand }}</td>
-                  <td>{{ product.quantity }}</td>
+                  <td class="text-center">{{ getStartItem() + i }}</td>
+                  <td class="text-center">
+                    <img [src]="product.imageUrl" class="product-thumb" alt="Product Image"
+                      onerror="this.src='assets/images/default-product.png'">
+                  </td>
+                  <td class="text-center">
+                    <span class="badge-overlap" [class.has-overlap]="product.overlapCount && product.overlapCount > 0">
+                      <i class="bi bi-circle-fill"></i> Trùng với {{ product.overlapCount || 0 }} đợt
+                    </span>
+                  </td>
+                  <td class="fw-bold">{{ product.name }}</td>
+                  <td class="text-center">
+                    <span class="badge-color">{{ product.color }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge-size">{{ product.size }}</span>
+                  </td>
+                  <td class="text-right price-original">
+                    {{ formatCurrency(product.originalPrice || 0) }}
+                  </td>
+                  <td class="text-right price-discounted">
+                    <div class="final-price">{{ formatCurrency(getDiscountedPrice(product.originalPrice || 0)) }}</div>
+                    <small class="discount-diff">
+                      <i class="bi bi-arrow-down"></i> -{{ formatCurrency(getDiscountAmount(product.originalPrice || 0))
+                      }}
+                    </small>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -260,7 +281,7 @@
                 <option value="50">50</option>
               </select>
               <span>mục/trang</span>
-              <span class="current-range">Hiển thị {{ startItem }}-{{ endItem }}/{{ totalItems }} mục</span>
+              <span class="current-range">Hiển thị {{ getStartItem() }}-{{ getEndItem() }}/{{ totalItems }} mục</span>
             </div>
 
             <div class="pagination-controls">
@@ -284,7 +305,34 @@
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- Actions Footer Moved Here -->
+      <div class="form-actions bottom-actions" [ngClass]="{'edit-mode-actions': isEditMode}" *ngIf="!isViewMode"
+        style="grid-column: 1 / -1; justify-content: flex-end; padding-top: 20px; border-top: 1px solid #eee; margin-top: 20px;">
+        <!-- Edit Mode Actions -->
+        <ng-container *ngIf="isEditMode">
+          <button type="button" class="btn btn-secondary" (click)="onClose()">
+            Hủy
+          </button>
+          <button type="button" class="btn btn-primary-custom" (click)="onSave()" [disabled]="isViewMode">
+            Cập nhật
+          </button>
+        </ng-container>
+
+        <!-- Add Mode Actions -->
+        <ng-container *ngIf="!isEditMode">
+          <button type="button" class="btn btn-secondary" (click)="onClose()">
+            <i class="bi bi-arrow-left"></i>
+            Quay Về
+          </button>
+          <button type="button" class="btn btn-success" (click)="onSave()">
+            <i class="bi bi-plus"></i>
+            Thêm
+          </button>
+        </ng-container>
+      </div>
+
+    </div> <!-- End of modal-body -->
   </div>
 </div>
 

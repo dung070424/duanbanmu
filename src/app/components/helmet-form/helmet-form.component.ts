@@ -237,7 +237,7 @@ export class HelmetFormComponent implements OnInit {
     private congNgheAnToanApi: CongNgheAnToanApiService,
     private helmetVersionApi: HelmetVersionApiService,
     private sizeApi: SizeApiService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.generateProductCode();
@@ -270,8 +270,8 @@ export class HelmetFormComponent implements OnInit {
                 v.trangThai !== undefined
                   ? v.trangThai
                   : v.trang_thai !== undefined
-                  ? v.trang_thai
-                  : true,
+                    ? v.trang_thai
+                    : true,
               isNew: false,
               anhSanPham: v.anhSanPham || v.anh_san_pham || null,
               imageFileName: v.anhSanPham || v.anh_san_pham ? 'Ảnh hiện có' : null,
@@ -279,7 +279,7 @@ export class HelmetFormComponent implements OnInit {
           });
           this.cdr.detectChanges();
         },
-        error: (err) => {},
+        error: (err) => { },
       });
     }
   }
@@ -349,7 +349,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenLoai,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -362,7 +362,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.ten,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -375,7 +375,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenChatLieu,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -388,7 +388,7 @@ export class HelmetFormComponent implements OnInit {
           name: `${item.giaTriTrongLuong}g`,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -401,7 +401,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenXuatXu,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -414,7 +414,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenKieuDang,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -427,7 +427,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenCongNghe,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -440,7 +440,7 @@ export class HelmetFormComponent implements OnInit {
           name: item.tenMau,
         }));
       },
-      error: (error: any) => {},
+      error: (error: any) => { },
     });
   }
 
@@ -588,15 +588,11 @@ export class HelmetFormComponent implements OnInit {
 
       this.loaiMuBaoHiemApi.create(request).subscribe({
         next: (response) => {
-          alert('Thêm mới Loại mũ bảo hiểm thành công!');
           this.loadLoaiMuBaoHiem(); // Refresh dropdown
           this.cdr.detectChanges();
         },
         error: (error) => {
-          alert(
-            'Lỗi khi thêm mới Loại mũ bảo hiểm: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-          );
+          // Error silently handled
         },
       });
     } else if (event.type === 'mauSac') {
@@ -608,15 +604,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Màu sắc thành công!');
             this.loadMauSac(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Màu sắc: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'nhaSanXuat') {
@@ -629,15 +621,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Nhà sản xuất thành công!');
             this.loadNhaSanXuat(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Nhà sản xuất: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'chatLieuVo') {
@@ -649,15 +637,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Chất liệu vỏ thành công!');
             this.loadChatLieu(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Chất liệu vỏ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'trongLuong') {
@@ -670,15 +654,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Trọng lượng thành công!');
             this.loadTrongLuong(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Trọng lượng: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'xuatXu') {
@@ -690,15 +670,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Xuất xứ thành công!');
             this.loadXuatXu(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Xuất xứ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'kieuDangMu') {
@@ -710,15 +686,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Kiểu dáng mũ thành công!');
             this.loadKieuDang(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Kiểu dáng mũ: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'congNgheAnToan') {
@@ -730,15 +702,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Công nghệ an toàn thành công!');
             this.loadCongNghe(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Công nghệ an toàn: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'kichThuoc') {
@@ -750,15 +718,11 @@ export class HelmetFormComponent implements OnInit {
         })
         .subscribe({
           next: () => {
-            alert('Thêm mới Kích thước thành công!');
             this.loadKichThuoc();
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Kích thước: ' +
-                (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     }
@@ -772,12 +736,10 @@ export class HelmetFormComponent implements OnInit {
     const file = event.target.files?.[0];
     if (!file || !this.helmetVersions[index]) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert('Kích thước file quá lớn. Vui lòng chọn file nhỏ hơn 5MB.');
       event.target.value = '';
       return;
     }
     if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn file ảnh hợp lệ.');
       event.target.value = '';
       return;
     }
@@ -798,39 +760,78 @@ export class HelmetFormComponent implements OnInit {
 
   // Sinh các phiên bản/biến thể dựa vào tổ hợp thuộc tính user chọn
   generateVariants() {
-    const oldVersions = this.helmetVersions || [];
-    this.helmetVersions = [];
     this.versionError = '';
     if (this.selectedSizes.length === 0 || this.selectedColors.length === 0) {
       this.versionError = 'Vui lòng chọn ít nhất một kích thước và một màu sắc để sinh phiên bản!';
       return;
     }
-    this.selectedSizes.forEach((kichThuocId) => {
-      this.selectedColors.forEach((mauSacId) => {
-        // Tìm bản ghi cũ (nếu có) theo kích thước và màu
-        const old = oldVersions.find((v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId);
-        this.helmetVersions.push({
-          kichThuocId,
-          mauSacId,
-          trongLuongId: null, // Không dùng ID nữa
-          trongLuongTen: old && typeof old.trongLuongTen !== 'undefined' ? old.trongLuongTen : '',
-          giaBan: String(
-            (old && typeof old.giaBan !== 'undefined' ? old.giaBan : this.priceAll) || ''
-          ),
-          soLuongTon: String(
-            (old && typeof old.soLuongTon !== 'undefined' ? old.soLuongTon : this.quantityAll) || ''
-          ),
-          trangThai: true, // default on
-          anhSanPham: old && typeof old.anhSanPham !== 'undefined' ? old.anhSanPham : null,
-          imageFileName:
-            old && typeof old.imageFileName !== 'undefined'
-              ? old.imageFileName
-              : old && old.anhSanPham
-              ? 'Ảnh hiện có'
-              : null,
+
+    // Kiểm tra xem đang ở chế độ CẬP NHẬT hay THÊM MỚI
+    const isUpdateMode = this.newProduct && this.newProduct.id > 0;
+
+    if (isUpdateMode) {
+      // CHẾ ĐỘ CẬP NHẬT: Giữ lại biến thể cũ, chỉ thêm biến thể mới
+      const existingVersions = this.helmetVersions || [];
+      let addedCount = 0;
+
+      this.selectedSizes.forEach((kichThuocId) => {
+        this.selectedColors.forEach((mauSacId) => {
+          // Kiểm tra xem biến thể này đã tồn tại chưa
+          const exists = existingVersions.find(
+            (v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId
+          );
+
+          // Nếu CHƯA tồn tại → thêm mới
+          if (!exists) {
+            this.helmetVersions.push({
+              kichThuocId,
+              mauSacId,
+              trongLuongId: null,
+              trongLuongTen: '',
+              giaBan: this.priceAll ? String(this.priceAll) : '',
+              soLuongTon: this.quantityAll ? String(this.quantityAll) : '',
+              trangThai: true,
+              anhSanPham: null,
+              imageFileName: null,
+            });
+            addedCount++;
+          }
         });
       });
-    });
+
+      // Variants updated silently
+    } else {
+      // CHẾ ĐỘ THÊM MỚI: Tạo lại toàn bộ biến thể
+      const oldVersions = this.helmetVersions || [];
+      this.helmetVersions = [];
+
+      this.selectedSizes.forEach((kichThuocId) => {
+        this.selectedColors.forEach((mauSacId) => {
+          // Tìm bản ghi cũ (nếu có) theo kích thước và màu
+          const old = oldVersions.find((v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId);
+          this.helmetVersions.push({
+            kichThuocId,
+            mauSacId,
+            trongLuongId: null,
+            trongLuongTen: old && typeof old.trongLuongTen !== 'undefined' ? old.trongLuongTen : '',
+            giaBan: String(
+              (old && typeof old.giaBan !== 'undefined' ? old.giaBan : this.priceAll) || ''
+            ),
+            soLuongTon: String(
+              (old && typeof old.soLuongTon !== 'undefined' ? old.soLuongTon : this.quantityAll) || ''
+            ),
+            trangThai: true,
+            anhSanPham: old && typeof old.anhSanPham !== 'undefined' ? old.anhSanPham : null,
+            imageFileName:
+              old && typeof old.imageFileName !== 'undefined'
+                ? old.imageFileName
+                : old && old.anhSanPham
+                  ? 'Ảnh hiện có'
+                  : null,
+          });
+        });
+      });
+    }
   }
 
   onPriceChangeAll() {
@@ -1023,7 +1024,6 @@ export class HelmetFormComponent implements OnInit {
         const sanPhamId = response.id || response?.idSanPham || null;
         if (!sanPhamId) {
           this.isLoading = false;
-          alert('Không nhận được mã sản phẩm sau khi tạo!');
           return;
         }
         // Gọi lần lượt API tạo các phiên bản
@@ -1036,25 +1036,21 @@ export class HelmetFormComponent implements OnInit {
             mauSacId: Number(v.mauSacId),
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
-             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
+            giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
             soLuongTon:
               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-             trangThai: true,
-             anhSanPham: v.anhSanPham || null,
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
           };
           this.helmetVersionApi.create(versionPayload).subscribe({
             next: () => {
               doneCount++;
               if (doneCount === this.helmetVersions.length && !errorFlag) {
-                alert('Tạo sản phẩm và các phiên bản thành công!');
                 this.router.navigate(['/products/helmets']);
               }
             },
             error: (err: any) => {
               errorFlag = true;
-              alert(
-                'Lỗi khi tạo phiên bản: ' + (err.error?.message || err.message || 'Không xác định')
-              );
               this.isLoading = false;
             },
           });
@@ -1062,9 +1058,6 @@ export class HelmetFormComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        alert(
-          'Lỗi khi tạo sản phẩm: ' + (error.error?.message || error.message || 'Không xác định')
-        );
       },
     });
   }
@@ -1138,23 +1131,33 @@ export class HelmetFormComponent implements OnInit {
             trongLuongId: v.trongLuongId ? Number(v.trongLuongId) : null,
             trongLuongTen: v.trongLuongTen || null,
             giaBan: v.giaBan !== undefined && v.giaBan !== null ? String(v.giaBan) : '',
-             soLuongTon:
-               v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
-             trangThai: true,
-             anhSanPham: v.anhSanPham || null,
+            soLuongTon:
+              v.soLuongTon !== undefined && v.soLuongTon !== null ? String(v.soLuongTon) : '',
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
           };
           if (v.id) {
-            this.helmetVersionApi.update(v.id, versionPayload).subscribe();
+            this.helmetVersionApi.update(v.id, versionPayload).subscribe({
+              next: () => { },
+              error: () => { }
+            });
           } else {
-            this.helmetVersionApi.create(versionPayload).subscribe();
+            this.helmetVersionApi.create(versionPayload).subscribe({
+              next: () => { },
+              error: () => { }
+            });
           }
         });
         // Delete removed variants
-        this.deletedVersionIds.forEach((id) => this.helmetVersionApi.delete(id).subscribe());
-        alert('Cập nhật sản phẩm và các phiên bản thành công!');
+        this.deletedVersionIds.forEach((id) => this.helmetVersionApi.delete(id).subscribe({
+          next: () => { },
+          error: () => { }
+        }));
         this.router.navigate(['/products/helmets']);
       },
-      error: (err) => alert(err.error?.message || 'Lỗi cập nhật'),
+      error: (err) => {
+        // Error silently handled
+      },
     });
   }
 

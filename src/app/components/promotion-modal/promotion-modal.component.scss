@@ -25,8 +25,8 @@
 
   // Larger size for edit mode
   &.edit-mode {
-    max-width: 900px;
-    max-height: 85vh;
+    max-width: 1200px; // Increased from 900px
+    max-height: 90vh;
   }
 }
 
@@ -224,9 +224,10 @@
   background: #f8f9fa;
   border-radius: 6px;
   border: 1px solid #e9ecef;
+  align-items: flex-end; // Align input with selects
 
   .search-group {
-    flex: 1;
+    flex: 2; // Give search more space
     position: relative;
 
     i {
@@ -245,7 +246,8 @@
   }
 
   .filter-group {
-    min-width: 100px;
+    flex: 1; // Allow filters to grow/shrink but keep proportion
+    min-width: 140px; // Increase min-width
 
     label {
       font-size: 11px;
@@ -841,5 +843,186 @@ textarea.form-control {
   &:disabled {
     background-color: #6c757d;
     cursor: not-allowed;
+  }
+}
+
+// Rich Table Styles
+.selection-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #e3f2fd; // Light blue background
+  border: 1px solid #90caf9;
+  color: #1565c0;
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+
+  .info-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+
+    i {
+      font-size: 18px;
+    }
+
+    .highlight {
+      font-weight: 700;
+      color: #0d47a1;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+
+    .btn {
+      padding: 5px 12px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .btn-outline-primary {
+      color: #007bff;
+      border: 1px solid #007bff;
+      background: white;
+
+      &:hover {
+        background: #007bff;
+        color: white;
+      }
+    }
+
+    .btn-outline-danger {
+      color: #dc3545;
+      border: 1px solid #dc3545;
+      background: white;
+
+      &:hover {
+        background: #dc3545;
+        color: white;
+      }
+    }
+  }
+}
+
+.table-container.rich-table {
+  max-height: 400px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+
+  .product-table {
+    th {
+      background-color: #f8f9fa;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: #6c757d;
+      letter-spacing: 0.5px;
+      padding: 12px 10px;
+      vertical-align: middle;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    td {
+      padding: 10px;
+      vertical-align: middle;
+      border-bottom: 1px solid #e9ecef;
+      font-size: 13px;
+    }
+
+    tr.selected-row {
+      background-color: #f1f8ff;
+    }
+
+    .product-thumb {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+
+    .fw-bold {
+      font-weight: 600;
+      color: #212529;
+    }
+
+    .badge-overlap {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      background-color: #e8f5e9; // Light green
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+
+      &.has-overlap {
+        background-color: #ffebee; // Light red
+        color: #c62828;
+        border-color: #ffcdd2;
+
+        i {
+          color: #d32f2f;
+        }
+      }
+
+      i {
+        font-size: 6px;
+        color: #4caf50;
+      }
+    }
+
+    .badge-color,
+    .badge-size {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      font-size: 12px;
+      font-weight: 500;
+      color: #495057;
+      text-transform: uppercase;
+    }
+
+    .price-original {
+      color: #6c757d;
+      text-decoration: line-through;
+      font-size: 12px;
+    }
+
+    .price-discounted {
+      .final-price {
+        color: #2e7d32; // Green
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .discount-diff {
+        display: block;
+        color: #dc3545; // Red
+        font-size: 11px;
+        font-style: italic;
+      }
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-right {
+      text-align: right;
+    }
   }
 }

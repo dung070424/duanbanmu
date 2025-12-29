@@ -153,6 +153,11 @@ export class HelmetsComponent implements OnInit {
   showQuickAddModal: boolean = false;
   quickAddModalType: string = '';
 
+  // Variant generation properties
+  selectedSizes: number[] = [];
+  selectedColors: number[] = [];
+  deletedVersionIds: number[] = [];
+
   constructor(
     private productApi: ProductApiService,
     private cdr: ChangeDetectorRef,
@@ -572,9 +577,8 @@ export class HelmetsComponent implements OnInit {
       });
     }
 
-    // Hiển thị lỗi nếu có
+    // Validation errors silently handled
     if (validationErrors.length > 0) {
-      alert('Vui lòng kiểm tra lại thông tin:\n\n' + validationErrors.join('\n'));
       return;
     }
     // Chuẩn hóa giá trị danh mục: gõ hoặc chọn đều được (bỏ dấu, so khớp gần đúng)
@@ -644,7 +648,6 @@ export class HelmetsComponent implements OnInit {
     if (!this.newProduct.kieuDangMuId) missing.push('Kiểu dáng mũ');
     if (!this.newProduct.congNgheAnToanId) missing.push('Công nghệ an toàn');
     if (missing.length) {
-      alert('Vui lòng chọn: ' + missing.join(', '));
       return;
     }
 
@@ -711,16 +714,30 @@ export class HelmetsComponent implements OnInit {
             function done() {
               pending--;
               if (pending <= 0) {
-                self.fetchProducts();
-                self.closeModal();
+                // After all variants are created/updated, delete removed variants
+                if (self.deletedVersionIds.length > 0) {
+                  let deletedCount = 0;
+                  self.deletedVersionIds.forEach((id) => {
+                    self.helmetVersionApi.delete(id).subscribe({
+                      next: () => {
+                        deletedCount++;
+                        if (deletedCount === self.deletedVersionIds.length) {
+                          self.fetchProducts();
+                          self.closeModal();
+                        }
+                      },
+                      error: (err) => console.error('Lỗi xóa biến thể:', err),
+                    });
+                  });
+                } else {
+                  self.fetchProducts();
+                  self.closeModal();
+                }
               }
             }
           },
           error: (err) => {
-            const msg =
-              (err?.error && (err.error.message || err.error.error)) ||
-              'Cập nhật thất bại. Vui lòng kiểm tra dữ liệu.';
-            alert(msg);
+            // Error silently handled
           },
         });
       };
@@ -757,16 +774,9 @@ export class HelmetsComponent implements OnInit {
             return;
           }
           if (err?.status === 400) {
-            const msg400 =
-              (err?.error && (err.error.message || err.error.error)) ||
-              'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các danh mục và giá trị bắt buộc.';
-            alert(msg400);
             return;
           }
-          const msg =
-            (err?.error && (err.error.message || err.error.error)) ||
-            'Thêm mới thất bại. Vui lòng kiểm tra dữ liệu (mã SP không trùng, giá > 0).';
-          alert(msg);
+          // Error silently handled
         },
       });
     };
@@ -799,7 +809,7 @@ export class HelmetsComponent implements OnInit {
           this.fetchProducts();
         },
         error: (err) => {
-          alert('Xóa thất bại');
+          // Error silently handled
         },
       });
     }
@@ -871,10 +881,7 @@ export class HelmetsComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        alert(
-          'Lỗi khi tải danh sách loại mũ bảo hiểm: ' +
-          (error.message || 'Không thể kết nối đến server')
-        );
+        // Error silently handled
       },
     });
   }
@@ -894,9 +901,7 @@ export class HelmetsComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        alert(
-          'Lỗi khi tải danh sách màu sắc: ' + (error.message || 'Không thể kết nối đến server')
-        );
+        // Error silently handled
       },
     });
   }
@@ -907,8 +912,170 @@ export class HelmetsComponent implements OnInit {
     this.selectedProduct = product;
     this.newProduct = { ...product };
     this.showModal = true;
+    // Reset selected sizes/colors and deleted IDs
+    this.selectedSizes = [];
+    this.selectedColors = [];
+    this.deletedVersionIds = [];
     // Tải phiên bản sản phẩm khi mở sửa
     this.loadHelmetVersions(product.id);
+  }
+
+  // Generate/add variants based on selected sizes and colors
+  generateVariants() {
+    if (this.selectedSizes.length === 0 || this.selectedColors.length === 0) {
+      alert('Vui lòng chọn ít nhất một kích thước và một màu sắc!');
+      return;
+    }
+
+    // Chế độ thêm biến thể: giữ lại biến thể cũ, chỉ thêm mới
+    const existingVersions = this.helmetVersions || [];
+    let addedCount = 0;
+
+    this.selectedSizes.forEach((kichThuocId) => {
+      this.selectedColors.forEach((mauSacId) => {
+        // Kiểm tra xem biến thể này đã tồn tại chưa
+        const exists = existingVersions.find(
+          (v) => v.kichThuocId == kichThuocId && v.mauSacId == mauSacId
+        );
+
+        // Nếu chưa tồn tại → thêm mới
+        if (!exists) {
+          this.helmetVersions.push({
+            kichThuocId,
+            mauSacId,
+            trongLuongId: null,
+            trongLuongTen: '',
+            giaBan: 0,
+            soLuongTon: 0,
+            trangThai: true,
+            anhSanPham: null,
+            imageFileName: null,
+          });
+          addedCount++;
+        }
+      });
+    });
+
+    // Variants updated silently
+    this.cdr.detectChanges();
+  }
+
+  // Remove variant from list
+  removeVariant(index: number) {
+    const variant = this.helmetVersions[index];
+    if (variant && variant.id) {
+      // Nếu variant đã có ID (tồn tại trong DB), thêm vào danh sách xóa
+      this.deletedVersionIds.push(variant.id);
+    }
+    // Xóa khỏi mảng hiển thị
+    this.helmetVersions.splice(index, 1);
+    this.cdr.detectChanges();
+  }
+
+  // Update existing product
+  updateProduct() {
+    const payload = {
+      maSanPham: this.newProduct.code,
+      tenSanPham: this.newProduct.name,
+      trangThai: this.newProduct.status === 'Đang bán',
+      loaiMuBaoHiemId: this.newProduct.loaiMuBaoHiemId || undefined,
+      nhaSanXuatId: this.newProduct.nhaSanXuatId || undefined,
+      chatLieuVoId: this.newProduct.chatLieuVoId || undefined,
+      xuatXuId: this.newProduct.xuatXuId || undefined,
+      kieuDangMuId: this.newProduct.kieuDangMuId || undefined,
+      congNgheAnToanId: this.newProduct.congNgheAnToanId || undefined,
+      moTa: this.newProduct.description || '',
+    };
+
+    this.productApi.update(this.newProduct.id, payload as any).subscribe({
+      next: (response: any) => {
+        const sanPhamId = response.id || this.newProduct.id;
+
+        // Update/create variants
+        let completedVariants = 0;
+        const totalVariants = this.helmetVersions.length;
+
+        if (totalVariants === 0 && this.deletedVersionIds.length === 0) {
+          this.closeModal();
+          this.fetchProducts();
+          return;
+        }
+
+        // Create or update variants
+        this.helmetVersions.forEach((v) => {
+          const versionPayload = {
+            sanPhamId,
+            kichThuocId: Number(v.kichThuocId),
+            mauSacId: Number(v.mauSacId),
+            trongLuongId: null,
+            trongLuongTen: v.trongLuongTen || null,
+            giaBan: String(v.giaBan || 0),
+            soLuongTon: String(v.soLuongTon || 0),
+            trangThai: true,
+            anhSanPham: v.anhSanPham || null,
+          };
+
+          if (v.id) {
+            // Update existing variant
+            this.helmetVersionApi.update(v.id, versionPayload).subscribe({
+              next: () => {
+                completedVariants++;
+                if (completedVariants === totalVariants) {
+                  this.deleteRemovedVariants();
+                }
+              },
+              error: (err) => {
+                // Error silently handled
+              },
+            });
+          } else {
+            // Create new variant
+            this.helmetVersionApi.create(versionPayload).subscribe({
+              next: () => {
+                completedVariants++;
+                if (completedVariants === totalVariants) {
+                  this.deleteRemovedVariants();
+                }
+              },
+              error: (err) => {
+                // Error silently handled
+              },
+            });
+          }
+        });
+
+        // If no variants to update, just delete removed ones
+        if (totalVariants === 0) {
+          this.deleteRemovedVariants();
+        }
+      },
+      error: (err) => {
+        // Error silently handled
+      },
+    });
+  }
+
+  // Delete removed variants from database
+  deleteRemovedVariants() {
+    if (this.deletedVersionIds.length === 0) {
+      this.closeModal();
+      this.fetchProducts();
+      return;
+    }
+
+    let deletedCount = 0;
+    this.deletedVersionIds.forEach((id) => {
+      this.helmetVersionApi.delete(id).subscribe({
+        next: () => {
+          deletedCount++;
+          if (deletedCount === this.deletedVersionIds.length) {
+            this.closeModal();
+            this.fetchProducts();
+          }
+        },
+        error: (err) => console.error('Lỗi xóa biến thể:', err),
+      });
+    });
   }
 
   formatPrice(price: any): string {
@@ -1015,13 +1182,11 @@ export class HelmetsComponent implements OnInit {
     if (!file || !this.helmetVersions[index]) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Kích thước file quá lớn. Vui lòng chọn file nhỏ hơn 5MB.');
       event.target.value = '';
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn file ảnh hợp lệ.');
       event.target.value = '';
       return;
     }
@@ -1147,15 +1312,11 @@ export class HelmetsComponent implements OnInit {
 
       this.loaiMuBaoHiemApi.create(request).subscribe({
         next: (response) => {
-          alert('Thêm mới Loại mũ bảo hiểm thành công!');
           this.loadHelmetTypes(); // Refresh dropdown
           this.cdr.detectChanges();
         },
         error: (error) => {
-          alert(
-            'Lỗi khi thêm mới Loại mũ bảo hiểm: ' +
-            (error.error?.message || error.message || 'Không thể kết nối đến server')
-          );
+          // Error silently handled
         },
       });
     } else if (event.type === 'mauSac') {
@@ -1167,15 +1328,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Màu sắc thành công!');
             this.loadColors(); // Refresh dropdown
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Màu sắc: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'nhaSanXuat') {
@@ -1188,15 +1345,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Nhà sản xuất thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Nhà sản xuất: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'chatLieuVo') {
@@ -1208,15 +1361,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Chất liệu vỏ thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Chất liệu vỏ: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'trongLuong') {
@@ -1229,15 +1378,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Trọng lượng thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Trọng lượng: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'xuatXu') {
@@ -1249,15 +1394,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Xuất xứ thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Xuất xứ: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'kieuDangMu') {
@@ -1269,15 +1410,11 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Kiểu dáng mũ thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Kiểu dáng mũ: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else if (event.type === 'congNgheAnToan') {
@@ -1289,33 +1426,15 @@ export class HelmetsComponent implements OnInit {
         })
         .subscribe({
           next: (response) => {
-            alert('Thêm mới Công nghệ an toàn thành công!');
             this.loadLookups(); // Refresh all dropdowns
             this.cdr.detectChanges();
           },
           error: (error) => {
-            alert(
-              'Lỗi khi thêm mới Công nghệ an toàn: ' +
-              (error.error?.message || error.message || 'Không thể kết nối đến server')
-            );
+            // Error silently handled
           },
         });
     } else {
-      // Tạm thời hiển thị alert cho các loại khác
-      const typeNames: { [key: string]: string } = {
-        nhaSanXuat: 'Nhà sản xuất',
-        chatLieuVo: 'Chất liệu vỏ',
-        trongLuong: 'Trọng lượng',
-        xuatXu: 'Xuất xứ',
-        kieuDangMu: 'Kiểu dáng mũ',
-        congNgheAnToan: 'Công nghệ an toàn',
-        mauSac: 'Màu sắc',
-      };
-
-      const typeName = typeNames[event.type] || event.type;
-      alert(
-        `Tính năng thêm mới "${typeName}" sẽ được implement sau. Hiện tại bạn có thể thêm mới từ menu "Quản lý sản phẩm" tương ứng.`
-      );
+      // Feature not implemented yet - silently handled
     }
 
     this.onQuickAddClose(); // Close modal

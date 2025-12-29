@@ -13,12 +13,8 @@
               <img [src]="mainImageUrl" [alt]="product.tenSanPham" />
             </div>
             <div class="image-thumbnails" *ngIf="productImages.length > 1">
-              <div
-                *ngFor="let img of productImages; let i = index"
-                class="thumbnail"
-                [class.active]="i === selectedImageIndex"
-                (click)="selectImage(i)"
-              >
+              <div *ngFor="let img of productImages; let i = index" class="thumbnail"
+                [class.active]="i === selectedImageIndex" (click)="selectImage(i)">
                 <img [src]="img" [alt]="product.tenSanPham" />
               </div>
             </div>
@@ -30,17 +26,20 @@
 
             <div class="product-meta">
               <span class="product-code">Mã SP: {{ product.maSanPham }}</span>
-              <span
-                class="product-status"
-                [class.in-stock]="product.trangThai"
-                [class.out-of-stock]="!product.trangThai"
-              >
+              <span class="product-status" [class.in-stock]="product.trangThai"
+                [class.out-of-stock]="!product.trangThai">
                 {{ product.trangThai ? 'Còn hàng' : 'Hết hàng' }}
               </span>
             </div>
 
             <div class="product-price">
-              <span class="current-price">{{ formatCurrency(getProductPrice()) }}</span>
+              <ng-container *ngIf="hasDiscount(); else normalPrice">
+                <span class="current-price discounted">{{ formatCurrency(getDisplayPrice()) }}</span>
+                <span class="original-price">{{ formatCurrency(getProductPrice()) }}</span>
+              </ng-container>
+              <ng-template #normalPrice>
+                <span class="current-price">{{ formatCurrency(getProductPrice()) }}</span>
+              </ng-template>
             </div>
 
             <!-- Product Variants -->
@@ -49,14 +48,9 @@
               <div class="variant-group" *ngIf="hasColorVariants()">
                 <label class="variant-label">Màu sắc:</label>
                 <div class="variant-options">
-                  <button
-                    *ngFor="let variant of getUniqueColors()"
-                    class="variant-btn color-btn"
-                    [class.active]="isSelectedColor(variant)"
-                    [style.background-color]="getColorCode(variant)"
-                    [title]="variant"
-                    (click)="selectColorVariant(variant)"
-                  >
+                  <button *ngFor="let variant of getUniqueColors()" class="variant-btn color-btn"
+                    [class.active]="isSelectedColor(variant)" [style.background-color]="getColorCode(variant)"
+                    [title]="variant" (click)="selectColorVariant(variant)">
                     {{ variant }}
                   </button>
                 </div>
@@ -66,13 +60,9 @@
               <div class="variant-group" *ngIf="hasSizeVariants()">
                 <label class="variant-label">Kích thước:</label>
                 <div class="variant-options">
-                  <button
-                    *ngFor="let variant of getUniqueSizes()"
-                    class="variant-btn size-btn"
-                    [class.active]="isSelectedSize(variant)"
-                    [class.unavailable]="!isSizeAvailable(variant)"
-                    (click)="selectSizeVariant(variant)"
-                  >
+                  <button *ngFor="let variant of getUniqueSizes()" class="variant-btn size-btn"
+                    [class.active]="isSelectedSize(variant)" [class.unavailable]="!isSizeAvailable(variant)"
+                    (click)="selectSizeVariant(variant)">
                     {{ variant }}
                     <span *ngIf="!isSizeAvailable(variant)" class="unavailable-badge">Hết</span>
                   </button>
@@ -92,26 +82,13 @@
             <div class="quantity-section">
               <label class="quantity-label">Số lượng:</label>
               <div class="quantity-controls">
-                <button
-                  class="quantity-btn"
-                  (click)="decreaseQuantity()"
-                  [disabled]="selectedQuantity <= 1"
-                >
+                <button class="quantity-btn" (click)="decreaseQuantity()" [disabled]="selectedQuantity <= 1">
                   <i class="fas fa-minus"></i>
                 </button>
-                <input
-                  type="number"
-                  [value]="selectedQuantity"
-                  min="1"
-                  [max]="getMaxStock()"
-                  (change)="onQuantityChange($event)"
-                  class="quantity-input"
-                />
-                <button
-                  class="quantity-btn"
-                  (click)="increaseQuantity()"
-                  [disabled]="selectedQuantity >= getMaxStock()"
-                >
+                <input type="number" [value]="selectedQuantity" min="1" [max]="getMaxStock()"
+                  (change)="onQuantityChange($event)" class="quantity-input" />
+                <button class="quantity-btn" (click)="increaseQuantity()"
+                  [disabled]="selectedQuantity >= getMaxStock()">
                   <i class="fas fa-plus"></i>
                 </button>
               </div>
@@ -130,27 +107,19 @@
 
               <!-- Hiển thị nút khi có variant -->
               <div *ngIf="productVariants.length > 0">
-                <button
-                  class="btn btn-add-cart"
-                  (click)="addToCart()"
-                  [disabled]="
+                <button class="btn btn-add-cart" (click)="addToCart()" [disabled]="
                     !product.trangThai ||
                     !selectedVariant ||
                     (selectedVariant.soLuongTon || 0) === 0
-                  "
-                >
+                  ">
                   <i class="fas fa-shopping-cart"></i>
                   Thêm vào giỏ hàng
                 </button>
-                <button
-                  class="btn btn-buy-now"
-                  (click)="buyNow()"
-                  [disabled]="
+                <button class="btn btn-buy-now" (click)="buyNow()" [disabled]="
                     !product.trangThai ||
                     !selectedVariant ||
                     (selectedVariant.soLuongTon || 0) === 0
-                  "
-                >
+                  ">
                   <i class="fas fa-bolt"></i>
                   Mua ngay
                 </button>
@@ -190,10 +159,7 @@
           <div class="tab-content">
             <!-- Description Tab -->
             <div *ngIf="activeTab === 'description'" class="tab-panel">
-              <div
-                class="product-description"
-                [innerHTML]="product.moTa || 'Chưa có mô tả sản phẩm'"
-              ></div>
+              <div class="product-description" [innerHTML]="product.moTa || 'Chưa có mô tả sản phẩm'"></div>
             </div>
 
             <!-- Specifications Tab -->
@@ -256,21 +222,12 @@
       <div class="suggested-products-section" *ngIf="suggestedProducts.length > 0">
         <h2 class="section-title">Sản phẩm gợi ý</h2>
         <div class="suggested-products-grid">
-          <div
-            class="suggested-product-card"
-            *ngFor="let suggestedProduct of suggestedProducts"
-            (click)="viewProductDetail(suggestedProduct.id)"
-          >
+          <div class="suggested-product-card" *ngFor="let suggestedProduct of suggestedProducts"
+            (click)="viewProductDetail(suggestedProduct.id)">
             <div class="product-image">
-              <img
-                [src]="getProductImageUrl(suggestedProduct)"
-                [alt]="suggestedProduct.tenSanPham"
-                (error)="$event.target.src='https://via.placeholder.com/200x200?text=No+Image'"
-              />
-              <span
-                class="status-badge"
-                [class.out-of-stock]="!suggestedProduct.trangThai"
-              >
+              <img [src]="getProductImageUrl(suggestedProduct)" [alt]="suggestedProduct.tenSanPham"
+                (error)="$event.target.src='https://via.placeholder.com/200x200?text=No+Image'" />
+              <span class="status-badge" [class.out-of-stock]="!suggestedProduct.trangThai">
                 {{ suggestedProduct.trangThai ? 'Còn hàng' : 'Hết hàng' }}
               </span>
             </div>

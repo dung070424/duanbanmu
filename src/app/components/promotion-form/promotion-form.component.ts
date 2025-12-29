@@ -139,7 +139,8 @@ export class PromotionFormComponent implements OnInit {
     this.loadProducts();
     this.generatePromotionCode();
     this.loadPromotionList();
-    this.loadDetailProducts(); // Load chi tiết sản phẩm
+    this.loadProducts();
+    this.generatePromotionCode();
     this.cdr.detectChanges();
 
     // Debug: Check data after a short delay
@@ -298,68 +299,61 @@ export class PromotionFormComponent implements OnInit {
     });
   }
 
-  loadDetailProducts() {
-    console.log('Loading sản phẩm cho bảng chi tiết...');
+  // Load variants for a specific parent product
+  loadVariants(productId: number) {
     this.loading = true;
+    console.log('Fetching variants for product ID:', productId);
 
-    // Lấy từ bảng Sản Phẩm thay vì Chi Tiết Sản Phẩm
-    this.productApiService.search({
-      page: 0,
-      size: 1000
-    }).subscribe({
+    this.chiTietSanPhamService.getBySanPhamId(productId).subscribe({
       next: (response: any) => {
-        console.log('Sản phẩm response:', response);
+        const rawData = Array.isArray(response) ? response : response?.data || response?.content || [];
+        console.log(`Found ${rawData.length} variants for product ${productId}.`);
 
-        const products = response.content || response;
-        console.log('Total items from database:', products.length);
+        this.detailProducts = rawData.map((item: any) => {
+          // Robust name lookup logic
+          const colorName = item.mauSacTen || item.mau_sac_ten || 'N/A';
+          // Fix: item.kichThuocTen might be mapped to 'loaiMu' or 'memory' in other places?
+          // Looking at previous valid code:
+          const sizeName = item.kichThuocTen || item.kich_thuoc_ten || 'N/A';
 
-        // Map dữ liệu từ API Sản Phẩm sang DetailProduct interface
-        this.detailProducts = products.map((item: any, index: number) => {
-          // Log giá từng sản phẩm để debug
-          console.log(`Product ${index + 1} - ${item.tenSanPham}: Giá = ${item.giaBan}`);
+          // Check if this variant is already selected
+          const isSelected = this.promotionData.selectedProducts.includes(item.id);
 
           return {
             id: item.id,
-            maSanPham: item.maSanPham || 'N/A',
-            productName: item.tenSanPham || 'N/A',
-            color: item.mauSacTen || 'N/A',
-            loaiMu: item.loaiMuBaoHiemTen || item.kieuDangMuTen || 'N/A',
+            maSanPham: item.maSanPham || '',
+            productName: item.sanPhamTen || this.selectedProductForDetail?.tenSanPham || 'N/A',
+            color: colorName,
+            // Map backend 'kichThuocTen' or similar to 'loaiMu' field which is used in HTML
+            loaiMu: sizeName,
             imageUrl: item.anhSanPham || 'assets/default-product.png',
             originalPrice: Number(item.giaBan) || 0,
-            selected: false,
+            discountedPrice: this.calculateDiscountedPrice(Number(item.giaBan) || 0),
+            selected: isSelected,
             status: item.trangThai ? 'active' : 'inactive',
-            nhaSanXuatTen: item.nhaSanXuatTen || 'N/A',
-            soLuongTon: item.soLuongTon || 0
+            nhaSanXuatTen: item.nhaSanXuatTen || '',
+            soLuongTon: Number(item.soLuongTon) || 0
           };
         });
 
-        // Initialize filtered products
         this.filteredDetailProducts = [...this.detailProducts];
         this.applyDetailFilters();
-
         this.loading = false;
-        console.log('✅ Loaded detail products from SanPham:', this.detailProducts.length);
-        if (this.detailProducts.length > 0) {
-          console.log('✅ Price range:', {
-            min: Math.min(...this.detailProducts.map(p => p.originalPrice)),
-            max: Math.max(...this.detailProducts.map(p => p.originalPrice))
-          });
-        }
-        console.log('Detail products data:', this.detailProducts);
+        this.cdr.detectChanges();
+
+        // Auto-scroll to details
+        setTimeout(() => {
+          const detailSection = document.querySelector('.product-detail-section');
+          if (detailSection) {
+            detailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
       },
       error: (error) => {
-        console.error('❌ Error loading sản phẩm:', error);
-        console.error('Error details:', {
-          status: error.status,
-          statusText: error.statusText,
-          message: error.message,
-          url: error.url
-        });
-
-        // Fallback to empty array if API fails
+        console.error('Error loading variants:', error);
+        this.loading = false;
         this.detailProducts = [];
         this.filteredDetailProducts = [];
-        this.loading = false;
       }
     });
   }
@@ -461,15 +455,10 @@ export class PromotionFormComponent implements OnInit {
       this.detailFilterProduct = product.tenSanPham;
       this.detailFilterLoaiMu = '';
       this.detailFilterColor = '';
-      this.onDetailFilterChange();
 
-      // Scroll xuống phần detail
-      setTimeout(() => {
-        const detailSection = document.querySelector('.product-detail-section');
-        if (detailSection) {
-          detailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
+      // Load variants for this product
+      this.loadVariants(product.id);
+
     } else {
       this.promotionData.selectedProducts = this.promotionData.selectedProducts.filter(
         id => id !== product.id
@@ -480,27 +469,26 @@ export class PromotionFormComponent implements OnInit {
         this.detailFilterProduct = '';
         this.detailFilterLoaiMu = '';
         this.detailFilterColor = '';
-        this.onDetailFilterChange();
+        this.detailProducts = [];
+        this.filteredDetailProducts = [];
       }
     }
   }
 
   // Click vào dòng sản phẩm để xem chi tiết
+  // Click vào dòng sản phẩm để xem chi tiết
   onProductRowClick(product: Product) {
     this.selectedProductForDetail = product;
     console.log('Selected product for detail view:', product);
+
     // Reset filter khi chọn sản phẩm mới
     this.detailFilterProduct = product.tenSanPham;
     this.detailFilterLoaiMu = '';
     this.detailFilterColor = '';
-    this.onDetailFilterChange();
-    // Scroll xuống phần detail
-    setTimeout(() => {
-      const detailSection = document.querySelector('.product-detail-section');
-      if (detailSection) {
-        detailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+
+    if (product.id) {
+      this.loadVariants(product.id);
+    }
   }
 
 
@@ -676,7 +664,13 @@ export class PromotionFormComponent implements OnInit {
       ngayBatDau: this.promotionData.ngayBatDau + 'T00:00:00',
       ngayKetThuc: this.promotionData.ngayKetThuc + 'T23:59:59',
       soLuongSuDung: 1000, // Default value
-      trangThai: true
+      trangThai: true,
+      chiTietDotGiamGias: this.detailProducts
+        .filter(p => p.selected)
+        .map(p => ({
+          chiTietSanPhamId: p.id,
+          giaTriGiam: isPercent ? Number(this.promotionData.giaTriGiamGia) : Number(this.promotionData.soTien)
+        }))
     };
 
     console.log('[Create Promotion] Payload:', request);
