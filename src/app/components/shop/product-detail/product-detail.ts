@@ -55,7 +55,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     private authService: AuthService,
     private customerService: CustomerService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     console.log('🛍️ ProductDetailComponent ngOnInit - Starting...');
@@ -115,7 +115,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
         // Load product variants (chi tiết sản phẩm) - không block UI
         this.loadProductVariants(productId);
-        
+
         // Load suggested products
         this.loadSuggestedProducts(productId);
       },
@@ -255,8 +255,14 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const price =
-      parseFloat(this.selectedVariant.giaBan?.toString() || '0') || this.product.giaBan || 0;
+    // Use discounted price if available
+    const originalPrice = parseFloat(this.selectedVariant.giaBan?.toString() || '0') || this.product.giaBan || 0;
+    const discountedPrice = this.selectedVariant.giaSauGiam
+      ? parseFloat(this.selectedVariant.giaSauGiam.toString())
+      : null;
+    const price = (discountedPrice != null && discountedPrice < originalPrice)
+      ? discountedPrice
+      : originalPrice;
     const totalPrice = price * this.selectedQuantity;
 
     // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
@@ -291,10 +297,10 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       localStorage.setItem('temp_cart', JSON.stringify(tempCart));
       // Force change detection sau khi cập nhật localStorage
       this.cdr.detectChanges();
-      
+
       // Phát sự kiện để header component cập nhật
       window.dispatchEvent(new Event('cartUpdated'));
-      
+
       alert(`Đã thêm "${this.product.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
       return;
     }
@@ -311,23 +317,33 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         return;
       }
 
+      // Use discounted price if available for logged-in users too
+      const originalPriceForCart = parseFloat(this.selectedVariant.giaBan?.toString() || '0') || this.product!.giaBan || 0;
+      const discountedPriceForCart = this.selectedVariant.giaSauGiam
+        ? parseFloat(this.selectedVariant.giaSauGiam.toString())
+        : null;
+      const priceForCart = (discountedPriceForCart != null && discountedPriceForCart < originalPriceForCart)
+        ? discountedPriceForCart
+        : originalPriceForCart;
+      const totalPriceForCart = priceForCart * this.selectedQuantity;
+
       const gioHangItem: GioHangChoItem = {
         chiTietSanPhamId: this.selectedVariant.id,
         tenSanPham: this.product.tenSanPham,
         soLuong: this.selectedQuantity,
-        donGia: price,
+        donGia: priceForCart,
         giamGia: 0,
-        thanhTien: totalPrice,
+        thanhTien: totalPriceForCart,
       };
 
       this.hoaDonChoService.addItemToCart(cartId, gioHangItem).subscribe({
         next: () => {
           // Force change detection sau khi thêm vào giỏ hàng thành công
           this.cdr.detectChanges();
-          
+
           // Phát sự kiện để header component cập nhật
           window.dispatchEvent(new Event('cartUpdated'));
-          
+
           alert(`Đã thêm "${this.product!.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
         },
         error: (error) => {
@@ -364,7 +380,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
             }
 
             console.log('✅ Got khachHangId:', khachHangId);
-            
+
             // Kiểm tra cart đã lưu trong localStorage
             const savedCartId = localStorage.getItem('current_cart_id');
             if (savedCartId) {
@@ -443,7 +459,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       trangThai: 'DANG_CHO',
       danhSachGioHang: [],
     };
-    
+
     console.log('📦 Creating new cart (not logged in)');
     console.log('   - maHoaDonCho:', maHoaDonCho);
 
@@ -509,6 +525,28 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       return parseFloat(this.selectedVariant.giaBan.toString()) || 0;
     }
     return this.product?.giaBan || 0;
+  }
+
+  getDiscountedPrice(): number | null {
+    if (this.selectedVariant && this.selectedVariant.giaSauGiam) {
+      const discounted = parseFloat(this.selectedVariant.giaSauGiam.toString());
+      return (discounted && discounted > 0) ? discounted : null;
+    }
+    return null;
+  }
+
+  hasDiscount(): boolean {
+    const discountedPrice = this.getDiscountedPrice();
+    const originalPrice = this.getProductPrice();
+    return discountedPrice != null && discountedPrice < originalPrice;
+  }
+
+  getDisplayPrice(): number {
+    const discountedPrice = this.getDiscountedPrice();
+    if (this.hasDiscount() && discountedPrice) {
+      return discountedPrice;
+    }
+    return this.getProductPrice();
   }
 
   isVariantAvailable(variant: ChiTietSanPhamResponse): boolean {
