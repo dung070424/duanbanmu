@@ -184,7 +184,6 @@
               <th width="100px">Mã</th>
               <th>Tên SP</th>
               <th width="120px">Hãng</th>
-              <th width="100px">Số lượng</th>
             </tr>
           </thead>
           <tbody>
@@ -197,16 +196,15 @@
               <td>{{ product.maSanPham }}</td>
               <td>{{ product.tenSanPham }}</td>
               <td>{{ product.nhaSanXuatTen }}</td>
-              <td>{{ product.soLuongTon }}</td>
             </tr>
             <tr *ngIf="loading">
-              <td colspan="6" class="text-center">
+              <td colspan="5" class="text-center">
                 <i class="bi bi-hourglass-split"></i>
                 Đang tải dữ liệu...
               </td>
             </tr>
             <tr *ngIf="getFilteredProducts().length === 0 && !loading && !error">
-              <td colspan="6" class="text-center">
+              <td colspan="5" class="text-center">
                 <i class="bi bi-inbox"></i>
                 Không có sản phẩm nào
               </td>
@@ -342,7 +340,9 @@
             <th width="60px">STT</th>
             <th width="80px">Ảnh</th>
             <th width="150px">Trùng</th>
-            <th>Sản phẩm & Màu sắc & Kích thước</th>
+            <th>Tên sản phẩm</th>
+            <th width="100px">Màu sắc</th>
+            <th width="100px">Kích thước</th>
             <th width="130px">Đơn giá gốc</th>
             <th width="150px">Đơn giá sau giảm</th>
           </tr>
@@ -361,13 +361,14 @@
                 {{ getStatusText(detail) }}
               </span>
             </td>
-            <td class="product-info-cell">
-              <div class="product-name">{{ detail.productName }}</div>
-              <div class="product-specs">
-                <span class="spec-item color">{{ detail.color }}</span>
-                <span class="spec-separator">-</span>
-                <span class="spec-item loaimu">{{ detail.loaiMu }}</span>
-              </div>
+            <td>
+              <div class="product-name fw-bold">{{ detail.productName }}</div>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ detail.color }}</span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ detail.loaiMu }}</span>
             </td>
             <td class="price-cell">
               <div class="original-price">{{ formatCurrency(detail.originalPrice) }}</div>
