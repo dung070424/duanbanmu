@@ -798,6 +798,7 @@ export class CounterSalesComponent implements OnInit {
             ram: r.kichThuocTen || r.kich_thuoc_ten || '',
             storage: trongLuongTen, // Dùng trongLuongTen từ DB
             productId: productId,
+            discountedPrice: (r.giaSauGiam) ? this.parsePrice(r.giaSauGiam) : null,
             imageUrl: variantImage || undefined,
           };
         });
@@ -1732,13 +1733,17 @@ export class CounterSalesComponent implements OnInit {
       return;
     }
 
+    const salePrice = (product.discountedPrice != null && product.discountedPrice < product.price)
+      ? product.discountedPrice
+      : product.price;
+
     const itemRequest: GioHangChoItem = {
       chiTietSanPhamId: product.id,
       tenSanPham: product.name,
       soLuong: 1,
-      donGia: product.price,
+      donGia: salePrice,
       giamGia: 0,
-      thanhTien: product.price,
+      thanhTien: salePrice,
     };
 
     this.hoaDonChoService.addItemToCart(this.currentHoaDonChoId, itemRequest).subscribe({

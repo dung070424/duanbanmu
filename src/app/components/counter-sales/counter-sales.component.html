@@ -173,7 +173,18 @@
                   <span>{{ p.colorName || p.color }}</span>
                 </td>
                 <td>{{ p.stock }}</td>
-                <td class="text-success fw-semibold">{{ formatCurrency(p.price) }}</td>
+                <td class="fw-semibold">
+                  <ng-container *ngIf="p.discountedPrice != null && p.discountedPrice < p.price; else normalListPrice">
+                    <div class="d-flex flex-column">
+                      <span class="text-danger">{{ formatCurrency(p.discountedPrice) }}</span>
+                      <span class="text-decoration-line-through text-muted small" style="font-size: 0.85em;">{{
+                        formatCurrency(p.price) }}</span>
+                    </div>
+                  </ng-container>
+                  <ng-template #normalListPrice>
+                    <span class="text-success">{{ formatCurrency(p.price) }}</span>
+                  </ng-template>
+                </td>
                 <td>
                   <button class="btn-edit" (click)="addToCart(p)" [disabled]="!isInvoiceCreated || p.stock <= 0"
                     [title]="
