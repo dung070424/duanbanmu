@@ -664,7 +664,13 @@ export class PromotionFormComponent implements OnInit {
       ngayBatDau: this.promotionData.ngayBatDau + 'T00:00:00',
       ngayKetThuc: this.promotionData.ngayKetThuc + 'T23:59:59',
       soLuongSuDung: 1000, // Default value
-      trangThai: true
+      trangThai: true,
+      chiTietDotGiamGias: this.detailProducts
+        .filter(p => p.selected)
+        .map(p => ({
+          chiTietSanPhamId: p.id,
+          giaTriGiam: isPercent ? Number(this.promotionData.giaTriGiamGia) : Number(this.promotionData.soTien)
+        }))
     };
 
     console.log('[Create Promotion] Payload:', request);

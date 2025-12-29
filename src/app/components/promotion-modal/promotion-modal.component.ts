@@ -1,6 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.service';
+import { DotGiamGiaService } from '../../services/dot-giam-gia.service';
 
 export interface PromotionFormData {
   id?: string;
@@ -12,15 +14,25 @@ export interface PromotionFormData {
   startDate: string;
   endDate: string;
   status: string;
+  chiTietDotGiamGias?: Array<{
+    chiTietSanPhamId: number;
+    giaTriGiam: number;
+  }>;
 }
 
 export interface Product {
-  id: string;
+  id: string; // This is actually chiTietSanPhamId
   code: string;
   name: string;
   brand: string;
   quantity: number;
   selected: boolean;
+  originalPrice?: number;
+  discountedPrice?: number;
+  color?: string;
+  size?: string;
+  imageUrl?: string;
+  overlapCount?: number;
 }
 
 @Component({
@@ -30,7 +42,7 @@ export interface Product {
   templateUrl: './promotion-modal.component.html',
   styleUrls: ['./promotion-modal.component.scss'],
 })
-export class PromotionModalComponent {
+export class PromotionModalComponent implements OnInit, OnChanges {
   @Input() isVisible = false;
   @Input() promotionData: PromotionFormData | null = null;
   @Input() isEditMode = false;
@@ -49,10 +61,20 @@ export class PromotionModalComponent {
     status: 'Chưa bắt đầu',
   };
 
+  constructor(
+    private chiTietSanPhamService: ChiTietSanPhamApiService,
+    private dotGiamGiaService: DotGiamGiaService,
+    private cdr: ChangeDetectorRef
+  ) { }
+
+  ngOnInit() {
+    this.loadAllProducts();
+  }
+
   // Product List Properties
   searchTerm = '';
-  selectedOS = '';
-  selectedManufacturer = '';
+  selectedColor = '';
+  selectedSize = '';
   selectAll = false;
 
   // Pagination
@@ -65,22 +87,13 @@ export class PromotionModalComponent {
   showConfirmModal = false;
 
   // Sample data
-  products: Product[] = [
-    { id: '1', code: 'SP00001', name: 'Iphone 14', brand: 'Apple', quantity: 1, selected: false },
-    { id: '2', code: 'SP00002', name: 'Iphone 14 Plus', brand: 'Apple', quantity: 0, selected: false },
-    { id: '3', code: 'SP00003', name: 'Iphone 14 Pro', brand: 'Apple', quantity: 2, selected: false },
-    { id: '4', code: 'SP00004', name: 'Iphone 14 Pro Max', brand: 'Apple', quantity: 1, selected: false },
-    { id: '5', code: 'SP00005', name: 'Iphone 15', brand: 'Apple', quantity: 0, selected: false },
-    { id: '6', code: 'SP00006', name: 'Iphone 15 Plus', brand: 'Apple', quantity: 1, selected: false },
-    { id: '7', code: 'SP00007', name: 'Iphone 15 Pro', brand: 'Apple', quantity: 1, selected: false },
-    { id: '8', code: 'SP00008', name: 'Iphone 15 Pro Max', brand: 'Apple', quantity: 0, selected: false },
-    { id: '9', code: 'SP00009', name: 'Iphone 16', brand: 'Apple', quantity: 4, selected: false },
-    { id: '10', code: 'SP00010', name: 'Iphone 16 Plus', brand: 'Apple', quantity: 4, selected: false },
-  ];
+  // Products data will be loaded from API
+  products: Product[] = [];
 
   filteredProducts: Product[] = [];
-  operatingSystems = ['iOS', 'Android', 'Windows'];
-  manufacturers = ['Apple', 'Samsung', 'Google'];
+  paginatedProducts: Product[] = [];
+  colors: string[] = [];
+  sizes: string[] = [];
 
   discountTypes = [
     { value: 'Phần trăm', label: 'Phần trăm (%)' },
@@ -116,15 +129,86 @@ export class PromotionModalComponent {
         status: this.promotionData.status || 'Chưa bắt đầu'
       };
 
-      console.log('Form data after mapping:', this.formData);
-      console.log('formData.discountType:', this.formData.discountType);
-      console.log('formData.startDate:', this.formData.startDate);
-      console.log('formData.endDate:', this.formData.endDate);
-      console.log('formData.discountValue:', this.formData.discountValue);
-      console.log('formData.maxDiscountAmount:', this.formData.maxDiscountAmount);
-    } else {
-      this.resetForm();
+      console.log('isEditMode:', this.isEditMode);
+
+      if (this.isVisible) {
+        if (!this.products || this.products.length === 0) {
+          this.loadAllProducts(() => {
+            if (this.promotionData && this.promotionData.id) {
+              this.loadPromotionDetails(Number(this.promotionData.id));
+            }
+          });
+        } else {
+          if (this.promotionData && this.promotionData.id) {
+            this.loadPromotionDetails(Number(this.promotionData.id));
+          }
+        }
+      } else {
+        this.resetForm();
+      }
     }
+  }
+
+  loadAllProducts(callback?: () => void) {
+    this.chiTietSanPhamService.getAll().subscribe({
+      next: (response: any) => {
+        const variants = response.data || response;
+        if (Array.isArray(variants)) {
+          this.products = variants.map((v: any) => ({
+            id: v.id,
+            code: v.maSanPham || 'Unknown',
+            name: v.sanPhamTen || (v.sanPham ? v.sanPham.tenSanPham : 'Unknown'),
+            brand: v.nhaSanXuatTen || (v.sanPham && v.sanPham.nhaSanXuat ? v.sanPham.nhaSanXuat.tenNhaSanXuat : 'Unknown'),
+            quantity: v.soLuongTon ? Number(v.soLuongTon) : 0,
+            selected: false,
+            originalPrice: v.giaBan ? Number(v.giaBan) : 0,
+            discountedPrice: v.giaBan ? Number(v.giaBan) : 0,
+            color: v.mauSacTen || (v.mauSac ? v.mauSac.tenMau : ''),
+            size: v.kichThuocTen || (v.kichThuoc ? v.kichThuoc.tenKichThuoc : ''),
+            imageUrl: v.anhSanPham || 'assets/images/default-product.png',
+            overlapCount: 0
+          }));
+
+          // Extract unique colors and sizes
+          this.colors = [...new Set(this.products.map(p => p.color).filter(Boolean))].sort() as string[];
+          this.sizes = [...new Set(this.products.map(p => p.size).filter(Boolean))].sort() as string[];
+
+          this.initializeProductList();
+        }
+        if (callback) callback();
+      },
+      error: (err: any) => console.error('Error loading products', err)
+    });
+  }
+
+  loadPromotionDetails(id: number) {
+    this.dotGiamGiaService.getDotGiamGiaById(id).subscribe({
+      next: (response: any) => {
+        const data = response.data;
+        if (data && data.chiTietDotGiamGias) {
+          const selectedIds = new Set(data.chiTietDotGiamGias.map((d: any) => d.chiTietSanPhamId));
+
+          // Update selected status in products list
+          this.products.forEach(p => {
+            if (selectedIds.has(Number(p.id))) {
+              p.selected = true;
+              // Find detail to get discount info if needed (though editing uses global discount)
+              const detail = data.chiTietDotGiamGias.find((d: any) => d.chiTietSanPhamId === Number(p.id));
+              if (detail && detail.giaSauGiam) {
+                p.discountedPrice = detail.giaSauGiam;
+              }
+            } else {
+              p.selected = false;
+            }
+          });
+
+          // Refresh list?
+          this.filterProducts();
+          this.cdr.detectChanges(); // Force UI update
+        }
+      },
+      error: (err) => console.error('Error loading promotion details', err)
+    });
   }
 
   resetForm() {
@@ -138,6 +222,11 @@ export class PromotionModalComponent {
       endDate: '',
       status: 'Chưa bắt đầu',
     };
+    // Reset product selection
+    if (this.products) {
+      this.products.forEach(p => p.selected = false);
+      this.filterProducts();
+    }
   }
 
   onClose() {
@@ -162,6 +251,24 @@ export class PromotionModalComponent {
 
   onConfirmSave() {
     this.showConfirmModal = false;
+
+    // Prepare detail payload
+    const selectedProducts = this.products.filter(p => p.selected);
+    const details = selectedProducts.map(p => {
+      let discount = 0;
+      if (this.formData.discountType === 'PHAN_TRAM') {
+        discount = Number(this.formData.discountValue);
+      } else {
+        discount = Number(this.formData.maxDiscountAmount);
+      }
+      return {
+        chiTietSanPhamId: Number(p.id),
+        giaTriGiam: discount
+      };
+    });
+
+    this.formData.chiTietDotGiamGias = details;
+
     this.save.emit(this.formData);
     this.resetForm();
   }
@@ -222,12 +329,12 @@ export class PromotionModalComponent {
     this.filterProducts();
   }
 
-  onOSChange() {
+  onColorChange() {
     this.currentPage = 1;
     this.filterProducts();
   }
 
-  onManufacturerChange() {
+  onSizeChange() {
     this.currentPage = 1;
     this.filterProducts();
   }
@@ -242,12 +349,12 @@ export class PromotionModalComponent {
       );
     }
 
-    if (this.selectedOS) {
-      // Add OS filtering logic here
+    if (this.selectedColor) {
+      filtered = filtered.filter(p => p.color === this.selectedColor);
     }
 
-    if (this.selectedManufacturer) {
-      filtered = filtered.filter(p => p.brand === this.selectedManufacturer);
+    if (this.selectedSize) {
+      filtered = filtered.filter(p => p.size === this.selectedSize);
     }
 
     this.filteredProducts = filtered;
@@ -263,7 +370,7 @@ export class PromotionModalComponent {
   }
 
   onProductSelect(product: Product) {
-    product.selected = !product.selected;
+    // product.selected is already toggled by ngModel
     this.selectAll = this.filteredProducts.every(p => p.selected);
   }
 
@@ -275,13 +382,26 @@ export class PromotionModalComponent {
   updatePagination() {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
-    this.filteredProducts = this.filteredProducts.slice(startIndex, endIndex);
+    this.paginatedProducts = this.filteredProducts.slice(startIndex, endIndex);
   }
-  get startItem(): number {
+
+  getSelectedCount(): number {
+    return this.products.filter(p => p.selected).length;
+  }
+
+  selectAllProducts() {
+    this.filteredProducts.forEach(p => p.selected = true);
+  }
+
+  deselectAllProducts() {
+    this.filteredProducts.forEach(p => p.selected = false);
+    this.selectAll = false;
+  }
+  getStartItem(): number {
     return (this.currentPage - 1) * this.itemsPerPage + 1;
   }
 
-  get endItem(): number {
+  getEndItem(): number {
     return Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
   }
 
@@ -321,8 +441,33 @@ export class PromotionModalComponent {
     }
   }
 
+  // Calculate discounted price for generic display
+  getDiscountedPrice(originalPrice: number): number {
+    if (!originalPrice) return 0;
+
+    let discount = 0;
+    if (this.formData.discountType === 'PHAN_TRAM') {
+      const percent = Number(this.formData.discountValue) || 0;
+      discount = originalPrice * (percent / 100);
+    } else {
+      discount = Number(this.formData.maxDiscountAmount) || 0;
+    }
+
+    // Ensure accurate big decimal handling expectation if needed, but number is fine for now
+    return Math.max(0, originalPrice - discount);
+  }
+
+  getDiscountAmount(originalPrice: number): number {
+    if (!originalPrice) return 0;
+    return originalPrice - this.getDiscountedPrice(originalPrice);
+  }
+
   goToLastPage() {
     this.currentPage = this.totalPages;
     this.updatePagination();
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   }
 }

@@ -28,6 +28,10 @@ export interface DotGiamGiaRequest {
   ngayKetThuc: string;
   soLuongSuDung: number;
   trangThai: boolean;
+  chiTietDotGiamGias?: Array<{
+    chiTietSanPhamId: number;
+    giaTriGiam: number;
+  }>;
 }
 
 export interface ApiResponse<T> {
@@ -50,7 +54,7 @@ export interface PaginatedResponse<T> {
 export class DotGiamGiaService {
   private apiUrl = `${environment.apiBaseUrl}/api/dot-giam-gia`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   createDotGiamGia(request: DotGiamGiaRequest): Observable<ApiResponse<DotGiamGia>> {
     return this.http.post<ApiResponse<DotGiamGia>>(this.apiUrl, request);

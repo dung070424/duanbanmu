@@ -1019,7 +1019,8 @@ export class PromotionManagementComponent implements OnInit {
       ngayBatDau: formData.startDate + 'T00:00:00',
       ngayKetThuc: formData.endDate + 'T23:59:59',
       soLuongSuDung: 1000, // Default value
-      trangThai: formData.status === 'Đang hoạt động'
+      trangThai: formData.status === 'Đang hoạt động',
+      chiTietDotGiamGias: formData.chiTietDotGiamGias
     };
 
     console.log('Request to send:', dotGiamGiaRequest);
