@@ -399,7 +399,7 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
     this.editForm = {
       maPhieu: phieu.maPhieu,
       tenPhieuGiamGia: phieu.tenPhieuGiamGia,
-      loaiPhieuGiamGia: phieu.loaiPhieuGiamGia,
+      loaiPhieuGiamGia: this.isTienMat(phieu.loaiPhieuGiamGia),
       giaTriGiam: phieu.giaTriGiam,
       giaTriToiThieu: phieu.giaTriToiThieu,
       soTienToiDa: phieu.soTienToiDa,
@@ -603,8 +603,14 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
     }).format(amount);
   }
 
+  // Helper để kiểm tra loại phiếu (giải quyết vấn đề kiểu dữ liệu string/boolean)
+  isTienMat(value: any): boolean {
+    if (value === true || value === 'true' || value === 1) return true;
+    return false;
+  }
+
   formatGiaTri(phieu: PhieuGiamGiaResponse): string {
-    if (phieu.loaiPhieuGiamGia) {
+    if (this.isTienMat(phieu.loaiPhieuGiamGia)) {
       // Phiếu giảm theo tiền mặt
       return this.formatCurrency(phieu.giaTriGiam);
     }
@@ -654,12 +660,12 @@ export class PhieuGiamGiaListComponent implements OnInit, OnDestroy {
     }
   }
 
-  getTypeText(type: boolean): string {
-    return type ? 'Tiền mặt' : 'Phần trăm';
+  getTypeText(type: any): string {
+    return this.isTienMat(type) ? 'Tiền mặt' : 'Phần trăm';
   }
 
-  getTypeClass(type: boolean): string {
-    return type ? 'type-cash' : 'type-percentage';
+  getTypeClass(type: any): string {
+    return this.isTienMat(type) ? 'type-cash' : 'type-percentage';
   }
 
   // Pagination

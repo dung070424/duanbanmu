@@ -65,7 +65,7 @@ export class PromotionManagementComponent implements OnInit {
     private dotGiamGiaService: DotGiamGiaService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit() {
     console.log('🚀 PromotionManagementComponent initialized');
@@ -78,10 +78,10 @@ export class PromotionManagementComponent implements OnInit {
     this.loading = true;
     this.error = null;
     this.cdr.detectChanges();
-    
+
     // Load data immediately
     this.loadDotGiamGiaList();
-    
+
     // Also try to refresh after a short delay to ensure data is loaded
     setTimeout(() => {
       if (this.promotions.length === 0 && !this.loading) {
@@ -97,7 +97,7 @@ export class PromotionManagementComponent implements OnInit {
     console.log('=== TEST DATA ===');
     console.log('dotGiamGiaList length:', this.dotGiamGiaList.length);
     console.log('promotions length:', this.promotions.length);
-    
+
     if (this.dotGiamGiaList.length > 0) {
       const firstItem = this.dotGiamGiaList[0];
       console.log('First dotGiamGia item:', firstItem);
@@ -107,7 +107,7 @@ export class PromotionManagementComponent implements OnInit {
       console.log('giaTriDotGiam:', firstItem.giaTriDotGiam);
       console.log('soTien:', firstItem.soTien);
     }
-    
+
     if (this.promotions.length > 0) {
       const firstPromotion = this.promotions[0];
       console.log('First promotion item:', firstPromotion);
@@ -144,7 +144,7 @@ export class PromotionManagementComponent implements OnInit {
           });
           this.filteredDotGiamGiaList = [...this.dotGiamGiaList];
           console.log('📊 DotGiamGia list loaded (sorted by newest first):', this.dotGiamGiaList.length, 'items');
-          
+
           // Debug: Kiểm tra dữ liệu từ API
           if (this.dotGiamGiaList.length > 0) {
             console.log('🔍 First item from API:', this.dotGiamGiaList[0]);
@@ -154,7 +154,7 @@ export class PromotionManagementComponent implements OnInit {
           } else {
             console.log('⚠️ No data received from API');
           }
-          
+
           this.convertToPromotions();
           console.log('🎯 Promotions converted:', this.promotions.length, 'items');
           this.cdr.detectChanges();
@@ -182,11 +182,12 @@ export class PromotionManagementComponent implements OnInit {
       code: dotGiamGia.maDotGiamGia,
       name: dotGiamGia.tenDotGiamGia,
       discountType: dotGiamGia.loaiDotGiamGia || 'Phần trăm',
-      discountValue: dotGiamGia.giaTriDotGiam ? `${dotGiamGia.giaTriDotGiam}%` : 
-                    dotGiamGia.soTien ? this.formatCurrency(dotGiamGia.soTien) : 'N/A',
+      discountValue: (dotGiamGia.loaiDotGiamGia === 'SO_TIEN')
+        ? this.formatCurrency(dotGiamGia.soTien || 0)
+        : (dotGiamGia.giaTriDotGiam ? `${dotGiamGia.giaTriDotGiam}%` : '0%'),
       discountPercentage: dotGiamGia.giaTriDotGiam ? parseFloat(dotGiamGia.giaTriDotGiam) : 0,
       maxDiscountAmount: dotGiamGia.soTien || 0,
-      voucherType: 'Tiền mặt', // Default value
+      voucherType: (dotGiamGia.loaiDotGiamGia === 'SO_TIEN') ? 'Tiền mặt' : 'Phần trăm', // Fix: Map correctly instead of hardcoding
       startDate: this.formatDate(dotGiamGia.ngayBatDau),
       endDate: this.formatDate(dotGiamGia.ngayKetThuc),
       status: dotGiamGia.trangThai ? 'ACTIVE' : 'INACTIVE',
@@ -195,13 +196,13 @@ export class PromotionManagementComponent implements OnInit {
     }));
     console.log('✅ Promotions converted:', this.promotions.length, 'items');
     console.log('🔍 First promotion ID:', this.promotions[0]?.id, 'Type:', typeof this.promotions[0]?.id);
-    
+
     // Update pagination
     this.totalPages = Math.ceil(this.promotions.length / this.itemsPerPage);
     if (this.currentPage > this.totalPages) {
       this.currentPage = 1;
     }
-    
+
     // Force change detection
     this.cdr.detectChanges();
     setTimeout(() => {
@@ -227,6 +228,10 @@ export class PromotionManagementComponent implements OnInit {
     }
   }
 
+  getTypeClass(type: string): string {
+    return type === 'Phần trăm' ? 'type-percentage' : 'type-money';
+  }
+
   onSearch() {
     this.applyFilters();
     this.cdr.detectChanges();
@@ -242,7 +247,7 @@ export class PromotionManagementComponent implements OnInit {
     if (this.filterCriteria.startDate && this.filterCriteria.endDate) {
       const startDate = new Date(this.filterCriteria.startDate);
       const endDate = new Date(this.filterCriteria.endDate);
-      
+
       if (startDate > endDate) {
         this.error = 'Ngày bắt đầu không thể lớn hơn ngày kết thúc';
         setTimeout(() => {
@@ -252,7 +257,7 @@ export class PromotionManagementComponent implements OnInit {
         return;
       }
     }
-    
+
     this.applyFilters();
     this.cdr.detectChanges();
   }
@@ -282,7 +287,7 @@ export class PromotionManagementComponent implements OnInit {
     const trimmedSearchTerm = this.filterCriteria.searchTerm.trim();
     if (trimmedSearchTerm && trimmedSearchTerm.length >= 2) {
       const searchTerm = trimmedSearchTerm.toLowerCase();
-      filteredData = filteredData.filter(item => 
+      filteredData = filteredData.filter(item =>
         item.maDotGiamGia?.toLowerCase().includes(searchTerm) ||
         item.tenDotGiamGia?.toLowerCase().includes(searchTerm) ||
         item.moTa?.toLowerCase().includes(searchTerm)
@@ -328,24 +333,24 @@ export class PromotionManagementComponent implements OnInit {
       filteredData = filteredData.filter(item => {
         const itemStartDate = new Date(item.ngayBatDau);
         const itemEndDate = new Date(item.ngayKetThuc);
-        
+
         let matchesStartDate = true;
         let matchesEndDate = true;
-        
+
         // Check start date filter
         if (this.filterCriteria.startDate) {
           const filterStartDate = new Date(this.filterCriteria.startDate);
           // Item should start on or after the filter start date
           matchesStartDate = itemStartDate >= filterStartDate;
         }
-        
+
         // Check end date filter  
         if (this.filterCriteria.endDate) {
           const filterEndDate = new Date(this.filterCriteria.endDate);
           // Item should end on or before the filter end date
           matchesEndDate = itemEndDate <= filterEndDate;
         }
-        
+
         return matchesStartDate && matchesEndDate;
       });
     }
@@ -368,7 +373,7 @@ export class PromotionManagementComponent implements OnInit {
     filteredData.sort((a: DotGiamGia, b: DotGiamGia) => {
       return (b.id || 0) - (a.id || 0);
     });
-    
+
     this.filteredDotGiamGiaList = filteredData;
     this.convertToPromotions();
     this.cdr.detectChanges();
@@ -398,7 +403,7 @@ export class PromotionManagementComponent implements OnInit {
 
   onExportExcel() {
     console.log('Exporting to Excel...');
-    
+
     // Prepare data for export
     const exportData = this.promotions.map((promotion, index) => ({
       'STT': index + 1,
@@ -424,25 +429,25 @@ export class PromotionManagementComponent implements OnInit {
       { wch: 30 },  // Điều kiện
       { wch: 15 }   // Trạng thái
     ];
-    
+
 
     // Generate filename with current date
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
     const filename = `Danh_sach_khuyen_mai_${dateStr}.xlsx`;
 
-    
+
     console.log('Excel file exported successfully:', filename);
   }
 
   onView(promotion: Promotion) {
     console.log('Viewing promotion:', promotion);
-    
+
     // Tìm thông tin chi tiết từ dotGiamGiaList
-    const dotGiamGiaDetail = this.dotGiamGiaList.find(item => 
+    const dotGiamGiaDetail = this.dotGiamGiaList.find(item =>
       item.id?.toString() === promotion.id
     );
-    
+
     if (dotGiamGiaDetail) {
       // Hiển thị modal xem chi tiết (read-only)
       this.showPromotionDetailsModal(dotGiamGiaDetail);
@@ -462,13 +467,13 @@ export class PromotionManagementComponent implements OnInit {
     console.log('ngayBatDau:', dotGiamGia.ngayBatDau);
     console.log('ngayKetThuc:', dotGiamGia.ngayKetThuc);
     console.log('trangThai:', dotGiamGia.trangThai);
-    
+
     // Tạo PromotionFormData từ DotGiamGia
     const promotionFormData: PromotionFormData = {
       code: dotGiamGia.maDotGiamGia || '',
       name: dotGiamGia.tenDotGiamGia || '',
       discountType: dotGiamGia.loaiDotGiamGia === 'SO_TIEN' ? 'Số tiền cố định' : 'Phần trăm',
-      discountValue: dotGiamGia.loaiDotGiamGia === 'SO_TIEN' 
+      discountValue: dotGiamGia.loaiDotGiamGia === 'SO_TIEN'
         ? (dotGiamGia.soTien ? this.formatCurrency(dotGiamGia.soTien) : '0₫')
         : (dotGiamGia.giaTriDotGiam ? dotGiamGia.giaTriDotGiam + '%' : '0%'),
       maxDiscountAmount: dotGiamGia.soTien ? this.formatCurrency(dotGiamGia.soTien) : '0₫',
@@ -476,13 +481,13 @@ export class PromotionManagementComponent implements OnInit {
       endDate: this.formatDateForInput(dotGiamGia.ngayKetThuc),
       status: dotGiamGia.trangThai ? 'Đang hoạt động' : 'Tạm dừng'
     };
-    
+
     console.log('Converted PromotionFormData:', promotionFormData);
     console.log('discountType mapped to:', promotionFormData.discountType);
     console.log('discountValue mapped to:', promotionFormData.discountValue);
     console.log('startDate mapped to:', promotionFormData.startDate);
     console.log('endDate mapped to:', promotionFormData.endDate);
-    
+
     // Hiển thị modal ở chế độ xem (read-only)
     this.selectedPromotion = promotionFormData;
     this.isEditMode = false; // Không phải edit mode
@@ -515,8 +520,8 @@ export class PromotionManagementComponent implements OnInit {
               <tr>
                 <td class="label-cell"><strong>Giá trị giảm:</strong></td>
                 <td class="value-cell">
-                  ${dotGiamGia.giaTriDotGiam ? `${dotGiamGia.giaTriDotGiam}%` : 
-                    dotGiamGia.soTien ? this.formatCurrency(dotGiamGia.soTien) : 'N/A'}
+                  ${dotGiamGia.giaTriDotGiam ? `${dotGiamGia.giaTriDotGiam}%` :
+        dotGiamGia.soTien ? this.formatCurrency(dotGiamGia.soTien) : 'N/A'}
                 </td>
               </tr>
               <tr>
@@ -564,7 +569,7 @@ export class PromotionManagementComponent implements OnInit {
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(modal);
   }
 
@@ -573,44 +578,44 @@ export class PromotionManagementComponent implements OnInit {
     console.log('Selected promotion:', promotion);
     console.log('Promotion ID:', promotion.id);
     console.log('Promotion ID type:', typeof promotion.id);
-    
+
     // Kiểm tra dữ liệu promotion
     if (!promotion || !promotion.id) {
       this.error = 'Dữ liệu khuyến mại không hợp lệ';
       console.error('Invalid promotion data:', promotion);
       return;
     }
-    
+
     // Sử dụng dữ liệu thô từ rawData nếu có, nếu không thì tìm từ dotGiamGiaList
     let dotGiamGiaDetail = promotion.rawData;
-    
+
     if (!dotGiamGiaDetail) {
       console.log('Raw data not found, searching in dotGiamGiaList...');
-      dotGiamGiaDetail = this.dotGiamGiaList.find(item => 
+      dotGiamGiaDetail = this.dotGiamGiaList.find(item =>
         item.id?.toString() === promotion.id
       );
     }
-    
+
     console.log('Found dotGiamGiaDetail:', dotGiamGiaDetail);
     console.log('loaiDotGiamGia:', dotGiamGiaDetail?.loaiDotGiamGia);
     console.log('ngayBatDau:', dotGiamGiaDetail?.ngayBatDau);
     console.log('ngayKetThuc:', dotGiamGiaDetail?.ngayKetThuc);
-    
+
     if (dotGiamGiaDetail) {
       try {
         // Debug và sửa dữ liệu nếu cần
         const fixedData = this.fixDotGiamGiaData(dotGiamGiaDetail);
         console.log('Fixed data:', fixedData);
-        
+
         // Chuyển đổi từ DotGiamGia sang PromotionFormData
         const discountType = this.mapDiscountType(fixedData.loaiDotGiamGia || '');
-        
+
         console.log('=== MAPPING DISCOUNT TYPE ===');
         console.log('Original loaiDotGiamGia:', fixedData.loaiDotGiamGia);
         console.log('Mapped discountType:', discountType);
         console.log('giaTriDotGiam:', fixedData.giaTriDotGiam);
         console.log('soTien:', fixedData.soTien);
-        
+
         const promotionFormData: PromotionFormData = {
           id: fixedData.id?.toString() || '',
           code: fixedData.maDotGiamGia || '',
@@ -624,7 +629,7 @@ export class PromotionManagementComponent implements OnInit {
           endDate: this.formatDateForInput(fixedData.ngayKetThuc),
           status: fixedData.trangThai ? 'Đang hoạt động' : 'Tạm dừng'
         };
-        
+
         console.log('=== FINAL PROMOTION FORM DATA ===');
         console.log('Converted promotionFormData:', promotionFormData);
         console.log('discountType:', promotionFormData.discountType);
@@ -632,30 +637,30 @@ export class PromotionManagementComponent implements OnInit {
         console.log('maxDiscountAmount:', promotionFormData.maxDiscountAmount);
         console.log('startDate:', promotionFormData.startDate);
         console.log('endDate:', promotionFormData.endDate);
-        
+
         // Kiểm tra dữ liệu trước khi set
         if (!promotionFormData.id) {
           console.error('Missing promotion ID');
           this.error = 'Không tìm thấy ID của khuyến mại';
           return;
         }
-        
+
         this.selectedPromotion = promotionFormData;
         this.isEditMode = true;
         this.isViewMode = false;
         this.showModal = true;
-        
+
         console.log('=== FINAL EDIT DATA ===');
         console.log('selectedPromotion:', this.selectedPromotion);
         console.log('isEditMode:', this.isEditMode);
         console.log('showModal:', this.showModal);
-        
+
         // Scroll to top when opening edit modal
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
         // Force change detection
         this.cdr.detectChanges();
-        
+
       } catch (error) {
         console.error('Error processing edit data:', error);
         this.error = 'Lỗi khi xử lý dữ liệu chỉnh sửa: ' + error;
@@ -669,7 +674,7 @@ export class PromotionManagementComponent implements OnInit {
   // Method để sửa dữ liệu nếu có vấn đề
   fixDotGiamGiaData(data: DotGiamGia): DotGiamGia {
     const fixed = { ...data };
-    
+
     // Sửa loại giảm giá nếu null/undefined hoặc normalize về format chuẩn
     if (!fixed.loaiDotGiamGia) {
       if (fixed.giaTriDotGiam && fixed.giaTriDotGiam !== '0') {
@@ -683,18 +688,18 @@ export class PromotionManagementComponent implements OnInit {
       // Normalize về format chuẩn nếu cần
       fixed.loaiDotGiamGia = this.mapDiscountType(fixed.loaiDotGiamGia);
     }
-    
+
     // Sửa ngày tháng nếu null/undefined
     if (!fixed.ngayBatDau) {
       fixed.ngayBatDau = new Date().toISOString().split('T')[0];
     }
-    
+
     if (!fixed.ngayKetThuc) {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       fixed.ngayKetThuc = tomorrow.toISOString().split('T')[0];
     }
-    
+
     console.log('Fixed data:', fixed);
     return fixed;
   }
@@ -708,7 +713,7 @@ export class PromotionManagementComponent implements OnInit {
     console.log('Promotion to delete:', promotion);
     console.log('Promotion ID:', promotion.id);
     console.log('Promotion ID type:', typeof promotion.id);
-    
+
     // Tạo modal xác nhận đẹp
     const modal = document.createElement('div');
     modal.className = 'delete-confirmation-modal';
@@ -725,7 +730,7 @@ export class PromotionManagementComponent implements OnInit {
       z-index: 9999;
       animation: fadeIn 0.3s ease-out;
     `;
-    
+
     // Thêm CSS animation
     const style = document.createElement('style');
     style.textContent = `
@@ -745,7 +750,7 @@ export class PromotionManagementComponent implements OnInit {
       }
     `;
     document.head.appendChild(style);
-    
+
     modal.innerHTML = `
       <div style="
         background: white;
@@ -834,17 +839,17 @@ export class PromotionManagementComponent implements OnInit {
         </div>
       </div>
     `;
-    
+
     // Thêm event listeners
     const cancelBtn = modal.querySelector('#cancelDelete');
     const confirmBtn = modal.querySelector('#confirmDelete');
-    
+
     if (cancelBtn) {
       cancelBtn.addEventListener('click', () => {
         document.body.removeChild(modal);
       });
     }
-    
+
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => {
         console.log('User confirmed delete');
@@ -854,14 +859,14 @@ export class PromotionManagementComponent implements OnInit {
         document.body.removeChild(modal);
       });
     }
-    
+
     // Đóng modal khi click outside
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         document.body.removeChild(modal);
       }
     });
-    
+
     document.body.appendChild(modal);
   }
 
@@ -869,7 +874,7 @@ export class PromotionManagementComponent implements OnInit {
     console.log('=== DELETE DEBUG ===');
     console.log('Deleting promotion with ID:', id);
     console.log('ID type:', typeof id);
-    
+
     this.loading = true;
     this.error = null;
 
@@ -923,7 +928,7 @@ export class PromotionManagementComponent implements OnInit {
       max-width: 300px;
       word-wrap: break-word;
     `;
-    
+
     toast.innerHTML = `
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 16px;">
@@ -932,9 +937,9 @@ export class PromotionManagementComponent implements OnInit {
         <span>${message}</span>
       </div>
     `;
-    
+
     document.body.appendChild(toast);
-    
+
     // Auto remove after 3 seconds
     setTimeout(() => {
       if (toast.parentNode) {
@@ -956,23 +961,23 @@ export class PromotionManagementComponent implements OnInit {
     console.log('formData:', formData);
     console.log('isEditMode:', this.isEditMode);
     console.log('selectedPromotion:', this.selectedPromotion);
-    
+
     // Map discountType từ PHAN_TRAM/SO_TIEN về format backend
     let loaiDotGiamGiaBackend = 'Phần trăm';
     if (formData.discountType === 'SO_TIEN') {
       loaiDotGiamGiaBackend = 'Số tiền cố định';
     }
-    
+
     const dotGiamGiaRequest: DotGiamGiaRequest = {
       maDotGiamGia: formData.code,
       tenDotGiamGia: formData.name,
       loaiDotGiamGia: loaiDotGiamGiaBackend,
       // Nếu là phần trăm thì lấy discountValue, nếu là số tiền thì set '0'
-      giaTriDotGiam: formData.discountType === 'PHAN_TRAM' 
-        ? (formData.discountValue || '0') 
+      giaTriDotGiam: formData.discountType === 'PHAN_TRAM'
+        ? (formData.discountValue || '0')
         : '0',
       // Nếu là số tiền thì lấy maxDiscountAmount, nếu là phần trăm thì undefined
-      soTien: formData.discountType === 'SO_TIEN' 
+      soTien: formData.discountType === 'SO_TIEN'
         ? (formData.maxDiscountAmount ? parseInt(formData.maxDiscountAmount) : 0)
         : undefined,
       moTa: '', // Empty description
@@ -1052,7 +1057,7 @@ export class PromotionManagementComponent implements OnInit {
       
       Dữ liệu đã được thêm vào danh sách đợt giảm giá.
     `;
-    
+
     alert(message);
   }
 
@@ -1099,11 +1104,11 @@ export class PromotionManagementComponent implements OnInit {
       console.log('Testing delete with promotion:', firstPromotion);
       console.log('ID to delete:', firstPromotion.id);
       console.log('Parsed ID:', parseInt(firstPromotion.id));
-      
+
       // Test API call directly
       const idToTest = parseInt(firstPromotion.id);
       console.log('Testing delete API call with ID:', idToTest);
-      
+
       this.dotGiamGiaService.deleteDotGiamGia(idToTest).subscribe({
         next: (response) => {
           console.log('Test delete response:', response);
@@ -1165,7 +1170,7 @@ export class PromotionManagementComponent implements OnInit {
     const maxVisiblePages = 5;
     const startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
     const endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
@@ -1181,15 +1186,15 @@ export class PromotionManagementComponent implements OnInit {
 
   mapDiscountType(loaiDotGiamGia: string): string {
     if (!loaiDotGiamGia) return 'PHAN_TRAM';
-    
+
     // Check if already in correct format
     if (loaiDotGiamGia === 'PHAN_TRAM' || loaiDotGiamGia === 'SO_TIEN') {
       return loaiDotGiamGia;
     }
-    
+
     // Normalize: lowercase and remove spaces
     const normalized = loaiDotGiamGia.toLowerCase().replace(/\s+/g, '');
-    
+
     switch (normalized) {
       case 'phầntrăm':
       case 'phantram':
