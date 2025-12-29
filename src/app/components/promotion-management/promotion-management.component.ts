@@ -182,12 +182,12 @@ export class PromotionManagementComponent implements OnInit {
       code: dotGiamGia.maDotGiamGia,
       name: dotGiamGia.tenDotGiamGia,
       discountType: dotGiamGia.loaiDotGiamGia || 'Phần trăm',
-      discountValue: (dotGiamGia.loaiDotGiamGia === 'SO_TIEN')
+      discountValue: (dotGiamGia.loaiDotGiamGia === 'SO_TIEN' || dotGiamGia.loaiDotGiamGia === 'Số tiền cố định')
         ? this.formatCurrency(dotGiamGia.soTien || 0)
         : (dotGiamGia.giaTriDotGiam ? `${dotGiamGia.giaTriDotGiam}%` : '0%'),
       discountPercentage: dotGiamGia.giaTriDotGiam ? parseFloat(dotGiamGia.giaTriDotGiam) : 0,
       maxDiscountAmount: dotGiamGia.soTien || 0,
-      voucherType: (dotGiamGia.loaiDotGiamGia === 'SO_TIEN') ? 'Tiền mặt' : 'Phần trăm', // Fix: Map correctly instead of hardcoding
+      voucherType: (dotGiamGia.loaiDotGiamGia === 'SO_TIEN' || dotGiamGia.loaiDotGiamGia === 'Số tiền cố định') ? 'Tiền mặt' : 'Phần trăm',
       startDate: this.formatDate(dotGiamGia.ngayBatDau),
       endDate: this.formatDate(dotGiamGia.ngayKetThuc),
       status: this.calculateStatus(dotGiamGia.ngayBatDau, dotGiamGia.ngayKetThuc, dotGiamGia.trangThai),
@@ -612,7 +612,6 @@ export class PromotionManagementComponent implements OnInit {
     console.log('=== DEBUG EDIT ===');
     console.log('Selected promotion:', promotion);
     console.log('Promotion ID:', promotion.id);
-    console.log('Promotion ID type:', typeof promotion.id);
 
     // Kiểm tra dữ liệu promotion
     if (!promotion || !promotion.id) {
@@ -621,89 +620,9 @@ export class PromotionManagementComponent implements OnInit {
       return;
     }
 
-    // Sử dụng dữ liệu thô từ rawData nếu có, nếu không thì tìm từ dotGiamGiaList
-    let dotGiamGiaDetail = promotion.rawData;
-
-    if (!dotGiamGiaDetail) {
-      console.log('Raw data not found, searching in dotGiamGiaList...');
-      dotGiamGiaDetail = this.dotGiamGiaList.find(item =>
-        item.id?.toString() === promotion.id
-      );
-    }
-
-    console.log('Found dotGiamGiaDetail:', dotGiamGiaDetail);
-    console.log('loaiDotGiamGia:', dotGiamGiaDetail?.loaiDotGiamGia);
-    console.log('ngayBatDau:', dotGiamGiaDetail?.ngayBatDau);
-    console.log('ngayKetThuc:', dotGiamGiaDetail?.ngayKetThuc);
-
-    if (dotGiamGiaDetail) {
-      try {
-        // Debug và sửa dữ liệu nếu cần
-        const fixedData = this.fixDotGiamGiaData(dotGiamGiaDetail);
-        console.log('Fixed data:', fixedData);
-
-        // Chuyển đổi từ DotGiamGia sang PromotionFormData
-        const discountType = this.mapDiscountType(fixedData.loaiDotGiamGia || '');
-
-        console.log('=== MAPPING DISCOUNT TYPE ===');
-        console.log('Original loaiDotGiamGia:', fixedData.loaiDotGiamGia);
-        console.log('Mapped discountType:', discountType);
-        console.log('giaTriDotGiam:', fixedData.giaTriDotGiam);
-        console.log('soTien:', fixedData.soTien);
-
-        const promotionFormData: PromotionFormData = {
-          id: fixedData.id?.toString() || '',
-          code: fixedData.maDotGiamGia || '',
-          name: fixedData.tenDotGiamGia || '',
-          discountType: discountType,
-          // Nếu là phần trăm thì set discountValue, nếu là số tiền thì để trống
-          discountValue: discountType === 'PHAN_TRAM' ? (fixedData.giaTriDotGiam || '0') : '',
-          // Nếu là số tiền thì set maxDiscountAmount, nếu là phần trăm thì để trống
-          maxDiscountAmount: discountType === 'SO_TIEN' ? (fixedData.soTien ? fixedData.soTien.toString() : '0') : '',
-          startDate: this.formatDateForInput(fixedData.ngayBatDau),
-          endDate: this.formatDateForInput(fixedData.ngayKetThuc),
-          status: fixedData.trangThai ? 'Đang hoạt động' : 'Tạm dừng'
-        };
-
-        console.log('=== FINAL PROMOTION FORM DATA ===');
-        console.log('Converted promotionFormData:', promotionFormData);
-        console.log('discountType:', promotionFormData.discountType);
-        console.log('discountValue:', promotionFormData.discountValue);
-        console.log('maxDiscountAmount:', promotionFormData.maxDiscountAmount);
-        console.log('startDate:', promotionFormData.startDate);
-        console.log('endDate:', promotionFormData.endDate);
-
-        // Kiểm tra dữ liệu trước khi set
-        if (!promotionFormData.id) {
-          console.error('Missing promotion ID');
-          this.error = 'Không tìm thấy ID của khuyến mại';
-          return;
-        }
-
-        this.selectedPromotion = promotionFormData;
-        this.isEditMode = true;
-        this.isViewMode = false;
-        this.showModal = true;
-
-        console.log('=== FINAL EDIT DATA ===');
-        console.log('selectedPromotion:', this.selectedPromotion);
-        console.log('isEditMode:', this.isEditMode);
-        console.log('showModal:', this.showModal);
-
-        // Scroll to top when opening edit modal
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Force change detection
-        this.cdr.detectChanges();
-
-      } catch (error) {
-        console.error('Error processing edit data:', error);
-        this.error = 'Lỗi khi xử lý dữ liệu chỉnh sửa: ' + error;
-      }
-    } else {
-      console.error('No dotGiamGiaDetail found for promotion:', promotion);
-      this.error = 'Không tìm thấy thông tin chi tiết của khuyến mại';
-    }
+    // Navigate to edit page
+    console.log('Navigating to edit page for promotion ID:', promotion.id);
+    this.router.navigate(['/promotions/edit', promotion.id]);
   }
 
   // Method để sửa dữ liệu nếu có vấn đề

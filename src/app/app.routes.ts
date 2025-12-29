@@ -155,6 +155,11 @@ export const routes: Routes = [
     // canActivate: [AuthGuard], // Tạm thời bỏ để test
   },
   {
+    path: 'promotions/edit/:id',
+    component: PromotionFormComponent,
+    // canActivate: [AuthGuard], // Tạm thời bỏ để test
+  },
+  {
     path: 'phieu-giam-gia',
     component: PhieuGiamGiaListComponent,
     canActivate: [AuthGuard],

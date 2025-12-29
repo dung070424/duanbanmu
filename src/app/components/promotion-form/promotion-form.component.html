@@ -6,7 +6,7 @@
       <i class="bi bi-arrow-left"></i>
     </button>
     <div class="page-title">
-      <h1>Thêm Đợt Giảm Giá</h1>
+      <h1>{{ isEditMode ? 'Cập Nhật Đợt Giảm Giá' : 'Thêm Đợt Giảm Giá' }}</h1>
     </div>
   </div>
 
@@ -129,8 +129,8 @@
         <!-- Action Buttons -->
         <div class="form-actions">
           <button class="btn btn-success" (click)="onSubmit()" [disabled]="loading">
-            <i class="bi bi-plus-circle"></i>
-            Thêm đợt
+            <i class="bi" [ngClass]="isEditMode ? 'bi-check-circle' : 'bi-plus-circle'"></i>
+            {{ isEditMode ? 'Cập nhật' : 'Thêm đợt' }}
           </button>
           <button class="btn btn-secondary" (click)="onCancel()" [disabled]="loading">
             <i class="bi bi-x-circle"></i>
@@ -350,7 +350,7 @@
         <tbody>
           <tr *ngFor="let detail of getFilteredDetailProducts(); let i = index">
             <td>
-              <input type="checkbox" [(ngModel)]="detail.selected" />
+              <input type="checkbox" [(ngModel)]="detail.selected" (change)="onDetailSelectionChange(detail)" />
             </td>
             <td>{{ detailCurrentPage * detailItemsPerPage + i + 1 }}</td>
             <td>
@@ -393,7 +393,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="detail-pagination" *ngIf="selectedProductForDetail">
+    <div class="detail-pagination" *ngIf="promotionData.selectedProducts.length > 0">
       <div class="pagination-left">
         <div class="items-per-page">
           <span>Hiển thị</span>
@@ -448,7 +448,7 @@
       </button>
     </div>
     <div class="confirm-modal-body">
-      <p>Bạn có muốn thêm mới đợt giảm giá này không?</p>
+      <p>Bạn có muốn {{ isEditMode ? 'cập nhật' : 'thêm mới' }} đợt giảm giá này không?</p>
     </div>
     <div class="confirm-modal-footer">
       <button class="btn btn-secondary" (click)="onCancelSubmit()">Hủy</button>

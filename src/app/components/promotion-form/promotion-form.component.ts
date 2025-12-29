@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { DotGiamGiaService, DotGiamGiaRequest } from '../../services/dot-giam-gia.service';
 import { ProductApiService } from '../../services/product-api.service';
 import { ChiTietSanPhamApiService } from '../../services/chi-tiet-san-pham-api.service';
@@ -27,6 +27,7 @@ interface Product {
 
 interface DetailProduct {
   id: number;
+  sanPhamId?: number; // Added for tracking parent
   maSanPham: string;
   productName: string;
   color: string;
@@ -123,25 +124,44 @@ export class PromotionFormComponent implements OnInit {
   showConfirmModal = false;
   showCancelModal = false;
 
+  // Edit Mode properties
+  isEditMode = false;
+  promotionId: number | null = null;
+
+  // Robust variant selection (Map<VariantID, DetailProduct>)
+  selectedVariantsMap: Map<number, DetailProduct> = new Map();
+
   constructor(
     private dotGiamGiaService: DotGiamGiaService,
     private productApiService: ProductApiService,
     private chiTietSanPhamService: ChiTietSanPhamApiService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
     console.log('Initializing promotion form component...');
+
+    // Check for edit mode
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.isEditMode = true;
+        this.promotionId = Number(id);
+        this.loadPromotionData(this.promotionId);
+      } else {
+        this.generatePromotionCode();
+      }
+    });
+
     // Reset filters
     this.searchTerm = '';
     this.selectedManufacturer = '';
     this.loadProducts();
-    this.generatePromotionCode();
-    this.loadPromotionList();
-    this.loadProducts();
-    this.generatePromotionCode();
+    // this.loadPromotionList(); 
     this.cdr.detectChanges();
+
 
     // Debug: Check data after a short delay
     setTimeout(() => {
@@ -299,6 +319,98 @@ export class PromotionFormComponent implements OnInit {
     });
   }
 
+  loadPromotionData(id: number) {
+    this.loading = true;
+    this.dotGiamGiaService.getDotGiamGiaById(id).subscribe({
+      next: (response: any) => {
+        const data = response.data;
+        if (data) {
+          // Fill form data
+          this.promotionData = {
+            maDotGiamGia: data.maDotGiamGia,
+            tenDotGiamGia: data.tenDotGiamGia,
+            loaiDotGiamGia: this.mapDiscountType(data.loaiDotGiamGia),
+            giaTriGiamGia: data.giaTriDotGiam ? Number(data.giaTriDotGiam) : null,
+            soTien: data.soTien ? Number(data.soTien) : null,
+            ngayBatDau: data.ngayBatDau ? data.ngayBatDau.split('T')[0] : '',
+            ngayKetThuc: data.ngayKetThuc ? data.ngayKetThuc.split('T')[0] : '',
+            moTa: data.moTa || '',
+            selectedProducts: [] // Will be populated below
+          };
+
+          // Process selected variants
+          if (data.chiTietDotGiamGias && Array.isArray(data.chiTietDotGiamGias)) {
+            // We need to fetch variant details to know their parents
+            this.chiTietSanPhamService.getAll().subscribe(allVariants => {
+              const selectedVariantIds = new Set(data.chiTietDotGiamGias.map((d: any) => d.chiTietSanPhamId));
+              const selectedParentIds = new Set<number>();
+              let firstParentId: number | null = null;
+              let firstParentName: string = '';
+
+              allVariants.forEach((v: any) => {
+                if (selectedVariantIds.has(v.id)) {
+                  // Add to global map
+                  const promotionDetail = data.chiTietDotGiamGias.find((d: any) => d.chiTietSanPhamId === v.id);
+                  const detailItem: DetailProduct = {
+                    id: v.id,
+                    maSanPham: v.maSanPham || '',
+                    productName: v.sanPhamTen || '',
+                    color: v.mauSacTen || '',
+                    loaiMu: v.kichThuocTen || '',
+                    imageUrl: v.anhSanPham || 'assets/default-product.png',
+                    originalPrice: Number(v.giaBan) || 0,
+                    discountedPrice: promotionDetail.giaSauGiam || this.calculateDiscountedPrice(Number(v.giaBan)),
+                    selected: true,
+                    status: v.trangThai ? 'active' : 'inactive',
+                    soLuongTon: Number(v.soLuongTon) || 0
+                  };
+                  this.selectedVariantsMap.set(v.id, detailItem);
+
+                  // Track parent
+                  if (v.sanPhamId) {
+                    selectedParentIds.add(v.sanPhamId);
+                    if (!firstParentId) {
+                      firstParentId = v.sanPhamId;
+                      firstParentName = v.sanPhamTen;
+                    }
+                  }
+                }
+              });
+
+              // Mark parents as selected
+              this.promotionData.selectedProducts = Array.from(selectedParentIds);
+
+              // Refill products list selection state
+              // Refill products list selection state
+              this.products.forEach(p => {
+                if (selectedParentIds.has(p.id)) {
+                  p.selected = true;
+                }
+              });
+
+              // NEW: Auto-load details for ALL selected parents
+              if (selectedParentIds.size > 0) {
+                console.log('Auto-loading details for ALL selected parents:', selectedParentIds.size);
+                selectedParentIds.forEach(pId => {
+                  this.loadVariants(pId);
+                });
+              }
+
+              console.log('Promotion data loaded, selected parents:', this.promotionData.selectedProducts.length);
+              this.cdr.detectChanges();
+            });
+          }
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading promotion:', err);
+        this.error = 'Không thể tải thông tin khuyến mãi.';
+        this.loading = false;
+      }
+    });
+  }
+
   // Load variants for a specific parent product
   loadVariants(productId: number) {
     this.loading = true;
@@ -309,22 +421,20 @@ export class PromotionFormComponent implements OnInit {
         const rawData = Array.isArray(response) ? response : response?.data || response?.content || [];
         console.log(`Found ${rawData.length} variants for product ${productId}.`);
 
-        this.detailProducts = rawData.map((item: any) => {
+        const newVariants = rawData.map((item: any) => {
           // Robust name lookup logic
           const colorName = item.mauSacTen || item.mau_sac_ten || 'N/A';
-          // Fix: item.kichThuocTen might be mapped to 'loaiMu' or 'memory' in other places?
-          // Looking at previous valid code:
           const sizeName = item.kichThuocTen || item.kich_thuoc_ten || 'N/A';
 
-          // Check if this variant is already selected
-          const isSelected = this.promotionData.selectedProducts.includes(item.id);
+          // Check if this variant is already selected from the global map
+          const isSelected = this.selectedVariantsMap.has(item.id);
 
           return {
             id: item.id,
+            sanPhamId: productId, // Track parent
             maSanPham: item.maSanPham || '',
-            productName: item.sanPhamTen || this.selectedProductForDetail?.tenSanPham || 'N/A',
+            productName: item.sanPhamTen || 'N/A',
             color: colorName,
-            // Map backend 'kichThuocTen' or similar to 'loaiMu' field which is used in HTML
             loaiMu: sizeName,
             imageUrl: item.anhSanPham || 'assets/default-product.png',
             originalPrice: Number(item.giaBan) || 0,
@@ -335,6 +445,11 @@ export class PromotionFormComponent implements OnInit {
             soLuongTon: Number(item.soLuongTon) || 0
           };
         });
+
+        // Add to detailProducts if not already present
+        // First remove existing variants for this parent to avoid duplicates/stale data
+        this.detailProducts = this.detailProducts.filter(d => d.sanPhamId !== productId);
+        this.detailProducts = [...this.detailProducts, ...newVariants];
 
         this.filteredDetailProducts = [...this.detailProducts];
         this.applyDetailFilters();
@@ -450,28 +565,23 @@ export class PromotionFormComponent implements OnInit {
       if (!this.promotionData.selectedProducts.includes(product.id)) {
         this.promotionData.selectedProducts.push(product.id);
       }
-      // Hiển thị chi tiết sản phẩm khi tích checkbox
-      this.selectedProductForDetail = product;
-      this.detailFilterProduct = product.tenSanPham;
-      this.detailFilterLoaiMu = '';
-      this.detailFilterColor = '';
 
-      // Load variants for this product
+      // Load variants for this product and APPEND to list
       this.loadVariants(product.id);
 
     } else {
       this.promotionData.selectedProducts = this.promotionData.selectedProducts.filter(
         id => id !== product.id
       );
-      // Nếu bỏ tích và đang hiển thị chi tiết của sản phẩm này, thì xóa hiển thị
-      if (this.selectedProductForDetail?.id === product.id) {
-        this.selectedProductForDetail = null;
-        this.detailFilterProduct = '';
-        this.detailFilterLoaiMu = '';
-        this.detailFilterColor = '';
-        this.detailProducts = [];
-        this.filteredDetailProducts = [];
-      }
+
+      // Remove variants of this product from detail list
+      this.detailProducts = this.detailProducts.filter(d => d.sanPhamId !== product.id);
+      this.filteredDetailProducts = [...this.detailProducts];
+
+      // Optional: Cleanup map? If desired. For now keeping map as is might be safer or user preference.
+      // But typically if parent is unchecked, children are gone.
+      // Let's NOT delete from map immediately to assume user might re-check?
+      // No, user expects clean state usually. But sticking to "Append/Remove from View" logic.
     }
   }
 
@@ -490,6 +600,8 @@ export class PromotionFormComponent implements OnInit {
       this.loadVariants(product.id);
     }
   }
+
+
 
 
   // New methods for product selection table
@@ -637,6 +749,31 @@ export class PromotionFormComponent implements OnInit {
     this.showConfirmModal = false;
   }
 
+  // Handle variant selection change
+  onDetailSelectionChange(detail: DetailProduct) {
+    if (detail.selected) {
+      this.selectedVariantsMap.set(detail.id, detail);
+    } else {
+      this.selectedVariantsMap.delete(detail.id);
+    }
+  }
+
+  // Helper to map discount type
+  mapDiscountType(type: string): string {
+    if (!type) return 'PHAN_TRAM';
+    // Normalize string: lowercase, remove spaces
+    // Also check for specific backend keys like 'SO_TIEN'
+    const normalized = type.toLowerCase().replace(/\s+/g, '');
+
+    // Check for 'SO_TIEN' explicitly
+    if (normalized === 'sotien' || normalized === 'so_tien') return 'SO_TIEN';
+
+    // Check for Vietnamese text 'tiền' or non-accented 'tien'
+    if (normalized.includes('tien') || normalized.includes('tiền') || normalized.includes('money')) return 'SO_TIEN';
+
+    return 'PHAN_TRAM';
+  }
+
   onConfirmSubmit() {
     this.showConfirmModal = false;
     this.loading = true;
@@ -653,10 +790,22 @@ export class PromotionFormComponent implements OnInit {
       ? String(this.promotionData.giaTriGiamGia ?? '0')
       : '0';
 
+    // Collect all selected variants from map
+    const selectedVariantDetails = Array.from(this.selectedVariantsMap.values()).map(p => ({
+      chiTietSanPhamId: p.id,
+      giaTriGiam: isPercent ? Number(this.promotionData.giaTriGiamGia) : Number(this.promotionData.soTien)
+    }));
+
+    if (selectedVariantDetails.length === 0) {
+      alert('Vui lòng chọn ít nhất một sản phẩm chi tiết.');
+      this.loading = false;
+      return;
+    }
+
     const request: DotGiamGiaRequest = {
       maDotGiamGia: this.promotionData.maDotGiamGia,
       tenDotGiamGia: this.promotionData.tenDotGiamGia,
-      loaiDotGiamGia: this.promotionData.loaiDotGiamGia,
+      loaiDotGiamGia: this.promotionData.loaiDotGiamGia === 'SO_TIEN' ? 'Số tiền cố định' : 'Phần trăm',
       // Một số schema bắt buộc cả hai cột NOT NULL → gửi giá trị 0 cho cột còn lại
       giaTriDotGiam: giaTriDotGiamStr,
       soTien: soTienNum,
@@ -665,35 +814,50 @@ export class PromotionFormComponent implements OnInit {
       ngayKetThuc: this.promotionData.ngayKetThuc + 'T23:59:59',
       soLuongSuDung: 1000, // Default value
       trangThai: true,
-      chiTietDotGiamGias: this.detailProducts
-        .filter(p => p.selected)
-        .map(p => ({
-          chiTietSanPhamId: p.id,
-          giaTriGiam: isPercent ? Number(this.promotionData.giaTriGiamGia) : Number(this.promotionData.soTien)
-        }))
+      chiTietDotGiamGias: selectedVariantDetails
     };
 
-    console.log('[Create Promotion] Payload:', request);
+    console.log('[Submit Promotion] Payload:', request);
 
-    this.dotGiamGiaService.createDotGiamGia(request).subscribe({
-      next: (response: any) => {
-        if (response.success) {
-          // Alert removed
-          this.router.navigate(['/promotions']);
-        } else {
-          this.error = response.message;
+    if (this.isEditMode && this.promotionId) {
+      this.dotGiamGiaService.updateDotGiamGia(this.promotionId, request).subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            this.router.navigate(['/promotions']);
+          } else {
+            this.error = response.message;
+          }
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (error: any) => {
+          this.handleError(error);
         }
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (error: any) => {
-        const backendMsg = error?.error?.message || error?.error || error?.message;
-        this.error = 'Lỗi khi tạo đợt giảm giá: ' + backendMsg;
-        console.error('[Create Promotion] Error response:', error);
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+      });
+    } else {
+      this.dotGiamGiaService.createDotGiamGia(request).subscribe({
+        next: (response: any) => {
+          if (response.success) {
+            this.router.navigate(['/promotions']);
+          } else {
+            this.error = response.message;
+          }
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (error: any) => {
+          this.handleError(error);
+        }
+      });
+    }
+  }
+
+  handleError(error: any) {
+    const backendMsg = error?.error?.message || error?.error || error?.message;
+    this.error = (this.isEditMode ? 'Lỗi khi cập nhật: ' : 'Lỗi khi tạo: ') + backendMsg;
+    console.error('Error:', error);
+    this.loading = false;
+    this.cdr.detectChanges();
   }
 
   validateForm(): boolean {
