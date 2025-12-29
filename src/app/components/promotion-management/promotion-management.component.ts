@@ -190,7 +190,7 @@ export class PromotionManagementComponent implements OnInit {
       voucherType: (dotGiamGia.loaiDotGiamGia === 'SO_TIEN') ? 'Tiền mặt' : 'Phần trăm', // Fix: Map correctly instead of hardcoding
       startDate: this.formatDate(dotGiamGia.ngayBatDau),
       endDate: this.formatDate(dotGiamGia.ngayKetThuc),
-      status: dotGiamGia.trangThai ? 'ACTIVE' : 'INACTIVE',
+      status: this.calculateStatus(dotGiamGia.ngayBatDau, dotGiamGia.ngayKetThuc, dotGiamGia.trangThai),
       // Lưu dữ liệu thô để sử dụng khi edit
       rawData: dotGiamGia
     }));
@@ -211,6 +211,43 @@ export class PromotionManagementComponent implements OnInit {
     }, 100);
   }
 
+  calculateStatus(startDateStr: string, endDateStr: string, isActive: boolean): string {
+    if (!isActive) return 'INACTIVE'; // Đã bị vô hiệu hóa thủ công
+
+    const now = new Date();
+    // Reset time part of now to compare strictly by date if needed, 
+    // but usually promotions are time-sensitive. 
+    // Assuming inputs are YYYY-MM-DD or ISO strings.
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Set end date to end of day to be inclusive
+    endDate.setHours(23, 59, 59, 999);
+
+    if (now < startDate) {
+      return 'UPCOMING';
+    } else if (now > endDate) {
+      return 'ENDED';
+    } else {
+      return 'ACTIVE';
+    }
+  }
+
+  getStatusText(status: string): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Đang diễn ra';
+      case 'INACTIVE':
+        return 'Ngừng hoạt động';
+      case 'UPCOMING':
+        return 'Sắp diễn ra';
+      case 'ENDED':
+        return 'Kết thúc';
+      default:
+        return 'Không xác định';
+    }
+  }
+
   getStatusClass(status: string): string {
     switch (status) {
       case 'ACTIVE':
@@ -218,11 +255,9 @@ export class PromotionManagementComponent implements OnInit {
       case 'INACTIVE':
         return 'status-inactive';
       case 'UPCOMING':
-        return 'status-upcoming';
-      case 'PENDING':
-        return 'status-pending';
+        return 'status-upcoming'; // Cần define class này nếu chưa có
       case 'ENDED':
-        return 'status-ended';
+        return 'status-ended';    // Cần define class này nếu chưa có
       default:
         return 'status-active';
     }
@@ -1221,21 +1256,7 @@ export class PromotionManagementComponent implements OnInit {
     return '0';
   }
 
-  // Status text methods
-  getStatusText(status: string): string {
-    switch (status) {
-      case 'ACTIVE':
-        return 'Đang diễn ra';
-      case 'UPCOMING':
-        return 'Sắp diễn ra';
-      case 'ENDED':
-        return 'Đã kết thúc';
-      case 'INACTIVE':
-        return 'Tạm dừng';
-      default:
-        return 'Đang diễn ra';
-    }
-  }
+
 
   // Force refresh data
   refreshData() {
