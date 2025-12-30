@@ -182,8 +182,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85')
-      center/cover;
+    background: url('https://img.websosanh.vn/v10/users/review/images/upwqa7ggsjfov/mu-bao-hiem-co-ket-cau-thoang-khi.jpg?compress=85') center/cover;
     opacity: 0.05;
     z-index: 0;
   }
@@ -352,7 +351,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2rem;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1.5rem;
@@ -370,6 +369,7 @@
   transition: all var(--transition-base);
   position: relative;
   background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
+  cursor: pointer; // Indicate that the entire card is clickable
 
   &.highlight {
     border-color: var(--accent);
@@ -656,4 +656,3 @@
     align-items: flex-start;
   }
 }
-

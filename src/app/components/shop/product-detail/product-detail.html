@@ -153,7 +153,7 @@
             <button class="tab-header" (click)="activeTab = 'specifications'">
               Thông số kỹ thuật
             </button>
-            <button class="tab-header" (click)="activeTab = 'reviews'">Đánh giá</button>
+
           </div>
 
           <div class="tab-content">
@@ -209,38 +209,11 @@
                 </tr>
               </table>
             </div>
-
-            <!-- Reviews Tab -->
-            <div *ngIf="activeTab === 'reviews'" class="tab-panel">
-              <p class="no-reviews">Chưa có đánh giá nào cho sản phẩm này.</p>
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Suggested Products Section -->
-      <div class="suggested-products-section" *ngIf="suggestedProducts.length > 0">
-        <h2 class="section-title">Sản phẩm gợi ý</h2>
-        <div class="suggested-products-grid">
-          <div class="suggested-product-card" *ngFor="let suggestedProduct of suggestedProducts"
-            (click)="viewProductDetail(suggestedProduct.id)">
-            <div class="product-image">
-              <img [src]="getProductImageUrl(suggestedProduct)" [alt]="suggestedProduct.tenSanPham"
-                (error)="$event.target.src='https://via.placeholder.com/200x200?text=No+Image'" />
-              <span class="status-badge" [class.out-of-stock]="!suggestedProduct.trangThai">
-                {{ suggestedProduct.trangThai ? 'Còn hàng' : 'Hết hàng' }}
-              </span>
-            </div>
-            <div class="product-info">
-              <h3 class="product-name">{{ suggestedProduct.tenSanPham }}</h3>
-              <div class="product-meta">
-                <span class="product-code">{{ suggestedProduct.maSanPham }}</span>
-              </div>
-              <div class="product-price">{{ formatCurrency(suggestedProduct.giaBan) }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Suggested Products Section Removed -->
     </div>
   </main>
 
