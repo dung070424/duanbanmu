@@ -46,7 +46,7 @@ $text-light: #6c757d;
         font-size: 14px;
         color: #666;
 
-        + .breadcrumb-item {
+        +.breadcrumb-item {
           padding-left: 8px;
 
           &::before {
@@ -110,40 +110,60 @@ $text-light: #6c757d;
       }
     }
   }
-  
+
   // Ensure all text elements inherit the same font
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     font-family: inherit;
   }
-  
+
   // Standardize font weights (đồng bộ với invoice-management)
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 600;
   }
-  
-  p, span, div, td, th, label, input, textarea, select {
+
+  p,
+  span,
+  div,
+  td,
+  th,
+  label,
+  input,
+  textarea,
+  select {
     font-weight: 400;
   }
-  
+
   .btn {
     font-weight: 500;
   }
-  
+
   .badge {
     font-weight: 500;
   }
-  
+
   // Remove bold from data values (đồng bộ với invoice-management)
-  .text-success, .text-primary, .text-danger, .text-warning, .text-info {
+  .text-success,
+  .text-primary,
+  .text-danger,
+  .text-warning,
+  .text-info {
     font-weight: 400 !important;
   }
-  
+
   .fw-bold {
     font-weight: 500 !important;
   }
-  
+
   // Currency and number formatting
-  .currency, .number {
+  .currency,
+  .number {
     font-variant-numeric: tabular-nums;
     font-weight: 400;
   }
@@ -170,13 +190,13 @@ $text-light: #6c757d;
       border-radius: 8px;
       font-weight: 500;
       transition: all 0.3s ease;
-      
+
       &.btn-outline-secondary {
         background: #f8f9fa;
         border: 1px solid #dee2e6;
         color: #495057;
-      
-      &:hover {
+
+        &:hover {
           background: #e9ecef;
           border-color: #adb5bd;
           transform: translateY(-1px);
@@ -189,7 +209,7 @@ $text-light: #6c757d;
       font-size: 20px;
       font-weight: 600;
       color: #333;
-      
+
       i {
         margin-right: 12px;
         color: $primary-color;
@@ -206,25 +226,25 @@ $text-light: #6c757d;
       border-radius: 8px;
       font-weight: 600;
       transition: all 0.3s ease;
-      
+
       &.btn-outline-primary {
         background: transparent;
         border: 2px solid $primary-color;
         color: $primary-color;
-      
-      &:hover {
+
+        &:hover {
           background: $primary-color;
           color: $white;
           transform: translateY(-1px);
         }
       }
-      
+
       &.btn-primary {
         background: $primary-color;
         border: 2px solid $primary-color;
         color: $white;
-      
-      &:hover {
+
+        &:hover {
           background: $primary-dark;
           border-color: $primary-dark;
           transform: translateY(-1px);
@@ -258,7 +278,7 @@ $text-light: #6c757d;
     display: flex;
     align-items: center;
     gap: 8px;
-    
+
     i {
       color: $primary-color;
       font-size: 1.1rem;
@@ -280,26 +300,26 @@ $text-light: #6c757d;
 }
 
 .status-fill {
-    height: 100%;
+  height: 100%;
   background: linear-gradient(90deg, $primary-color, $primary-dark);
   border-radius: 2px;
   transition: width 0.6s ease;
-    position: relative;
+  position: relative;
 
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
     width: 8px;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
   }
 }
 
 .status-steps {
-    display: flex;
-    justify-content: space-between;
+  display: flex;
+  justify-content: space-between;
   align-items: flex-start;
   position: relative;
   flex-wrap: wrap;
@@ -307,14 +327,14 @@ $text-light: #6c757d;
 }
 
 .status-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   flex: 1;
   position: relative;
   min-width: 0;
   transition: all 0.3s ease;
-  
+
   &:not(:last-child)::after {
     content: '';
     position: absolute;
@@ -326,15 +346,15 @@ $text-light: #6c757d;
     z-index: 1;
     transition: background 0.3s ease;
   }
-  
+
   &.completed:not(:last-child)::after {
     background: $success-color;
   }
-  
+
   &.active:not(:last-child)::after {
     background: linear-gradient(90deg, $success-color 0%, $primary-color 100%);
   }
-  
+
   &.current:not(:last-child)::after {
     background: linear-gradient(90deg, $success-color 0%, $primary-color 100%);
   }
@@ -360,63 +380,63 @@ $text-light: #6c757d;
     color: $text-light;
     transition: all 0.3s ease;
   }
-  
+
   .status-step.completed & {
     background: $success-color;
     border-color: $success-color;
     box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
     transform: scale(1);
-    
+
     i {
       color: $white;
       font-size: 1.1rem;
     }
   }
-  
+
   .status-step.active & {
     background: $primary-color;
     border-color: $primary-color;
     box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
     transform: scale(1.1);
-    
+
     i {
       color: $white;
       font-size: 1.2rem;
     }
   }
-  
+
   .status-step.current & {
     background: linear-gradient(135deg, $primary-color, $primary-dark);
     border-color: $primary-dark;
     transform: scale(1.3);
     box-shadow: 0 8px 25px rgba(254, 188, 73, 0.6);
     animation: pulse 2s infinite;
-    
+
     i {
       color: $white;
       font-size: 1.4rem;
       animation: iconPulse 2s infinite;
     }
   }
-  
+
   .status-step.pending & {
     background: #f8f9fa;
     border-color: #dee2e6;
     transform: scale(0.9);
-    
+
     i {
       color: $text-light;
       opacity: 0.5;
       font-size: 1rem;
     }
   }
-  
+
   .status-step.cancelled & {
     background: linear-gradient(135deg, $danger-color, #c82333);
     border-color: $danger-color;
     box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
     transform: scale(1.2);
-    
+
     i {
       color: $white;
       font-size: 1.2rem;
@@ -425,9 +445,12 @@ $text-light: #6c757d;
 }
 
 @keyframes iconPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -437,9 +460,11 @@ $text-light: #6c757d;
   0% {
     box-shadow: 0 6px 20px rgba(254, 188, 73, 0.5);
   }
+
   50% {
     box-shadow: 0 6px 20px rgba(254, 188, 73, 0.8);
   }
+
   100% {
     box-shadow: 0 6px 20px rgba(254, 188, 73, 0.5);
   }
@@ -454,29 +479,29 @@ $text-light: #6c757d;
   transition: all 0.3s ease;
   margin-top: 4px;
   white-space: nowrap;
-  
+
   .status-step.completed & {
     color: $success-color;
     font-weight: 600;
   }
-  
+
   .status-step.active & {
     color: $text-dark;
     font-weight: 600;
   }
-  
+
   .status-step.current & {
     color: $primary-color;
     font-weight: 700;
     font-size: 0.95rem;
     transform: scale(1.05);
   }
-  
+
   .status-step.cancelled & {
     color: $danger-color;
     font-weight: 700;
   }
-  
+
   .status-step.pending & {
     color: $text-light;
     opacity: 0.6;
@@ -489,11 +514,11 @@ $text-light: #6c757d;
   text-align: center;
   margin-top: 4px;
   line-height: 1.2;
-  
+
   .status-step.completed & {
     color: $success-color;
   }
-  
+
   .status-step.current & {
     color: $primary-color;
     font-weight: 600;
@@ -502,7 +527,7 @@ $text-light: #6c757d;
 
 .step-status-indicator {
   margin-top: 6px;
-  
+
   .status-badge {
     padding: 4px 10px;
     border-radius: 14px;
@@ -511,26 +536,26 @@ $text-light: #6c757d;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     display: inline-block;
-    
+
     &.completed {
       background: $success-color;
       color: $white;
       box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);
     }
-    
+
     &.current {
       background: $primary-color;
       color: $white;
       box-shadow: 0 2px 6px rgba(254, 188, 73, 0.3);
       animation: pulse 2s infinite;
     }
-    
+
     &.pending {
       background: #f8f9fa;
       color: $text-light;
       border: 1px solid #dee2e6;
     }
-    
+
     &.cancelled {
       background: #007bff;
       color: $white;
@@ -549,41 +574,41 @@ $text-light: #6c757d;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   .summary-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    
+
     .summary-label {
       font-size: 0.8rem;
       color: $text-light;
       margin-bottom: 4px;
       font-weight: 500;
     }
-    
+
     .summary-value {
       font-size: 1rem;
-        font-weight: 700;
+      font-weight: 700;
       color: $text-dark;
-      
+
       &.status-cho-xac-nhan {
         color: $warning-color;
       }
-      
+
       &.status-da-xac-nhan {
         color: $info-color;
       }
-      
+
       &.status-dang-giao-hang {
         color: $primary-color;
       }
-      
+
       &.status-da-giao-hang {
         color: $success-color;
       }
-      
+
       &.status-huy {
         color: #007bff;
       }
@@ -614,7 +639,7 @@ $text-light: #6c757d;
     margin-bottom: 20px;
     transition: all 0.3s ease;
     position: relative;
-    
+
     i {
       font-size: 2.5rem;
       color: $white;
@@ -698,7 +723,7 @@ $text-light: #6c757d;
   align-items: flex-start;
   margin-bottom: 20px;
   position: relative;
-  
+
   &:not(:last-child)::after {
     content: '';
     position: absolute;
@@ -708,7 +733,7 @@ $text-light: #6c757d;
     width: 2px;
     background: #e9ecef;
   }
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -726,29 +751,29 @@ $text-light: #6c757d;
   flex-shrink: 0;
   transition: all 0.3s ease;
   border: 3px solid transparent;
-  
+
   i {
     font-size: 0.9rem;
     color: $text-light;
   }
-  
+
   &.completed {
     background: $success-color;
     border-color: $success-color;
     box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
-    
+
     i {
       color: $white;
     }
   }
-  
+
   &.current {
     background: $primary-color;
     border-color: $primary-color;
     transform: scale(1.1);
     box-shadow: 0 6px 20px rgba(254, 188, 73, 0.5);
     animation: pulse 2s infinite;
-    
+
     i {
       color: $white;
     }
@@ -775,7 +800,7 @@ $text-light: #6c757d;
 
 .timeline-status {
   margin-top: 6px;
-  
+
   .current-badge {
     background: linear-gradient(135deg, $primary-color, $primary-dark);
     color: $white;
@@ -802,7 +827,7 @@ $text-light: #6c757d;
   color: $danger-color;
   font-weight: 600;
   font-size: 0.9rem;
-  
+
   i {
     font-size: 1rem;
   }
@@ -884,10 +909,10 @@ $text-light: #6c757d;
     i {
       color: $primary-color;
       font-size: 1rem;
+    }
   }
-}
 
-.info-table {
+  .info-table {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -920,12 +945,12 @@ $text-light: #6c757d;
       &.highlight {
         color: $primary-color;
         font-weight: 500;
-}
+      }
 
       &.success {
         color: $success-color;
         font-weight: 500;
-}
+      }
 
       &.danger {
         color: $danger-color;
@@ -977,15 +1002,15 @@ $text-light: #6c757d;
 }
 
 .table tbody tr:last-child td {
-      border-bottom: none;
-    }
+  border-bottom: none;
+}
 
 // STT column styling - đồng bộ với invoice-management (chỉ hiển thị số không cần badge)
 .table td:first-child {
   text-align: center;
   font-weight: 600;
   color: #333;
-  
+
   // Loại bỏ badge styling - chỉ hiển thị số
   .badge {
     background: none !important;
@@ -1024,37 +1049,37 @@ $text-light: #6c757d;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   display: inline-block !important;
-  
+
   &.bg-warning {
     background: linear-gradient(135deg, #ffc107, #f39c12) !important;
     color: $white !important;
     box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3) !important;
   }
-  
+
   &.bg-info {
     background: linear-gradient(135deg, #17a2b8, #138496) !important;
     color: $white !important;
     box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3) !important;
   }
-  
+
   &.bg-primary {
     background: linear-gradient(135deg, $primary-color, $primary-dark) !important;
     color: $white !important;
     box-shadow: 0 2px 6px rgba(254, 188, 73, 0.3) !important;
   }
-  
+
   &.bg-success {
     background: linear-gradient(135deg, #28a745, #1e7e34) !important;
     color: $white !important;
     box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3) !important;
   }
-  
+
   &.bg-danger {
     background: linear-gradient(135deg, #dc3545, #c82333) !important;
     color: $white !important;
     box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3) !important;
   }
-  
+
   &.bg-secondary {
     background: linear-gradient(135deg, $secondary-color, #34495e) !important;
     color: $white !important;
@@ -1067,35 +1092,35 @@ $text-light: #6c757d;
   padding: 6px 12px;
   border-radius: 15px;
   font-size: 0.75rem;
-        font-weight: 600;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: inline-block;
-  
+
   &.status-cho-xac-nhan {
     background: linear-gradient(135deg, #ffc107, #f39c12);
     color: $white;
     box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3);
   }
-  
+
   &.status-da-xac-nhan {
     background: linear-gradient(135deg, #17a2b8, #138496);
     color: $white;
     box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
   }
-  
+
   &.status-dang-giao-hang {
     background: linear-gradient(135deg, #6f42c1, #5a32a3);
     color: $white;
     box-shadow: 0 2px 6px rgba(111, 66, 193, 0.3);
   }
-  
+
   &.status-da-giao-hang {
     background: linear-gradient(135deg, #28a745, #1e7e34);
     color: $white;
     box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
   }
-  
+
   &.status-huy {
     background: linear-gradient(135deg, #dc3545, #c82333);
     color: $white;
@@ -1108,23 +1133,23 @@ $text-light: #6c757d;
   padding: 6px 12px;
   border-radius: 15px;
   font-size: 0.75rem;
-      font-weight: 600;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: inline-block;
-  
+
   &.payment-pending {
     background: linear-gradient(135deg, #ffc107, #f39c12);
     color: $white;
     box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3);
   }
-  
+
   &.payment-paid {
     background: linear-gradient(135deg, #28a745, #1e7e34);
     color: $white;
     box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
   }
-  
+
   &.payment-failed {
     background: linear-gradient(135deg, #dc3545, #c82333);
     color: $white;
@@ -1150,13 +1175,13 @@ $text-light: #6c757d;
   .modal-title {
     color: #333 !important;
     font-weight: 600;
-        font-size: 1.1rem;
+    font-size: 1.1rem;
     margin: 0;
   }
 
   .btn-close {
     opacity: 0.6;
-    
+
     &:hover {
       opacity: 1;
     }
@@ -1177,21 +1202,26 @@ $text-light: #6c757d;
 
 /* ===== MODAL CONTENT STYLES - ORANGE THEME (đồng bộ với invoice-management) ===== */
 .section-title h6 {
-  color: #febc49 !important; /* Đồng bộ với invoice-management */
+  color: #febc49 !important;
+  /* Đồng bộ với invoice-management */
 }
 
 .section-title h6 i {
-  color: #febc49 !important; /* Đồng bộ với invoice-management */
+  color: #febc49 !important;
+  /* Đồng bộ với invoice-management */
 }
 
 .form-label {
-  color: #000000 !important; /* Đồng bộ với invoice-management */
+  color: #000000 !important;
+  /* Đồng bộ với invoice-management */
   font-weight: 600;
 }
 
 .form-control:focus {
-  border-color: #febc49 !important; /* Đồng bộ với invoice-management */
-  box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important; /* Đồng bộ với invoice-management */
+  border-color: #febc49 !important;
+  /* Đồng bộ với invoice-management */
+  box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important;
+  /* Đồng bộ với invoice-management */
 }
 
 .form-control::placeholder {
@@ -1202,7 +1232,8 @@ $text-light: #6c757d;
 .input-group-text {
   background-color: #f8f9fa;
   border-color: #ced4da;
-  color: #000000 !important; /* Đồng bộ với invoice-management */
+  color: #000000 !important;
+  /* Đồng bộ với invoice-management */
 }
 
 /* Radio buttons màu vàng cam */
@@ -1217,7 +1248,8 @@ $text-light: #6c757d;
 }
 
 .form-check-label {
-  color: #000000 !important; /* Đồng bộ với invoice-management */
+  color: #000000 !important;
+  /* Đồng bộ với invoice-management */
 }
 
 /* File input button màu vàng cam */
@@ -1280,7 +1312,7 @@ $text-light: #6c757d;
 .table-dark,
 .table-light {
   background-color: #f8f9fa !important;
-  
+
   th {
     color: #333 !important;
     background-color: #f8f9fa !important;
@@ -1398,26 +1430,26 @@ $text-light: #6c757d;
   .modal-dialog {
     max-width: 1200px;
     margin: 1.75rem auto;
-    
+
     @media (max-width: 1200px) {
       max-width: 95%;
       margin: 1rem auto;
     }
   }
-  
-.modal-content {
+
+  .modal-content {
     border-radius: 12px;
-  border: none;
+    border: none;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
   }
-  
+
   .modal-header {
     background: linear-gradient(135deg, #febc49, #e6a942);
     border-bottom: none;
     padding: 1.5rem 2rem;
     position: relative;
-    
+
     &::after {
       content: '';
       position: absolute;
@@ -1425,9 +1457,9 @@ $text-light: #6c757d;
       left: 0;
       right: 0;
       height: 3px;
-      background: linear-gradient(90deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
     }
-    
+
     .modal-title {
       color: white !important;
       font-weight: 700;
@@ -1435,49 +1467,49 @@ $text-light: #6c757d;
       display: flex;
       align-items: center;
       gap: 12px;
-      
+
       i {
         font-size: 1.3rem;
         opacity: 0.9;
       }
     }
-    
+
     .btn-close {
       filter: brightness(0) invert(1);
       opacity: 0.8;
-      
+
       &:hover {
         opacity: 1;
         transform: scale(1.1);
       }
     }
   }
-  
+
   .modal-body {
     padding: 2rem;
     background: #fafafa;
     max-height: 70vh;
     overflow-y: auto;
-    
+
     // Custom scrollbar
     &::-webkit-scrollbar {
       width: 8px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: #e0e0e0;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: #a8a8a8;
       border-radius: 4px;
-      
+
       &:hover {
         background: #8c8c8c;
       }
     }
   }
-  
+
   .modal-footer {
     border-top: 1px solid #e9ecef;
     padding: 1.5rem 2rem;
@@ -1485,7 +1517,7 @@ $text-light: #6c757d;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
+
     .btn {
       padding: 12px 24px;
       border-radius: 8px;
@@ -1493,23 +1525,23 @@ $text-light: #6c757d;
       font-size: 0.95rem;
       transition: all 0.3s ease;
       min-width: 120px;
-      
+
       &.btn-secondary {
         background: linear-gradient(135deg, #6c757d, #5a6268);
         border: none;
         color: white;
-        
+
         &:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
         }
       }
-      
+
       &.btn-primary {
         background: linear-gradient(135deg, #febc49, #e6a942);
         border: none;
         color: white;
-        
+
         &:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
@@ -1527,7 +1559,7 @@ $text-light: #6c757d;
   margin-bottom: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid #e9ecef;
-  
+
   .section-title {
     display: flex;
     align-items: center;
@@ -1535,7 +1567,7 @@ $text-light: #6c757d;
     margin-bottom: 1.5rem;
     padding-bottom: 0.75rem;
     border-bottom: 2px solid #febc49;
-    
+
     h6 {
       color: #febc49 !important;
       font-weight: 700;
@@ -1544,16 +1576,16 @@ $text-light: #6c757d;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    
+
     i {
       color: #febc49 !important;
       font-size: 1.2rem;
     }
   }
-  
+
   .row {
     margin: 0 -0.75rem;
-    
+
     .col-md-6 {
       padding: 0 0.75rem;
       margin-bottom: 1rem;
@@ -1565,7 +1597,7 @@ $text-light: #6c757d;
 /* ===== FORM STYLES (đồng bộ với invoice-management) ===== */
 .form-group {
   margin-bottom: 20px;
-  
+
   .form-label {
     color: #333 !important;
     font-weight: 500;
@@ -1574,13 +1606,13 @@ $text-light: #6c757d;
     display: flex;
     align-items: center;
     gap: 6px;
-    
+
     .required {
       color: #e74c3c;
       font-weight: 500;
     }
   }
-  
+
   .form-control {
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -1589,29 +1621,29 @@ $text-light: #6c757d;
     font-weight: 400;
     color: #333;
     background-color: #fff;
-  transition: all 0.3s ease;
-    
+    transition: all 0.3s ease;
+
     &:focus {
       border-color: #febc49;
       box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25);
       outline: none;
     }
-  
-  &:hover {
+
+    &:hover {
       border-color: #febc49;
     }
-    
+
     &::placeholder {
       color: #adb5bd;
       font-style: italic;
     }
-    
+
     &.is-invalid {
       border-color: #e74c3c !important;
       box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25) !important;
     }
   }
-  
+
   .form-select {
     border: 2px solid #e9ecef;
     border-radius: 8px;
@@ -1620,13 +1652,13 @@ $text-light: #6c757d;
     transition: all 0.3s ease;
     background: white;
     cursor: pointer;
-    
+
     &:focus {
       border-color: #febc49 !important;
       box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important;
       background: #fffef7;
     }
-    
+
     &:hover {
       border-color: #febc49;
     }
@@ -1637,24 +1669,24 @@ $text-light: #6c757d;
     background-color: #e9ecef;
     border-color: #adb5bd;
     color: #495057;
-    
+
     &:focus {
       background-color: #e9ecef;
       border-color: #adb5bd;
       color: #495057;
       box-shadow: 0 0 0 0.2rem rgba(173, 181, 189, 0.25);
     }
-    
+
     &:hover {
       border-color: #adb5bd;
     }
   }
-  
+
   .form-textarea {
     min-height: 100px;
     resize: vertical;
   }
-  
+
   .invalid-feedback {
     color: #e74c3c !important;
     font-size: 0.8rem;
@@ -1663,12 +1695,12 @@ $text-light: #6c757d;
     display: flex;
     align-items: center;
     gap: 4px;
-    
+
     i {
       font-size: 0.9rem;
     }
   }
-  
+
   .valid-feedback {
     color: #28a745 !important;
     font-size: 0.8rem;
@@ -1677,7 +1709,7 @@ $text-light: #6c757d;
     display: flex;
     align-items: center;
     gap: 4px;
-    
+
     i {
       font-size: 0.9rem;
     }
@@ -1693,15 +1725,15 @@ $text-light: #6c757d;
     color: #495057 !important;
     font-weight: 500;
     padding: 0.75rem 1rem;
-    
+
     i {
       color: #febc49;
     }
   }
-  
+
   .form-control {
     border-left: none;
-    
+
     &:focus {
       border-left: none;
     }
@@ -1721,17 +1753,17 @@ $text-light: #6c757d;
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
     background: linear-gradient(135deg, #e6a942, #d99a0b);
   }
-  
+
   &:focus {
     box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25);
   }
-  
+
   i {
     font-size: 1.1rem;
   }
@@ -1744,14 +1776,14 @@ $text-light: #6c757d;
   border-radius: 10px;
   padding: 1.5rem;
   margin-top: 1rem;
-  
+
   .summary-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 0;
     border-bottom: 1px solid rgba(254, 188, 73, 0.2);
-    
+
     &:last-child {
       border-bottom: none;
       border-top: 2px solid #febc49;
@@ -1759,23 +1791,23 @@ $text-light: #6c757d;
       padding-top: 1rem;
       font-weight: 700;
       font-size: 1.1rem;
-      
+
       .label {
         color: #2c3e50;
       }
-      
+
       .value {
         color: #febc49;
         font-size: 1.2rem;
       }
     }
-    
+
     .label {
       color: #495057;
       font-weight: 600;
       font-size: 0.95rem;
     }
-    
+
     .value {
       color: #2c3e50;
       font-weight: 600;
@@ -1787,7 +1819,7 @@ $text-light: #6c757d;
 // Loading States
 .form-loading {
   position: relative;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -1802,7 +1834,7 @@ $text-light: #6c757d;
     border-radius: 8px;
     z-index: 10;
   }
-  
+
   .spinner-border {
     color: #febc49;
     width: 2rem;
@@ -1816,7 +1848,7 @@ $text-light: #6c757d;
     border-color: #28a745 !important;
     background: rgba(40, 167, 69, 0.05);
   }
-  
+
   .form-label {
     color: #28a745 !important;
   }
@@ -1827,7 +1859,7 @@ $text-light: #6c757d;
     border-color: #e74c3c !important;
     background: rgba(231, 76, 60, 0.05);
   }
-  
+
   .form-label {
     color: #e74c3c !important;
   }
@@ -1840,40 +1872,40 @@ $text-light: #6c757d;
       max-width: 95%;
       margin: 0.5rem auto;
     }
-    
+
     .modal-header {
       padding: 1rem 1.5rem;
-      
+
       .modal-title {
         font-size: 1.2rem;
       }
     }
-    
+
     .modal-body {
       padding: 1.5rem;
       max-height: 60vh;
     }
-    
+
     .modal-footer {
       padding: 1rem 1.5rem;
       flex-direction: column;
       gap: 0.75rem;
-      
+
       .btn {
         width: 100%;
         min-width: auto;
       }
     }
-    
+
     .form-section {
       padding: 1rem;
       margin-bottom: 1rem;
-      
+
       .section-title h6 {
         font-size: 1rem;
       }
     }
-    
+
     .row .col-md-6 {
       margin-bottom: 0.75rem;
     }
@@ -1889,18 +1921,18 @@ $text-light: #6c757d;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     background: white;
   }
-  
+
   .table {
     width: 100%;
     border-collapse: collapse;
     background: white;
     margin-bottom: 0;
   }
-  
+
   .table thead {
     background: #f8f9fa !important; // Override table-dark
   }
-  
+
   .table th {
     padding: 16px 12px;
     text-align: left;
@@ -1910,28 +1942,28 @@ $text-light: #6c757d;
     font-size: 14px;
     background-color: #f8f9fa !important; // Override table-dark
   }
-  
+
   .table td {
     padding: 16px 12px;
     border-bottom: 1px solid #f0f0f0;
     font-size: 14px;
     color: #333;
   }
-  
+
   .table tbody tr:hover {
     background-color: #f8f9fa;
   }
-  
+
   .table tbody tr:last-child td {
     border-bottom: none;
   }
-  
+
   // STT column styling - đồng bộ với invoice-management (chỉ hiển thị số không cần badge)
   .table td:first-child {
     text-align: center;
     font-weight: 600;
     color: #333;
-    
+
     .badge {
       background: none !important;
       color: #333 !important;
@@ -1944,50 +1976,50 @@ $text-light: #6c757d;
       letter-spacing: normal !important;
     }
   }
-  
+
   // Checkbox column styling - đồng bộ với invoice-management
   .table td:nth-child(2) {
     text-align: center;
-      
-      .form-check-input {
+
+    .form-check-input {
       width: 18px;
       height: 18px;
       margin: 0;
-      
-        &:checked {
+
+      &:checked {
         background-color: #febc49 !important;
         border-color: #febc49 !important;
       }
-      
+
       &:focus {
         border-color: #febc49 !important;
         box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important;
       }
     }
   }
-  
+
   // Image column styling
   .table td:nth-child(3) {
     text-align: center;
-    
+
     .img-thumbnail {
       border-radius: 6px;
       border: 1px solid #e0e0e0;
     }
-    
+
     .bg-light {
       border-radius: 6px;
       border: 1px solid #e0e0e0;
     }
   }
-  
+
   // Product code styling - đồng bộ với invoice-management
   .table td:nth-child(4) {
     .text-warning {
       color: #febc49 !important;
       font-weight: 600;
     }
-    
+
     code {
       background: #f8f9fa;
       padding: 4px 8px;
@@ -1997,7 +2029,7 @@ $text-light: #6c757d;
       border: 1px solid #e0e0e0;
     }
   }
-  
+
   // Product name styling - đồng bộ với invoice-management
   .table td:nth-child(5) {
     strong {
@@ -2005,15 +2037,15 @@ $text-light: #6c757d;
       color: #333;
     }
   }
-  
+
   // Badge columns styling (Danh mục, Thương hiệu, Màu sắc) - đồng bộ với invoice-management
   .table td:nth-child(6),
   .table td:nth-child(7),
   .table td:nth-child(8) {
-      .text-muted {
+    .text-muted {
       color: #6c757d !important;
     }
-    
+
     .badge {
       padding: 4px 8px !important;
       border-radius: 12px !important;
@@ -2022,19 +2054,19 @@ $text-light: #6c757d;
       text-transform: uppercase !important;
       letter-spacing: 0.3px !important;
       display: inline-block !important;
-      
+
       &.bg-info {
         background: linear-gradient(135deg, #17a2b8, #138496) !important;
         color: white !important;
         box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3) !important;
       }
-      
+
       &.bg-secondary {
         background: linear-gradient(135deg, $secondary-color, #34495e) !important;
         color: white !important;
         box-shadow: 0 2px 4px rgba(52, 73, 94, 0.3) !important;
       }
-      
+
       &.bg-warning {
         background: linear-gradient(135deg, #ffc107, #f39c12) !important;
         color: white !important;
@@ -2042,40 +2074,40 @@ $text-light: #6c757d;
       }
     }
   }
-  
+
   // Price column styling - đồng bộ với invoice-management
   .table td:nth-child(10) {
     .text-success {
       color: #28a745 !important;
       font-weight: 600;
     }
-    
+
     font-weight: 400;
     color: #28a745;
   }
-  
+
   // Stock quantity column styling - đồng bộ với invoice-management
   .table td:nth-child(11) {
     text-align: center;
-    
+
     .badge {
       padding: 4px 8px !important;
       border-radius: 12px !important;
       font-size: 0.7rem !important;
       font-weight: 500 !important;
-      
+
       &.bg-success {
         background: linear-gradient(135deg, #28a745, #1e7e34) !important;
         color: white !important;
         box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3) !important;
       }
-      
+
       &.bg-warning {
         background: linear-gradient(135deg, #ffc107, #f39c12) !important;
         color: white !important;
         box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3) !important;
       }
-      
+
       &.bg-danger {
         background: linear-gradient(135deg, #dc3545, #c82333) !important;
         color: white !important;
@@ -2083,23 +2115,23 @@ $text-light: #6c757d;
       }
     }
   }
-  
+
   // Status column styling - đồng bộ với invoice-management
   .table td:nth-child(12) {
     text-align: center;
-    
+
     .badge {
       padding: 4px 8px !important;
       border-radius: 12px !important;
       font-size: 0.7rem !important;
       font-weight: 500 !important;
-      
+
       &.bg-success {
         background: linear-gradient(135deg, #28a745, #1e7e34) !important;
         color: white !important;
         box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3) !important;
       }
-      
+
       &.bg-danger {
         background: linear-gradient(135deg, #dc3545, #c82333) !important;
         color: white !important;
@@ -2107,31 +2139,31 @@ $text-light: #6c757d;
       }
     }
   }
-  
+
   // Quantity input column styling
   .table td:nth-child(13) {
     text-align: center;
-    
+
     .form-control {
       width: 80px;
       text-align: center;
       padding: 6px 8px;
-    font-size: 0.9rem;
+      font-size: 0.9rem;
       border: 1px solid #ddd;
       border-radius: 4px;
-      
+
       &:focus {
         border-color: #febc49 !important;
         box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important;
       }
-      
+
       &:disabled {
         background-color: #f8f9fa;
         opacity: 0.6;
       }
     }
   }
-  
+
   // Total amount column styling
   .table td:nth-child(14) {
     font-weight: 400;
@@ -2145,13 +2177,13 @@ $text-light: #6c757d;
   text-align: center;
   padding: 40px 20px;
   color: #6c757d;
-  
+
   .fa-spinner {
     font-size: 2rem;
     color: #febc49;
     margin-bottom: 15px;
   }
-  
+
   p {
     font-size: 1rem;
     margin: 0;
@@ -2163,18 +2195,18 @@ $text-light: #6c757d;
   text-align: center;
   padding: 40px 20px;
   color: #6c757d;
-  
+
   .fa-box-open {
     font-size: 3rem;
     color: #dee2e6;
     margin-bottom: 15px;
   }
-  
+
   h5 {
     color: #495057;
     margin-bottom: 10px;
   }
-  
+
   p {
     font-size: 0.9rem;
     margin: 0;
@@ -2188,12 +2220,13 @@ $text-light: #6c757d;
 
 // Print Invoice Styles - Chỉ in nội dung trong ô đỏ
 @media print {
+
   // Reset page
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
+
   // Ẩn tất cả các phần không cần thiết
   body,
   .invoice-detail-container,
@@ -2216,7 +2249,7 @@ $text-light: #6c757d;
     display: none !important;
     visibility: hidden !important;
   }
-  
+
   // Chỉ hiển thị phần print-invoice
   .print-invoice {
     display: block !important;
@@ -2237,7 +2270,7 @@ $text-light: #6c757d;
     border: none !important;
     z-index: 9999 !important;
   }
-  
+
   // Đảm bảo tất cả phần tử trong print-invoice hiển thị
   .print-invoice * {
     display: block !important;
@@ -2245,21 +2278,21 @@ $text-light: #6c757d;
     color: #000 !important;
     background: transparent !important;
   }
-  
+
   // Đặc biệt cho table
   .print-invoice table {
     display: table !important;
   }
-  
+
   .print-invoice tr {
     display: table-row !important;
   }
-  
+
   .print-invoice td,
   .print-invoice th {
     display: table-cell !important;
   }
-  
+
   // Đặc biệt cho flex elements
   .print-invoice .info-row,
   .print-invoice .summary-row {
@@ -2270,11 +2303,11 @@ $text-light: #6c757d;
 // Print invoice styles
 .print-invoice {
   display: none;
-  
+
   @media print {
     display: block !important;
   }
-  
+
   // Đảm bảo các phần tử hiển thị đúng khi không print
   .invoice-header,
   .invoice-info,
@@ -2285,28 +2318,28 @@ $text-light: #6c757d;
   .thank-you {
     display: block;
   }
-  
+
   .info-row,
   .summary-row {
     display: flex;
   }
-  
+
   table {
     display: table;
   }
-  
+
   tr {
     display: table-row;
   }
-  
+
   td,
   th {
     display: table-cell;
   }
 }
 
-  .invoice-header {
-    text-align: center;
+.invoice-header {
+  text-align: center;
   margin-bottom: 30px;
 
   .store-name {
@@ -2316,7 +2349,7 @@ $text-light: #6c757d;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #000;
-    
+
     @media print {
       color: #000 !important;
     }
@@ -2327,7 +2360,7 @@ $text-light: #6c757d;
     margin-bottom: 15px;
     color: #000;
     font-weight: normal;
-    
+
     @media print {
       color: #000 !important;
     }
@@ -2340,12 +2373,12 @@ $text-light: #6c757d;
     letter-spacing: 2px;
     color: #000;
     margin-bottom: 20px;
-    
+
     @media print {
       color: #000 !important;
     }
   }
-  
+
   // Separator line
   &::after {
     content: '';
@@ -2367,36 +2400,12 @@ $text-light: #6c757d;
     padding: 5px 0;
     border-bottom: 1px dotted #ccc;
 
-  .label {
-    font-weight: bold;
-      min-width: 120px;
-      color: #000;
-  }
-
-  .value {
-      flex: 1;
-    text-align: right;
-      color: #000;
-    }
-  }
-  }
-
-  .customer-info {
-  margin-bottom: 25px;
-  
-  .info-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    padding: 5px 0;
-    border-bottom: 1px dotted #ccc;
-    
     .label {
       font-weight: bold;
       min-width: 120px;
       color: #000;
     }
-    
+
     .value {
       flex: 1;
       text-align: right;
@@ -2405,13 +2414,38 @@ $text-light: #6c757d;
   }
 }
 
-  .product-table {
-    width: 100%;
-    border-collapse: collapse;
+.customer-info {
+  margin-bottom: 25px;
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 5px 0;
+    border-bottom: 1px dotted #ccc;
+
+    .label {
+      font-weight: bold;
+      min-width: 120px;
+      color: #000;
+    }
+
+    .value {
+      flex: 1;
+      text-align: right;
+      color: #000;
+    }
+  }
+}
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
   margin-bottom: 25px;
   border: 2px solid #000;
 
-  th, td {
+  th,
+  td {
     border: 1px solid #000;
     padding: 8px 12px;
     text-align: center;
@@ -2425,16 +2459,17 @@ $text-light: #6c757d;
     font-size: 12px;
     color: #000;
   }
-  
+
   td {
     font-size: 13px;
     color: #000;
-    
-    &:nth-child(2) {
-    text-align: left;
-  }
 
-    &:nth-child(4), &:nth-child(5) {
+    &:nth-child(2) {
+      text-align: left;
+    }
+
+    &:nth-child(4),
+    &:nth-child(5) {
       text-align: right;
     }
   }
@@ -2450,20 +2485,20 @@ $text-light: #6c757d;
     padding: 8px 0;
     font-size: 15px;
     color: #000;
-    
+
     .label {
       font-weight: bold;
       color: #000;
     }
-    
+
     .value {
-    font-weight: bold;
+      font-weight: bold;
       color: #000;
-  }
+    }
 
     &:last-child {
       border-top: 2px solid #000;
-    margin-top: 15px;
+      margin-top: 15px;
       padding-top: 15px;
     }
   }
@@ -2471,21 +2506,21 @@ $text-light: #6c757d;
 
 .payment-info {
   margin-bottom: 25px;
-  
+
   .info-row {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
     padding: 5px 0;
     border-bottom: 1px dotted #ccc;
-    
+
     .label {
       font-weight: bold;
       min-width: 120px;
       color: #000;
     }
-    
-      .value {
+
+    .value {
       flex: 1;
       text-align: right;
       color: #000;
@@ -2496,7 +2531,7 @@ $text-light: #6c757d;
 .thank-you {
   font-size: 16px;
   font-weight: bold;
-        font-style: italic;
+  font-style: italic;
   color: #000;
   text-align: left;
   margin-top: 20px;
@@ -2509,7 +2544,7 @@ $text-light: #6c757d;
   background: linear-gradient(135deg, rgba(254, 188, 73, 0.1) 0%, rgba(254, 188, 73, 0.05) 100%);
   border-radius: 12px;
   border: 1px solid rgba(254, 188, 73, 0.2);
-  
+
   .status-badge {
     display: inline-flex;
     align-items: center;
@@ -2520,57 +2555,57 @@ $text-light: #6c757d;
     font-size: 1rem;
     margin-bottom: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    
+
     i {
       font-size: 1.1rem;
     }
-    
+
     &.status-pending {
       background: linear-gradient(135deg, #ffc107, #f39c12);
       color: $white;
     }
-    
+
     &.status-confirmed {
       background: linear-gradient(135deg, #17a2b8, #138496);
       color: $white;
     }
-    
+
     &.status-preparing {
       background: linear-gradient(135deg, #6f42c1, #5a32a3);
       color: $white;
     }
-    
+
     &.status-shipping {
       background: linear-gradient(135deg, #007bff, #0056b3);
       color: $white;
     }
-    
+
     &.status-delivered {
       background: linear-gradient(135deg, #28a745, #1e7e34);
       color: $white;
     }
-    
+
     &.status-completed {
       background: linear-gradient(135deg, #20c997, #17a085);
       color: $white;
     }
-    
+
     &.status-cancelled {
       background: linear-gradient(135deg, #dc3545, #c82333);
       color: $white;
     }
-    
+
     &.status-returned {
       background: linear-gradient(135deg, #fd7e14, #e55a00);
       color: $white;
     }
-    
+
     &.status-unknown {
       background: linear-gradient(135deg, #6c757d, #5a6268);
       color: $white;
     }
   }
-  
+
   .status-description {
     font-size: 0.95rem;
     color: $text-light;
@@ -2587,12 +2622,12 @@ $text-light: #6c757d;
   text-align: center;
   line-height: 1.2;
   opacity: 0.8;
-  
+
   .status-step.active & {
     opacity: 1;
     color: $text-dark;
   }
-  
+
   .status-step.current & {
     color: $primary-color;
     font-weight: 500;
@@ -2601,18 +2636,18 @@ $text-light: #6c757d;
 
 // Returned Status Styles
 .returned-status {
-    display: flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 12px 20px;
   background: rgba(253, 126, 20, 0.1);
   border: 1px solid rgba(253, 126, 20, 0.2);
-        border-radius: 8px;
+  border-radius: 8px;
   color: #fd7e14;
   font-weight: 600;
   font-size: 0.9rem;
-  
+
   i {
     font-size: 1rem;
   }
@@ -2624,13 +2659,13 @@ $text-light: #6c757d;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
   }
-  
+
   .left-column,
   .middle-column,
   .right-column {
     gap: 18px;
   }
-  
+
   .info-card {
     padding: 22px 20px;
   }
@@ -2641,64 +2676,64 @@ $text-light: #6c757d;
   .invoice-detail-container {
     padding: 15px;
   }
-  
+
   .detail-header {
     padding: 20px 15px;
     flex-direction: column;
     gap: 15px;
-    
+
     .header-left {
       flex-direction: column;
       align-items: flex-start;
       gap: 10px;
-      
+
       h2 {
         font-size: 1.4rem;
       }
     }
-    
+
     .header-right {
       width: 100%;
       justify-content: center;
     }
   }
-  
+
   .status-section {
     padding: 20px 15px;
-    
+
     h3 {
       font-size: 1.1rem;
     }
   }
-  
+
   .content-grid {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .info-card {
     padding: 20px 15px;
   }
-  
+
   .status-steps {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .status-step {
     flex-direction: row;
     justify-content: flex-start;
     text-align: left;
-    
+
     .step-circle {
       margin-right: 15px;
       margin-bottom: 0;
     }
   }
-  
+
   .current-status-info {
     padding: 15px;
-    
+
     .status-badge {
       padding: 10px 15px;
       font-size: 0.9rem;
@@ -2715,11 +2750,11 @@ $text-light: #6c757d;
   color: #febc49 !important;
   font-weight: 600 !important;
   transition: all 0.3s ease;
-  
+
   .btn-text {
     transition: opacity 0.3s ease;
   }
-  
+
   .btn-loading {
     position: absolute;
     top: 50%;
@@ -2728,39 +2763,39 @@ $text-light: #6c757d;
     opacity: 0;
     transition: opacity 0.3s ease;
   }
-  
+
   &:hover:not(:disabled) {
     background: #febc49 !important;
     color: white !important;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(254, 188, 73, 0.3);
-    
+
     i {
       animation: printPulse 0.6s ease-in-out;
     }
   }
-  
+
   &:focus {
     box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25) !important;
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
   }
-  
+
   &.loading {
     .btn-text {
       opacity: 0;
     }
-    
+
     .btn-loading {
       opacity: 1;
     }
   }
-  
+
   i {
     margin-right: 8px;
     font-size: 16px;
@@ -2768,9 +2803,12 @@ $text-light: #6c757d;
 }
 
 @keyframes printPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -2781,11 +2819,11 @@ $text-light: #6c757d;
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   .label {
     min-width: 120px;
   }
-  
+
   .status-edit-container {
     display: flex;
     align-items: center;
@@ -2804,37 +2842,37 @@ $text-light: #6c757d;
   font-size: 14px;
   transition: all 0.3s ease;
   cursor: pointer;
-  
+
   &:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
   }
-  
+
   &.status-pending {
     background-color: #fff3cd;
     border-color: #ffc107;
     color: #856404;
   }
-  
+
   &.status-confirmed {
     background-color: #d1ecf1;
     border-color: #17a2b8;
     color: #0c5460;
   }
-  
+
   &.status-shipping {
     background-color: #cce5ff;
     border-color: #007bff;
     color: #004085;
   }
-  
+
   &.status-delivered {
     background-color: #d4edda;
     border-color: #28a745;
     color: #155724;
   }
-  
+
   &.status-cancelled {
     background-color: #f8d7da;
     border-color: #dc3545;
@@ -2857,26 +2895,26 @@ $text-light: #6c757d;
   gap: 8px;
   box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
   white-space: nowrap;
-  
+
   &:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   }
-  
+
   &:active:not(:disabled) {
     transform: translateY(0);
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
   }
-  
+
   i {
     font-size: 14px;
   }
-  
+
   .fa-spinner {
     animation: spin 1s linear infinite;
   }
@@ -2886,6 +2924,7 @@ $text-light: #6c757d;
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -2896,6 +2935,7 @@ $text-light: #6c757d;
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -2907,6 +2947,7 @@ $text-light: #6c757d;
     transform: translateX(0);
     opacity: 1;
   }
+
   to {
     transform: translateX(100%);
     opacity: 0;
@@ -2926,61 +2967,61 @@ $text-light: #6c757d;
   text-transform: uppercase;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  
+
   &.status-pending {
     background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
     border: 2px solid #f39c12;
     color: #7d5a0a;
     box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
-    
+
     &:hover {
       box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
       transform: translateY(-1px);
     }
   }
-  
+
   &.status-confirmed {
     background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
     border: 2px solid #0984e3;
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(9, 132, 227, 0.3);
-    
+
     &:hover {
       box-shadow: 0 4px 12px rgba(9, 132, 227, 0.4);
       transform: translateY(-1px);
     }
   }
-  
+
   &.status-shipping {
     background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
     border: 2px solid #6c5ce7;
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
-    
+
     &:hover {
       box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
       transform: translateY(-1px);
     }
   }
-  
+
   &.status-delivered {
     background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
     border: 2px solid #00b894;
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 184, 148, 0.3);
-    
+
     &:hover {
       box-shadow: 0 4px 12px rgba(0, 184, 148, 0.4);
       transform: translateY(-1px);
     }
   }
-  
+
   &.status-cancelled {
     background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
     border: 2px solid #d63031;
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(214, 48, 49, 0.3);
-    
+
     &:hover {
       box-shadow: 0 4px 12px rgba(214, 48, 49, 0.4);
       transform: translateY(-1px);
@@ -3000,79 +3041,79 @@ $text-light: #6c757d;
   background-color: white;
   letter-spacing: 0.3px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  
+
   &:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
   }
-  
+
   &.status-pending {
     background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
     border-color: #f39c12;
     color: #7d5a0a;
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(243, 156, 18, 0.25);
-    
+
     &:focus {
       border-color: #f39c12;
       box-shadow: 0 0 0 4px rgba(243, 156, 18, 0.2);
     }
   }
-  
+
   &.status-confirmed {
     background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
     border-color: #0984e3;
     color: #ffffff;
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(9, 132, 227, 0.25);
-    
+
     &:focus {
       border-color: #0984e3;
       box-shadow: 0 0 0 4px rgba(9, 132, 227, 0.2);
     }
   }
-  
+
   &.status-shipping {
     background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
     border-color: #6c5ce7;
     color: #ffffff;
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(108, 92, 231, 0.25);
-    
+
     &:focus {
       border-color: #6c5ce7;
       box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
     }
   }
-  
+
   &.status-delivered {
     background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
     border-color: #00b894;
     color: #ffffff;
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(0, 184, 148, 0.25);
-    
+
     &:focus {
       border-color: #00b894;
       box-shadow: 0 0 0 4px rgba(0, 184, 148, 0.2);
     }
   }
-  
+
   &.status-cancelled {
     background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
     border-color: #d63031;
     color: #ffffff;
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(214, 48, 49, 0.25);
-    
+
     &:focus {
       border-color: #d63031;
       box-shadow: 0 0 0 4px rgba(214, 48, 49, 0.2);
     }
   }
-  
-  
+
+
   option {
     background-color: white;
     color: #333;
@@ -3085,20 +3126,20 @@ $text-light: #6c757d;
 // Invoice Detail Tables Styles
 .invoice-detail-tables {
   margin-top: 20px;
-  
+
   .table-responsive {
     margin-bottom: 20px;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(252, 250, 250, 0.1);
   }
-  
+
   .invoice-info-table {
     width: 100%;
     margin-bottom: 0;
     background: $white;
     border-collapse: collapse;
-    
+
     .table-header-primary {
       background: linear-gradient(135deg, $primary-color, $primary-dark);
       color: $white;
@@ -3107,12 +3148,12 @@ $text-light: #6c757d;
       font-size: 1.1rem;
       text-align: center;
       border: none;
-      
+
       i {
         font-size: 1.2rem;
       }
     }
-    
+
     .table-header-secondary {
       background: linear-gradient(135deg, $primary-color, $primary-dark);
       color: $white;
@@ -3121,12 +3162,12 @@ $text-light: #6c757d;
       font-size: 1.1rem;
       text-align: center;
       border: none;
-      
+
       i {
         font-size: 1.2rem;
       }
     }
-    
+
     .table-header-success {
       background: linear-gradient(135deg, #28a745, #1e7e34);
       color: $white;
@@ -3135,15 +3176,15 @@ $text-light: #6c757d;
       font-size: 1.1rem;
       text-align: center;
       border: none;
-      
+
       i {
         font-size: 1.2rem;
       }
     }
-    
+
     .sub-header {
       background: #f8f9fa;
-      
+
       th {
         background: #f8f9fa;
         color: $text-dark;
@@ -3153,29 +3194,29 @@ $text-light: #6c757d;
         text-align: center;
       }
     }
-    
+
     tbody {
       tr {
         transition: background-color 0.2s ease;
-        
+
         &:hover {
           background-color: #f8f9fa;
         }
-        
+
         &.total-row {
           background: linear-gradient(135deg, rgba(254, 188, 73, 0.1), rgba(254, 188, 73, 0.05));
           font-weight: 700;
-          
+
           td {
             border-top: 2px solid $primary-color;
             padding: 16px 20px;
           }
         }
-        
+
         &.summary-row {
           background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(40, 167, 69, 0.05));
           font-weight: 700;
-          
+
           td {
             border-top: 2px solid #28a745;
             padding: 16px 20px;
@@ -3183,7 +3224,7 @@ $text-light: #6c757d;
         }
       }
     }
-    
+
     .label-cell {
       width: 35%;
       background: #f8f9fa;
@@ -3193,39 +3234,40 @@ $text-light: #6c757d;
       color: $text-dark;
       vertical-align: middle;
     }
-    
+
     .value-cell {
       width: 65%;
       padding: 14px 20px;
       color: #333;
       vertical-align: middle;
-      
+
       &.amount {
         font-weight: 600;
         color: $primary-color;
-        
+
         &.discount {
           color: $danger-color;
         }
-        
+
         &.total {
           font-size: 1.1rem;
           color: #28a745;
         }
       }
     }
-    
-    td, th {
+
+    td,
+    th {
       border: 1px solid #dee2e6;
     }
   }
-  
+
   .invoice-products-table {
     width: 100%;
     margin-bottom: 0;
     background: $white;
     border-collapse: collapse;
-    
+
     thead {
       th {
         font-weight: 600;
@@ -3234,45 +3276,45 @@ $text-light: #6c757d;
         padding: 14px 12px;
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
-        
+
         // Căn chỉnh header theo cột
         &:nth-child(1) {
           // STT - căn giữa
           text-align: center;
         }
-        
+
         &:nth-child(3) {
           // Thông tin sản phẩm - căn trái
           text-align: left;
         }
-        
+
         &:nth-child(4) {
           // Đặc tính - căn trái
           text-align: left;
         }
-        
+
         &:nth-child(5) {
           // Header cột Số lượng - căn giữa
           text-align: center;
         }
-        
+
         &:nth-child(6) {
           // Header cột Đơn giá - căn phải
           text-align: right;
         }
-        
+
         &:nth-child(7) {
           // Header cột Giảm giá - căn phải
           text-align: right;
         }
-        
+
         &:nth-child(8) {
           // Header cột Thành tiền - căn phải
           text-align: right;
         }
       }
     }
-    
+
     tbody {
       tr {
         td {
@@ -3282,12 +3324,12 @@ $text-light: #6c757d;
         }
       }
     }
-    
+
     // Style cho cột số lượng - không có background, căn giữa
     .quantity-cell {
       text-align: center;
       vertical-align: middle;
-      
+
       .quantity-value {
         display: inline-block;
         font-weight: 600;
@@ -3299,12 +3341,12 @@ $text-light: #6c757d;
         min-width: 30px;
       }
     }
-    
+
     // Style cho cột đơn giá - căn phải, màu xanh lá
     .price-cell {
       text-align: right;
       vertical-align: middle;
-      
+
       .price-value {
         display: inline-block;
         font-weight: 600;
@@ -3313,12 +3355,12 @@ $text-light: #6c757d;
         padding: 0;
       }
     }
-    
+
     // Style cho cột thành tiền - căn phải, màu cam
     .amount-cell {
       text-align: right;
       vertical-align: middle;
-      
+
       .amount-value {
         display: inline-block;
         font-weight: 700;
@@ -3327,13 +3369,13 @@ $text-light: #6c757d;
         padding: 0;
       }
     }
-    
+
     // Style cho cột hình ảnh sản phẩm
     .product-image-cell {
       text-align: center;
       vertical-align: middle;
       padding: 10px;
-      
+
       .product-image-wrapper {
         width: 80px;
         height: 80px;
@@ -3345,39 +3387,39 @@ $text-light: #6c757d;
         display: flex;
         align-items: center;
         justify-content: center;
-        
+
         .product-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
           transition: transform 0.3s ease;
-          
+
           &:hover {
             transform: scale(1.1);
           }
         }
       }
     }
-    
+
     // Style cho cột thông tin sản phẩm
     .product-info-cell {
       vertical-align: middle;
       padding: 12px;
-      
+
       .product-info {
         .product-code {
           margin-bottom: 6px;
-          
+
           .badge {
             font-size: 0.75rem;
             padding: 4px 8px;
             font-weight: 600;
           }
         }
-        
+
         .product-name {
           margin-bottom: 8px;
-          
+
           strong {
             font-size: 1rem;
             color: $text-dark;
@@ -3385,13 +3427,13 @@ $text-light: #6c757d;
             line-height: 1.4;
           }
         }
-        
+
         .product-category-brand {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
           margin-top: 6px;
-          
+
           .category-badge,
           .brand-badge {
             display: inline-flex;
@@ -3400,17 +3442,17 @@ $text-light: #6c757d;
             border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 500;
-            
+
             i {
               font-size: 0.7rem;
             }
           }
-          
+
           .category-badge {
             background-color: #e3f2fd;
             color: #1976d2;
           }
-          
+
           .brand-badge {
             background-color: #fff3e0;
             color: #f57c00;
@@ -3418,35 +3460,35 @@ $text-light: #6c757d;
         }
       }
     }
-    
+
     // Style cho cột đặc tính (màu sắc, kích thước)
     .product-specs-cell {
       vertical-align: middle;
       padding: 12px;
-      
+
       .product-specs {
         .spec-item {
           margin-bottom: 6px;
-          
+
           &:last-child {
             margin-bottom: 0;
           }
-          
+
           .spec-label {
             font-size: 0.85rem;
             color: #6c757d;
             font-weight: 500;
             margin-right: 6px;
           }
-          
+
           .spec-value {
             font-size: 0.9rem;
             font-weight: 600;
-            
+
             &.color-spec {
               color: #6c5ce7;
             }
-            
+
             &.size-spec {
               color: #00b894;
             }
@@ -3454,12 +3496,12 @@ $text-light: #6c757d;
         }
       }
     }
-    
+
     // Style cho cột giảm giá
     .discount-cell {
       text-align: right;
       vertical-align: middle;
-      
+
       .discount-value {
         display: inline-block;
         font-weight: 600;
@@ -3469,7 +3511,7 @@ $text-light: #6c757d;
       }
     }
   }
-  
+
   @media (max-width: 768px) {
     .invoice-info-table {
       .label-cell {
@@ -3477,13 +3519,13 @@ $text-light: #6c757d;
         padding: 12px 15px;
         font-size: 0.9rem;
       }
-      
+
       .value-cell {
         width: 60%;
         padding: 12px 15px;
         font-size: 0.9rem;
       }
-      
+
       .table-header-primary,
       .table-header-secondary,
       .table-header-success {
@@ -3491,11 +3533,12 @@ $text-light: #6c757d;
         font-size: 1rem;
       }
     }
-    
+
     .invoice-products-table {
       font-size: 0.85rem;
-      
-      th, td {
+
+      th,
+      td {
         padding: 10px 8px;
       }
     }
@@ -3506,26 +3549,26 @@ $text-light: #6c757d;
 .status-update-control {
   margin: 20px 0;
   padding: 0;
-  
+
   .status-update-card {
     background: $white;
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 4px 20px rgba(254, 188, 73, 0.1);
     border: 1px solid rgba(254, 188, 73, 0.2);
-    
+
     .status-update-header {
       display: flex;
       align-items: center;
       margin-bottom: 20px;
       padding-bottom: 15px;
       border-bottom: 2px solid rgba(254, 188, 73, 0.2);
-      
+
       i {
         color: $primary-color;
         font-size: 1.2rem;
       }
-      
+
       h5 {
         color: $text-dark;
         font-weight: 600;
@@ -3533,11 +3576,11 @@ $text-light: #6c757d;
         margin: 0;
       }
     }
-    
+
     .status-update-body {
       .form-group {
         margin-bottom: 20px;
-        
+
         .form-label {
           color: $text-dark;
           font-weight: 600;
@@ -3545,7 +3588,7 @@ $text-light: #6c757d;
           margin-bottom: 10px;
           display: block;
         }
-        
+
         .form-select {
           width: 100%;
           padding: 12px 16px;
@@ -3555,17 +3598,17 @@ $text-light: #6c757d;
           font-weight: 500;
           background-color: $white;
           transition: all 0.3s ease;
-          
+
           &:focus {
             border-color: $primary-color;
             box-shadow: 0 0 0 0.2rem rgba(254, 188, 73, 0.25);
             outline: none;
           }
-          
+
           &:hover:not(:disabled) {
             border-color: $primary-color;
           }
-          
+
           &:disabled {
             background-color: #f8f9fa;
             opacity: 0.7;
@@ -3573,12 +3616,12 @@ $text-light: #6c757d;
           }
         }
       }
-      
+
       .status-update-actions {
         display: flex;
         justify-content: flex-end;
         gap: 12px;
-        
+
         .btn {
           padding: 12px 24px;
           border-radius: 8px;
@@ -3589,29 +3632,29 @@ $text-light: #6c757d;
           align-items: center;
           justify-content: center;
           min-width: 180px;
-          
+
           &.btn-primary {
             background: linear-gradient(135deg, $primary-color, $primary-dark);
             border: none;
             color: $white;
-            
+
             &:hover:not(:disabled) {
               transform: translateY(-2px);
               box-shadow: 0 4px 15px rgba(254, 188, 73, 0.4);
               background: linear-gradient(135deg, $primary-dark, #d99a0b);
             }
-            
+
             &:disabled {
               opacity: 0.6;
               cursor: not-allowed;
               transform: none;
             }
           }
-          
+
           i {
             font-size: 1rem;
           }
-          
+
           .spinner-border {
             width: 1rem;
             height: 1rem;
@@ -3621,17 +3664,17 @@ $text-light: #6c757d;
       }
     }
   }
-  
+
   @media (max-width: 768px) {
     .status-update-card {
       padding: 20px;
-      
+
       .status-update-header {
         h5 {
           font-size: 1rem;
         }
       }
-      
+
       .status-update-body {
         .status-update-actions {
           .btn {
@@ -3875,6 +3918,7 @@ $text-light: #6c757d;
 
 // Confirmed invoice details section (legacy - giữ lại để tương thích)
 .confirmed-invoice-details {
+
   .recipient-info-card,
   .cost-summary-card {
     background: $white;
@@ -4606,6 +4650,96 @@ $text-light: #6c757d;
     opacity: 0;
     transform: translateY(-10px);
   }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom Confirmation Modal Styles */
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); // Semi-transparent black overlay
+  z-index: 2000; // High z-index to appear on top of everything
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .confirm-modal {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 450px;
+    max-width: 90%;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease-in-out;
+
+    .confirm-modal-header {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      // bg-warning style override (Bootstrap warning color is roughly #ffc107)
+      background-color: #ffc107;
+
+      h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .btn-close-custom {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+
+    .confirm-modal-body {
+      padding: 20px;
+      font-size: 1rem;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .confirm-modal-footer {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid #eee;
+
+      .btn {
+        padding: 8px 20px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
   to {
     opacity: 1;
     transform: translateY(0);

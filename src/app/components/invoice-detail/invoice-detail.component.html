@@ -957,3 +957,22 @@
 
 <div class="modal-backdrop fade" [class.show]="showShippingFeeAdjustmentModal"
   [style.display]="showShippingFeeAdjustmentModal ? 'block' : 'none'" (click)="closeShippingFeeAdjustmentModal()"></div>
+
+<!-- Confirmation Modal -->
+<div class="confirm-modal-overlay" *ngIf="showConfirmModal">
+  <div class="confirm-modal">
+    <div class="confirm-modal-header bg-warning text-white">
+      <h3>{{ confirmModalTitle }}</h3>
+      <button class="btn-close-custom text-white" (click)="closeConfirmModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="confirm-modal-body bg-white">
+      <p style="white-space: pre-line;">{{ confirmModalMessage }}</p>
+    </div>
+    <div class="confirm-modal-footer bg-white">
+      <button class="btn btn-secondary" (click)="closeConfirmModal()">Hủy</button>
+      <button class="btn btn-primary" (click)="confirmAction()">Xác nhận</button>
+    </div>
+  </div>
+</div>
