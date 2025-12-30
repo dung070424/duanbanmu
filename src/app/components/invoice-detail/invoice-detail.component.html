@@ -152,17 +152,13 @@
       </h3>
       <div class="status-progress">
         <div class="status-steps">
-          <div 
-            *ngFor="let step of statusSteps" 
-            class="status-step"
-            [ngClass]="{
+          <div *ngFor="let step of statusSteps" class="status-step" [ngClass]="{
               'completed': getStepStatus(step.key, invoice.trangThai) === 'completed',
               'active': getStepStatus(step.key, invoice.trangThai) === 'active',
               'current': isCurrentStep(step.key, invoice.trangThai),
               'pending': getStepStatus(step.key, invoice.trangThai) === 'pending',
               'cancelled': getStepStatus(step.key, invoice.trangThai) === 'cancelled'
-            }"
-          >
+            }">
             <div class="step-circle">
               <i [ngClass]="step.iconClass"></i>
             </div>

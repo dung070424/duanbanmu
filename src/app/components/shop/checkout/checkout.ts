@@ -1404,16 +1404,6 @@ export class CheckoutComponent implements OnInit {
       soLuongSanPham: this.getTotalItems(),
     };
 
-    // Nếu thanh toán bằng chuyển khoản, thêm thông tin giao dịch vào ghi chú
-    if (this.paymentMethod === 'transfer') {
-      const transferNote = `Mã giao dịch: ${this.transactionCode || ''}\nNgân hàng: ${this.bankInfo?.bankName || ''
-        }\nSố tài khoản: ${this.bankInfo?.accountNumber || ''}\nChủ tài khoản: ${this.bankInfo?.accountName || ''
-        }`;
-      hoaDonData.ghiChu = hoaDonData.ghiChu
-        ? `${hoaDonData.ghiChu}\n\n${transferNote}`
-        : transferNote;
-    }
-
     // Validate dữ liệu trước khi gửi
     if (!hoaDonData.danhSachChiTiet || hoaDonData.danhSachChiTiet.length === 0) {
       console.error('❌ Cannot create invoice: cartItems is empty');
