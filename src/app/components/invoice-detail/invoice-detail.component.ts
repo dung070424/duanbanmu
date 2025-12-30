@@ -110,7 +110,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   loadingDistricts: boolean = false;
   loadingWards: boolean = false;
   calculatingShippingFee: boolean = false;
+
   originalShippingFee: number = 0; // Lưu phí ship ban đầu
+
+  // Custom Confirmation Modal properties
+  showConfirmModal: boolean = false;
+  confirmModalTitle: string = 'Xác nhận';
+  confirmModalMessage: string = '';
+  pendingAction: Function | null = null;
 
   // Selected saved address
   selectedSavedAddressId: string = '';
@@ -122,11 +129,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   // Status mapping - 5 giai đoạn như trong hình ảnh
   statusSteps = [
-    { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận', iconClass: 'fas fa-clock', color: '#ffc107', description: 'Đơn hàng đang chờ xác nhận' },
-    { key: 'DA_XAC_NHAN', label: 'Đã xác nhận', iconClass: 'fas fa-clipboard-check', color: '#17a2b8', description: 'Đơn hàng đã được xác nhận' },
-    { key: 'DANG_GIAO_HANG', label: 'Đang giao hàng', iconClass: 'fas fa-truck', color: '#007bff', description: 'Đơn hàng đang được giao' },
-    { key: 'DA_GIAO_HANG', label: 'Đã Hoàn Thành', iconClass: 'fas fa-box-open', color: '#28a745', description: 'Đơn hàng đã giao thành công' },
-    { key: 'HUY', label: 'Hủy', iconClass: 'fas fa-times-circle', color: '#dc3545', description: 'Đơn hàng đã bị hủy' }
+    { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận', iconClass: 'bi bi-clock', color: '#ffc107', description: 'Đơn hàng đang chờ xác nhận' },
+    { key: 'DA_XAC_NHAN', label: 'Đã xác nhận', iconClass: 'bi bi-clipboard-check', color: '#17a2b8', description: 'Đơn hàng đã được xác nhận' },
+    { key: 'DANG_GIAO_HANG', label: 'Đang giao hàng', iconClass: 'bi bi-truck', color: '#007bff', description: 'Đơn hàng đang được giao' },
+    { key: 'DA_GIAO_HANG', label: 'Đã Hoàn Thành', iconClass: 'bi bi-box-seam', color: '#28a745', description: 'Đơn hàng đã giao thành công' }
   ];
 
   constructor(
@@ -4502,23 +4508,40 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         let errorMessage = 'Vui lòng thử lại';
         if (error.error?.message) {
           errorMessage = error.error.message;
-        } else if (error.message) {
-          errorMessage = error.message;
-        } else if (error.status === 404) {
-          errorMessage = 'Không tìm thấy hóa đơn';
-        } else if (error.status === 400) {
-          errorMessage = 'Trạng thái không hợp lệ';
-        } else if (error.status === 500) {
-          errorMessage = 'Lỗi server, vui lòng thử lại sau';
         }
-
-        this.showToast('Lỗi khi cập nhật trạng thái: ' + errorMessage, 'error');
-
-        // Reload invoice để đảm bảo UI đồng bộ với server
-        console.log('🔄 Reloading invoice to sync UI with server');
-        this.loadInvoiceDetail();
       }
     });
+  }
+
+  /**
+   * Mở modal xác nhận
+   */
+  openConfirmModal(title: string, message: string, action: Function): void {
+    this.confirmModalTitle = title;
+    this.confirmModalMessage = message;
+    this.pendingAction = action;
+    this.showConfirmModal = true;
+  }
+
+  /**
+   * Thực hiện hành động đã xác nhận
+   */
+  confirmAction(): void {
+    if (this.pendingAction) {
+      this.pendingAction();
+    }
+    this.closeConfirmModal();
+  }
+
+  /**
+   * Đóng modal xác nhận
+   */
+  /**
+   * Đóng modal xác nhận
+   */
+  closeConfirmModal(): void {
+    this.showConfirmModal = false;
+    this.pendingAction = null;
   }
 
   /**
@@ -4544,20 +4567,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Xác nhận với người dùng
+    // Xác nhận với người dùng bằng modal tùy chỉnh
     const currentStatusLabel = this.getStatusLabel(this.invoice.trangThai);
     const newStatusLabel = this.getStatusLabel(this.selectedStatus);
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn đổi trạng thái từ "${currentStatusLabel}" sang "${newStatusLabel}"?`
-    );
+    const message = `Bạn có chắc chắn muốn đổi trạng thái từ "${currentStatusLabel}" sang "${newStatusLabel}"?`;
 
-    if (!confirmed) {
-      console.log('❌ User cancelled status change');
-      return;
-    }
-
-    // Gọi phương thức cập nhật trạng thái hiện có
-    this.onStatusChangeFromTimeline(this.selectedStatus);
+    this.openConfirmModal('Xác nhận đổi trạng thái', message, () => {
+      // Gọi phương thức cập nhật trạng thái hiện có
+      this.onStatusChangeFromTimeline(this.selectedStatus);
+    });
   }
 
   /**
@@ -4756,50 +4774,46 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Xác nhận với người dùng
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"?\n\n` +
-      `Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`
-    );
+    // Xác nhận với người dùng bằng modal tùy chỉnh
+    const message = `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"?\n\nHóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`;
 
-    if (!confirmed) {
-      return;
-    }
+    this.openConfirmModal('Xác nhận cập nhật trạng thái', message, () => {
+      this.savingStatus = true;
 
-    this.savingStatus = true;
+      // Cập nhật trạng thái
+      console.log('🔄 Calling updateTrangThaiHoaDon with invoiceId:', this.invoiceId, 'trangThai:', newStatus);
+      this.hoaDonService.updateTrangThaiHoaDon(this.invoiceId, newStatus).subscribe({
+        next: (updatedInvoice) => {
+          console.log('✅ Invoice status updated successfully:', updatedInvoice);
+          this.savingStatus = false;
 
-    // Cập nhật trạng thái
-    console.log('🔄 Calling updateTrangThaiHoaDon with invoiceId:', this.invoiceId, 'trangThai:', newStatus);
-    this.hoaDonService.updateTrangThaiHoaDon(this.invoiceId, newStatus).subscribe({
-      next: (updatedInvoice) => {
-        console.log('✅ Invoice status updated successfully:', updatedInvoice);
-        this.savingStatus = false;
+          // Hiển thị thông báo thành công
+          this.showToast(`Cập nhật hóa đơn thành công! Trạng thái đã được cập nhật thành "${statusMessage}".`, 'success');
 
-        // Hiển thị thông báo thành công
-        this.showToast(`Cập nhật hóa đơn thành công! Trạng thái đã được cập nhật thành "${statusMessage}".`, 'success');
+          // Reload invoice để cập nhật UI và view theo trạng thái mới
+          console.log('🔄 Reloading invoice detail to update view based on new status:', updatedInvoice.trangThai);
+          this.loadInvoiceDetail();
 
-        // Reload invoice để cập nhật UI và view theo trạng thái mới
-        // Điều này đảm bảo khi chuyển từ DANG_GIAO_HANG sang DA_GIAO_HANG,
-        // view sẽ tự động chuyển từ timeline sang icon display
-        console.log('🔄 Reloading invoice detail to update view based on new status:', updatedInvoice.trangThai);
-        this.loadInvoiceDetail();
+          // Sau 2 giây, chuyển về trang quản lý hóa đơn
+          setTimeout(() => {
+            this.router.navigate(['/invoices']);
+          }, 2000);
+        },
+        error: (error) => {
+          console.error('❌ Error updating invoice status:', error);
+          console.error('   - Status: ' + error.status);
+          console.error('   - StatusText: ' + error.statusText);
+          console.error('   - Error body: ', error.error);
+          console.error('   - Error message: ', error.message);
+          console.error('   - Full error: ', error);
+          this.savingStatus = false;
+          const errorMessage = error.error?.message || error.error || error.message || 'Vui lòng thử lại';
+          this.showToast('Lỗi khi cập nhật trạng thái: ' + errorMessage, 'error');
 
-        // Sau 2 giây, chuyển về trang quản lý hóa đơn
-        setTimeout(() => {
-          this.router.navigate(['/invoices']);
-        }, 2000);
-      },
-      error: (error) => {
-        console.error('❌ Error updating invoice status:', error);
-        console.error('   - Status: ' + error.status);
-        console.error('   - StatusText: ' + error.statusText);
-        console.error('   - Error body: ', error.error);
-        console.error('   - Error message: ', error.message);
-        console.error('   - Full error: ', error);
-        this.savingStatus = false;
-        const errorMessage = error.error?.message || error.error || error.message || 'Vui lòng thử lại';
-        this.showToast('Lỗi khi cập nhật trạng thái: ' + errorMessage, 'error');
-      }
+          // Reload invoice để đảm bảo UI đồng bộ với server
+          this.loadInvoiceDetail();
+        }
+      });
     });
   }
 
@@ -4978,7 +4992,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     else {
       console.warn('⚠️ No products in this.invoice, loading from API...');
       this.hoaDonService.getHoaDonById(this.invoice.id).subscribe({
-        next: (currentInvoice) => {
+        next: (currentInvoice: any) => {
           console.log('📦 Loaded invoice from API:', {
             danhSachSanPham: currentInvoice.danhSachSanPham?.length || 0,
             danhSachChiTiet: (currentInvoice as any).danhSachChiTiet?.length || 0
@@ -5106,32 +5120,41 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Log final data trước khi gửi
     console.log('📤 Final update data to send:', JSON.stringify(finalUpdateData, null, 2));
 
-    this.hoaDonService.updateHoaDonNew(this.invoice.id, finalUpdateData).subscribe({
-      next: (updatedInvoice) => {
-        console.log('✅ Invoice confirmed successfully:', updatedInvoice);
-        this.savingStatus = false;
+    // Reset saving status before showing modal
+    this.savingStatus = false;
 
-        // Hiển thị thông báo thành công
-        this.showToast('Xác nhận hóa đơn thành công! Trạng thái đã được cập nhật thành "Đã xác nhận".', 'success');
+    // Hiển thị modal xác nhận
+    const message = `Bạn có chắc chắn muốn xác nhận hóa đơn "${this.invoice.maHoaDon}"?\n\nHóa đơn sẽ được chuyển sang trạng thái "Đã xác nhận".`;
 
-        // Reset form
-        this.resetConfirmInvoiceForm();
+    this.openConfirmModal('Xác nhận hóa đơn', message, () => {
+      this.savingStatus = true;
+      this.hoaDonService.updateHoaDonNew(this.invoice!.id, finalUpdateData).subscribe({
+        next: (updatedInvoice: any) => {
+          console.log('✅ Invoice confirmed successfully:', updatedInvoice);
+          this.savingStatus = false;
 
-        // Reload invoice để cập nhật UI và hiển thị view chi tiết với trạng thái mới
-        console.log('🔄 Reloading invoice detail to show updated status (DA_XAC_NHAN)...');
-        this.loadInvoiceDetail();
+          // Hiển thị thông báo thành công
+          this.showToast('Xác nhận hóa đơn thành công! Trạng thái đã được cập nhật thành "Đã xác nhận".', 'success');
 
-        // Sau 2 giây, chuyển về trang quản lý hóa đơn
-        setTimeout(() => {
-          this.router.navigate(['/invoices']);
-        }, 2000);
-      },
-      error: (error) => {
-        console.error('❌ Error confirming invoice:', error);
-        this.savingStatus = false;
-        const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
-        this.showToast('Lỗi khi xác nhận hóa đơn: ' + errorMessage, 'error');
-      }
+          // Reset form
+          this.resetConfirmInvoiceForm();
+
+          // Reload invoice để cập nhật UI và hiển thị view chi tiết với trạng thái mới
+          console.log('🔄 Reloading invoice detail to show updated status (DA_XAC_NHAN)...');
+          this.loadInvoiceDetail();
+
+          // Sau 2 giây, chuyển về trang quản lý hóa đơn
+          setTimeout(() => {
+            this.router.navigate(['/invoices']);
+          }, 2000);
+        },
+        error: (error: any) => {
+          console.error('❌ Error confirming invoice:', error);
+          this.savingStatus = false;
+          const errorMessage = error.error?.message || error.message || 'Vui lòng thử lại';
+          this.showToast('Lỗi khi xác nhận hóa đơn: ' + errorMessage, 'error');
+        }
+      });
     });
   }
 
@@ -5176,7 +5199,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     // Load hóa đơn hiện tại để lấy đầy đủ thông tin
     console.log('🔄 Loading current invoice data...');
     this.hoaDonService.getHoaDonById(this.invoice.id).subscribe({
-      next: (currentInvoice) => {
+      next: (currentInvoice: any) => {
         console.log('✅ Current invoice loaded:', {
           id: currentInvoice.id,
           maHoaDon: currentInvoice.maHoaDon,
@@ -5300,7 +5323,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
         // Bước 1: Cập nhật trạng thái thành HUY
         this.hoaDonService.updateTrangThaiHoaDon(this.invoice.id, 'HUY').subscribe({
-          next: (updatedInvoice) => {
+          next: (updatedInvoice: any) => {
             console.log('✅ Invoice status updated to HUY:', updatedInvoice);
 
             // Bước 2: Nếu đơn hàng đã thanh toán, xử lý hoàn tiền
@@ -5319,7 +5342,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
               }
 
               this.hoaDonService.refundInvoice(this.invoice.id, refundRequest).subscribe({
-                next: (refundedInvoice) => {
+                next: (refundedInvoice: any) => {
                   console.log('✅ Refund processed successfully:', refundedInvoice);
                   this.savingStatus = false;
                   this.closeCancelInvoiceModal();
@@ -5329,7 +5352,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                     this.router.navigate(['/invoices']);
                   }, 2000);
                 },
-                error: (refundError) => {
+                error: (refundError: any) => {
                   console.error('❌ Error processing refund:', refundError);
                   // Vẫn hiển thị thành công vì đơn hàng đã được hủy
                   this.savingStatus = false;
