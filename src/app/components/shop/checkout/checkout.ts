@@ -156,8 +156,13 @@ export class CheckoutComponent implements OnInit {
     private notificationService: NotificationService
   ) { }
 
+  realCustomerId: number | null = null;
+
   ngOnInit(): void {
     console.log('🛒 CheckoutComponent ngOnInit - Starting...');
+
+    // Resolve real customer ID first
+    this.resolveCustomerId();
 
     const currentUser = this.authService.getCurrentUser();
     const isLoggedIn = this.authService.isLoggedIn();
@@ -255,6 +260,31 @@ export class CheckoutComponent implements OnInit {
     setTimeout(() => {
       this.refreshVoucherSuggestions();
     }, 500);
+  }
+
+  resolveCustomerId(): void {
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      console.log('👤 Guest user, skipping Customer ID resolution');
+      return;
+    }
+
+    console.log('👤 Resolving Customer ID for User ID:', user.id);
+    this.customerService.getCustomerByUserId(user.id).subscribe({
+      next: (customer: any) => {
+        if (customer) {
+          this.realCustomerId = customer.id;
+          console.log('✅ Resolved Real Customer ID:', this.realCustomerId, 'for User:', user.username);
+          // Trigger refresh to update vouchers with new ID
+          this.refreshVoucherSuggestions();
+        } else {
+          console.warn('⚠️ No Customer record found for User ID:', user.id);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Failed to resolve Customer ID:', err);
+      }
+    });
   }
 
   /**
@@ -2246,8 +2276,11 @@ export class CheckoutComponent implements OnInit {
     const subtotal = this.getSubtotal();
     const discount = this.getDiscount();
     const base = Math.max(0, subtotal - discount);
-    const currentUser = this.authService.getCurrentUser();
-    const customerId = currentUser?.id;
+
+    // Use the resolved customer ID if available, otherwise strict null for guests
+    // Do NOT fallback to user.id as it might be different
+    const customerId = this.realCustomerId;
+
     const collected: any[] = [];
     const voucherIds = new Set<number>(); // Để loại bỏ trùng lặp
 
@@ -2255,19 +2288,15 @@ export class CheckoutComponent implements OnInit {
     console.log('   - Subtotal:', subtotal);
     console.log('   - Discount:', discount);
     console.log('   - Base:', base);
-    console.log('   - CustomerId:', customerId);
-    console.log('   - Cart items:', this.isTempCart ? this.tempCart?.length : this.cart?.danhSachGioHang?.length);
+    console.log('   - Real CustomerId:', customerId);
 
     // Nếu base = 0, vẫn hiển thị phiếu để user biết có phiếu nào không
     // (nhưng sẽ filter sau khi tính discount)
 
     // ✅ Lấy TẤT CẢ phiếu đang hoạt động (bao gồm cả công khai và cá nhân)
-    // Sau đó frontend sẽ lọc: phiếu công khai hiển thị cho tất cả, phiếu cá nhân chỉ cho khách hàng có trong bảng
-    console.log('📡 Calling getActivePhieuGiamGia API...');
     this.phieuGiamGiaService.getActivePhieuGiamGia().subscribe({
       next: (res: any) => {
         console.log('✅ Active vouchers API response:', res);
-        // ApiResponse có structure: { success: true, data: [...], message: "..." }
         let allActiveVouchers: any[] = [];
         if (Array.isArray(res)) {
           allActiveVouchers = res;
@@ -2281,91 +2310,86 @@ export class CheckoutComponent implements OnInit {
 
         console.log('📋 Extracted all active vouchers:', allActiveVouchers.length, allActiveVouchers);
 
-        // ✅ Lấy danh sách ID các phiếu cá nhân (nếu có đăng nhập)
-        if (customerId) {
-          this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
-            next: (pers: any) => {
-              console.log('✅ Personal vouchers API response:', pers);
-              let raw: any[] = [];
-              if (Array.isArray(pers)) {
-                raw = pers;
-              } else if (pers?.data && Array.isArray(pers.data)) {
-                raw = pers.data;
-              } else if (pers?.content && Array.isArray(pers.content)) {
-                raw = pers.content;
-              } else if (pers?.success && pers?.data && Array.isArray(pers.data)) {
-                raw = pers.data;
-              }
+        // ✅ Lấy danh sách ID các phiếu cá nhân (luôn check để lọc phiếu private ngay cả khi chưa login)
+        this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+          next: (pers: any) => {
+            console.log('✅ Personal vouchers API response:', pers);
+            let raw: any[] = [];
+            if (Array.isArray(pers)) {
+              raw = pers;
+            } else if (pers?.data && Array.isArray(pers.data)) {
+              raw = pers.data;
+            } else if (pers?.content && Array.isArray(pers.content)) {
+              raw = pers.content;
+            } else if (pers?.success && pers?.data && Array.isArray(pers.data)) {
+              raw = pers.data;
+            }
 
-              // Lấy danh sách ID các phiếu cá nhân của khách hàng này
-              const personalVoucherIds = new Set<number>();
-              raw
-                .filter((r: any) => (r?.khachHangId ?? r?.khachHang?.id) === customerId)
-                .forEach((r: any) => {
-                  const voucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
-                  if (voucherId) {
-                    personalVoucherIds.add(voucherId);
+            // Lấy danh sách ID các phiếu cá nhân CỦA KHÁCH HÀNG HIỆN TẠI (nếu có)
+            const personalVoucherIds = new Set<string>();
+            console.log('🔍 [DEBUG] Current Customer ID:', customerId, 'Type:', typeof customerId);
+
+            if (customerId) {
+              raw.forEach((r: any) => {
+                const rCustomerId = r?.khachHangId ?? r?.khachHang?.id;
+                const rVoucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
+
+                // Robust comparison: convert both to string to handle number vs string mismatches
+                if (String(rCustomerId) === String(customerId)) {
+                  if (rVoucherId) {
+                    personalVoucherIds.add(String(rVoucherId));
                   }
-                });
-
-              console.log('📋 Personal voucher IDs for customer:', Array.from(personalVoucherIds));
-
-              // ✅ Lọc phiếu để hiển thị:
-              // - Phiếu công khai: không có trong bảng phieu_giam_gia_ca_nhan HOẶC có nhưng không thuộc khách hàng này
-              // - Phiếu cá nhân: có trong bảng phieu_giam_gia_ca_nhan VÀ thuộc khách hàng này
-              const vouchersToShow = allActiveVouchers.filter((v: any) => {
-                const voucherId = v?.id;
-                if (!voucherId) return false;
-
-                // Nếu phiếu có trong danh sách cá nhân của khách hàng này => hiển thị
-                if (personalVoucherIds.has(voucherId)) {
-                  console.log('✅ Voucher is personal for this customer:', v.code);
-                  return true;
                 }
+              });
+            }
+            console.log('📋 [DEBUG] Personal Voucher IDs found:', Array.from(personalVoucherIds));
 
-                // Kiểm tra xem phiếu này có trong bảng phieu_giam_gia_ca_nhan không
-                const isInPersonalTable = raw.some((r: any) => {
-                  const rVoucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
-                  return rVoucherId === voucherId;
-                });
+            // ✅ Lọc phiếu để hiển thị (Logic thống nhất cho cả User và Guest):
+            // - Phiếu công khai: không có trong bảng phieu_giam_gia_ca_nhan (bất kể của ai)
+            // - Phiếu cá nhân: CÓ trong bảng phieu_giam_gia_ca_nhan VÀ thuộc về khách hàng này
+            // - Phiếu của người khác: CÓ trong bảng nhưng KHÔNG thuộc khách hàng này -> ẨN
+            // - Khách vãng lai (Guest): Không có personalVoucherIds -> Luôn ẩn phiếu Private -> Chỉ thấy phiếu Public
+            const vouchersToShow = allActiveVouchers.filter((v: any) => {
+              const voucherId = v?.id;
+              if (!voucherId) return false;
 
-                // Nếu không có trong bảng => đây là phiếu công khai => hiển thị
-                if (!isInPersonalTable) {
-                  console.log('✅ Voucher is public (not in personal table):', v.code);
-                  return true;
-                }
-
-                // Nếu có trong bảng nhưng không thuộc khách hàng này => cũng là công khai => hiển thị
-                // (vì có thể có nhiều khách hàng khác có phiếu này, nhưng nếu khách hàng này không có thì vẫn được xem như công khai)
-                console.log('✅ Voucher is in personal table but not for this customer (treating as public):', v.code);
-                return true;
+              // 1. Kiểm tra xem phiếu này có phải là phiếu cá nhân (của bất kỳ ai) không?
+              // Logic chuẩn POS: Nếu ID phiếu nằm trong bảng mapping (privateMappings) -> Nó là phiếu cá nhân.
+              const isPrivateVoucher = raw.some((r: any) => {
+                const rVoucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
+                // Robust comparison
+                return String(rVoucherId) === String(voucherId);
               });
 
-              console.log('📦 Filtered vouchers to show:', vouchersToShow.length, vouchersToShow);
-              this.computeVoucherLists(vouchersToShow, base);
-            },
-            error: (err) => {
-              console.error('❌ Error loading personal vouchers:', err);
-              // Nếu lỗi khi lấy phiếu cá nhân, hiển thị tất cả phiếu đang hoạt động (coi như công khai)
-              console.log('⚠️ Fallback: showing all active vouchers as public');
-              this.computeVoucherLists(allActiveVouchers, base);
-            },
-          });
-        } else {
-          // ✅ Khách hàng chưa đăng nhập: hiển thị tất cả phiếu đang hoạt động
-          // (Đơn giản hóa: coi tất cả phiếu đang hoạt động là công khai cho user chưa đăng nhập)
-          console.log('👤 Not logged in, showing all active vouchers as public');
-          this.computeVoucherLists(allActiveVouchers, base);
-        }
+              // 2. Nếu là phiếu cá nhân: 
+              if (isPrivateVoucher) {
+                // Chỉ hiển thị nếu nó thuộc về TÔI (personalVoucherIds)
+                if (personalVoucherIds.has(String(voucherId))) {
+                  return true;
+                }
+                // Nếu mình là Guest hoặc phiếu của người khác -> ẨN
+                return false;
+              }
+
+              // 3. Nếu không phải phiếu cá nhân -> Phiếu công khai -> Hiển thị
+              console.log('✅ Voucher is public:', v.code);
+              return true;
+            });
+
+            console.log('📦 Filtered vouchers to show:', vouchersToShow.length, vouchersToShow);
+            this.computeVoucherLists(vouchersToShow, base);
+          },
+          error: (err) => {
+            console.error('❌ Error loading personal vouchers:', err);
+            // Fallback: show all as public if checking fails? 
+            // Better to show nothing private for safety, but showing all publics is okay
+            console.log('⚠️ Fallback: showing all active vouchers as public due to error');
+            this.computeVoucherLists(allActiveVouchers, base);
+          },
+        });
       },
       error: (err) => {
         console.error('❌ Error loading active vouchers:', err);
-        console.error('   - Error details:', {
-          status: err?.status,
-          statusText: err?.statusText,
-          message: err?.message,
-          error: err?.error
-        });
         this.computeVoucherLists([], base);
       },
     });
