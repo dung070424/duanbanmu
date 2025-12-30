@@ -122,11 +122,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   // Status mapping - 5 giai đoạn như trong hình ảnh
   statusSteps = [
-    { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận', iconClass: 'fas fa-clock', color: '#ffc107', description: 'Đơn hàng đang chờ xác nhận' },
-    { key: 'DA_XAC_NHAN', label: 'Đã xác nhận', iconClass: 'fas fa-clipboard-check', color: '#17a2b8', description: 'Đơn hàng đã được xác nhận' },
-    { key: 'DANG_GIAO_HANG', label: 'Đang giao hàng', iconClass: 'fas fa-truck', color: '#007bff', description: 'Đơn hàng đang được giao' },
-    { key: 'DA_GIAO_HANG', label: 'Đã Hoàn Thành', iconClass: 'fas fa-box-open', color: '#28a745', description: 'Đơn hàng đã giao thành công' },
-    { key: 'HUY', label: 'Hủy', iconClass: 'fas fa-times-circle', color: '#dc3545', description: 'Đơn hàng đã bị hủy' }
+    { key: 'CHO_XAC_NHAN', label: 'Chờ xác nhận', iconClass: 'bi bi-clock', color: '#ffc107', description: 'Đơn hàng đang chờ xác nhận' },
+    { key: 'DA_XAC_NHAN', label: 'Đã xác nhận', iconClass: 'bi bi-clipboard-check', color: '#17a2b8', description: 'Đơn hàng đã được xác nhận' },
+    { key: 'DANG_GIAO_HANG', label: 'Đang giao hàng', iconClass: 'bi bi-truck', color: '#007bff', description: 'Đơn hàng đang được giao' },
+    { key: 'DA_GIAO_HANG', label: 'Đã Hoàn Thành', iconClass: 'bi bi-box-seam', color: '#28a745', description: 'Đơn hàng đã giao thành công' }
   ];
 
   constructor(

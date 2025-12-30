@@ -145,7 +145,8 @@
     </div>
 
     <!-- Status Progress Bar -->
-    <div class="status-section" *ngIf="invoice">
+    <div class="status-section"
+      *ngIf="invoice && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'">
       <h3>
         <i class="bi bi-list-check"></i>
         Trạng thái đơn hàng
@@ -169,14 +170,7 @@
     </div>
 
 
-    <!-- Invoice Status Timeline (chỉ hiển thị khi trạng thái là Đang Giao Hàng) -->
-    <app-invoice-status-timeline *ngIf="invoice && invoice.trangThai === 'DANG_GIAO_HANG'"
-      [currentStatus]="invoice ? invoice.trangThai : undefined"
-      [invoiceCreatedAt]="invoice ? invoice.ngayTao : undefined"
-      [invoicePaymentDate]="invoice ? invoice.ngayThanhToan : undefined"
-      [invoiceEstimatedDelivery]="invoice ? invoice.ngayDuKienGiao : undefined" [invoiceId]="invoiceId"
-      [enableClick]="false" (statusChange)="onStatusChangeFromTimeline($event)">
-    </app-invoice-status-timeline>
+    <!-- Invoice Status Timeline (Removed as per request) -->
 
     <!-- Single Status Icon Display (hiển thị cho tất cả trạng thái) -->
     <div class="single-status-display" *ngIf="invoice">
@@ -369,13 +363,12 @@
               <th>Thuộc tính</th>
               <th class="text-center">Số lượng</th>
               <th class="text-end">Đơn giá</th>
-              <th class="text-end">Giảm giá</th>
               <th class="text-end">Thành tiền</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngIf="!invoice.danhSachSanPham || invoice.danhSachSanPham.length === 0">
-              <td colspan="7" class="text-center py-4 text-muted">
+              <td colspan="6" class="text-center py-4 text-muted">
                 <i class="fas fa-inbox me-2"></i>Chưa có sản phẩm nào trong hóa đơn này
               </td>
             </tr>
@@ -407,12 +400,6 @@
               </td>
               <td class="text-center">{{ product.soLuong }}</td>
               <td class="text-end">{{ formatCurrency(product.donGia) }}</td>
-              <td class="text-end">
-                <span *ngIf="product.giamGia && product.giamGia > 0" class="text-danger">
-                  -{{ formatCurrency(product.giamGia) }}
-                </span>
-                <span *ngIf="!product.giamGia || product.giamGia === 0" class="text-muted">0</span>
-              </td>
               <td class="text-end fw-semibold text-primary">{{ formatCurrency(product.thanhTien) }}</td>
             </tr>
           </tbody>
