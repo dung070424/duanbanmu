@@ -27,6 +27,13 @@
   }
 }
 
+// Cart Main Container Override
+.cart-main {
+  .container {
+    width: min(1400px, 95%); // Increased from 1200px to give more space
+  }
+}
+
 .product-thumbnail {
   width: 60px;
   height: 60px;
@@ -70,7 +77,7 @@
       font-size: 14px;
       color: #6b7280;
 
-      + .breadcrumb-item {
+      +.breadcrumb-item {
         padding-left: 8px;
 
         &::before {
@@ -242,6 +249,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -286,8 +294,8 @@
 
 .cart-content {
   display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 30px;
+  grid-template-columns: 1fr 400px; // Increased width for standard summary
+  gap: 20px; // Reduced gap
 
   @media (max-width: 968px) {
     grid-template-columns: 1fr;
@@ -297,11 +305,11 @@
 .cart-items {
   background: white;
   border-radius: var(--radius-xl);
-  padding: 2rem;
+  padding: 1rem; // Reduced padding to save space
   box-shadow: var(--shadow-lg);
   border: 2px solid var(--gray-100);
   position: relative;
-  overflow: hidden;
+  overflow: hidden; // Revert to hidden
 
   &::before {
     content: '';
@@ -315,6 +323,7 @@
 
   .cart-table {
     width: 100%;
+    // min-width removed
     border-collapse: separate;
     border-spacing: 0;
 
@@ -323,14 +332,15 @@
       border-bottom: 2px solid var(--gray-200);
 
       th {
-        padding: 1.25rem 1rem;
+        padding: 0.75rem 0.5rem; // Reduced padding
         text-align: left;
         font-weight: 700;
         color: var(--gray-700);
         text-transform: uppercase;
-        font-size: 0.75rem;
+        font-size: 0.7rem; // Reduced font size
         letter-spacing: 0.05em;
         border-bottom: 2px solid var(--gray-200);
+        white-space: nowrap; // Prevent header wrapping
       }
     }
 
@@ -346,66 +356,88 @@
 
     .cart-item {
       td {
-        padding: 20px 15px;
+        padding: 8px 4px; // Reduced padding
         vertical-align: middle;
       }
     }
 
-    .product-info {
-      .product-details {
-        h4 {
-          margin: 0;
-          color: #333;
-          font-size: 1rem;
-        }
+    .product-image {
+      width: 50px;
+      text-align: center;
 
-        .btn-detail {
-          margin-top: 6px;
-          padding: 6px 12px;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-          border-radius: 999px;
-          background: #fff;
-          font-size: 0.85rem;
-          color: #111827;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          transition: all 0.2s ease;
-          font-weight: 500;
+      .product-thumbnail {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-right: 0; // Reset margin from global style
+      }
+    }
 
-          &:hover {
-            border-color: #f4a11a;
-            color: #f4a11a;
-            background: rgba(244, 161, 26, 0.05);
-          }
-        }
+    .product-name {
+      h4 {
+        margin: 0;
+        color: #333;
+        font-size: 0.9rem; // Reduced font size
+        font-weight: 600;
+        line-height: 1.3;
+        white-space: nowrap; // Prevent product name wrapping
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px; // Constraint width to prevent overflow
+      }
+    }
+
+    .product-color,
+    .product-size {
+      text-align: center;
+
+      .badge-color,
+      .badge-size {
+        display: inline-block;
+        padding: 2px 6px; // Reduced padding
+        border-radius: 4px;
+        background: #f9fafb;
+        color: #4b5563;
+        font-size: 0.8rem; // Reduced font size
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+        white-space: nowrap;
+      }
+
+      .text-muted {
+        color: #9ca3af;
+        font-style: italic;
       }
     }
 
     .product-price {
       color: #333;
       font-weight: 600;
+      font-size: 0.9rem; // Reduced font size
+      white-space: nowrap;
     }
 
     .product-quantity {
       .quantity-controls {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 2px; // Reduced gap
 
         .btn-quantity {
-          width: 40px;
-          height: 40px;
+          width: 24px; // Reduced size
+          height: 24px; // Reduced size
           border: 1px solid rgba(0, 0, 0, 0.1);
           background: white;
-          border-radius: 12px;
+          border-radius: 4px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.3s ease;
           font-weight: 600;
+          font-size: 0.75rem;
 
           &:hover:not(:disabled) {
             background: #f4a11a;
@@ -422,12 +454,13 @@
         }
 
         .quantity-input {
-          width: 70px;
-          padding: 8px;
+          width: 36px; // Reduced width
+          padding: 2px;
+          height: 24px;
           border: 1px solid rgba(0, 0, 0, 0.1);
-          border-radius: 12px;
+          border-radius: 4px;
           text-align: center;
-          font-size: 1rem;
+          font-size: 0.85rem;
           font-weight: 700;
 
           &:focus {
@@ -438,27 +471,36 @@
       }
     }
 
-    .product-total {
-      color: #f4a11a;
-      font-weight: 800;
-      font-size: 1.1rem;
-    }
-
     .product-actions {
+      text-align: center;
+      width: 40px; // Reduced width
+
       .btn-remove {
         background: #fee;
         color: #c33;
         border: none;
-        padding: 8px 12px;
+        padding: 6px;
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.3s ease;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
 
         &:hover {
           background: #c33;
           color: white;
         }
       }
+    }
+
+    .product-total {
+      color: #f4a11a;
+      font-weight: 800;
+      font-size: 0.95rem; // Reduced font size
+      white-space: nowrap;
     }
   }
 }
@@ -491,6 +533,7 @@
       justify-content: space-between;
       padding: 12px 0;
       border-bottom: 1px solid #eee;
+      white-space: nowrap; // Prevent wrapping in summary rows
 
       &.total {
         border-bottom: 2px solid #111827;

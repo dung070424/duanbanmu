@@ -7,14 +7,17 @@ import { AuthService } from '../../../services/auth';
 import { CustomerService } from '../../../services/customer.service';
 import { ColorApiService, ColorResponse } from '../../../services/color-api.service';
 import { SizeApiService, SizeResponse } from '../../../services/size-api.service';
+import { ChiTietSanPhamApiService } from '../../../services/chi-tiet-san-pham-api.service';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
 import { ShopFooterComponent } from '../shared/shop-footer.component';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
+import { NotificationComponent } from '../shared/notification.component';
+import { NotificationService } from '../shared/notification.service';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ShopHeaderComponent, ShopFooterComponent, ChatbotComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ShopHeaderComponent, ShopFooterComponent, ChatbotComponent, NotificationComponent],
   templateUrl: './cart.html',
   styleUrls: ['./cart.scss']
 })
@@ -51,19 +54,21 @@ export class CartComponent implements OnInit {
     private location: Location,
     private cdr: ChangeDetectorRef,
     private colorApiService: ColorApiService,
-    private sizeApiService: SizeApiService
-  ) {}
+    private sizeApiService: SizeApiService,
+    private chiTietSanPhamApiService: ChiTietSanPhamApiService,
+    private notificationService: NotificationService
+  ) { }
 
   ngOnInit(): void {
     // Không kiểm tra quyền - giỏ hàng là public
     console.log('🛒 CartComponent ngOnInit - Loading cart...');
     console.log('   - isLoggedIn:', this.authService.isLoggedIn());
-    
+
     // QUAN TRỌNG: Load dữ liệu ngay lập tức từ localStorage trước (đồng bộ)
     // Sau đó mới load từ DB nếu đã đăng nhập (bất đồng bộ)
     const tempCartData = localStorage.getItem('temp_cart');
     console.log('🛒 ngOnInit - temp_cart in localStorage:', tempCartData ? 'EXISTS' : 'NOT FOUND');
-    
+
     // Load ngay từ localStorage nếu có (đồng bộ - hiển thị ngay)
     if (tempCartData && tempCartData.trim() !== '' && tempCartData !== 'null') {
       try {
@@ -125,7 +130,7 @@ export class CartComponent implements OnInit {
       next: (customer) => {
         const khachHangId = customer?.id ?? null;
         console.log('✅ loadCart - Got khachHangId:', khachHangId);
-        
+
         if (!khachHangId) {
           console.warn('⚠️ loadCart - No khachHangId found, loading temp cart');
           this.loadTempCart();
@@ -138,13 +143,13 @@ export class CartComponent implements OnInit {
           next: (carts) => {
             console.log('✅ loadCart - Received carts from DB:', carts);
             console.log('   - carts length:', carts?.length || 0);
-            
+
             if (carts && carts.length > 0) {
               // Lấy cart đầu tiên có trạng thái DANG_CHO
               const activeCart = carts.find(c => c.trangThai === 'DANG_CHO') || carts[0];
               console.log('✅ loadCart - Active cart:', activeCart);
               console.log('   - cart items count:', activeCart.danhSachGioHang?.length || 0);
-              
+
               // QUAN TRỌNG: Nếu cart DB trống nhưng có temp_cart, ưu tiên hiển thị temp_cart
               if (!activeCart.danhSachGioHang || activeCart.danhSachGioHang.length === 0) {
                 const tempCartData = localStorage.getItem('temp_cart');
@@ -161,7 +166,7 @@ export class CartComponent implements OnInit {
                   }
                 }
               }
-              
+
               this.currentHoaDonChoId = activeCart.id!;
               this.cart = activeCart;
               this.isTempCart = false; // Đảm bảo flag đúng
@@ -240,12 +245,12 @@ export class CartComponent implements OnInit {
     this.isTempCart = true;
     this.cart = null;
     this.isLoading = false; // Không hiển thị loading, hiển thị dữ liệu ngay
-    
+
     try {
       const tempCartData = localStorage.getItem('temp_cart');
       console.log('🛒 loadTempCart - tempCartData from localStorage:', tempCartData);
       console.log('🛒 loadTempCart - typeof tempCartData:', typeof tempCartData);
-      
+
       if (tempCartData && tempCartData.trim() !== '' && tempCartData !== 'null') {
         try {
           this.tempCart = JSON.parse(tempCartData);
@@ -253,7 +258,7 @@ export class CartComponent implements OnInit {
           console.log('   - tempCart type:', Array.isArray(this.tempCart) ? 'ARRAY' : typeof this.tempCart);
           console.log('   - tempCart length:', this.tempCart.length);
           console.log('   - tempCart items:', this.tempCart);
-          
+
           // Đảm bảo tempCart là array
           if (!Array.isArray(this.tempCart)) {
             console.warn('⚠️ loadTempCart - tempCart is not an array, resetting to []');
@@ -271,7 +276,7 @@ export class CartComponent implements OnInit {
         console.log('⚠️ loadTempCart - No temp_cart in localStorage or empty/null');
         this.tempCart = [];
       }
-      
+
       // Update cartItems cache ngay để hiển thị
       this.updateCartItemsCache();
       // Force change detection để Angular render ngay
@@ -306,9 +311,9 @@ export class CartComponent implements OnInit {
   createNewCart(): void {
     // Tạo mã hóa đơn chờ unique: HDC + timestamp + random number
     const maHoaDonCho = `HDC${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const currentUser = this.authService.getCurrentUser();
-    
+
     // Nếu đã đăng nhập, lấy khachHangId từ customer service
     if (currentUser?.id && this.authService.isLoggedIn()) {
       this.customerService.getCurrentCustomer().subscribe({
@@ -374,6 +379,18 @@ export class CartComponent implements OnInit {
     if (this.isTempCart) {
       const tempItem = item as any;
       if (tempItem.chiTietSanPhamId && newQuantity >= 1) {
+        // Kiểm tra số lượng tồn nếu có thông tin (maxQuantity)
+        if (item.maxQuantity !== undefined && newQuantity > item.maxQuantity) {
+          this.notificationService.warning(`Sản phẩm này chỉ còn ${item.maxQuantity} sản phẩm`);
+          // Reset lại input về max
+          if (item !== this.tempCart.find((i: any) => i.chiTietSanPhamId === tempItem.chiTietSanPhamId)) {
+            // item trong cartItems là copy, nên không ảnh hưởng trực tiếp tempCart gốc ngay ở đây nếu chỉ sửa item
+            // Tuy nhiên logic dưới update tempCart theo index
+          }
+          newQuantity = item.maxQuantity;
+          // Cập nhật lại UI số lượng hiển thị nếu cần (Angular binding sẽ lo nếu model update)
+        }
+
         const index = this.tempCart.findIndex((i: any) => i.chiTietSanPhamId === tempItem.chiTietSanPhamId);
         if (index >= 0) {
           this.tempCart[index].quantity = newQuantity;
@@ -389,6 +406,12 @@ export class CartComponent implements OnInit {
     // Nếu là giỏ hàng DB
     if (!this.currentHoaDonChoId || !item.id || newQuantity < 1) return;
 
+    // Kiểm tra số lượng tồn
+    if (item.maxQuantity !== undefined && newQuantity > item.maxQuantity) {
+      this.notificationService.warning(`Sản phẩm này chỉ còn ${item.maxQuantity} sản phẩm trong kho!`);
+      newQuantity = item.maxQuantity;
+    }
+
     this.hoaDonChoService.updateCartItemQuantity(
       this.currentHoaDonChoId,
       item.id,
@@ -401,7 +424,7 @@ export class CartComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error updating quantity:', error);
-        alert('Không thể cập nhật số lượng. Vui lòng thử lại!');
+        this.notificationService.error('Không thể cập nhật số lượng. Vui lòng thử lại!');
       }
     });
   }
@@ -413,7 +436,7 @@ export class CartComponent implements OnInit {
       if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
         return;
       }
-      
+
       if (tempItem.chiTietSanPhamId) {
         this.tempCart = this.tempCart.filter((i: any) => i.chiTietSanPhamId !== tempItem.chiTietSanPhamId);
         localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
@@ -439,7 +462,7 @@ export class CartComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error removing item:', error);
-        alert('Không thể xóa sản phẩm. Vui lòng thử lại!');
+        this.notificationService.error('Không thể xóa sản phẩm. Vui lòng thử lại!');
       }
     });
   }
@@ -448,19 +471,19 @@ export class CartComponent implements OnInit {
     // Kiểm tra giỏ hàng tạm
     if (this.isTempCart) {
       if (!this.tempCart || this.tempCart.length === 0) {
-        alert('Giỏ hàng của bạn đang trống!');
+        this.notificationService.warning('Giỏ hàng của bạn đang trống!');
         return;
       }
-      
+
       // Đảm bảo tempCart được lưu vào localStorage
       localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
       console.log('🛒 proceedToCheckout - Saved temp_cart to localStorage, items:', this.tempCart.length);
-      
+
       // CHO PHÉP thanh toán không cần đăng nhập (để test)
       // Chuyển đến checkout với tempCart
       this.router.navigate(['/shop/checkout']);
       return;
-      
+
       // Code cũ: yêu cầu đăng nhập
       // if (!this.authService.isLoggedIn()) {
       //   if (confirm('Bạn cần đăng nhập để thanh toán. Bạn có muốn đăng nhập ngay không?')) {
@@ -490,7 +513,7 @@ export class CartComponent implements OnInit {
           console.error('Error parsing temp_cart:', e);
         }
       }
-      alert('Giỏ hàng của bạn đang trống!');
+      this.notificationService.warning('Giỏ hàng của bạn đang trống!');
       return;
     }
 
@@ -505,8 +528,8 @@ export class CartComponent implements OnInit {
     // Chuyển đến trang checkout với cartId
     if (this.currentHoaDonChoId) {
       console.log('🛒 proceedToCheckout - Navigating to checkout with cartId:', this.currentHoaDonChoId);
-      this.router.navigate(['/shop/checkout'], { 
-        queryParams: { cartId: this.currentHoaDonChoId } 
+      this.router.navigate(['/shop/checkout'], {
+        queryParams: { cartId: this.currentHoaDonChoId }
       });
     } else {
       // Không có cartId, vẫn navigate để load từ localStorage
@@ -527,7 +550,7 @@ export class CartComponent implements OnInit {
       });
       return;
     }
-    
+
     // Navigate đến trang lịch sử đơn hàng
     this.router.navigate(['/customer/orders']);
   }
@@ -551,7 +574,7 @@ export class CartComponent implements OnInit {
       next: (customer) => {
         const khachHangId = customer?.id ?? null;
         console.log('✅ Got khachHangId for merge:', khachHangId);
-        
+
         if (!khachHangId) {
           console.warn('⚠️ No khachHangId found, cannot merge to DB cart');
           return;
@@ -560,7 +583,7 @@ export class CartComponent implements OnInit {
         this.hoaDonChoService.getHoaDonChoByKhachHangId(khachHangId).subscribe({
           next: (carts) => {
             let cartId: number;
-            
+
             if (carts && carts.length > 0) {
               const activeCart = carts.find(c => c.trangThai === 'DANG_CHO') || carts[0];
               cartId = activeCart.id!;
@@ -574,7 +597,7 @@ export class CartComponent implements OnInit {
                 trangThai: 'DANG_CHO',
                 danhSachGioHang: []
               };
-              
+
               this.hoaDonChoService.createHoaDonCho(newCart).subscribe({
                 next: (cart) => {
                   if (cart.id) {
@@ -635,8 +658,8 @@ export class CartComponent implements OnInit {
             // Reload cart và chuyển đến checkout
             this.loadCart();
             setTimeout(() => {
-              this.router.navigate(['/shop/checkout'], { 
-                queryParams: { cartId: cartId } 
+              this.router.navigate(['/shop/checkout'], {
+                queryParams: { cartId: cartId }
               });
             }, 500);
           }
@@ -695,10 +718,11 @@ export class CartComponent implements OnInit {
     if (this.isTempCart) {
       this.cartItems = Array.isArray(this.tempCart)
         ? this.tempCart.map(item => ({
-            ...item
-          }))
+          ...item
+        }))
         : [];
       console.log('🛒 updateCartItemsCache - Updated from tempCart, length:', this.cartItems.length);
+      this.loadStockInfo(); // Cũng load stock cho temp cart
     } else if (this.cart && this.cart.danhSachGioHang) {
       // Map từ GioHangChoItem sang format giống temp cart
       this.cartItems = this.cart.danhSachGioHang.map(item => {
@@ -713,14 +737,41 @@ export class CartComponent implements OnInit {
           imageUrl: '', // Cần lấy từ product
           id: gioHangItem.id,
           mauSac: gioHangItem.mauSac || '',
-          kichThuoc: gioHangItem.kichThuoc || ''
+          kichThuoc: gioHangItem.kichThuoc || '',
+          maxQuantity: undefined // Sẽ được load sau
         };
       });
       console.log('🛒 updateCartItemsCache - Updated from cart.danhSachGioHang, length:', this.cartItems.length);
+      this.loadStockInfo(); // Gọi load stock sau khi update cache
     } else {
       this.cartItems = [];
       console.log('🛒 updateCartItemsCache - No cart data, set to empty array');
     }
+  }
+
+  /**
+   * Load thông tin tồn kho cho các item trong giỏ
+   */
+  loadStockInfo(): void {
+    if (this.cartItems.length === 0) return;
+
+    this.cartItems.forEach(item => {
+      if (item.chiTietSanPhamId) {
+        this.chiTietSanPhamApiService.getById(item.chiTietSanPhamId).subscribe({
+          next: (detail) => {
+            if (detail && detail.soLuongTon) {
+              item.maxQuantity = parseInt(detail.soLuongTon, 10);
+              // Nếu số lượng trong giỏ lớn hơn tồn kho, cảnh báo (optional, hoặc tự điều chỉnh)
+              if (item.quantity > item.maxQuantity) {
+                console.warn(`Item ${item.productName} quantity ${item.quantity} exceeds stock ${item.maxQuantity}`);
+                // Có thể tự động giảm xuống max nếu muốn strict
+              }
+            }
+          },
+          error: (err) => console.error(`Error loading stock for item ${item.chiTietSanPhamId}`, err)
+        });
+      }
+    });
   }
 
   /**
@@ -729,12 +780,12 @@ export class CartComponent implements OnInit {
    */
   getCartItems(): any[] {
     // Nếu cache chưa được update, update ngay
-    if (this.cartItems.length === 0 && ((this.isTempCart && this.tempCart.length > 0) || 
-        (!this.isTempCart && this.cart && this.cart.danhSachGioHang && this.cart.danhSachGioHang.length > 0))) {
+    if (this.cartItems.length === 0 && ((this.isTempCart && this.tempCart.length > 0) ||
+      (!this.isTempCart && this.cart && this.cart.danhSachGioHang && this.cart.danhSachGioHang.length > 0))) {
       console.log('🛒 getCartItems - Cache is empty but data exists, updating cache...');
       this.updateCartItemsCache();
     }
-    
+
     console.log('🛒 getCartItems - Returning cached items, length:', this.cartItems.length);
     return this.cartItems;
   }
@@ -779,7 +830,7 @@ export class CartComponent implements OnInit {
       this.tempCart = [];
       this.cartItems = [];
     }
-    
+
     // Nếu đã đăng nhập, reload từ DB
     if (this.authService.isLoggedIn()) {
       this.loadCart();

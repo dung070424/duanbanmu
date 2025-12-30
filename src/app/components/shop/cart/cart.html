@@ -8,11 +8,7 @@
         <button class="btn-back" (click)="goBack()" type="button">
           <i class="fas fa-arrow-left"></i> Quay lại
         </button>
-        <button 
-          *ngIf="authService.isLoggedIn()" 
-          class="btn-order-history" 
-          (click)="viewOrderHistory()"
-          type="button">
+        <button *ngIf="authService.isLoggedIn()" class="btn-order-history" (click)="viewOrderHistory()" type="button">
           <i class="fas fa-history"></i> Lịch sử đơn hàng
         </button>
       </nav>
@@ -66,58 +62,48 @@
           <table class="cart-table">
             <thead>
               <tr>
-                <th>Sản phẩm</th>
+                <th style="width: 50px;">Ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Màu</th>
+                <th>Size</th>
                 <th>Giá</th>
                 <th>Số lượng</th>
                 <th>Tổng</th>
-                <th></th>
+                <th style="width: 40px;">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let item of cartItems" class="cart-item">
-                <td class="product-info">
-                  <div class="product-details">
-                    <img
-                      *ngIf="item.imageUrl"
-                      [src]="item.imageUrl"
-                      [alt]="item.productName || item.tenSanPham"
-                      class="product-thumbnail"
-                    />
-                    <div>
-                      <h4>{{ item.productName || item.tenSanPham }}</h4>
-                      <p *ngIf="item.mauSac || item.kichThuoc" class="product-variants">
-                        <span *ngIf="item.mauSac">Màu: {{ item.mauSac }}</span>
-                        <span *ngIf="item.kichThuoc">Size: {{ item.kichThuoc }}</span>
-                      </p>
-                      <button type="button" class="btn-detail" (click)="openItemDetail(item)">
-                        <i class="fas fa-eye"></i> Chi tiết
-                      </button>
-                    </div>
-                  </div>
+                <td class="product-image">
+                  <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.productName || item.tenSanPham"
+                    class="product-thumbnail" />
+                </td>
+                <td class="product-name">
+                  <h4>{{ item.productName || item.tenSanPham }}</h4>
+                </td>
+                <td class="product-color">
+                  <span class="badge-color" *ngIf="item.mauSac">{{ item.mauSac }}</span>
+                  <span class="text-muted" *ngIf="!item.mauSac">-</span>
+                </td>
+                <td class="product-size">
+                  <span class="badge-size" *ngIf="item.kichThuoc">{{ item.kichThuoc }}</span>
+                  <span class="text-muted" *ngIf="!item.kichThuoc">-</span>
                 </td>
                 <td class="product-price">
                   {{ formatCurrency(item.price || item.donGia) }}
                 </td>
                 <td class="product-quantity">
                   <div class="quantity-controls">
-                    <button
-                      class="btn-quantity"
+                    <button class="btn-quantity"
                       (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) - 1)"
-                      [disabled]="(item.quantity || item.soLuong || 1) <= 1"
-                    >
+                      [disabled]="(item.quantity || item.soLuong || 1) <= 1">
                       <i class="fas fa-minus"></i>
                     </button>
-                    <input
-                      type="number"
-                      [value]="item.quantity || item.soLuong || 1"
-                      min="1"
-                      (change)="updateQuantity(item, +$any($event.target).value)"
-                      class="quantity-input"
-                    />
-                    <button
-                      class="btn-quantity"
+                    <input type="number" [value]="item.quantity || item.soLuong || 1" min="1" [max]="item.maxQuantity"
+                      (change)="updateQuantity(item, +$any($event.target).value)" class="quantity-input" />
+                    <button class="btn-quantity"
                       (click)="updateQuantity(item, (item.quantity || item.soLuong || 1) + 1)"
-                    >
+                      [disabled]="item.maxQuantity !== undefined && (item.quantity || item.soLuong || 1) >= item.maxQuantity">
                       <i class="fas fa-plus"></i>
                     </button>
                   </div>
@@ -125,15 +111,11 @@
                 <td class="product-total">
                   {{ formatCurrency(item.totalItemPrice || item.thanhTien) }}
                 </td>
-                <!-- <td class="product-actions">
-                <button
-                  class="btn-remove"
-                  (click)="removeItem(item)"
-                  title="Xóa sản phẩm"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              </td> -->
+                <td class="product-actions">
+                  <button class="btn-remove" (click)="removeItem(item)" title="Xóa sản phẩm">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -169,6 +151,7 @@
   <app-shop-footer></app-shop-footer>
 
   <app-chatbot></app-chatbot>
+  <app-notification></app-notification>
 </div>
 
 <div class="cart-item-detail" *ngIf="showItemDetail && selectedItem">
@@ -226,7 +209,7 @@
         <label>Tổng tạm tính</label>
         <strong>{{
           formatCurrency((selectedItem.price || selectedItem.donGia) * detailQuantity)
-        }}</strong>
+          }}</strong>
       </div>
     </div>
 
