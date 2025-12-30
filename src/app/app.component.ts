@@ -7,10 +7,12 @@ import { AuthService } from './services/auth';
 import { Subscription, filter } from 'rxjs';
 
 
+import { NotificationComponent } from './components/shop/shared/notification.component';
+
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent, NotificationComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
@@ -24,10 +26,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private initialPathname: string = ''; // Lưu pathname ban đầu khi component init
 
   constructor(
-    public router: Router, 
+    public router: Router,
     private authService: AuthService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit() {
     // QUAN TRỌNG: Khi refresh trang, cần đợi router sẵn sàng
@@ -36,7 +38,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.initialPathname = pathname; // Lưu pathname ban đầu
     console.log('🔍 AppComponent ngOnInit - Pathname:', pathname);
     console.log('🔍 AppComponent ngOnInit - Router URL:', this.router.url);
-    
+
     // QUAN TRỌNG: Set layout flags ngay lập tức dựa trên URL hiện tại
     // Điều này đảm bảo view được hiển thị đúng ngay từ đầu, không bị flash hoặc nhảy
     if (pathname === '/' || pathname === '') {
@@ -50,7 +52,7 @@ export class AppComponent implements OnInit, OnDestroy {
       // Điều này đảm bảo khi refresh trang admin, layout được set đúng ngay từ đầu
       this.updateLayoutFlags(pathname);
     }
-    
+
     // Force change detection để đảm bảo view được cập nhật ngay
     this.cdr.detectChanges();
 
@@ -64,11 +66,11 @@ export class AppComponent implements OnInit, OnDestroy {
           const finalUrl = event.urlAfterRedirects || event.url;
           const normalizedFinalUrl = finalUrl.split('?')[0].split('#')[0];
           const normalizedInitialUrl = this.initialPathname.split('?')[0].split('#')[0];
-          
+
           console.log('🔍 NavigationEnd - Final URL:', normalizedFinalUrl);
           console.log('🔍 NavigationEnd - Initial Pathname:', normalizedInitialUrl);
           console.log('🔍 NavigationEnd - URL After Redirects:', event.urlAfterRedirects);
-          
+
           // QUAN TRỌNG: Khi refresh trang, URL không thay đổi
           // Chỉ cập nhật layout flags nếu URL thực sự thay đổi (user navigate)
           // Điều này tránh việc reset layout flags khi refresh trang admin
@@ -89,9 +91,9 @@ export class AppComponent implements OnInit, OnDestroy {
   updateLayoutFlags(url: string): void {
     // Normalize URL - loại bỏ query params và hash
     const normalizedUrl = url.split('?')[0].split('#')[0];
-    
+
     console.log('🔍 updateLayoutFlags called with URL:', normalizedUrl);
-    
+
     // Trang login, register, forgot-password (Admin/Staff) - không có sidebar/header
     this.isLoginPage = normalizedUrl === '/login' || normalizedUrl === '/register' || normalizedUrl === '/forgot-password';
 
@@ -100,30 +102,30 @@ export class AppComponent implements OnInit, OnDestroy {
     // VÀ các route /customer/* (số ít) như /customer/profile, /customer/orders - đây là customer website pages
     // KHÔNG BAO GỒM /customers (số nhiều) - đây là admin management page, cần có sidebar
     const isShopRoute = normalizedUrl.startsWith('/shop');
-    
+
     // Kiểm tra /customer/* (số ít) nhưng KHÔNG phải /customers (số nhiều)
     // /customer/profile, /customer/orders -> shop layout (không có sidebar)
     // /customers, /customers/* -> admin layout (có sidebar)
     // Logic: chỉ match /customer/ (có dấu / sau customer) và KHÔNG match /customers (số nhiều)
-    const isCustomerWebsiteRoute = normalizedUrl.startsWith('/customer/') && 
-                                   !normalizedUrl.startsWith('/customers');
-    
+    const isCustomerWebsiteRoute = normalizedUrl.startsWith('/customer/') &&
+      !normalizedUrl.startsWith('/customers');
+
     this.isShopPage = isShopRoute || isCustomerWebsiteRoute;
 
     // Hiển thị admin layout nếu không phải login/shop/customer website pages
     // QUAN TRỌNG: Mặc định là admin layout nếu không phải các trang đặc biệt
     this.showAdminLayout = !this.isLoginPage && !this.isShopPage;
 
-    console.log('✅ updateLayoutFlags result:', { 
-      url: normalizedUrl, 
-      isLoginPage: this.isLoginPage, 
-      isShopPage: this.isShopPage, 
+    console.log('✅ updateLayoutFlags result:', {
+      url: normalizedUrl,
+      isLoginPage: this.isLoginPage,
+      isShopPage: this.isShopPage,
       showAdminLayout: this.showAdminLayout,
       isShopRoute,
       isCustomerWebsiteRoute,
       layoutType: this.getLayoutType()
     });
-    
+
     // Force change detection để đảm bảo view được cập nhật ngay lập tức
     this.cdr.detectChanges();
   }

@@ -28,6 +28,8 @@ import {
   HelmetVersionRequest,
 } from '../../services/helmet-version-api.service';
 import { SizeApiService, SizeResponse } from '../../services/size-api.service';
+import { NotificationComponent } from '../shop/shared/notification.component';
+import { NotificationService } from '../shop/shared/notification.service';
 
 interface HelmetProduct {
   id: number;
@@ -83,6 +85,7 @@ interface HelmetVariantRow {
     RouterModule,
     QuickAddModalComponent,
     SearchableDropdownComponent,
+    NotificationComponent,
   ],
   templateUrl: './helmet-form.component.html',
   styleUrls: ['./helmet-form.component.scss'],
@@ -236,7 +239,8 @@ export class HelmetFormComponent implements OnInit {
     private helmetStyleApi: HelmetStyleApiService,
     private congNgheAnToanApi: CongNgheAnToanApiService,
     private helmetVersionApi: HelmetVersionApiService,
-    private sizeApi: SizeApiService
+    private sizeApi: SizeApiService,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit() {
@@ -589,10 +593,11 @@ export class HelmetFormComponent implements OnInit {
       this.loaiMuBaoHiemApi.create(request).subscribe({
         next: (response) => {
           this.loadLoaiMuBaoHiem(); // Refresh dropdown
+          this.notificationService.success('Thêm mới loại mũ bảo hiểm thành công!');
           this.cdr.detectChanges();
         },
         error: (error) => {
-          // Error silently handled
+          this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
         },
       });
     } else if (event.type === 'mauSac') {
@@ -605,10 +610,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.loadMauSac(); // Refresh dropdown
+            this.notificationService.success('Thêm mới màu sắc thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     } else if (event.type === 'nhaSanXuat') {
@@ -622,10 +628,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.loadNhaSanXuat(); // Refresh dropdown
+            this.notificationService.success('Thêm mới nhà sản xuất thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     } else if (event.type === 'chatLieuVo') {
@@ -638,10 +645,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.loadChatLieu(); // Refresh dropdown
+            this.notificationService.success('Thêm mới chất liệu vỏ thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     } else if (event.type === 'trongLuong') {
@@ -655,10 +663,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.loadTrongLuong(); // Refresh dropdown
+            this.notificationService.success('Thêm mới trọng lượng thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     } else if (event.type === 'xuatXu') {
@@ -671,10 +680,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.loadXuatXu(); // Refresh dropdown
+            this.notificationService.success('Thêm mới xuất xứ thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     } else if (event.type === 'kieuDangMu') {
@@ -687,10 +697,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.loadKieuDang(); // Refresh dropdown
+            this.notificationService.success('Thêm mới kiểu dáng mũ thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     } else if (event.type === 'congNgheAnToan') {
@@ -703,10 +714,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.loadCongNghe(); // Refresh dropdown
+            this.notificationService.success('Thêm mới công nghệ an toàn thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     } else if (event.type === 'kichThuoc') {
@@ -719,10 +731,11 @@ export class HelmetFormComponent implements OnInit {
         .subscribe({
           next: () => {
             this.loadKichThuoc();
+            this.notificationService.success('Thêm mới kích thước thành công!');
             this.cdr.detectChanges();
           },
           error: (error) => {
-            // Error silently handled
+            this.notificationService.error('Thêm mới thất bại: ' + (error?.message || 'Lỗi không xác định'));
           },
         });
     }
@@ -831,6 +844,14 @@ export class HelmetFormComponent implements OnInit {
           });
         });
       });
+    }
+
+    if (this.helmetVersions.length > 0) {
+      if (isUpdateMode) {
+        this.notificationService.success('Đã cập nhật danh sách biến thể thành công!');
+      } else {
+        this.notificationService.success('Đã tạo các biến thể thành công!');
+      }
     }
   }
 
@@ -1046,18 +1067,23 @@ export class HelmetFormComponent implements OnInit {
             next: () => {
               doneCount++;
               if (doneCount === this.helmetVersions.length && !errorFlag) {
-                this.router.navigate(['/products/helmets']);
+                this.notificationService.success('Thêm mới sản phẩm thành công!');
+                setTimeout(() => {
+                  this.router.navigate(['/products/helmets']);
+                }, 1000);
               }
             },
             error: (err: any) => {
               errorFlag = true;
               this.isLoading = false;
+              this.notificationService.error('Có lỗi xảy ra khi tạo biến thể!');
             },
           });
         });
       },
       error: (error) => {
         this.isLoading = false;
+        this.notificationService.error('Thêm mới sản phẩm thất bại: ' + (error?.message || 'Lỗi không xác định'));
       },
     });
   }
@@ -1122,6 +1148,10 @@ export class HelmetFormComponent implements OnInit {
     this.productApi.update(this.newProduct.id, payload as any).subscribe({
       next: (response: any) => {
         const sanPhamId = response.id || this.newProduct.id;
+
+        let doneCount = 0;
+        let errorFlag = false;
+
         // Update + create variant
         this.helmetVersions.forEach((v, idx) => {
           const versionPayload: HelmetVersionRequest = {
@@ -1138,25 +1168,43 @@ export class HelmetFormComponent implements OnInit {
           };
           if (v.id) {
             this.helmetVersionApi.update(v.id, versionPayload).subscribe({
-              next: () => { },
-              error: () => { }
+              next: () => { checkDone(); },
+              error: () => { errorFlag = true; checkDone(); }
             });
           } else {
             this.helmetVersionApi.create(versionPayload).subscribe({
-              next: () => { },
-              error: () => { }
+              next: () => { checkDone(); },
+              error: () => { errorFlag = true; checkDone(); }
             });
           }
         });
+
         // Delete removed variants
-        this.deletedVersionIds.forEach((id) => this.helmetVersionApi.delete(id).subscribe({
-          next: () => { },
-          error: () => { }
-        }));
-        this.router.navigate(['/products/helmets']);
+        this.deletedVersionIds.forEach((id) => {
+          this.helmetVersionApi.delete(id).subscribe({
+            next: () => { },
+            error: () => { }
+          });
+        });
+
+        const checkDone = () => {
+          doneCount++;
+          if (doneCount === this.helmetVersions.length) {
+            this.isLoading = false;
+            if (!errorFlag) {
+              this.notificationService.success('Cập nhật sản phẩm thành công!');
+              setTimeout(() => {
+                this.router.navigate(['/products/helmets']);
+              }, 1000);
+            } else {
+              this.notificationService.error('Cập nhật sản phẩm thành công nhưng có lỗi ở các biến thể!');
+            }
+          }
+        };
       },
       error: (err) => {
-        // Error silently handled
+        this.isLoading = false;
+        this.notificationService.error('Cập nhật sản phẩm thất bại: ' + (err?.message || 'Lỗi không xác định'));
       },
     });
   }

@@ -17,13 +17,13 @@ export class NotificationComponent implements OnInit, OnDestroy {
   private confirmSub?: Subscription;
   private timeoutId?: number;
 
-  constructor(private notificationService: NotificationService) {}
+  constructor(private notificationService: NotificationService) { }
 
   ngOnInit(): void {
     // Subscribe to notifications
     this.notificationSub = this.notificationService.notification$.subscribe((config) => {
       this.notification = config;
-      
+
       // Auto close after duration
       if (config && config.duration && config.duration > 0) {
         if (this.timeoutId) {

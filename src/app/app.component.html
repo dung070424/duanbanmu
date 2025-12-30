@@ -1,4 +1,6 @@
-<!-- Sử dụng ngSwitch để đảm bảo chỉ một layout được hiển thị tại một thời điểm -->
+<!-- Global Notification -->
+<app-notification></app-notification>
+
 <div [ngSwitch]="getLayoutType()">
   <!-- Trang đăng nhập, đăng ký, quên mật khẩu - không có sidebar/header -->
   <div *ngSwitchCase="'auth'" class="auth-layout">

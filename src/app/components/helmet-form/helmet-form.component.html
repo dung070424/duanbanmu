@@ -201,7 +201,7 @@
                   <th>STT</th>
                   <th>Kích thước</th>
                   <th>Màu sắc</th>
-                  <th>Trọng lượng</th>
+                  <th>Trọng lượng (gam)</th>
                   <th>Giá bán (VNĐ)</th>
                   <th>Số lượng</th>
                   <th>Ảnh biến thể</th>
@@ -226,8 +226,8 @@
                   </td>
                   <td>
                     <input type="text" class="form-control" name="trongLuongTen_{{ i }}" [(ngModel)]="v.trongLuongTen"
-                      [ngModelOptions]="{ standalone: true }" placeholder="VD: 500g, 1kg"
-                      (keydown)="onNumericKeyDown($event)" (blur)="onTrongLuongChangeRow(i, v.trongLuongTen)" />
+                      [ngModelOptions]="{ standalone: true }" placeholder="VD: 500" (keydown)="onNumericKeyDown($event)"
+                      (blur)="onTrongLuongChangeRow(i, v.trongLuongTen)" />
                   </td>
                   <td>
                     <input type="text" class="form-control" name="giaBan_{{ i }}" [(ngModel)]="v.giaBan"
