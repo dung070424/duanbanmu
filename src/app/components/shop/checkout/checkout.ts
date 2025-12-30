@@ -60,7 +60,7 @@ export class CheckoutComponent implements OnInit {
   orderNotes = '';
 
   // Payment method
-  paymentMethod: 'cash' | 'transfer' = 'transfer';
+  paymentMethod: 'cash' | 'transfer' | 'zalopay' = 'transfer';
 
   // Bank transfer info
   bankInfo = {
@@ -152,7 +152,7 @@ export class CheckoutComponent implements OnInit {
     private location: Location,
     private cdr: ChangeDetectorRef,
     private notificationService: NotificationService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     console.log('🛒 CheckoutComponent ngOnInit - Starting...');
@@ -183,8 +183,8 @@ export class CheckoutComponent implements OnInit {
         this.cartId = pendingCartId
           ? parseInt(pendingCartId)
           : currentCartId
-          ? parseInt(currentCartId)
-          : null;
+            ? parseInt(currentCartId)
+            : null;
         console.log('🛒 cartId from localStorage:', this.cartId);
 
         if (this.cartId) {
@@ -244,10 +244,10 @@ export class CheckoutComponent implements OnInit {
 
     // Generate transaction code
     this.generateTransactionCode();
-    
+
     // Load danh sách tỉnh/thành phố
     this.loadProvinces();
-    
+
     // ✅ Gọi refreshVoucherSuggestions ngay cả khi chưa có cart
     // để hiển thị phiếu giảm giá cho user
     setTimeout(() => {
@@ -596,7 +596,7 @@ export class CheckoutComponent implements OnInit {
       if (province) {
         this.selectedProvinceCode = province.code;
         this.loadDistrictsByProvince(province.code);
-        
+
         // Đợi districts load xong rồi mới set district
         setTimeout(() => {
           if (address.quanHuyen && this.districts.length > 0) {
@@ -604,7 +604,7 @@ export class CheckoutComponent implements OnInit {
             if (district) {
               this.selectedDistrictCode = district.code;
               this.loadWardsByDistrict(district.code);
-              
+
               // Đợi wards load xong rồi mới set ward và tính phí ship
               setTimeout(() => {
                 if (address.phuongXa && this.wards.length > 0) {
@@ -613,7 +613,7 @@ export class CheckoutComponent implements OnInit {
                     this.selectedWardCode = ward.code;
                   }
                 }
-                
+
                 // Tính phí ship sau khi đã set xong tất cả dropdown values
                 console.log('🔄 Calculating shipping fee after loading address dropdowns...');
                 this.calculateShippingFeeAuto();
@@ -898,6 +898,7 @@ export class CheckoutComponent implements OnInit {
     const methodMap: { [key: string]: string } = {
       cash: 'Tiền mặt',
       transfer: 'Chuyển khoản',
+      zalopay: 'Zalo Pay',
     };
     return methodMap[method] || method;
   }
@@ -1020,9 +1021,9 @@ export class CheckoutComponent implements OnInit {
       return false;
     }
 
-    // Validate mã giao dịch nếu thanh toán bằng chuyển khoản
+    // Validate mã giao dịch nếu thanh toán bằng chuyển khoản hoặc Zalo Pay
     if (
-      this.paymentMethod === 'transfer' &&
+      (this.paymentMethod === 'transfer' || this.paymentMethod === 'zalopay') &&
       (!this.transactionCode || this.transactionCode === '')
     ) {
       this.notificationService.warning('Vui lòng tạo mã giao dịch!');
@@ -1049,13 +1050,13 @@ export class CheckoutComponent implements OnInit {
         (addr) =>
           addr.diaChiChiTiet === this.billingInfo.address &&
           addr.tinhThanh ===
-            (this.billingInfo.city.split(',').length > 2
-              ? this.billingInfo.city.split(',')[2]?.trim()
-              : this.billingInfo.city) &&
+          (this.billingInfo.city.split(',').length > 2
+            ? this.billingInfo.city.split(',')[2]?.trim()
+            : this.billingInfo.city) &&
           addr.quanHuyen ===
-            (this.billingInfo.city.split(',').length > 1
-              ? this.billingInfo.city.split(',')[1]?.trim()
-              : '') &&
+          (this.billingInfo.city.split(',').length > 1
+            ? this.billingInfo.city.split(',')[1]?.trim()
+            : '') &&
           addr.phuongXa === (this.billingInfo.city.split(',')[0]?.trim() || '')
       );
 
@@ -1145,12 +1146,12 @@ export class CheckoutComponent implements OnInit {
           const donGia = parseFloat(item.price) || 0;
           const giamGia = 0;
           const thanhTien = item.totalItemPrice || (donGia * soLuong - giamGia);
-          
+
           if (!chiTietSanPhamId) {
             console.error('❌ Cart item missing chiTietSanPhamId:', item);
             return null;
           }
-          
+
           return {
             chiTietSanPhamId: chiTietSanPhamId,
             tenSanPham: item.productName || '',
@@ -1170,12 +1171,12 @@ export class CheckoutComponent implements OnInit {
           const donGia = parseFloat(String(item.donGia)) || 0;
           const giamGia = parseFloat(String(item.giamGia)) || 0;
           const thanhTien = parseFloat(String(item.thanhTien)) || (donGia * soLuong - giamGia);
-          
+
           if (!chiTietSanPhamId) {
             console.error('❌ Cart item missing chiTietSanPhamId:', item);
             return null;
           }
-          
+
           return {
             chiTietSanPhamId: chiTietSanPhamId,
             tenSanPham: item.tenSanPham || '',
@@ -1193,23 +1194,23 @@ export class CheckoutComponent implements OnInit {
       this.isSubmitting = false;
       return;
     }
-    
+
     // Validate tất cả items đều có đầy đủ thông tin
-    const invalidItems = cartItems.filter((item: any) => 
-      !item.chiTietSanPhamId || 
-      !item.soLuong || 
-      item.soLuong <= 0 || 
-      !item.donGia || 
+    const invalidItems = cartItems.filter((item: any) =>
+      !item.chiTietSanPhamId ||
+      !item.soLuong ||
+      item.soLuong <= 0 ||
+      !item.donGia ||
       item.donGia <= 0
     );
-    
+
     if (invalidItems.length > 0) {
       console.error('❌ Invalid cart items:', invalidItems);
       this.notificationService.warning('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!');
       this.isSubmitting = false;
       return;
     }
-    
+
     console.log('✅ Validated cart items:', cartItems.length);
 
     // QUAN TRỌNG: Nếu đã đăng nhập, lấy khachHangId từ customer service
@@ -1246,7 +1247,7 @@ export class CheckoutComponent implements OnInit {
       const tenKhachHang = `${this.billingInfo?.firstName || ''} ${this.billingInfo?.lastName || ''}`.trim();
       const emailKhachHang = this.billingInfo?.email || '';
       const soDienThoaiKhachHang = this.billingInfo?.phone || '';
-      
+
       if (!tenKhachHang || tenKhachHang === '') {
         this.notificationService.warning('Vui lòng nhập tên khách hàng!');
         this.isSubmitting = false;
@@ -1263,16 +1264,15 @@ export class CheckoutComponent implements OnInit {
         return;
       }
     }
-    
+
     // Tạo hóa đơn từ HoaDonCho hoặc tempCart
     // QUAN TRỌNG: Không set nhanVienId để đánh dấu đơn hàng online (nhanVienId = null = Online)
     // Backend sẽ tự động map nhanVienId = null thành viTriBanHang = "Online"
     const hoaDonData: any = {
-      maHoaDon: `HD${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      maHoaDon: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       khachHangId: khachHangId, // Đã lấy từ customer service
-      tenKhachHang: `${this.billingInfo?.firstName || ''} ${
-        this.billingInfo?.lastName || ''
-      }`.trim() || (currentUser?.name || 'Khách hàng'),
+      tenKhachHang: `${this.billingInfo?.firstName || ''} ${this.billingInfo?.lastName || ''
+        }`.trim() || (currentUser?.name || 'Khách hàng'),
       soDienThoaiKhachHang: this.billingInfo?.phone || '',
       emailKhachHang: this.billingInfo?.email || '',
       diaChiChiTiet: this.billingInfo?.address || '',
@@ -1294,7 +1294,7 @@ export class CheckoutComponent implements OnInit {
       trangThai: 'CHO_XAC_NHAN',
       // KHÔNG set nhanVienId - để null = Online order
       // KHÔNG set viTriBanHang - backend sẽ tự động map từ nhanVienId
-      phuongThucThanhToan: this.paymentMethod === 'transfer' ? 'transfer' : 'cash',
+      phuongThucThanhToan: this.paymentMethod === 'cash' ? 'cash' : 'transfer', // Map zalopay -> transfer
       // Map danhSachGioHang từ cart hoặc tempCart sang danhSachChiTiet
       danhSachChiTiet: cartItems,
       tongTien: this.getSubtotal(),
@@ -1307,16 +1307,8 @@ export class CheckoutComponent implements OnInit {
     };
 
     // Nếu thanh toán bằng chuyển khoản, thêm thông tin giao dịch vào ghi chú
-    if (this.paymentMethod === 'transfer') {
-      const transferNote = `Mã giao dịch: ${this.transactionCode || ''}\nNgân hàng: ${
-        this.bankInfo?.bankName || ''
-      }\nSố tài khoản: ${this.bankInfo?.accountNumber || ''}\nChủ tài khoản: ${
-        this.bankInfo?.accountName || ''
-      }`;
-      hoaDonData.ghiChu = hoaDonData.ghiChu
-        ? `${hoaDonData.ghiChu}\n\n${transferNote}`
-        : transferNote;
-    }
+    // Nếu thanh toán bằng chuyển khoản hoặc Zalo Pay, thêm thông tin vào ghi chú
+    // Logic adding transaction info to ghiChu removed as per user request
 
     // Validate dữ liệu trước khi gửi
     if (!hoaDonData.danhSachChiTiet || hoaDonData.danhSachChiTiet.length === 0) {
@@ -1325,21 +1317,21 @@ export class CheckoutComponent implements OnInit {
       this.isSubmitting = false;
       return;
     }
-    
+
     // Validate từng item trong danhSachChiTiet
-    const invalidItems = hoaDonData.danhSachChiTiet.filter((item: any) => 
-      !item.chiTietSanPhamId || 
-      !item.soLuong || 
+    const invalidItems = hoaDonData.danhSachChiTiet.filter((item: any) =>
+      !item.chiTietSanPhamId ||
+      !item.soLuong ||
       item.soLuong <= 0
     );
-    
+
     if (invalidItems.length > 0) {
       console.error('❌ Cannot create invoice: invalid items found', invalidItems);
       this.notificationService.warning('Có sản phẩm trong giỏ hàng không hợp lệ. Vui lòng kiểm tra lại!');
       this.isSubmitting = false;
       return;
     }
-    
+
     // Validate tổng tiền
     if (!hoaDonData.tongTien || hoaDonData.tongTien <= 0) {
       console.error('❌ Cannot create invoice: tongTien is invalid', hoaDonData.tongTien);
@@ -1347,7 +1339,7 @@ export class CheckoutComponent implements OnInit {
       this.isSubmitting = false;
       return;
     }
-    
+
     // Tạo hóa đơn
     console.log('📤 Creating invoice from cart:', {
       cartId: this.cartId,
@@ -1360,7 +1352,7 @@ export class CheckoutComponent implements OnInit {
       tongTien: hoaDonData.tongTien,
       thanhTien: hoaDonData.thanhTien,
     });
-    
+
     // Log chi tiết từng item để debug
     hoaDonData.danhSachChiTiet.forEach((item: any, index: number) => {
       console.log(`   - Item ${index + 1}: chiTietSanPhamId=${item.chiTietSanPhamId}, soLuong=${item.soLuong}, donGia=${item.donGia}`);
@@ -1531,7 +1523,7 @@ export class CheckoutComponent implements OnInit {
                 resolve(false);
                 return;
               }
-              
+
               // Cập nhật giỏ hàng với giá mới
               this.cart!.danhSachGioHang = recalculatedItems;
               resolve(true);
@@ -1575,13 +1567,13 @@ export class CheckoutComponent implements OnInit {
     // ✅ Tính coupon discount cho nhiều phiếu giảm giá
     this.couponDiscount = 0;
     let remainingBase = base; // Số tiền còn lại sau mỗi lần giảm giá
-    
+
     // Áp dụng từng phiếu giảm giá theo thứ tự
     for (const coupon of this.appliedCoupons) {
       if (coupon.minOrder && remainingBase < coupon.minOrder) {
         continue; // Bỏ qua phiếu không đủ điều kiện
       }
-      
+
       let discount = 0;
       if (coupon.type === 'PERCENT') {
         discount = (remainingBase * coupon.value) / 100;
@@ -1591,16 +1583,16 @@ export class CheckoutComponent implements OnInit {
       } else {
         discount = coupon.value;
       }
-      
+
       // Đảm bảo không giảm quá số tiền còn lại
       discount = Math.min(discount, remainingBase);
       this.couponDiscount += discount;
       remainingBase -= discount;
-      
+
       // Nếu đã hết tiền để giảm, dừng lại
       if (remainingBase <= 0) break;
     }
-    
+
     // Giữ tương thích với appliedCoupon cũ (nếu có)
     if (this.appliedCoupon && !this.appliedCoupons.find(c => c.id === this.appliedCoupon!.id)) {
       if (!this.appliedCoupon.minOrder || base >= this.appliedCoupon.minOrder) {
@@ -1738,7 +1730,7 @@ export class CheckoutComponent implements OnInit {
 
         // Kiểm tra response từ GHN API
         let newShippingFee = this.DEFAULT_SHIPPING_FEE;
-        
+
         if (ghnResponse && ghnResponse.code === 200 && ghnResponse.data) {
           // Kiểm tra nhiều format response
           if (ghnResponse.data.total) {
@@ -1746,7 +1738,7 @@ export class CheckoutComponent implements OnInit {
           } else if (typeof ghnResponse.data === 'number') {
             newShippingFee = Number(ghnResponse.data) || this.DEFAULT_SHIPPING_FEE;
           }
-          
+
           if (newShippingFee > 0) {
             // Địa chỉ có thật, tính phí ship theo API
             this.shippingFee = newShippingFee;
@@ -1766,7 +1758,7 @@ export class CheckoutComponent implements OnInit {
         console.log('🔄 Updated shipping fee to:', this.shippingFee, 'VNĐ');
         console.log('🔄 Total will be:', this.getTotal(), 'VNĐ');
         this.cdr.detectChanges();
-        
+
         // Trigger change detection một lần nữa để đảm bảo UI được cập nhật
         setTimeout(() => {
           this.cdr.detectChanges();
@@ -1805,7 +1797,7 @@ export class CheckoutComponent implements OnInit {
 
     this.loadingProvinces = true;
     console.log('🔄 Loading provinces from local data...');
-    
+
     try {
       // Sử dụng dữ liệu local từ sub-vn package thay vì gọi API
       this.provinces = provincesData as any as Array<{ code: string; name: string }>;
@@ -1934,7 +1926,7 @@ export class CheckoutComponent implements OnInit {
    */
   onProvinceChange(): void {
     console.log('📍 Province changed:', this.selectedProvinceCode);
-    
+
     // Reset districts và wards khi chọn tỉnh mới
     if (!this.selectedProvinceCode || this.selectedProvinceCode === '') {
       this.districts = [];
@@ -1950,7 +1942,7 @@ export class CheckoutComponent implements OnInit {
     const province = this.provinces.find(p => p.code === this.selectedProvinceCode);
     if (province) {
       console.log('✅ Found province:', province.name);
-      
+
       // Cập nhật billingInfo.city với tên tỉnh
       const cityParts = this.billingInfo.city ? this.billingInfo.city.split(',') : [];
       if (cityParts.length >= 2) {
@@ -1959,10 +1951,10 @@ export class CheckoutComponent implements OnInit {
       } else {
         this.billingInfo.city = province.name;
       }
-      
+
       // Load districts
       this.loadDistrictsByProvince(province.code);
-      
+
       // Tính lại phí ship sau khi load districts (chỉ khi đã có quận/huyện)
       if (this.selectedDistrictCode) {
         setTimeout(() => {
@@ -1984,7 +1976,7 @@ export class CheckoutComponent implements OnInit {
    */
   onDistrictChange(): void {
     console.log('📍 District changed:', this.selectedDistrictCode);
-    
+
     // Reset wards khi chọn quận/huyện mới
     if (!this.selectedDistrictCode || this.selectedDistrictCode === '') {
       this.wards = [];
@@ -1998,7 +1990,7 @@ export class CheckoutComponent implements OnInit {
     const district = this.districts.find(d => d.code === this.selectedDistrictCode);
     if (district) {
       console.log('✅ Found district:', district.name);
-      
+
       // Cập nhật billingInfo.city với tên quận/huyện
       const cityParts = this.billingInfo.city ? this.billingInfo.city.split(',') : [];
       const province = this.provinces.find(p => p.code === this.selectedProvinceCode);
@@ -2008,10 +2000,10 @@ export class CheckoutComponent implements OnInit {
       } else {
         this.billingInfo.city = `${district.name}, ${province?.name || ''}`.trim();
       }
-      
+
       // Load wards
       this.loadWardsByDistrict(district.code);
-      
+
       // Tính lại phí ship ngay khi có đủ tỉnh và quận/huyện
       if (this.selectedProvinceCode) {
         setTimeout(() => {
@@ -2035,7 +2027,7 @@ export class CheckoutComponent implements OnInit {
       const district = this.districts.find(d => d.code === this.selectedDistrictCode);
       const province = this.provinces.find(p => p.code === this.selectedProvinceCode);
       this.billingInfo.city = `${ward.name}, ${district?.name || ''}, ${province?.name || ''}`.trim();
-      
+
       // Tính lại phí ship sau khi có đủ thông tin (tỉnh và quận/huyện)
       if (this.selectedProvinceCode && this.selectedDistrictCode) {
         setTimeout(() => {
@@ -2122,9 +2114,8 @@ export class CheckoutComponent implements OnInit {
     const amount = Math.round(this.getTotal() || 0);
     const description = this.transactionCode || 'TDK CHECKOUT';
     const amountQuery = amount > 0 ? `&amount=${amount}` : '';
-    return `https://img.vietqr.io/image/${this.bankInfo.bankCode}-${this.bankInfo.accountNumber}-${
-      this.bankInfo.template || 'compact2'
-    }.png?addInfo=${encodeURIComponent(description)}${amountQuery}`;
+    return `https://img.vietqr.io/image/${this.bankInfo.bankCode}-${this.bankInfo.accountNumber}-${this.bankInfo.template || 'compact2'
+      }.png?addInfo=${encodeURIComponent(description)}${amountQuery}`;
   }
 
   copyTransactionCode(): void {
@@ -2159,7 +2150,7 @@ export class CheckoutComponent implements OnInit {
           this.cdr.detectChanges();
         }
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -2171,8 +2162,8 @@ export class CheckoutComponent implements OnInit {
       // Nếu đã chọn, bỏ chọn (toggle)
       this.appliedCoupons.splice(existingIndex, 1);
     } else {
-      // Nếu chưa chọn, thêm vào danh sách
-      this.appliedCoupons.push(mapped);
+      // Nếu chưa chọn, XÓA TẤT CẢ và thêm phiếu mới (chỉ chọn 1)
+      this.appliedCoupons = [mapped];
     }
     // Giữ tương thích với appliedCoupon cũ
     this.appliedCoupon = this.appliedCoupons.length > 0 ? this.appliedCoupons[0] : null;
@@ -2193,7 +2184,7 @@ export class CheckoutComponent implements OnInit {
     this.couponDiscount = 0;
     this.cdr.detectChanges();
   }
-  
+
   isCouponApplied(couponId: number): boolean {
     return this.appliedCoupons.some(c => c.id === couponId);
   }
@@ -2280,7 +2271,7 @@ export class CheckoutComponent implements OnInit {
     console.log('   - Base:', base);
     console.log('   - CustomerId:', customerId);
     console.log('   - Cart items:', this.isTempCart ? this.tempCart?.length : this.cart?.danhSachGioHang?.length);
-    
+
     // Nếu base = 0, vẫn hiển thị phiếu để user biết có phiếu nào không
     // (nhưng sẽ filter sau khi tính discount)
 
@@ -2301,7 +2292,7 @@ export class CheckoutComponent implements OnInit {
         } else if (res?.success && res?.data && Array.isArray(res.data)) {
           allActiveVouchers = res.data;
         }
-        
+
         console.log('📋 Extracted all active vouchers:', allActiveVouchers.length, allActiveVouchers);
 
         // ✅ Lấy danh sách ID các phiếu cá nhân (nếu có đăng nhập)
@@ -2319,7 +2310,7 @@ export class CheckoutComponent implements OnInit {
               } else if (pers?.success && pers?.data && Array.isArray(pers.data)) {
                 raw = pers.data;
               }
-              
+
               // Lấy danh sách ID các phiếu cá nhân của khách hàng này
               const personalVoucherIds = new Set<number>();
               raw
@@ -2330,40 +2321,40 @@ export class CheckoutComponent implements OnInit {
                     personalVoucherIds.add(voucherId);
                   }
                 });
-              
+
               console.log('📋 Personal voucher IDs for customer:', Array.from(personalVoucherIds));
-              
+
               // ✅ Lọc phiếu để hiển thị:
               // - Phiếu công khai: không có trong bảng phieu_giam_gia_ca_nhan HOẶC có nhưng không thuộc khách hàng này
               // - Phiếu cá nhân: có trong bảng phieu_giam_gia_ca_nhan VÀ thuộc khách hàng này
               const vouchersToShow = allActiveVouchers.filter((v: any) => {
                 const voucherId = v?.id;
                 if (!voucherId) return false;
-                
+
                 // Nếu phiếu có trong danh sách cá nhân của khách hàng này => hiển thị
                 if (personalVoucherIds.has(voucherId)) {
                   console.log('✅ Voucher is personal for this customer:', v.code);
                   return true;
                 }
-                
+
                 // Kiểm tra xem phiếu này có trong bảng phieu_giam_gia_ca_nhan không
                 const isInPersonalTable = raw.some((r: any) => {
                   const rVoucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
                   return rVoucherId === voucherId;
                 });
-                
+
                 // Nếu không có trong bảng => đây là phiếu công khai => hiển thị
                 if (!isInPersonalTable) {
                   console.log('✅ Voucher is public (not in personal table):', v.code);
                   return true;
                 }
-                
+
                 // Nếu có trong bảng nhưng không thuộc khách hàng này => cũng là công khai => hiển thị
                 // (vì có thể có nhiều khách hàng khác có phiếu này, nhưng nếu khách hàng này không có thì vẫn được xem như công khai)
                 console.log('✅ Voucher is in personal table but not for this customer (treating as public):', v.code);
                 return true;
               });
-              
+
               console.log('📦 Filtered vouchers to show:', vouchersToShow.length, vouchersToShow);
               this.computeVoucherLists(vouchersToShow, base);
             },
@@ -2397,7 +2388,7 @@ export class CheckoutComponent implements OnInit {
   private computeVoucherLists(raw: any[], base: number): void {
     console.log('🔧 Computing voucher lists, raw count:', raw.length, 'base:', base);
     console.log('🔧 Raw vouchers:', raw);
-    
+
     if (!raw || raw.length === 0) {
       console.log('⚠️ No raw vouchers to process');
       this.allVouchers = [];
@@ -2405,7 +2396,7 @@ export class CheckoutComponent implements OnInit {
       this.cdr.detectChanges();
       return;
     }
-    
+
     const mapped = (raw || [])
       .map((v) => {
         const mapped = this.mapVoucher(v);
@@ -2426,7 +2417,7 @@ export class CheckoutComponent implements OnInit {
         return true;
       });
     console.log('📊 Mapped vouchers (after minOrder filter):', mapped.length, mapped);
-    
+
     const usable = mapped
       .map((m) => {
         const discount = this.computeVoucherDiscount(m, base);
@@ -2446,12 +2437,12 @@ export class CheckoutComponent implements OnInit {
       })
       .sort((a, b) => b.discount - a.discount);
     console.log('✅ Usable vouchers (after discount > 0 filter):', usable.length, usable);
-    
+
     this.allVouchers = usable;
     this.displayedVouchers = usable.slice(0, this.maxDisplayedVouchers);
     console.log('🎯 Displayed vouchers:', this.displayedVouchers.length, this.displayedVouchers);
     console.log('🎯 allVouchers:', this.allVouchers.length);
-    
+
     // Force change detection
     this.cdr.detectChanges();
   }

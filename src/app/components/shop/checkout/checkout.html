@@ -24,10 +24,8 @@
         <!-- Warning nhỏ nếu giỏ hàng trống (nhưng vẫn hiển thị form) -->
         <div *ngIf="!hasCartItems() && !error" class="cart-empty-warning">
           <i class="fas fa-exclamation-triangle"></i>
-          <span
-            >Giỏ hàng của bạn đang trống. Vui lòng <a routerLink="/shop">quay lại cửa hàng</a> để
-            thêm sản phẩm.</span
-          >
+          <span>Giỏ hàng của bạn đang trống. Vui lòng <a routerLink="/shop">quay lại cửa hàng</a> để
+            thêm sản phẩm.</span>
         </div>
         <div class="checkout-main-section">
           <!-- Login/Register Links -->
@@ -50,11 +48,7 @@
             <div *ngIf="customerAddresses.length > 0" class="form-group">
               <label>Chọn địa chỉ đã lưu:</label>
               <div class="address-select-row">
-                <select
-                  class="form-control"
-                  [(ngModel)]="selectedAddressId"
-                  (change)="onAddressChange()"
-                >
+                <select class="form-control" [(ngModel)]="selectedAddressId" (change)="onAddressChange()">
                   <option [value]="null">Chọn địa chỉ...</option>
                   <option *ngFor="let addr of customerAddresses" [value]="addr.id">
                     {{ addr.tenNguoiNhan }} - {{ addr.diaChi }}, {{ addr.tinhThanh }}
@@ -72,59 +66,33 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>Tên người nhận *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="newAddress.tenNguoiNhan"
-                    placeholder="Tên người nhận"
-                  />
+                  <input type="text" class="form-control" [(ngModel)]="newAddress.tenNguoiNhan"
+                    placeholder="Tên người nhận" />
                 </div>
                 <div class="form-group">
                   <label>Số điện thoại *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="newAddress.soDienThoai"
-                    placeholder="Số điện thoại"
-                  />
+                  <input type="text" class="form-control" [(ngModel)]="newAddress.soDienThoai"
+                    placeholder="Số điện thoại" />
                 </div>
               </div>
               <div class="form-group">
                 <label>Địa chỉ chi tiết *</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="newAddress.diaChiChiTiet"
-                  placeholder="Số nhà, tên đường"
-                />
+                <input type="text" class="form-control" [(ngModel)]="newAddress.diaChiChiTiet"
+                  placeholder="Số nhà, tên đường" />
               </div>
               <div class="form-row">
                 <div class="form-group">
                   <label>Phường/Xã *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="newAddress.phuongXa"
-                    placeholder="Phường/Xã"
-                  />
+                  <input type="text" class="form-control" [(ngModel)]="newAddress.phuongXa" placeholder="Phường/Xã" />
                 </div>
                 <div class="form-group">
                   <label>Quận/Huyện *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="newAddress.quanHuyen"
-                    placeholder="Quận/Huyện"
-                  />
+                  <input type="text" class="form-control" [(ngModel)]="newAddress.quanHuyen" placeholder="Quận/Huyện" />
                 </div>
                 <div class="form-group">
                   <label>Tỉnh/Thành phố *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="newAddress.tinhThanh"
-                    placeholder="Tỉnh/Thành phố"
-                  />
+                  <input type="text" class="form-control" [(ngModel)]="newAddress.tinhThanh"
+                    placeholder="Tỉnh/Thành phố" />
                 </div>
               </div>
               <div class="form-group">
@@ -141,23 +109,12 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Tên *</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="billingInfo.firstName"
-                  placeholder="Tên"
-                  required
-                />
+                <input type="text" class="form-control" [(ngModel)]="billingInfo.firstName" placeholder="Tên"
+                  required />
               </div>
               <div class="form-group">
                 <label>Họ *</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="billingInfo.lastName"
-                  placeholder="Họ"
-                  required
-                />
+                <input type="text" class="form-control" [(ngModel)]="billingInfo.lastName" placeholder="Họ" required />
               </div>
             </div>
 
@@ -170,14 +127,8 @@
 
             <div class="form-group">
               <label>Địa chỉ *</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="billingInfo.address"
-                (input)="onAddressDetailChange()"
-                placeholder="Địa chỉ"
-                required
-              />
+              <input type="text" class="form-control" [(ngModel)]="billingInfo.address"
+                (input)="onAddressDetailChange()" placeholder="Địa chỉ" required />
             </div>
 
             <!-- Tỉnh/Thành phố, Quận/Huyện, Phường/Xã Dropdowns -->
@@ -185,14 +136,8 @@
               <div class="col-md-4">
                 <div class="form-group">
                   <label>Tỉnh/Thành phố <span class="text-danger">*</span></label>
-                  <select
-                    class="form-control"
-                    [(ngModel)]="selectedProvinceCode"
-                    (change)="onProvinceChange()"
-                    name="province"
-                    [disabled]="loadingProvinces"
-                    required
-                  >
+                  <select class="form-control" [(ngModel)]="selectedProvinceCode" (change)="onProvinceChange()"
+                    name="province" [disabled]="loadingProvinces" required>
                     <option [ngValue]="''">Chọn tỉnh/thành phố</option>
                     <option *ngFor="let province of provinces" [ngValue]="province.code">
                       {{ province.name }}
@@ -212,14 +157,8 @@
               <div class="col-md-4">
                 <div class="form-group">
                   <label>Quận/Huyện <span class="text-danger">*</span></label>
-                  <select
-                    class="form-control"
-                    [(ngModel)]="selectedDistrictCode"
-                    (change)="onDistrictChange()"
-                    name="district"
-                    [disabled]="!selectedProvinceCode || loadingDistricts"
-                    required
-                  >
+                  <select class="form-control" [(ngModel)]="selectedDistrictCode" (change)="onDistrictChange()"
+                    name="district" [disabled]="!selectedProvinceCode || loadingDistricts" required>
                     <option [ngValue]="''">Chọn quận/huyện</option>
                     <option *ngFor="let district of districts" [ngValue]="district.code">
                       {{ district.name }}
@@ -236,13 +175,8 @@
               <div class="col-md-4">
                 <div class="form-group">
                   <label>Phường/Xã</label>
-                  <select
-                    class="form-control"
-                    [(ngModel)]="selectedWardCode"
-                    (change)="onWardChange()"
-                    name="ward"
-                    [disabled]="!selectedDistrictCode || loadingWards"
-                  >
+                  <select class="form-control" [(ngModel)]="selectedWardCode" (change)="onWardChange()" name="ward"
+                    [disabled]="!selectedDistrictCode || loadingWards">
                     <option [ngValue]="''">Chọn phường/xã (tùy chọn)</option>
                     <option *ngFor="let ward of wards" [ngValue]="ward.code">
                       {{ ward.name }}
@@ -260,34 +194,19 @@
 
             <div class="form-group">
               <label>Số điện thoại *</label>
-              <input
-                type="tel"
-                class="form-control"
-                [(ngModel)]="billingInfo.phone"
-                placeholder="Số điện thoại"
-                required
-              />
+              <input type="tel" class="form-control" [(ngModel)]="billingInfo.phone" placeholder="Số điện thoại"
+                required />
             </div>
 
             <div class="form-group">
               <label>Địa chỉ email *</label>
-              <input
-                type="email"
-                class="form-control"
-                [(ngModel)]="billingInfo.email"
-                placeholder="Email"
-                required
-              />
+              <input type="email" class="form-control" [(ngModel)]="billingInfo.email" placeholder="Email" required />
             </div>
 
             <div class="form-group">
               <label>Ghi chú đơn hàng (tuỳ chọn)</label>
-              <textarea
-                class="form-control"
-                rows="4"
-                [(ngModel)]="orderNotes"
-                placeholder="Ghi chú về đơn hàng, ví dụ: thời gian hay chỉ dẫn địa điểm giao hàng chi tiết hơn."
-              ></textarea>
+              <textarea class="form-control" rows="4" [(ngModel)]="orderNotes"
+                placeholder="Ghi chú về đơn hàng, ví dụ: thời gian hay chỉ dẫn địa điểm giao hàng chi tiết hơn."></textarea>
             </div>
           </div>
         </div>
@@ -296,256 +215,257 @@
         <div class="checkout-bottom-section">
           <!-- Payment Methods Column -->
           <div class="checkout-payment-column">
-          <div class="payment-methods">
-            <h3>Phương thức thanh toán</h3>
+            <div class="payment-methods">
+              <h3>Phương thức thanh toán</h3>
 
-            <div class="payment-option">
-              <input
-                type="radio"
-                id="paymentCash"
-                name="paymentMethod"
-                value="cash"
-                [(ngModel)]="paymentMethod"
-              />
-              <label for="paymentCash">
-                <strong>Trả tiền mặt khi nhận hàng</strong>
-                <p>Trả tiền mặt khi giao hàng.</p>
-              </label>
-            </div>
-
-            <div class="payment-option">
-              <input
-                type="radio"
-                id="paymentTransfer"
-                name="paymentMethod"
-                value="transfer"
-                [(ngModel)]="paymentMethod"
-              />
-              <label for="paymentTransfer">
-                <strong>Chuyển khoản ngân hàng</strong>
-                <p>Chuyển khoản trực tiếp vào tài khoản ngân hàng của chúng tôi.</p>
-              </label>
-            </div>
-
-            <!-- Bank Transfer Info -->
-            <div *ngIf="paymentMethod === 'transfer'" class="bank-info">
-              <div class="bank-details">
-                <p><strong>Ngân hàng:</strong> {{ bankInfo.bankName }}</p>
-                <p><strong>Số tài khoản:</strong> {{ bankInfo.accountNumber }}</p>
-                <p><strong>Chủ tài khoản:</strong> {{ bankInfo.accountName }}</p>
-                <p><strong>Số tiền:</strong> {{ formatCurrency(getTotal()) }}</p>
+              <div class="payment-option">
+                <input type="radio" id="paymentCash" name="paymentMethod" value="cash" [(ngModel)]="paymentMethod" />
+                <label for="paymentCash">
+                  <strong>Trả tiền mặt khi nhận hàng</strong>
+                  <p>Trả tiền mặt khi giao hàng.</p>
+                </label>
               </div>
 
-              <div class="bank-qr">
-                <img [src]="getBankTransferQrUrl()" alt="QR chuyển khoản" />
-                <span>Quét QR để thanh toán nhanh</span>
+              <div class="payment-option">
+                <input type="radio" id="paymentTransfer" name="paymentMethod" value="transfer"
+                  [(ngModel)]="paymentMethod" />
+                <label for="paymentTransfer">
+                  <strong>Chuyển khoản ngân hàng</strong>
+                  <p>Chuyển khoản trực tiếp vào tài khoản ngân hàng của chúng tôi.</p>
+                </label>
               </div>
 
-              <div class="transaction-code">
-                <label>Mã giao dịch (tự động sinh):</label>
-                <div class="code-display">
-                  <input type="text" [value]="transactionCode" readonly class="code-input" />
-                  <button class="btn-copy" (click)="copyTransactionCode()" title="Sao chép mã">
-                    <i class="fas fa-copy"></i>
-                  </button>
+              <div class="payment-option">
+                <input type="radio" id="paymentZalo" name="paymentMethod" value="zalopay" [(ngModel)]="paymentMethod" />
+                <label for="paymentZalo">
+                  <strong>Zalo Pay</strong>
+                  <p>Thanh toán qua ví ZaloPay (Quét mã QR)</p>
+                </label>
+              </div>
+
+              <!-- Bank Transfer Info -->
+              <div *ngIf="paymentMethod === 'transfer'" class="bank-info">
+                <div class="bank-details">
+                  <p><strong>Ngân hàng:</strong> {{ bankInfo.bankName }}</p>
+                  <p><strong>Số tài khoản:</strong> {{ bankInfo.accountNumber }}</p>
+                  <p><strong>Chủ tài khoản:</strong> {{ bankInfo.accountName }}</p>
+                  <p><strong>Số tiền:</strong> {{ formatCurrency(getTotal()) }}</p>
                 </div>
-                <p class="code-note">
-                  <i class="fas fa-info-circle"></i>
-                  Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
-                  thanh toán.
-                </p>
+
+                <div class="bank-qr">
+                  <img [src]="getBankTransferQrUrl()" alt="QR chuyển khoản" />
+                  <span>Quét QR để thanh toán nhanh</span>
+                </div>
+
+                <div class="transaction-code">
+                  <label>Mã giao dịch (tự động sinh):</label>
+                  <div class="code-display">
+                    <input type="text" [value]="transactionCode" readonly class="code-input" />
+                    <button class="btn-copy" (click)="copyTransactionCode()" title="Sao chép mã">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                  <p class="code-note">
+                    <i class="fas fa-info-circle"></i>
+                    Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
+                    thanh toán.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Zalo Pay Info -->
+              <div *ngIf="paymentMethod === 'zalopay'" class="bank-info">
+                <div class="bank-details">
+                  <p><strong>Ngân hàng:</strong> ZaloPay</p>
+                  <p><strong>Số tài khoản:</strong> {{ bankInfo.accountNumber }}</p>
+                  <p><strong>Chủ tài khoản:</strong> {{ bankInfo.accountName }}</p>
+                  <p><strong>Số tiền:</strong> {{ formatCurrency(getTotal()) }}</p>
+                </div>
+
+                <div class="bank-qr">
+                  <img src="assets/images/zalopay-qr.png" alt="QR ZaloPay" />
+                  <span>Quét mã bằng Zalo Pay để thanh toán nhanh</span>
+                </div>
+
+                <div class="transaction-code">
+                  <label>Mã giao dịch (tự động sinh):</label>
+                  <div class="code-display">
+                    <input type="text" [value]="transactionCode" readonly class="code-input" />
+                    <button class="btn-copy" (click)="copyTransactionCode()" title="Sao chép mã">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                  <p class="code-note">
+                    <i class="fas fa-info-circle"></i>
+                    Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
+                    thanh toán.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
           </div>
 
           <!-- Order Summary -->
           <div class="checkout-sidebar">
             <div class="order-summary">
-            <h2>ĐƠN HÀNG CỦA BẠN</h2>
+              <h2>ĐƠN HÀNG CỦA BẠN</h2>
 
-            <table class="order-table">
-              <thead>
-                <tr>
-                  <th>SẢN PHẨM</th>
-                  <th>TỔNG</th>
-                </tr>
-              </thead>
-              <tbody>
-                <ng-container *ngIf="hasCartItems(); else emptyCart">
-                  <tr *ngFor="let item of getOrderItems()">
+              <table class="order-table">
+                <thead>
+                  <tr>
+                    <th>SẢN PHẨM</th>
+                    <th>TỔNG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ng-container *ngIf="hasCartItems(); else emptyCart">
+                    <tr *ngFor="let item of getOrderItems()">
+                      <td>
+                        <div class="product-name">{{ item.name }}</div>
+                        <div class="product-meta">
+                          <span>Mã chi tiết: <strong>#{{ item.code || 'N/A' }}</strong></span>
+                          <span>Đơn giá: <strong>{{ formatCurrency(item.unitPrice) }}</strong></span>
+                          <span>Số lượng: <strong>{{ item.quantity }}</strong></span>
+                        </div>
+                      </td>
+                      <td>{{ formatCurrency(item.total) }}</td>
+                    </tr>
+                  </ng-container>
+                  <ng-template #emptyCart>
+                    <tr>
+                      <td colspan="2" class="empty-cart-row">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Giỏ hàng của bạn đang trống</span>
+                      </td>
+                    </tr>
+                  </ng-template>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Tổng phụ</td>
+                    <td>{{ formatCurrency(getSubtotal()) }}</td>
+                  </tr>
+                  <tr>
+                    <td>Phí vận chuyển</td>
                     <td>
-                      <div class="product-name">{{ item.name }}</div>
-                      <div class="product-meta">
-                        <span
-                          >Mã chi tiết: <strong>#{{ item.code || 'N/A' }}</strong></span
-                        >
-                        <span
-                          >Đơn giá: <strong>{{ formatCurrency(item.unitPrice) }}</strong></span
-                        >
-                        <span
-                          >Số lượng: <strong>{{ item.quantity }}</strong></span
-                        >
+                      <span *ngIf="isCalculatingShippingFee" class="text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Đang tính...
+                      </span>
+                      <span *ngIf="!isCalculatingShippingFee">
+                        {{ shippingFee > 0 ? formatCurrency(shippingFee) : 'Miễn phí' }}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="couponDiscount > 0">
+                    <td>
+                      Giảm giá (mã)
+                      <div class="applied-coupons-list" *ngIf="appliedCoupons.length > 0">
+                        <small *ngFor="let c of appliedCoupons" class="coupon-badge">
+                          {{ c.code }}
+                        </small>
                       </div>
                     </td>
-                    <td>{{ formatCurrency(item.total) }}</td>
+                    <td class="text-danger">-{{ formatCurrency(couponDiscount) }}</td>
                   </tr>
-                </ng-container>
-                <ng-template #emptyCart>
-                  <tr>
-                    <td colspan="2" class="empty-cart-row">
-                      <i class="fas fa-shopping-cart"></i>
-                      <span>Giỏ hàng của bạn đang trống</span>
-                    </td>
+                  <tr class="total-row">
+                    <td>Tổng</td>
+                    <td>{{ formatCurrency(getTotal()) }}</td>
                   </tr>
-                </ng-template>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td>Tổng phụ</td>
-                  <td>{{ formatCurrency(getSubtotal()) }}</td>
-                </tr>
-                <tr>
-                  <td>Phí vận chuyển</td>
-                  <td>
-                    <span *ngIf="isCalculatingShippingFee" class="text-muted">
-                      <i class="fas fa-spinner fa-spin"></i> Đang tính...
-                    </span>
-                    <span *ngIf="!isCalculatingShippingFee">
-                      {{ shippingFee > 0 ? formatCurrency(shippingFee) : 'Miễn phí' }}
-                    </span>
-                  </td>
-                </tr>
-                <tr *ngIf="couponDiscount > 0">
-                  <td>
-                    Giảm giá (mã)
-                    <div class="applied-coupons-list" *ngIf="appliedCoupons.length > 0">
-                      <small *ngFor="let c of appliedCoupons" class="coupon-badge">
-                        {{ c.code }}
-                      </small>
-                    </div>
-                  </td>
-                  <td class="text-danger">-{{ formatCurrency(couponDiscount) }}</td>
-                </tr>
-                <tr class="total-row">
-                  <td>Tổng</td>
-                  <td>{{ formatCurrency(getTotal()) }}</td>
-                </tr>
-              </tfoot>
-            </table>
+                </tfoot>
+              </table>
 
-            <div class="order-details-extra" *ngIf="hasCartItems()">
-              <div class="detail-line">
-                <span>Mã đơn tạm</span>
-                <strong>{{ cart?.maHoaDonCho || 'Sẽ tạo khi xác nhận' }}</strong>
-              </div>
-              <div class="detail-line">
-                <span>Số lượng sản phẩm</span>
-                <strong>{{ getTotalItems() }}</strong>
-              </div>
-            </div>
-
-            <!-- Discount Code / Voucher -->
-            <div class="voucher-section">
-              <label class="form-label">Mã giảm giá</label>
-              <!-- ✅ Hiển thị danh sách phiếu đã chọn -->
-              <div class="applied-coupons-summary" *ngIf="appliedCoupons.length > 0">
-                <div class="applied-coupons-header">
-                  <strong>Đã chọn {{ appliedCoupons.length }} phiếu giảm giá:</strong>
-                  <button type="button" class="btn-remove-all" (click)="removeCoupon()" title="Bỏ tất cả">
-                    <i class="fas fa-times"></i>
-                  </button>
+              <div class="order-details-extra" *ngIf="hasCartItems()">
+                <div class="detail-line">
+                  <span>Mã đơn tạm</span>
+                  <strong>{{ cart?.maHoaDonCho || 'Sẽ tạo khi xác nhận' }}</strong>
                 </div>
-                <div class="applied-coupons-list">
-                  <div *ngFor="let c of appliedCoupons" class="applied-coupon-item">
-                    <span class="coupon-code">{{ c.code }}</span>
-                    <span class="coupon-discount">-{{ formatCurrency(computeVoucherDiscount(c, getSubtotal() - getDiscount())) }}</span>
-                    <button type="button" class="btn-remove-single" (click)="removeCoupon(c.id)" title="Bỏ">
+                <div class="detail-line">
+                  <span>Số lượng sản phẩm</span>
+                  <strong>{{ getTotalItems() }}</strong>
+                </div>
+              </div>
+
+              <!-- Discount Code / Voucher -->
+              <div class="voucher-section">
+                <label class="form-label">Mã giảm giá</label>
+                <!-- ✅ Hiển thị danh sách phiếu đã chọn -->
+                <div class="applied-coupons-summary" *ngIf="appliedCoupons.length > 0">
+                  <div class="applied-coupons-header">
+                    <strong>Đã chọn {{ appliedCoupons.length }} phiếu giảm giá:</strong>
+                    <button type="button" class="btn-remove-all" (click)="removeCoupon()" title="Bỏ tất cả">
                       <i class="fas fa-times"></i>
                     </button>
                   </div>
-                </div>
-              </div>
-              <div class="voucher-input-container">
-                <div class="voucher-input-row">
-                  <input
-                    type="text"
-                    class="form-control voucher-input"
-                    placeholder="Nhập mã và Enter"
-                    [(ngModel)]="couponCode"
-                    (keyup.enter)="applyCoupon()"
-                  />
-                  <button
-                    type="button"
-                    class="btn-remove-coupon"
-                    *ngIf="appliedCoupons.length > 0"
-                    (click)="removeCoupon()"
-                  >
-                    Bỏ tất cả ({{ appliedCoupons.length }})
-                  </button>
-                </div>
-              </div>
-              <!-- ✅ Luôn hiển thị container để user thấy vùng phiếu giảm giá -->
-              <div class="voucher-list-container">
-                <div class="voucher-list" *ngIf="displayedVouchers.length > 0">
-                  <div
-                    class="voucher-card"
-                    *ngFor="let v of displayedVouchers; let i = index"
-                    [ngClass]="{ best: i === 0 }"
-                  >
-                    <div class="voucher-header">
-                      <span class="code-chip">{{ v.code }}</span>
-                      <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
-                    </div>
-                    <div class="voucher-body">
-                      <div class="discount-row">
-                        <span class="tag">Giảm:</span>
-                        <span class="value">-{{ formatCurrency(v.discount) }}</span>
-                      </div>
-                      <div class="extra" *ngIf="v.expiry || v.expiredAt">
-                        Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
-                      </div>
-                      <div class="extra" *ngIf="v.minOrder">
-                        Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
-                      </div>
-                    </div>
-                    <div class="voucher-actions">
-                      <label class="form-check m-0">
-                        <input
-                          type="checkbox"
-                          class="form-check-input"
-                          [checked]="isCouponApplied(v.id)"
-                          (change)="applyCouponFromSuggestion(v)"
-                        />
-                        <span>{{ isCouponApplied(v.id) ? 'Đã chọn' : 'Chọn' }}</span>
-                      </label>
+                  <div class="applied-coupons-list">
+                    <div *ngFor="let c of appliedCoupons" class="applied-coupon-item">
+                      <span class="coupon-code">{{ c.code }}</span>
+                      <span class="coupon-discount">-{{ formatCurrency(computeVoucherDiscount(c, getSubtotal() -
+                        getDiscount())) }}</span>
+                      <button type="button" class="btn-remove-single" (click)="removeCoupon(c.id)" title="Bỏ">
+                        <i class="fas fa-times"></i>
+                      </button>
                     </div>
                   </div>
                 </div>
-                <div
-                  class="voucher-more-action"
-                  *ngIf="allVouchers.length > maxDisplayedVouchers && allVouchers.length > 0"
-                >
-                  <button type="button" class="btn-view-more" (click)="openVoucherModal()">
-                    <i class="fas fa-chevron-down"></i>
-                    {{ allVouchers.length - maxDisplayedVouchers }} phiếu giảm giá khác...
-                  </button>
+                <div class="voucher-input-container">
+                  <div class="voucher-input-row">
+                    <input type="text" class="form-control voucher-input" placeholder="Nhập mã và Enter"
+                      [(ngModel)]="couponCode" (keyup.enter)="applyCoupon()" />
+                    <button type="button" class="btn-remove-coupon" *ngIf="appliedCoupons.length > 0"
+                      (click)="removeCoupon()">
+                      Bỏ tất cả ({{ appliedCoupons.length }})
+                    </button>
+                  </div>
                 </div>
-                <div class="text-muted small text-center py-2" *ngIf="allVouchers.length === 0 && displayedVouchers.length === 0">
-                  <i class="fas fa-info-circle"></i> Không có mã giảm giá phù hợp
+                <!-- ✅ Luôn hiển thị container để user thấy vùng phiếu giảm giá -->
+                <div class="voucher-list-container">
+                  <div class="voucher-list" *ngIf="displayedVouchers.length > 0">
+                    <div class="voucher-card" *ngFor="let v of displayedVouchers; let i = index"
+                      [ngClass]="{ best: i === 0 }">
+                      <div class="voucher-header">
+                        <span class="code-chip">{{ v.code }}</span>
+                        <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
+                      </div>
+                      <div class="voucher-body">
+                        <div class="discount-row">
+                          <span class="tag">Giảm:</span>
+                          <span class="value">-{{ formatCurrency(v.discount) }}</span>
+                        </div>
+                        <div class="extra" *ngIf="v.expiry || v.expiredAt">
+                          Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
+                        </div>
+                        <div class="extra" *ngIf="v.minOrder">
+                          Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
+                        </div>
+                      </div>
+                      <div class="voucher-actions">
+                        <label class="form-check m-0">
+                          <input type="checkbox" class="form-check-input" [checked]="isCouponApplied(v.id)"
+                            (change)="applyCouponFromSuggestion(v)" />
+                          <span>{{ isCouponApplied(v.id) ? 'Đã chọn' : 'Chọn' }}</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="voucher-more-action"
+                    *ngIf="allVouchers.length > maxDisplayedVouchers && allVouchers.length > 0">
+                    <button type="button" class="btn-view-more" (click)="openVoucherModal()">
+                      <i class="fas fa-chevron-down"></i>
+                      {{ allVouchers.length - maxDisplayedVouchers }} phiếu giảm giá khác...
+                    </button>
+                  </div>
+                  <div class="text-muted small text-center py-2"
+                    *ngIf="allVouchers.length === 0 && displayedVouchers.length === 0">
+                    <i class="fas fa-info-circle"></i> Không có mã giảm giá phù hợp
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Button Đặt hàng -->
-            <button
-              class="btn-place-order"
-              (click)="prepareOrder()"
-              [disabled]="isSubmitting || !hasCartItems()"
-            >
-              <i class="fas fa-shopping-bag"></i>
-              ĐẶT HÀNG
-            </button>
+              <!-- Button Đặt hàng -->
+              <button class="btn-place-order" (click)="prepareOrder()" [disabled]="isSubmitting || !hasCartItems()">
+                <i class="fas fa-shopping-bag"></i>
+                ĐẶT HÀNG
+              </button>
             </div>
           </div>
         </div>
@@ -553,521 +473,486 @@
     </div>
   </main>
 
-    <!-- Order Confirmation Modal -->
-    <div *ngIf="showOrderConfirmation && orderSummary" class="order-confirmation-modal">
-      <div class="modal-overlay" (click)="cancelOrderConfirmation()"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="header-icon">
-            <i class="fas fa-check-circle"></i>
-          </div>
-          <h2>Xác nhận đơn hàng</h2>
-          <p class="header-subtitle">Vui lòng kiểm tra lại thông tin trước khi xác nhận</p>
-          <button class="btn-close" (click)="cancelOrderConfirmation()" title="Đóng">
-            <i class="fas fa-times"></i>
-          </button>
+  <!-- Order Confirmation Modal -->
+  <div *ngIf="showOrderConfirmation && orderSummary" class="order-confirmation-modal">
+    <div class="modal-overlay" (click)="cancelOrderConfirmation()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="header-icon">
+          <i class="fas fa-check-circle"></i>
         </div>
+        <h2>Xác nhận đơn hàng</h2>
+        <p class="header-subtitle">Vui lòng kiểm tra lại thông tin trước khi xác nhận</p>
+        <button class="btn-close" (click)="cancelOrderConfirmation()" title="Đóng">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
 
-        <div class="modal-body">
-          <div class="order-summary-grid">
-            <!-- Product List Section -->
-            <div class="order-summary-section product-list-section">
-              <div class="section-header">
-                <i class="fas fa-box-open"></i>
-                <h3>Danh sách sản phẩm</h3>
-                <span class="product-count">{{ orderSummary.products?.length || 0 }} sản phẩm</span>
-              </div>
-              <div class="product-cards-list">
-                <div class="product-card" *ngFor="let item of orderSummary.products; let i = index">
-                  <div class="product-info-main">
-                    <div class="product-image-wrapper" *ngIf="item.anhSanPham">
-                      <img
-                        [src]="getProductImageUrl(item.anhSanPham)"
-                        [alt]="item.tenSanPham"
-                        class="product-thumbnail"
-                        (error)="handleImageError($event)"
-                      />
-                    </div>
-                    <div class="product-details-info">
-                      <div class="product-name">{{ item.tenSanPham }}</div>
-                      <div class="product-specs" *ngIf="item.mauSac || item.kichThuoc || item.maSanPham">
-                        <span class="product-spec" *ngIf="item.maSanPham">
-                          <i class="fas fa-barcode"></i>
-                          Mã: <strong>{{ item.maSanPham }}</strong>
-                        </span>
-                        <span class="product-spec" *ngIf="item.mauSac">
-                          <i class="fas fa-palette"></i>
-                          Màu: <strong>{{ item.mauSac }}</strong>
-                        </span>
-                        <span class="product-spec" *ngIf="item.kichThuoc">
-                          <i class="fas fa-ruler"></i>
-                          Kích thước: <strong>{{ item.kichThuoc }}</strong>
-                        </span>
-                      </div>
-                      <div class="product-price-info">
-                        <span class="unit-price">{{ formatCurrency(item.donGia) }} / sản phẩm</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="product-quantity-price">
-                    <div class="quantity-display">
-                      <i class="fas fa-shopping-cart"></i>
-                      <span class="quantity-value">x{{ item.soLuong }}</span>
-                    </div>
-                    <div class="price-display">
-                      <span class="price-label">Thành tiền:</span>
-                      <span class="price-value">{{ formatCurrency(item.thanhTien) }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <div class="modal-body">
+        <div class="order-summary-grid">
+          <!-- Product List Section -->
+          <div class="order-summary-section product-list-section">
+            <div class="section-header">
+              <i class="fas fa-box-open"></i>
+              <h3>Danh sách sản phẩm</h3>
+              <span class="product-count">{{ orderSummary.products?.length || 0 }} sản phẩm</span>
             </div>
-
-            <!-- Delivery Info Section -->
-            <div class="order-summary-section delivery-info-section">
-              <div class="section-header">
-                <i class="fas fa-truck"></i>
-                <h3>Thông tin giao hàng</h3>
-              </div>
-              <div class="info-block">
-                <div class="info-item">
-                  <div class="info-icon">
-                    <i class="fas fa-user"></i>
+            <div class="product-cards-list">
+              <div class="product-card" *ngFor="let item of orderSummary.products; let i = index">
+                <div class="product-info-main">
+                  <div class="product-image-wrapper" *ngIf="item.anhSanPham">
+                    <img [src]="getProductImageUrl(item.anhSanPham)" [alt]="item.tenSanPham" class="product-thumbnail"
+                      (error)="handleImageError($event)" />
                   </div>
-                  <div class="info-text">
-                    <span class="label">Người nhận</span>
-                    <span class="value">{{ orderSummary.billingInfo.firstName }} {{ orderSummary.billingInfo.lastName }}</span>
-                  </div>
-                </div>
-                <div class="info-item">
-                  <div class="info-icon">
-                    <i class="fas fa-phone"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Số điện thoại</span>
-                    <span class="value">{{ orderSummary.billingInfo.phone }}</span>
-                  </div>
-                </div>
-                <div class="info-item" *ngIf="orderSummary.billingInfo.email">
-                  <div class="info-icon">
-                    <i class="fas fa-envelope"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Email</span>
-                    <span class="value">{{ orderSummary.billingInfo.email }}</span>
-                  </div>
-                </div>
-                <div class="info-item">
-                  <div class="info-icon">
-                    <i class="fas fa-map-marker-alt"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Địa chỉ</span>
-                    <span class="value">
-                      <ng-container *ngIf="orderSummary.billingInfo.fullAddress">
-                        {{ orderSummary.billingInfo.fullAddress }}
-                      </ng-container>
-                      <ng-container *ngIf="!orderSummary.billingInfo.fullAddress">
-                        {{ orderSummary.billingInfo.addressDetail }}
-                        <span *ngIf="orderSummary.billingInfo.ward">, {{ orderSummary.billingInfo.ward }}</span>
-                        <span *ngIf="orderSummary.billingInfo.district">, {{ orderSummary.billingInfo.district }}</span>
-                        <span *ngIf="orderSummary.billingInfo.province">, {{ orderSummary.billingInfo.province }}</span>
-                        <span *ngIf="orderSummary.billingInfo.address && orderSummary.billingInfo.city">
-                          {{ orderSummary.billingInfo.address }}, {{ orderSummary.billingInfo.city }}
-                        </span>
-                      </ng-container>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Payment Info Section -->
-            <div class="order-summary-section payment-info-section">
-              <div class="section-header">
-                <i class="fas fa-credit-card"></i>
-                <h3>Phương thức thanh toán</h3>
-              </div>
-              <div class="info-block">
-                <div class="info-item">
-                  <div class="info-icon">
-                    <i class="fas fa-money-bill-wave"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Phương thức</span>
-                    <span class="value">
-                      {{ orderSummary.paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt khi nhận hàng' }}
-                    </span>
-                  </div>
-                </div>
-                <div *ngIf="orderSummary.paymentMethod === 'transfer'" class="bank-details">
-                  <div class="info-item">
-                    <div class="info-icon">
-                      <i class="fas fa-bank"></i>
+                  <div class="product-details-info">
+                    <div class="product-name">{{ item.tenSanPham }}</div>
+                    <div class="product-specs" *ngIf="item.mauSac || item.kichThuoc || item.maSanPham">
+                      <span class="product-spec" *ngIf="item.maSanPham">
+                        <i class="fas fa-barcode"></i>
+                        Mã: <strong>{{ item.maSanPham }}</strong>
+                      </span>
+                      <span class="product-spec" *ngIf="item.mauSac">
+                        <i class="fas fa-palette"></i>
+                        Màu: <strong>{{ item.mauSac }}</strong>
+                      </span>
+                      <span class="product-spec" *ngIf="item.kichThuoc">
+                        <i class="fas fa-ruler"></i>
+                        Kích thước: <strong>{{ item.kichThuoc }}</strong>
+                      </span>
                     </div>
-                    <div class="info-text">
-                      <span class="label">Ngân hàng</span>
-                      <span class="value">{{ orderSummary.bankInfo.bankName }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <div class="info-icon">
-                      <i class="fas fa-hashtag"></i>
-                    </div>
-                    <div class="info-text">
-                      <span class="label">Số tài khoản</span>
-                      <span class="value account-number">{{ orderSummary.bankInfo.accountNumber }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <div class="info-icon">
-                      <i class="fas fa-user-tag"></i>
-                    </div>
-                    <div class="info-text">
-                      <span class="label">Chủ tài khoản</span>
-                      <span class="value">{{ orderSummary.bankInfo.accountName }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item" *ngIf="orderSummary.transactionCode">
-                    <div class="info-icon">
-                      <i class="fas fa-receipt"></i>
-                    </div>
-                    <div class="info-text">
-                      <span class="label">Mã giao dịch</span>
-                      <span class="value transaction-code"><code>{{ orderSummary.transactionCode }}</code></span>
+                    <div class="product-price-info">
+                      <span class="unit-price">{{ formatCurrency(item.donGia) }} / sản phẩm</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Order Notes Section -->
-            <div *ngIf="orderSummary.orderNotes" class="order-summary-section order-notes-section">
-              <div class="section-header">
-                <i class="fas fa-sticky-note"></i>
-                <h3>Ghi chú đơn hàng</h3>
-              </div>
-              <div class="info-block">
-                <p class="notes-text">{{ orderSummary.orderNotes }}</p>
+                <div class="product-quantity-price">
+                  <div class="quantity-display">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="quantity-value">x{{ item.soLuong }}</span>
+                  </div>
+                  <div class="price-display">
+                    <span class="price-label">Thành tiền:</span>
+                    <span class="price-value">{{ formatCurrency(item.thanhTien) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Total Summary -->
-          <div class="order-total-summary">
-            <div class="total-row">
-              <span class="label">Tổng phụ</span>
-              <span class="value">{{ formatCurrency(orderSummary.subtotal) }}</span>
+          <!-- Delivery Info Section -->
+          <div class="order-summary-section delivery-info-section">
+            <div class="section-header">
+              <i class="fas fa-truck"></i>
+              <h3>Thông tin giao hàng</h3>
             </div>
-            <div *ngIf="orderSummary.discount > 0" class="total-row discount-row">
-              <span class="label">
-                <i class="fas fa-tag"></i>
-                Giảm giá sản phẩm
-              </span>
-              <span class="value text-danger">-{{ formatCurrency(orderSummary.discount) }}</span>
-            </div>
-            <div *ngIf="orderSummary.couponDiscount > 0" class="total-row coupon-row">
-              <span class="label">
-                <i class="fas fa-ticket-alt"></i>
-                Giảm giá (mã)
-                <div class="applied-coupons-list" *ngIf="orderSummary.appliedCoupons && orderSummary.appliedCoupons.length > 0">
-                  <small *ngFor="let c of orderSummary.appliedCoupons" class="coupon-badge">
-                    {{ c.code }}
-                  </small>
+            <div class="info-block">
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="fas fa-user"></i>
                 </div>
-              </span>
-              <span class="value text-danger">-{{ formatCurrency(orderSummary.couponDiscount) }}</span>
+                <div class="info-text">
+                  <span class="label">Người nhận</span>
+                  <span class="value">{{ orderSummary.billingInfo.firstName }} {{ orderSummary.billingInfo.lastName
+                    }}</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="fas fa-phone"></i>
+                </div>
+                <div class="info-text">
+                  <span class="label">Số điện thoại</span>
+                  <span class="value">{{ orderSummary.billingInfo.phone }}</span>
+                </div>
+              </div>
+              <div class="info-item" *ngIf="orderSummary.billingInfo.email">
+                <div class="info-icon">
+                  <i class="fas fa-envelope"></i>
+                </div>
+                <div class="info-text">
+                  <span class="label">Email</span>
+                  <span class="value">{{ orderSummary.billingInfo.email }}</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="info-text">
+                  <span class="label">Địa chỉ</span>
+                  <span class="value">
+                    <ng-container *ngIf="orderSummary.billingInfo.fullAddress">
+                      {{ orderSummary.billingInfo.fullAddress }}
+                    </ng-container>
+                    <ng-container *ngIf="!orderSummary.billingInfo.fullAddress">
+                      {{ orderSummary.billingInfo.addressDetail }}
+                      <span *ngIf="orderSummary.billingInfo.ward">, {{ orderSummary.billingInfo.ward }}</span>
+                      <span *ngIf="orderSummary.billingInfo.district">, {{ orderSummary.billingInfo.district }}</span>
+                      <span *ngIf="orderSummary.billingInfo.province">, {{ orderSummary.billingInfo.province }}</span>
+                      <span *ngIf="orderSummary.billingInfo.address && orderSummary.billingInfo.city">
+                        {{ orderSummary.billingInfo.address }}, {{ orderSummary.billingInfo.city }}
+                      </span>
+                    </ng-container>
+                  </span>
+                </div>
+              </div>
             </div>
-            <div *ngIf="orderSummary.shippingFee > 0" class="total-row shipping-row">
-              <span class="label">
-                <img
-                  src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
-                  alt="Giao Hàng Tiết Kiệm"
-                  class="shipping-logo"
-                  onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;"
-                />
-                <i class="fas fa-shipping-fast"></i>
-                Phí vận chuyển
-              </span>
-              <span class="value">{{ formatCurrency(orderSummary.shippingFee) }}</span>
+          </div>
+
+          <!-- Payment Info Section -->
+          <div class="order-summary-section payment-info-section">
+            <div class="section-header">
+              <i class="fas fa-credit-card"></i>
+              <h3>Phương thức thanh toán</h3>
             </div>
-            <div class="total-row final-total">
-              <span class="label">
-                <i class="fas fa-calculator"></i>
-                Tổng cộng
-              </span>
-              <span class="value">{{ formatCurrency(orderSummary.total) }}</span>
+            <div class="info-block">
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="info-text">
+                  <span class="label">Phương thức</span>
+                  <span class="value">
+                    {{ orderSummary.paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' :
+                    (orderSummary.paymentMethod === 'zalopay' ? 'Zalo Pay' : 'Tiền mặt khi nhận hàng') }}
+                  </span>
+                </div>
+              </div>
+              <div *ngIf="orderSummary.paymentMethod === 'transfer'" class="bank-details">
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="fas fa-bank"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Ngân hàng</span>
+                    <span class="value">{{ orderSummary.bankInfo.bankName }}</span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="fas fa-hashtag"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Số tài khoản</span>
+                    <span class="value account-number">{{ orderSummary.bankInfo.accountNumber }}</span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="info-icon">
+                    <i class="fas fa-user-tag"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Chủ tài khoản</span>
+                    <span class="value">{{ orderSummary.bankInfo.accountName }}</span>
+                  </div>
+                </div>
+                <div class="info-item" *ngIf="orderSummary.transactionCode">
+                  <div class="info-icon">
+                    <i class="fas fa-receipt"></i>
+                  </div>
+                  <div class="info-text">
+                    <span class="label">Mã giao dịch</span>
+                    <span class="value transaction-code"><code>{{ orderSummary.transactionCode }}</code></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Notes Section -->
+          <div *ngIf="orderSummary.orderNotes" class="order-summary-section order-notes-section">
+            <div class="section-header">
+              <i class="fas fa-sticky-note"></i>
+              <h3>Ghi chú đơn hàng</h3>
+            </div>
+            <div class="info-block">
+              <p class="notes-text">{{ orderSummary.orderNotes }}</p>
             </div>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button class="btn-cancel" (click)="cancelOrderConfirmation()">
-            <i class="fas fa-times"></i>
-            <span>Hủy</span>
-          </button>
-          <button class="btn-confirm" (click)="confirmAndPlaceOrder()" [disabled]="isSubmitting">
-            <i class="fas fa-check" *ngIf="!isSubmitting"></i>
-            <span class="spinner-border spinner-border-sm" *ngIf="isSubmitting" role="status"></span>
-            <span>{{ isSubmitting ? 'Đang xử lý...' : 'Xác nhận đặt hàng' }}</span>
-          </button>
+        <!-- Total Summary -->
+        <div class="order-total-summary">
+          <div class="total-row">
+            <span class="label">Tổng phụ</span>
+            <span class="value">{{ formatCurrency(orderSummary.subtotal) }}</span>
+          </div>
+          <div *ngIf="orderSummary.discount > 0" class="total-row discount-row">
+            <span class="label">
+              <i class="fas fa-tag"></i>
+              Giảm giá sản phẩm
+            </span>
+            <span class="value text-danger">-{{ formatCurrency(orderSummary.discount) }}</span>
+          </div>
+          <div *ngIf="orderSummary.couponDiscount > 0" class="total-row coupon-row">
+            <span class="label">
+              <i class="fas fa-ticket-alt"></i>
+              Giảm giá (mã)
+              <div class="applied-coupons-list"
+                *ngIf="orderSummary.appliedCoupons && orderSummary.appliedCoupons.length > 0">
+                <small *ngFor="let c of orderSummary.appliedCoupons" class="coupon-badge">
+                  {{ c.code }}
+                </small>
+              </div>
+            </span>
+            <span class="value text-danger">-{{ formatCurrency(orderSummary.couponDiscount) }}</span>
+          </div>
+          <div *ngIf="orderSummary.shippingFee > 0" class="total-row shipping-row">
+            <span class="label">
+              <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/05/Logo-GHTK-Slogan.png"
+                alt="Giao Hàng Tiết Kiệm" class="shipping-logo"
+                onerror="this.src='https://cdn.ghtk.vn/static/img/logo-ghtk.png'; this.onerror=null;" />
+              <i class="fas fa-shipping-fast"></i>
+              Phí vận chuyển
+            </span>
+            <span class="value">{{ formatCurrency(orderSummary.shippingFee) }}</span>
+          </div>
+          <div class="total-row final-total">
+            <span class="label">
+              <i class="fas fa-calculator"></i>
+              Tổng cộng
+            </span>
+            <span class="value">{{ formatCurrency(orderSummary.total) }}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Invoice Details Modal - Hiển thị chi tiết hoá đơn sau khi đặt hàng thành công -->
-    <div
-      *ngIf="showInvoiceDetails && createdInvoice"
-      class="invoice-modal-overlay"
-      (click)="closeInvoiceDetails()"
-    >
-      <div class="invoice-modal" (click)="$event.stopPropagation()">
-        <div class="invoice-modal-header">
-          <h2><i class="fas fa-check-circle success-icon"></i> Đặt hàng thành công!</h2>
-          <button class="btn-close" (click)="closeInvoiceDetails()">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div class="invoice-modal-body">
-          <!-- Success Message -->
-          <div class="success-message">
-            <p>Cảm ơn bạn đã đặt hàng! Đơn hàng của bạn đã được tiếp nhận.</p>
-          </div>
-
-          <!-- Invoice Details -->
-          <div class="invoice-details">
-            <h3>Chi tiết đơn hàng</h3>
-
-            <!-- Invoice Info -->
-            <div class="invoice-info-section">
-              <div class="info-row">
-                <span class="label">Mã đơn hàng:</span>
-                <span class="value"
-                  ><strong>{{ createdInvoice.maHoaDon }}</strong></span
-                >
-              </div>
-              <div class="info-row">
-                <span class="label">Trạng thái:</span>
-                <span
-                  class="value status-badge"
-                  [class.status-cho-xac-nhan]="createdInvoice.trangThai === 'CHO_XAC_NHAN'"
-                >
-                  {{ getStatusText(createdInvoice.trangThai) }}
-                </span>
-              </div>
-              <div class="info-row">
-                <span class="label">Ngày đặt:</span>
-                <span class="value">{{ createdInvoice.ngayTao | date : 'dd/MM/yyyy HH:mm' }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Phương thức thanh toán:</span>
-                <span class="value">{{
-                  getPaymentMethodText(createdInvoice.phuongThucThanhToan)
-                }}</span>
-              </div>
-            </div>
-
-            <!-- Customer Info -->
-            <div class="invoice-info-section">
-              <h4>Thông tin khách hàng</h4>
-              <div class="info-row">
-                <span class="label">Họ tên:</span>
-                <span class="value">{{
-                  createdInvoice.tenKhachHang || billingInfo.firstName + ' ' + billingInfo.lastName
-                }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Số điện thoại:</span>
-                <span class="value">{{
-                  createdInvoice.soDienThoaiKhachHang || billingInfo.phone
-                }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Email:</span>
-                <span class="value">{{ createdInvoice.emailKhachHang || billingInfo.email }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Địa chỉ giao hàng:</span>
-                <span class="value">
-                  {{ createdInvoice.diaChiChiTiet || billingInfo.address }},
-                  {{ createdInvoice.phuongXa
-                  }}{{ createdInvoice.quanHuyen ? ', ' + createdInvoice.quanHuyen : ''
-                  }}{{ createdInvoice.tinhThanh ? ', ' + createdInvoice.tinhThanh : '' }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Order Items -->
-            <div class="invoice-info-section">
-              <h4>Sản phẩm đã đặt</h4>
-              <table class="invoice-items-table">
-                <thead>
-                  <tr>
-                    <th>Sản phẩm</th>
-                    <th>Số lượng</th>
-                    <th>Đơn giá</th>
-                    <th>Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let item of createdInvoice.danhSachChiTiet">
-                    <td>{{ item.tenSanPham }}</td>
-                    <td>{{ item.soLuong }}</td>
-                    <td>{{ formatCurrency(item.donGia) }}</td>
-                    <td>
-                      <strong>{{ formatCurrency(item.thanhTien) }}</strong>
-                    </td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colspan="3" class="text-right"><strong>Tổng phụ:</strong></td>
-                    <td>
-                      <strong>{{ formatCurrency(createdInvoice.tongTien) }}</strong>
-                    </td>
-                  </tr>
-                  <tr *ngIf="createdInvoice.tienGiamGia > 0">
-                    <td colspan="3" class="text-right"><strong>Giảm giá:</strong></td>
-                    <td>
-                      <strong>-{{ formatCurrency(createdInvoice.tienGiamGia) }}</strong>
-                    </td>
-                  </tr>
-                  <tr class="total-row">
-                    <td colspan="3" class="text-right"><strong>Tổng cộng:</strong></td>
-                    <td>
-                      <strong>{{ formatCurrency(createdInvoice.thanhTien) }}</strong>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            <!-- Payment Info (if transfer) -->
-            <div
-              *ngIf="createdInvoice.phuongThucThanhToan === 'transfer'"
-              class="invoice-info-section payment-info"
-            >
-              <h4>Thông tin thanh toán</h4>
-              <div class="info-row">
-                <span class="label">Ngân hàng:</span>
-                <span class="value">{{ bankInfo.bankName }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Số tài khoản:</span>
-                <span class="value"
-                  ><strong>{{ bankInfo.accountNumber }}</strong></span
-                >
-              </div>
-              <div class="info-row">
-                <span class="label">Chủ tài khoản:</span>
-                <span class="value">{{ bankInfo.accountName }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Số tiền:</span>
-                <span class="value"
-                  ><strong>{{ formatCurrency(createdInvoice.thanhTien) }}</strong></span
-                >
-              </div>
-              <div class="info-row">
-                <span class="label">Mã giao dịch:</span>
-                <span class="value"
-                  ><code class="transaction-code">{{ transactionCode }}</code></span
-                >
-              </div>
-              <div class="payment-note">
-                <i class="fas fa-info-circle"></i>
-                <p>
-                  Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
-                  thanh toán.
-                </p>
-              </div>
-            </div>
-
-            <!-- Notes -->
-            <div *ngIf="createdInvoice.ghiChu" class="invoice-info-section">
-              <h4>Ghi chú</h4>
-              <p class="notes-text">{{ createdInvoice.ghiChu }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="invoice-modal-footer">
-          <button class="btn-primary" (click)="closeInvoiceDetails()">
-            <i class="fas fa-check"></i> Đã hiểu
-          </button>
-        </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelOrderConfirmation()">
+          <i class="fas fa-times"></i>
+          <span>Hủy</span>
+        </button>
+        <button class="btn-confirm" (click)="confirmAndPlaceOrder()" [disabled]="isSubmitting">
+          <i class="fas fa-check" *ngIf="!isSubmitting"></i>
+          <span class="spinner-border spinner-border-sm" *ngIf="isSubmitting" role="status"></span>
+          <span>{{ isSubmitting ? 'Đang xử lý...' : 'Xác nhận đặt hàng' }}</span>
+        </button>
       </div>
     </div>
+  </div>
 
-    <!-- Voucher Modal -->
-    <div *ngIf="showVoucherModal" class="voucher-modal-overlay" (click)="closeVoucherModal()">
-      <div class="voucher-modal-content" (click)="$event.stopPropagation()">
-        <div class="voucher-modal-header">
-          <h2>Chọn mã giảm giá</h2>
-          <button type="button" class="btn-close" (click)="closeVoucherModal()">
-            <i class="fas fa-times"></i>
-          </button>
+  <!-- Invoice Details Modal - Hiển thị chi tiết hoá đơn sau khi đặt hàng thành công -->
+  <div *ngIf="showInvoiceDetails && createdInvoice" class="invoice-modal-overlay" (click)="closeInvoiceDetails()">
+    <div class="invoice-modal" (click)="$event.stopPropagation()">
+      <div class="invoice-modal-header">
+        <h2><i class="fas fa-check-circle success-icon"></i> Đặt hàng thành công!</h2>
+        <button class="btn-close" (click)="closeInvoiceDetails()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="invoice-modal-body">
+        <!-- Success Message -->
+        <div class="success-message">
+          <p>Cảm ơn bạn đã đặt hàng! Đơn hàng của bạn đã được tiếp nhận.</p>
         </div>
-        <div class="voucher-modal-body">
-          <!-- Tìm kiếm phiếu giảm giá -->
-          <div class="mb-3">
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Tìm kiếm theo mã, giá trị giảm, đơn tối thiểu..."
-              [(ngModel)]="voucherModalSearchTerm"
-            />
-          </div>
 
-          <!-- Danh sách phiếu giảm giá -->
-          <div class="voucher-modal-list">
-            <div
-              class="voucher-card"
-              *ngFor="let v of filteredVouchersForModal; let i = index"
-              [ngClass]="{ best: i === 0 }"
-            >
-              <div class="voucher-header">
-                <span class="code-chip">{{ v.code }}</span>
-                <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
-              </div>
-              <div class="voucher-body">
-                <div class="discount-row">
-                  <span class="tag">Giảm:</span>
-                  <span class="value">-{{ formatCurrency(v.discount) }}</span>
-                </div>
-                <div class="extra" *ngIf="v.expiry || v.expiredAt">
-                  Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
-                </div>
-                <div class="extra" *ngIf="v.minOrder">
-                  Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
-                </div>
-              </div>
-              <div class="voucher-actions">
-                <label class="form-check m-0">
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    [checked]="isCouponApplied(v.id)"
-                    (change)="applyCouponFromSuggestion(v)"
-                  />
-                  <span>{{ isCouponApplied(v.id) ? 'Đã chọn' : 'Chọn' }}</span>
-                </label>
-              </div>
+        <!-- Invoice Details -->
+        <div class="invoice-details">
+          <h3>Chi tiết đơn hàng</h3>
+
+          <!-- Invoice Info -->
+          <div class="invoice-info-section">
+            <div class="info-row">
+              <span class="label">Mã đơn hàng:</span>
+              <span class="value"><strong>{{ createdInvoice.maHoaDon }}</strong></span>
             </div>
-            <div
-              class="text-muted small text-center p-3"
-              *ngIf="filteredVouchersForModal.length === 0"
-            >
-              Không tìm thấy phiếu giảm giá phù hợp
+            <div class="info-row">
+              <span class="label">Trạng thái:</span>
+              <span class="value status-badge"
+                [class.status-cho-xac-nhan]="createdInvoice.trangThai === 'CHO_XAC_NHAN'">
+                {{ getStatusText(createdInvoice.trangThai) }}
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Ngày đặt:</span>
+              <span class="value">{{ createdInvoice.ngayTao | date : 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Phương thức thanh toán:</span>
+              <span class="value">{{
+                getPaymentMethodText(createdInvoice.phuongThucThanhToan)
+                }}</span>
             </div>
           </div>
-        </div>
-        <div class="voucher-modal-footer">
-          <button type="button" class="btn-secondary" (click)="closeVoucherModal()">Đóng</button>
+
+          <!-- Customer Info -->
+          <div class="invoice-info-section">
+            <h4>Thông tin khách hàng</h4>
+            <div class="info-row">
+              <span class="label">Họ tên:</span>
+              <span class="value">{{
+                createdInvoice.tenKhachHang || billingInfo.firstName + ' ' + billingInfo.lastName
+                }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Số điện thoại:</span>
+              <span class="value">{{
+                createdInvoice.soDienThoaiKhachHang || billingInfo.phone
+                }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Email:</span>
+              <span class="value">{{ createdInvoice.emailKhachHang || billingInfo.email }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Địa chỉ giao hàng:</span>
+              <span class="value">
+                {{ createdInvoice.diaChiChiTiet || billingInfo.address }},
+                {{ createdInvoice.phuongXa
+                }}{{ createdInvoice.quanHuyen ? ', ' + createdInvoice.quanHuyen : ''
+                }}{{ createdInvoice.tinhThanh ? ', ' + createdInvoice.tinhThanh : '' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Order Items -->
+          <div class="invoice-info-section">
+            <h4>Sản phẩm đã đặt</h4>
+            <table class="invoice-items-table">
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th>Số lượng</th>
+                  <th>Đơn giá</th>
+                  <th>Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of createdInvoice.danhSachChiTiet">
+                  <td>{{ item.tenSanPham }}</td>
+                  <td>{{ item.soLuong }}</td>
+                  <td>{{ formatCurrency(item.donGia) }}</td>
+                  <td>
+                    <strong>{{ formatCurrency(item.thanhTien) }}</strong>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" class="text-right"><strong>Tổng phụ:</strong></td>
+                  <td>
+                    <strong>{{ formatCurrency(createdInvoice.tongTien) }}</strong>
+                  </td>
+                </tr>
+                <tr *ngIf="createdInvoice.tienGiamGia > 0">
+                  <td colspan="3" class="text-right"><strong>Giảm giá:</strong></td>
+                  <td>
+                    <strong>-{{ formatCurrency(createdInvoice.tienGiamGia) }}</strong>
+                  </td>
+                </tr>
+                <tr class="total-row">
+                  <td colspan="3" class="text-right"><strong>Tổng cộng:</strong></td>
+                  <td>
+                    <strong>{{ formatCurrency(createdInvoice.thanhTien) }}</strong>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Payment Info (if transfer) -->
+          <div *ngIf="createdInvoice.phuongThucThanhToan === 'transfer'" class="invoice-info-section payment-info">
+            <h4>Thông tin thanh toán</h4>
+            <div class="info-row">
+              <span class="label">Ngân hàng:</span>
+              <span class="value">{{ bankInfo.bankName }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Số tài khoản:</span>
+              <span class="value"><strong>{{ bankInfo.accountNumber }}</strong></span>
+            </div>
+            <div class="info-row">
+              <span class="label">Chủ tài khoản:</span>
+              <span class="value">{{ bankInfo.accountName }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Số tiền:</span>
+              <span class="value"><strong>{{ formatCurrency(createdInvoice.thanhTien) }}</strong></span>
+            </div>
+            <div class="info-row">
+              <span class="label">Mã giao dịch:</span>
+              <span class="value"><code class="transaction-code">{{ transactionCode }}</code></span>
+            </div>
+            <div class="payment-note">
+              <i class="fas fa-info-circle"></i>
+              <p>
+                Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
+                thanh toán.
+              </p>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div *ngIf="createdInvoice.ghiChu" class="invoice-info-section">
+            <h4>Ghi chú</h4>
+            <p class="notes-text">{{ createdInvoice.ghiChu }}</p>
+          </div>
         </div>
       </div>
+
+      <div class="invoice-modal-footer">
+        <button class="btn-primary" (click)="closeInvoiceDetails()">
+          <i class="fas fa-check"></i> Đã hiểu
+        </button>
+      </div>
     </div>
+  </div>
+
+  <!-- Voucher Modal -->
+  <div *ngIf="showVoucherModal" class="voucher-modal-overlay" (click)="closeVoucherModal()">
+    <div class="voucher-modal-content" (click)="$event.stopPropagation()">
+      <div class="voucher-modal-header">
+        <h2>Chọn mã giảm giá</h2>
+        <button type="button" class="btn-close" (click)="closeVoucherModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="voucher-modal-body">
+        <!-- Tìm kiếm phiếu giảm giá -->
+        <div class="mb-3">
+          <input type="text" class="form-control" placeholder="Tìm kiếm theo mã, giá trị giảm, đơn tối thiểu..."
+            [(ngModel)]="voucherModalSearchTerm" />
+        </div>
+
+        <!-- Danh sách phiếu giảm giá -->
+        <div class="voucher-modal-list">
+          <div class="voucher-card" *ngFor="let v of filteredVouchersForModal; let i = index"
+            [ngClass]="{ best: i === 0 }">
+            <div class="voucher-header">
+              <span class="code-chip">{{ v.code }}</span>
+              <span class="best-badge" *ngIf="i === 0">Mã Tốt Nhất</span>
+            </div>
+            <div class="voucher-body">
+              <div class="discount-row">
+                <span class="tag">Giảm:</span>
+                <span class="value">-{{ formatCurrency(v.discount) }}</span>
+              </div>
+              <div class="extra" *ngIf="v.expiry || v.expiredAt">
+                Hết hạn: {{ v.expiry || v.expiredAt | date : 'dd/MM/yyyy' }}
+              </div>
+              <div class="extra" *ngIf="v.minOrder">
+                Đơn tối thiểu: {{ formatCurrency(v.minOrder) }}
+              </div>
+            </div>
+            <div class="voucher-actions">
+              <label class="form-check m-0">
+                <input type="checkbox" class="form-check-input" [checked]="isCouponApplied(v.id)"
+                  (change)="applyCouponFromSuggestion(v)" />
+                <span>{{ isCouponApplied(v.id) ? 'Đã chọn' : 'Chọn' }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="text-muted small text-center p-3" *ngIf="filteredVouchersForModal.length === 0">
+            Không tìm thấy phiếu giảm giá phù hợp
+          </div>
+        </div>
+      </div>
+      <div class="voucher-modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeVoucherModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
 
   <app-shop-footer></app-shop-footer>
 

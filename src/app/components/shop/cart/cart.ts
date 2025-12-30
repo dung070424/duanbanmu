@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -33,6 +33,8 @@ export class CartComponent implements OnInit {
   detailSize = '';
   availableColors: ColorResponse[] = [];
   availableSizes: SizeResponse[] = [];
+  editingItemId: string | null = null; // Track item đang edit (dùng key để identify)
+  editingField: 'color' | 'size' | null = null; // Track field đang edit
   bankTransferInfo = {
     bankName: 'MB Bank - Ngân hàng Quân đội',
     accountName: 'CÔNG TY TDK STUDIO',
@@ -894,6 +896,119 @@ export class CartComponent implements OnInit {
       const index = this.cart.danhSachGioHang.findIndex(gi => this.getItemKey(gi) === key);
       if (index >= 0) {
         updater(this.cart.danhSachGioHang[index]);
+      }
+    }
+  }
+
+  /**
+   * Toggle edit mode cho màu hoặc size
+   */
+  toggleEditField(item: any, field: 'color' | 'size'): void {
+    const itemKey = this.getItemKey(item);
+    // Nếu đang edit field khác, đóng lại và mở field mới
+    if (this.editingItemId !== itemKey || this.editingField !== field) {
+      this.editingItemId = itemKey;
+      this.editingField = field;
+      this.cdr.detectChanges();
+    }
+  }
+
+  /**
+   * Kiểm tra xem item có đang được edit field nào không
+   */
+  isEditingField(item: any, field: 'color' | 'size'): boolean {
+    const itemKey = this.getItemKey(item);
+    return this.editingItemId === itemKey && this.editingField === field;
+  }
+
+  /**
+   * Cập nhật màu sắc cho item
+   */
+  updateItemColor(item: any, newColor: string): void {
+    if (!newColor || newColor.trim() === '') {
+      return;
+    }
+
+    const updates: any = {
+      mauSac: newColor
+    };
+
+    // Nếu là giỏ hàng tạm
+    if (this.isTempCart) {
+      const key = this.getItemKey(item);
+      const index = this.tempCart.findIndex(temp => this.getItemKey(temp) === key);
+      if (index >= 0) {
+        this.tempCart[index].mauSac = newColor;
+        localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
+        this.updateCartItemsCache();
+      }
+    } else {
+      // Nếu là giỏ hàng DB, cần update qua API
+      // Tạm thời chỉ update local, có thể cần gọi API sau
+      this.applyDetailUpdates(item, updates);
+      this.updateCartItemsCache();
+    }
+
+    // Đóng edit mode
+    this.editingItemId = null;
+    this.editingField = null;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Cập nhật size cho item
+   */
+  updateItemSize(item: any, newSize: string): void {
+    if (!newSize || newSize.trim() === '') {
+      return;
+    }
+
+    const updates: any = {
+      kichThuoc: newSize
+    };
+
+    // Nếu là giỏ hàng tạm
+    if (this.isTempCart) {
+      const key = this.getItemKey(item);
+      const index = this.tempCart.findIndex(temp => this.getItemKey(temp) === key);
+      if (index >= 0) {
+        this.tempCart[index].kichThuoc = newSize;
+        localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
+        this.updateCartItemsCache();
+      }
+    } else {
+      // Nếu là giỏ hàng DB, cần update qua API
+      // Tạm thời chỉ update local, có thể cần gọi API sau
+      this.applyDetailUpdates(item, updates);
+      this.updateCartItemsCache();
+    }
+
+    // Đóng edit mode
+    this.editingItemId = null;
+    this.editingField = null;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Đóng edit mode
+   */
+  closeEditField(): void {
+    this.editingItemId = null;
+    this.editingField = null;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Đóng edit mode khi click ra ngoài
+   */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    // Kiểm tra xem click có phải vào dropdown không
+    const target = event.target as HTMLElement;
+    if (this.editingItemId && this.editingField) {
+      const isClickInside = target.closest('.edit-dropdown') || target.closest('.editable-field');
+      if (!isClickInside) {
+        this.closeEditField();
       }
     }
   }

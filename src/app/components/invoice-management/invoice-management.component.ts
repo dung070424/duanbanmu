@@ -244,18 +244,9 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
       size: this.itemsPerPage,
     };
 
-    // Add search term if provided - tìm kiếm theo số hóa đơn và tên khách hàng
+    // Add search term if provided - tìm kiếm chung cho tất cả các trường
     if (this.searchTerm && this.searchTerm.trim()) {
-      const trimmedSearchTerm = this.searchTerm.trim();
-      // Kiểm tra nếu là số hóa đơn (bắt đầu bằng HD, INV, hoặc MA)
-      if (trimmedSearchTerm.toUpperCase().startsWith('HD') ||
-        trimmedSearchTerm.toUpperCase().startsWith('INV') ||
-        trimmedSearchTerm.toUpperCase().startsWith('MA')) {
-        filterParams.maHoaDon = trimmedSearchTerm;
-      } else {
-        // Tìm kiếm theo tên khách hàng, số điện thoại, hoặc email
-        filterParams.keyword = trimmedSearchTerm;
-      }
+      filterParams.keyword = this.searchTerm.trim();
     }
 
     // Add status filter if not 'all'
@@ -948,39 +939,39 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   // QUAN TRỌNG: Đơn hàng chuyển khoản luôn hiển thị "đã thanh toán"
   getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
     if (!invoice || !invoice.trangThai) return 'pending';
-    
+
     // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
     const normalizedStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
-    
+
     // Nếu đơn hàng bị hủy, luôn trả về 'cancelled' (ưu tiên cao nhất)
     if (normalizedStatus === 'HUY') return 'cancelled';
-    
+
     // ✅ QUAN TRỌNG: Nếu phương thức thanh toán là chuyển khoản, luôn hiển thị "đã thanh toán"
     if (this.isTransferPayment(invoice.phuongThucThanhToan)) {
       return 'paid';
     }
-    
+
     // Logic cũ: Nếu đã giao hàng thì đã thanh toán
     if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';
-    
+
     return 'pending';
   }
-  
+
   /**
    * Kiểm tra xem phương thức thanh toán có phải là chuyển khoản không
    */
   private isTransferPayment(method?: string | null): boolean {
     if (!method) return false;
-    
+
     const methodLower = method.toLowerCase().trim();
-    
+
     // Kiểm tra các cách viết khác nhau của "chuyển khoản"
-    return methodLower === 'transfer' || 
-           methodLower === 'chuyển khoản' || 
-           methodLower === 'chuyen khoan' ||
-           methodLower.includes('chuyển khoản') ||
-           methodLower.includes('chuyen khoan') ||
-           methodLower.includes('transfer');
+    return methodLower === 'transfer' ||
+      methodLower === 'chuyển khoản' ||
+      methodLower === 'chuyen khoan' ||
+      methodLower.includes('chuyển khoản') ||
+      methodLower.includes('chuyen khoan') ||
+      methodLower.includes('transfer');
   }
 
   getPaymentMethodLabel(method?: string | null): string {

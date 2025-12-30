@@ -145,24 +145,21 @@
     </div>
 
     <!-- Status Progress Bar -->
-    <div class="status-section" *ngIf="invoice">
+    <div class="status-section"
+      *ngIf="invoice && invoice.trangThai !== 'DA_GIAO_HANG' && invoice.trangThai !== 'HUY' && invoice.trangThai !== 'DA_HUY'">
       <h3>
         <i class="bi bi-list-check"></i>
         Trạng thái đơn hàng
       </h3>
       <div class="status-progress">
         <div class="status-steps">
-          <div 
-            *ngFor="let step of statusSteps" 
-            class="status-step"
-            [ngClass]="{
+          <div *ngFor="let step of statusSteps" class="status-step" [ngClass]="{
               'completed': getStepStatus(step.key, invoice.trangThai) === 'completed',
               'active': getStepStatus(step.key, invoice.trangThai) === 'active',
               'current': isCurrentStep(step.key, invoice.trangThai),
               'pending': getStepStatus(step.key, invoice.trangThai) === 'pending',
               'cancelled': getStepStatus(step.key, invoice.trangThai) === 'cancelled'
-            }"
-          >
+            }">
             <div class="step-circle">
               <i [ngClass]="step.iconClass"></i>
             </div>

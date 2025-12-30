@@ -66,33 +66,70 @@
           <table class="cart-table">
             <thead>
               <tr>
+                <th>Ảnh</th>
                 <th>Sản phẩm</th>
+                <th>Size</th>
+                <th>Màu sắc</th>
                 <th>Giá</th>
                 <th>Số lượng</th>
                 <th>Tổng</th>
-                <th></th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let item of cartItems" class="cart-item">
-                <td class="product-info">
-                  <div class="product-details">
-                    <img
-                      *ngIf="item.imageUrl"
-                      [src]="item.imageUrl"
-                      [alt]="item.productName || item.tenSanPham"
-                      class="product-thumbnail"
-                    />
-                    <div>
-                      <h4>{{ item.productName || item.tenSanPham }}</h4>
-                      <p *ngIf="item.mauSac || item.kichThuoc" class="product-variants">
-                        <span *ngIf="item.mauSac">Màu: {{ item.mauSac }}</span>
-                        <span *ngIf="item.kichThuoc">Size: {{ item.kichThuoc }}</span>
-                      </p>
-                      <button type="button" class="btn-detail" (click)="openItemDetail(item)">
-                        <i class="fas fa-eye"></i> Chi tiết
-                      </button>
-                    </div>
+                <td class="product-image">
+                  <img
+                    *ngIf="item.imageUrl"
+                    [src]="item.imageUrl"
+                    [alt]="item.productName || item.tenSanPham"
+                    class="product-thumbnail"
+                  />
+                  <div *ngIf="!item.imageUrl" class="product-placeholder">
+                    <i class="fas fa-image"></i>
+                  </div>
+                </td>
+                <td class="product-name">
+                  <h4>{{ item.productName || item.tenSanPham }}</h4>
+                </td>
+                <td class="product-size">
+                  <div *ngIf="!isEditingField(item, 'size')" class="editable-field" (click)="toggleEditField(item, 'size')">
+                    <span>{{ item.kichThuoc || '-' }}</span>
+                    <i class="fas fa-edit edit-icon"></i>
+                  </div>
+                  <div *ngIf="isEditingField(item, 'size')" class="edit-dropdown" (click)="$event.stopPropagation()">
+                    <select 
+                      [value]="item.kichThuoc || ''"
+                      (change)="updateItemSize(item, $any($event.target).value)"
+                      (blur)="closeEditField()"
+                      class="size-select"
+                      #sizeSelect
+                    >
+                      <option value="">Chọn size</option>
+                      <option *ngFor="let size of availableSizes" [value]="size.tenKichThuoc" [selected]="item.kichThuoc === size.tenKichThuoc">
+                        {{ size.tenKichThuoc }}
+                      </option>
+                    </select>
+                  </div>
+                </td>
+                <td class="product-color">
+                  <div *ngIf="!isEditingField(item, 'color')" class="editable-field" (click)="toggleEditField(item, 'color')">
+                    <span>{{ item.mauSac || '-' }}</span>
+                    <i class="fas fa-edit edit-icon"></i>
+                  </div>
+                  <div *ngIf="isEditingField(item, 'color')" class="edit-dropdown" (click)="$event.stopPropagation()">
+                    <select 
+                      [value]="item.mauSac || ''"
+                      (change)="updateItemColor(item, $any($event.target).value)"
+                      (blur)="closeEditField()"
+                      class="color-select"
+                      #colorSelect
+                    >
+                      <option value="">Chọn màu</option>
+                      <option *ngFor="let color of availableColors" [value]="color.tenMau" [selected]="item.mauSac === color.tenMau">
+                        {{ color.tenMau }}
+                      </option>
+                    </select>
                   </div>
                 </td>
                 <td class="product-price">
@@ -125,15 +162,15 @@
                 <td class="product-total">
                   {{ formatCurrency(item.totalItemPrice || item.thanhTien) }}
                 </td>
-                <!-- <td class="product-actions">
-                <button
-                  class="btn-remove"
-                  (click)="removeItem(item)"
-                  title="Xóa sản phẩm"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              </td> -->
+                <td class="product-actions">
+                  <button
+                    class="btn-remove"
+                    (click)="removeItem(item)"
+                    title="Xóa sản phẩm"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -169,75 +206,4 @@
   <app-shop-footer></app-shop-footer>
 
   <app-chatbot></app-chatbot>
-</div>
-
-<div class="cart-item-detail" *ngIf="showItemDetail && selectedItem">
-  <div class="detail-overlay" (click)="closeItemDetail()"></div>
-  <div class="detail-panel">
-    <header>
-      <div>
-        <p class="detail-label">Sản phẩm</p>
-        <h3>{{ selectedItem.productName || selectedItem.tenSanPham }}</h3>
-        <p class="detail-meta">
-          Mã chi tiết: #{{ selectedItem.chiTietSanPhamId || selectedItem.productId }}
-        </p>
-      </div>
-      <button class="btn-close" (click)="closeItemDetail()">
-        <i class="fas fa-times"></i>
-      </button>
-    </header>
-
-    <div class="detail-body">
-      <div class="detail-row">
-        <label>Đơn giá</label>
-        <strong>{{ formatCurrency(selectedItem.price || selectedItem.donGia) }}</strong>
-      </div>
-      <div class="detail-row quantity-row">
-        <label>Số lượng</label>
-        <div class="quantity-controls">
-          <button class="btn-quantity" (click)="decreaseDetailQuantity()">
-            <i class="fas fa-minus"></i>
-          </button>
-          <input type="number" min="1" [(ngModel)]="detailQuantity" />
-          <button class="btn-quantity" (click)="increaseDetailQuantity()">
-            <i class="fas fa-plus"></i>
-          </button>
-        </div>
-      </div>
-      <div class="detail-row">
-        <label>Màu sắc</label>
-        <select [(ngModel)]="detailColor">
-          <option [ngValue]="''">Chọn màu</option>
-          <option *ngFor="let color of availableColors" [ngValue]="color.tenMau">
-            {{ color.tenMau }}
-          </option>
-        </select>
-      </div>
-      <div class="detail-row">
-        <label>Kích cỡ</label>
-        <select [(ngModel)]="detailSize">
-          <option [ngValue]="''">Chọn kích cỡ</option>
-          <option *ngFor="let size of availableSizes" [ngValue]="size.tenKichThuoc">
-            {{ size.tenKichThuoc }}
-          </option>
-        </select>
-      </div>
-      <div class="detail-row">
-        <label>Tổng tạm tính</label>
-        <strong>{{
-          formatCurrency((selectedItem.price || selectedItem.donGia) * detailQuantity)
-        }}</strong>
-      </div>
-    </div>
-
-    <footer>
-      <button class="btn-danger" (click)="removeItemFromDetail()">
-        <i class="fas fa-trash"></i> Xóa sản phẩm
-      </button>
-      <div class="action-group">
-        <button class="btn-secondary" (click)="closeItemDetail()">Hủy</button>
-        <button class="btn-primary" (click)="saveItemDetail()">Cập nhật</button>
-      </div>
-    </footer>
-  </div>
 </div>
