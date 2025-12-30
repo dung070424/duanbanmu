@@ -2366,10 +2366,60 @@ export class CheckoutComponent implements OnInit {
             },
           });
         } else {
-          // ✅ Khách hàng chưa đăng nhập: hiển thị tất cả phiếu đang hoạt động
-          // (Đơn giản hóa: coi tất cả phiếu đang hoạt động là công khai cho user chưa đăng nhập)
-          console.log('👤 Not logged in, showing all active vouchers as public');
-          this.computeVoucherLists(allActiveVouchers, base);
+          // ✅ Khách hàng chưa đăng nhập: 
+          // Cần lọc bỏ các phiếu cá nhân (có trong bảng phieu_giam_gia_ca_nhan)
+          // Chỉ hiển thị phiếu công khai (không có trong bảng phieu_giam_gia_ca_nhan)
+          console.log('👤 Not logged in, checking for personal vouchers to exclude');
+
+          this.phieuGiamGiaService.getAllPhieuGiamGiaCaNhan().subscribe({
+            next: (pers: any) => {
+              console.log('✅ Personal vouchers API response (for exclusion):', pers);
+              let raw: any[] = [];
+              if (Array.isArray(pers)) {
+                raw = pers;
+              } else if (pers?.data && Array.isArray(pers.data)) {
+                raw = pers.data;
+              } else if (pers?.content && Array.isArray(pers.content)) {
+                raw = pers.content;
+              } else if (pers?.success && pers?.data && Array.isArray(pers.data)) {
+                raw = pers.data;
+              }
+
+              // Tập hợp tất cả ID của các phiếu cá nhân
+              const allPersonalVoucherIds = new Set<number>();
+              raw.forEach((r: any) => {
+                const voucherId = r?.phieuGiamGiaId ?? r?.phieuGiamGia?.id ?? r?.voucher?.id ?? r?.id;
+                if (voucherId) {
+                  allPersonalVoucherIds.add(voucherId);
+                }
+              });
+
+              console.log('📋 All personal voucher IDs to exclude:', Array.from(allPersonalVoucherIds));
+
+              // Lọc chỉ giữ lại các phiếu KHÔNG có trong danh sách cá nhân
+              const publicVouchers = allActiveVouchers.filter((v: any) => {
+                const voucherId = v?.id;
+                if (!voucherId) return false;
+
+                // Nếu ID phiếu có trong danh sách cá nhân => ẩn (vì user chưa đăng nhập)
+                if (allPersonalVoucherIds.has(voucherId)) {
+                  console.log('🚫 Hiding personal voucher from guest:', v.code);
+                  return false;
+                }
+
+                return true;
+              });
+
+              console.log('📦 Public vouchers for guest:', publicVouchers.length);
+              this.computeVoucherLists(publicVouchers, base);
+            },
+            error: (err) => {
+              console.error('❌ Error loading personal vouchers for exclusion:', err);
+              // Fallback: nếu lỗi thì vẫn hiển thị tất cả (hoặc có thể chọn ẩn tất cả để an toàn)
+              console.warn('⚠️ Fallback: showing all active vouchers due to error');
+              this.computeVoucherLists(allActiveVouchers, base);
+            }
+          });
         }
       },
       error: (err) => {

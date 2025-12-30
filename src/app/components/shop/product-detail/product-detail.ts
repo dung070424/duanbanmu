@@ -334,6 +334,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
         donGia: priceForCart,
         giamGia: 0,
         thanhTien: totalPriceForCart,
+        mauSac: this.selectedVariant.mauSacTen || '',
+        kichThuoc: this.selectedVariant.kichThuocTen || ''
       };
 
       this.hoaDonChoService.addItemToCart(cartId, gioHangItem).subscribe({

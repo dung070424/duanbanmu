@@ -32,10 +32,10 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   private videoCheckInterval: any = null;
 
   constructor(
-    private authService: AuthService, 
+    private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Lấy returnUrl từ query params
@@ -49,13 +49,13 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => {
       if (this.videoElement && this.videoElement.nativeElement) {
         const video = this.videoElement.nativeElement;
-        
+
         // Đảm bảo các thuộc tính cần thiết
         video.muted = true;
         video.loop = true;
         video.playsInline = true;
         video.autoplay = true;
-        
+
         // Function để play video
         const playVideo = () => {
           const playPromise = video.play();
@@ -73,20 +73,20 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
               });
           }
         };
-        
+
         // Xử lý khi video có thể play
         video.addEventListener('loadeddata', () => {
           console.log('✅ Video loaded');
           playVideo();
         });
-        
+
         // Xử lý khi video kết thúc - đảm bảo lặp lại
         video.addEventListener('ended', () => {
           console.log('🔄 Video ended, restarting...');
           video.currentTime = 0;
           playVideo();
         });
-        
+
         // Xử lý khi video bị pause - tự động play lại
         video.addEventListener('pause', () => {
           if (!video.ended) {
@@ -94,23 +94,23 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
             playVideo();
           }
         });
-        
+
         // Xử lý khi video có thể play (canplay event)
         video.addEventListener('canplay', () => {
           playVideo();
         });
-        
+
         // Xử lý lỗi
         video.addEventListener('error', (e) => {
           console.error('❌ Video error:', e);
           console.error('Video src:', video.src);
           console.error('Video error code:', video.error?.code);
         });
-        
+
         // Load và play video ngay lập tức
         video.load();
         playVideo();
-        
+
         // Đảm bảo video luôn play - kiểm tra định kỳ
         this.videoCheckInterval = setInterval(() => {
           if (video.paused && !video.ended) {
@@ -145,25 +145,28 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
           if (success) {
             const user = this.authService.getCurrentUser();
             console.log('Login successful, user:', user);
-            
+
             // Nếu có returnUrl, quay lại trang đó (ví dụ: checkout)
             if (this.returnUrl) {
               console.log('Redirecting to returnUrl:', this.returnUrl);
               this.router.navigateByUrl(this.returnUrl);
               return;
             }
-            
+
             // Redirect dựa trên role
+            // QUAN TRỌNG: Trang login này CHỈ dành cho Admin và Staff
             if (user?.roles?.includes('ADMIN') || user?.roles?.includes('STAFF')) {
               console.log('Navigating to dashboard for admin/staff');
               this.router.navigate(['/dashboard']);
-            } else if (user?.roles?.includes('CUSTOMER')) {
-              console.log('Navigating to shop for customer');
-              this.router.navigate(['/shop']);
             } else {
-              // Fallback: nếu không có role, redirect đến shop
-              console.log('No role found, navigating to shop');
-              this.router.navigate(['/shop']);
+              // Nếu không phải Admin/Staff (ví dụ: Customer), chặn đăng nhập
+              console.warn('User is not ADMIN/STAFF, blocking access to admin portal');
+
+              // Logout ngay lập tức
+              this.authService.logout();
+
+              // Hiển thị thông báo lỗi
+              this.handleLoginError('Tài khoản của bạn không có quyền truy cập trang quản trị.');
             }
           } else {
             console.log('Login failed - invalid credentials');

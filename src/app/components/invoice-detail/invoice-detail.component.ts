@@ -129,6 +129,10 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     { key: 'HUY', label: 'Hủy', iconClass: 'fas fa-times-circle', color: '#dc3545', description: 'Đơn hàng đã bị hủy' }
   ];
 
+  get visibleStatusSteps() {
+    return this.statusSteps.filter(step => step.key !== 'DA_GIAO_HANG' && step.key !== 'HUY');
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
