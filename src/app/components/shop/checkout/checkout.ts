@@ -8,6 +8,7 @@ import { AuthService } from '../../../services/auth';
 import { CustomerAddressService } from '../../../services/customer-address.service';
 import { CustomerService } from '../../../services/customer.service';
 import { PhieuGiamGiaService } from '../../../services/phieu-giam-gia.service';
+import { ChiTietSanPhamApiService } from '../../../services/chi-tiet-san-pham-api.service';
 import { GHNService } from '../../../services/ghn.service';
 import { VietnamAddressService, Province, District, Ward } from '../../../services/vietnam-address.service';
 import provincesData from 'sub-vn/json_data/provinces.json';
@@ -147,6 +148,7 @@ export class CheckoutComponent implements OnInit {
     private customerAddressService: CustomerAddressService,
     private customerService: CustomerService,
     private phieuGiamGiaService: PhieuGiamGiaService,
+    private chiTietSanPhamApiService: ChiTietSanPhamApiService,
     private ghnService: GHNService,
     private vietnamAddressService: VietnamAddressService,
     private router: Router,
@@ -346,6 +348,9 @@ export class CheckoutComponent implements OnInit {
             this.cart.danhSachGioHang?.length || 0
           );
 
+          // ✅ Load thông tin chi tiết sản phẩm (nếu thiếu)
+          this.loadMissingProductDetails(this.cart.danhSachGioHang);
+
           // ✅ Refresh voucher suggestions sau khi cart đã load xong
           setTimeout(() => {
             this.refreshVoucherSuggestions();
@@ -410,6 +415,9 @@ export class CheckoutComponent implements OnInit {
               cart.danhSachGioHang.length
             );
 
+            // ✅ Load thông tin chi tiết sản phẩm (nếu thiếu)
+            this.loadMissingProductDetails(this.cart.danhSachGioHang);
+
             // ✅ Refresh voucher suggestions sau khi cart đã load xong
             setTimeout(() => {
               this.refreshVoucherSuggestions();
@@ -470,6 +478,64 @@ export class CheckoutComponent implements OnInit {
         // Force change detection
         this.cdr.detectChanges();
       },
+    });
+  }
+
+  /**
+   * Load thông tin chi tiết (màu sắc, kích thước, ảnh) cho các item trong giỏ hàng
+   * nếu chúng bị thiếu (đặc biệt là items từ API giỏ hàng chờ)
+   */
+  loadMissingProductDetails(items: any[] | undefined): void {
+    if (!items || items.length === 0) return;
+
+    items.forEach((item) => {
+      // Logic kiểm tra xem có cần load không
+      // Nếu đã có đủ màu, size, ảnh thì bỏ qua
+      if (item.mauSac && item.kichThuoc && (item.imageUrl || item.anhSanPham)) {
+        return;
+      }
+
+      const id = item.chiTietSanPhamId || item.id;
+      if (!id) return;
+
+      this.chiTietSanPhamApiService.getById(id).subscribe({
+        next: (detail: any) => {
+          if (detail) {
+            let updated = false;
+
+            // Update màu
+            if (!item.mauSac && detail.mauSacTen) {
+              item.mauSac = detail.mauSacTen;
+              updated = true;
+            }
+
+            // Update size
+            if (!item.kichThuoc && detail.kichThuocTen) {
+              item.kichThuoc = detail.kichThuocTen;
+              updated = true;
+            }
+
+            // Update ảnh (ưu tiên ảnh biến thể, fallback ảnh sản phẩm cha)
+            if (!item.imageUrl && !item.anhSanPham && detail.anhSanPham) {
+              // item.imageUrl là field custom ta dùng
+              item.imageUrl = detail.anhSanPham;
+              // Cập nhật luôn field anhSanPham nếu có
+              item.anhSanPham = detail.anhSanPham;
+              updated = true;
+            }
+
+            if (updated) {
+              console.log(`✅ Loaded details for item ${id}:`, {
+                color: item.mauSac,
+                size: item.kichThuoc,
+                img: item.imageUrl
+              });
+              this.cdr.detectChanges();
+            }
+          }
+        },
+        error: (err) => console.error(`❌ Error loading details for item ${id}`, err)
+      });
     });
   }
 
@@ -837,7 +903,8 @@ export class CheckoutComponent implements OnInit {
         ...item,
         mauSac: item.mauSac || '',
         kichThuoc: item.kichThuoc || '',
-        anhSanPham: item.anhSanPham || '',
+        // Ưu tiên imageUrl (đã fetch thêm) -> anhSanPham -> placeholder
+        anhSanPham: item.imageUrl || item.anhSanPham || '',
         maSanPham: item.maSanPham || '',
       }));
     }

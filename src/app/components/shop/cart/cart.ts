@@ -750,26 +750,54 @@ export class CartComponent implements OnInit {
   }
 
   /**
-   * Load thông tin tồn kho cho các item trong giỏ
+   * Load thông tin chi tiết (tồn kho, ảnh, màu, size) cho các item trong giỏ
    */
   loadStockInfo(): void {
     if (this.cartItems.length === 0) return;
 
     this.cartItems.forEach(item => {
       if (item.chiTietSanPhamId) {
+        console.log(`🔍 [DEBUG] Loading detail for item: ${item.chiTietSanPhamId}`);
         this.chiTietSanPhamApiService.getById(item.chiTietSanPhamId).subscribe({
           next: (detail) => {
-            if (detail && detail.soLuongTon) {
-              item.maxQuantity = parseInt(detail.soLuongTon, 10);
-              // Nếu số lượng trong giỏ lớn hơn tồn kho, cảnh báo (optional, hoặc tự điều chỉnh)
-              if (item.quantity > item.maxQuantity) {
-                console.warn(`Item ${item.productName} quantity ${item.quantity} exceeds stock ${item.maxQuantity}`);
-                // Có thể tự động giảm xuống max nếu muốn strict
+            console.log(`✅ [DEBUG] Detail loaded for ${item.chiTietSanPhamId}:`, detail);
+            if (detail) {
+              // 1. Cập nhật số lượng tồn
+              if (detail.soLuongTon) {
+                item.maxQuantity = parseInt(detail.soLuongTon, 10);
               }
+
+              // 2. Cập nhật thông tin chi tiết nếu thiếu (cho giỏ hàng DB)
+              if (!item.mauSac && detail.mauSacTen) {
+                item.mauSac = detail.mauSacTen;
+                console.log(`   -> Updated Color: ${item.mauSac}`);
+              } else if (!item.mauSac && detail.mauSacId) {
+                // Fallback: Need names? Usually detail logic sends names.
+              }
+
+              if (!item.kichThuoc && detail.kichThuocTen) {
+                item.kichThuoc = detail.kichThuocTen;
+                console.log(`   -> Updated Size: ${item.kichThuoc}`);
+              }
+
+              if (!item.imageUrl && detail.anhSanPham) {
+                item.imageUrl = detail.anhSanPham;
+                console.log(`   -> Updated Image: ${item.imageUrl}`);
+              }
+
+              // Cập nhật tên nếu cần
+              if (!item.productName && detail.sanPhamTen) {
+                item.productName = detail.sanPhamTen;
+              }
+
+              // Force update UI
+              this.cdr.detectChanges();
             }
           },
-          error: (err) => console.error(`Error loading stock for item ${item.chiTietSanPhamId}`, err)
+          error: (err) => console.error(`❌ [DEBUG] Error loading detail for item ${item.chiTietSanPhamId}`, err)
         });
+      } else {
+        console.warn('⚠️ [DEBUG] Item missing chiTietSanPhamId:', item);
       }
     });
   }
