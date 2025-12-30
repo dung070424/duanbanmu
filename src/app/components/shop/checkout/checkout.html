@@ -592,44 +592,6 @@
                   </span>
                 </div>
               </div>
-              <div *ngIf="orderSummary.paymentMethod === 'transfer'" class="bank-details">
-                <div class="info-item">
-                  <div class="info-icon">
-                    <i class="fas fa-bank"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Ngân hàng</span>
-                    <span class="value">{{ orderSummary.bankInfo.bankName }}</span>
-                  </div>
-                </div>
-                <div class="info-item">
-                  <div class="info-icon">
-                    <i class="fas fa-hashtag"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Số tài khoản</span>
-                    <span class="value account-number">{{ orderSummary.bankInfo.accountNumber }}</span>
-                  </div>
-                </div>
-                <div class="info-item">
-                  <div class="info-icon">
-                    <i class="fas fa-user-tag"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Chủ tài khoản</span>
-                    <span class="value">{{ orderSummary.bankInfo.accountName }}</span>
-                  </div>
-                </div>
-                <div class="info-item" *ngIf="orderSummary.transactionCode">
-                  <div class="info-icon">
-                    <i class="fas fa-receipt"></i>
-                  </div>
-                  <div class="info-text">
-                    <span class="label">Mã giao dịch</span>
-                    <span class="value transaction-code"><code>{{ orderSummary.transactionCode }}</code></span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
