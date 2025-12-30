@@ -4755,15 +4755,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Xác nhận với người dùng
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"?\n\n` +
-      `Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`
-    );
-
-    if (!confirmed) {
-      return;
-    }
+    // Xác nhận với người dùng - Removed as per request to avoid browser alert
+    // const confirmed = window.confirm(
+    //   `Bạn có chắc chắn muốn cập nhật hóa đơn "${this.invoice.maHoaDon}"?\n\n` +
+    //   `Hóa đơn sẽ được chuyển sang trạng thái "${statusMessage}".`
+    // );
+    // if (!confirmed) {
+    //   return;
+    // }
 
     this.savingStatus = true;
 
