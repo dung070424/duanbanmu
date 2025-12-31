@@ -22,12 +22,10 @@
       <div class="spinner"></div>
       <p>Đang tải giỏ hàng...</p>
     </div> -->
-
       <!-- <div *ngIf="error" class="error-message">
       <i class="fas fa-exclamation-circle"></i>
       {{ error }}
     </div>
-
     Login prompt for temp cart -->
       <!-- <div *ngIf="isTempCart && tempCart.length > 0" class="login-prompt">
       <div class="alert alert-info">
@@ -35,7 +33,6 @@
         <p>Bạn đang xem giỏ hàng tạm. <a routerLink="/shop/login">Đăng nhập</a> để lưu giỏ hàng và tiếp tục mua sắm!</p>
       </div>
     </div> -->
-
       <!-- Debug info (tạm thời để debug - có thể bật bằng cách xóa display: none) -->
       <!-- <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; display: block;">
       <strong>Debug Info:</strong><br>
@@ -152,6 +149,51 @@
 
   <app-chatbot></app-chatbot>
   <app-notification></app-notification>
+
+  <!-- Remove Item Confirmation Dialog -->
+  <div *ngIf="showRemoveConfirm && itemToRemove" class="remove-item-confirm-overlay" (click)="closeRemoveConfirm()">
+    <div class="remove-item-confirm-dialog" (click)="$event.stopPropagation()">
+      <div class="confirm-header">
+        <h3>
+          <i class="fas fa-trash"></i>
+          Xác nhận xóa sản phẩm
+        </h3>
+        <button class="btn-close" (click)="closeRemoveConfirm()" type="button">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="confirm-body">
+        <div class="product-preview">
+          <img *ngIf="itemToRemove.imageUrl" [src]="itemToRemove.imageUrl" [alt]="itemToRemove.productName || itemToRemove.tenSanPham" />
+          <div class="product-info">
+            <h4>{{ itemToRemove.productName || itemToRemove.tenSanPham }}</h4>
+            <p class="variant-info" *ngIf="itemToRemove.mauSac || itemToRemove.kichThuoc">
+              <i class="fas fa-tag"></i>
+              <span *ngIf="itemToRemove.mauSac">{{ itemToRemove.mauSac }}</span>
+              <span *ngIf="itemToRemove.mauSac && itemToRemove.kichThuoc"> - </span>
+              <span *ngIf="itemToRemove.kichThuoc">{{ itemToRemove.kichThuoc }}</span>
+            </p>
+            <p class="quantity-info">
+              <i class="fas fa-shopping-bag"></i>
+              Số lượng: <strong>{{ itemToRemove.quantity || itemToRemove.soLuong || 1 }}</strong>
+            </p>
+          </div>
+        </div>
+        <div class="confirm-message">
+          <p>Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?</p>
+        </div>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn-cancel" (click)="closeRemoveConfirm()" type="button">
+          Hủy
+        </button>
+        <button class="btn-confirm" (click)="confirmRemoveItem()" type="button">
+          <i class="fas fa-trash"></i>
+          Xóa
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="cart-item-detail" *ngIf="showItemDetail && selectedItem">

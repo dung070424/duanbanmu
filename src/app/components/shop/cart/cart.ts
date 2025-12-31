@@ -36,6 +36,11 @@ export class CartComponent implements OnInit {
   detailSize = '';
   availableColors: ColorResponse[] = [];
   availableSizes: SizeResponse[] = [];
+  
+  // Confirmation dialog for remove item
+  showRemoveConfirm = false;
+  itemToRemove: any = null;
+  
   bankTransferInfo = {
     bankName: 'MB Bank - Ngân hàng Quân đội',
     accountName: 'CÔNG TY TDK STUDIO',
@@ -430,25 +435,36 @@ export class CartComponent implements OnInit {
   }
 
   removeItem(item: GioHangChoItem | any): void {
+    // Hiển thị confirmation dialog
+    this.itemToRemove = item;
+    this.showRemoveConfirm = true;
+    this.cdr.detectChanges();
+  }
+
+  confirmRemoveItem(): void {
+    if (!this.itemToRemove) {
+      this.closeRemoveConfirm();
+      return;
+    }
+
+    const item = this.itemToRemove;
+
     // Nếu là giỏ hàng tạm
     if (this.isTempCart) {
       const tempItem = item as any;
-      if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-        return;
-      }
-
       if (tempItem.chiTietSanPhamId) {
         this.tempCart = this.tempCart.filter((i: any) => i.chiTietSanPhamId !== tempItem.chiTietSanPhamId);
         localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
         this.updateCartItemsCache();
+        this.notificationService.success('Đã xóa sản phẩm khỏi giỏ hàng');
       }
+      this.closeRemoveConfirm();
       return;
     }
 
     // Nếu là giỏ hàng DB
-    if (!this.currentHoaDonChoId || !item.id) return;
-
-    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+    if (!this.currentHoaDonChoId || !item.id) {
+      this.closeRemoveConfirm();
       return;
     }
 
@@ -459,12 +475,21 @@ export class CartComponent implements OnInit {
       next: (updatedCart) => {
         this.cart = updatedCart;
         this.updateCartItemsCache();
+        this.notificationService.success('Đã xóa sản phẩm khỏi giỏ hàng');
+        this.closeRemoveConfirm();
       },
       error: (error) => {
         console.error('Error removing item:', error);
         this.notificationService.error('Không thể xóa sản phẩm. Vui lòng thử lại!');
+        this.closeRemoveConfirm();
       }
     });
+  }
+
+  closeRemoveConfirm(): void {
+    this.showRemoveConfirm = false;
+    this.itemToRemove = null;
+    this.cdr.detectChanges();
   }
 
   proceedToCheckout(): void {
@@ -913,8 +938,10 @@ export class CartComponent implements OnInit {
     if (!this.selectedItem) {
       return;
     }
-    this.removeItem(this.selectedItem);
+    // Đóng detail panel trước
     this.closeItemDetail();
+    // Hiển thị confirmation dialog
+    this.removeItem(this.selectedItem);
   }
 
   decreaseDetailQuantity(): void {

@@ -247,11 +247,17 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     // Add search term if provided - tìm kiếm theo số hóa đơn và tên khách hàng
     if (this.searchTerm && this.searchTerm.trim()) {
       const trimmedSearchTerm = this.searchTerm.trim();
-      // Kiểm tra nếu là số hóa đơn (bắt đầu bằng HD, INV, hoặc MA)
-      if (trimmedSearchTerm.toUpperCase().startsWith('HD') ||
-        trimmedSearchTerm.toUpperCase().startsWith('INV') ||
-        trimmedSearchTerm.toUpperCase().startsWith('MA')) {
+      const upperSearchTerm = trimmedSearchTerm.toUpperCase();
+      
+      // Kiểm tra nếu là số hóa đơn (bắt đầu bằng HD, INV, hoặc MA) - không phân biệt hoa thường
+      // Luôn gửi maHoaDon để backend tìm kiếm chính xác hơn
+      if (upperSearchTerm.startsWith('HD') ||
+        upperSearchTerm.startsWith('INV') ||
+        upperSearchTerm.startsWith('MA')) {
+        // Gửi cả maHoaDon và keyword để đảm bảo tìm kiếm hoạt động
         filterParams.maHoaDon = trimmedSearchTerm;
+        // Cũng gửi keyword để backend có thể fallback nếu cần
+        filterParams.keyword = trimmedSearchTerm;
       } else {
         // Tìm kiếm theo tên khách hàng, số điện thoại, hoặc email
         filterParams.keyword = trimmedSearchTerm;

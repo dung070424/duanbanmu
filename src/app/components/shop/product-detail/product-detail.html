@@ -220,4 +220,57 @@
   <app-shop-footer></app-shop-footer>
 
   <app-chatbot></app-chatbot>
+
+  <!-- Notification & Confirmation Dialog -->
+  <app-notification></app-notification>
+
+  <!-- Add to Cart Confirmation Dialog -->
+  <div *ngIf="showAddToCartConfirm && confirmCartData" class="add-to-cart-confirm-overlay" (click)="closeAddToCartConfirm()">
+    <div class="add-to-cart-confirm-dialog" (click)="$event.stopPropagation()">
+      <div class="confirm-header">
+        <h3>
+          <i class="fas fa-shopping-cart"></i>
+          Xác nhận thêm vào giỏ hàng
+        </h3>
+        <button class="btn-close" (click)="closeAddToCartConfirm()" type="button">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="confirm-body">
+        <div class="product-preview">
+          <img [src]="confirmCartData.imageUrl" [alt]="confirmCartData.productName" />
+          <div class="product-info">
+            <h4>{{ confirmCartData.productName }}</h4>
+            <p class="variant-info" *ngIf="confirmCartData.variantInfo">
+              <i class="fas fa-tag"></i>
+              {{ confirmCartData.variantInfo }}
+            </p>
+          </div>
+        </div>
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>Số lượng:</span>
+            <strong>{{ confirmCartData.quantity }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Đơn giá:</span>
+            <strong>{{ formatCurrency(confirmCartData.price) }}</strong>
+          </div>
+          <div class="summary-row total">
+            <span>Tổng tiền:</span>
+            <strong>{{ formatCurrency(confirmCartData.totalPrice) }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn-cancel" (click)="closeAddToCartConfirm()" type="button">
+          Hủy
+        </button>
+        <button class="btn-confirm" (click)="confirmAddToCart()" type="button">
+          <i class="fas fa-check"></i>
+          Xác nhận
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

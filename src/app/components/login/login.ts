@@ -145,26 +145,29 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
           if (success) {
             const user = this.authService.getCurrentUser();
             console.log('Login successful, user:', user);
-            
+            console.log('   - User roles:', user?.roles);
+
+            // CHỈ CHO PHÉP ĐĂNG NHẬP VỚI ROLE ADMIN HOẶC STAFF
+            // Chặn tài khoản khách hàng đăng nhập ở màn hình admin
+            if (!user?.roles || (!user.roles.includes('ADMIN') && !user.roles.includes('STAFF'))) {
+              console.error('❌ Only ADMIN or STAFF role can login from admin login page');
+              console.error('   - User roles:', user?.roles);
+              this.handleLoginError('Chỉ tài khoản quản trị viên hoặc nhân viên mới có thể đăng nhập tại đây! Vui lòng sử dụng trang đăng nhập dành cho khách hàng.');
+              this.authService.logout(); // Logout ngay lập tức
+              this.isLoading = false;
+              return;
+            }
             // Nếu có returnUrl, quay lại trang đó (ví dụ: checkout)
             if (this.returnUrl) {
               console.log('Redirecting to returnUrl:', this.returnUrl);
               this.router.navigateByUrl(this.returnUrl);
+              this.isLoading = false;
               return;
             }
             
-            // Redirect dựa trên role
-            if (user?.roles?.includes('ADMIN') || user?.roles?.includes('STAFF')) {
-              console.log('Navigating to dashboard for admin/staff');
-              this.router.navigate(['/dashboard']);
-            } else if (user?.roles?.includes('CUSTOMER')) {
-              console.log('Navigating to shop for customer');
-              this.router.navigate(['/shop']);
-            } else {
-              // Fallback: nếu không có role, redirect đến shop
-              console.log('No role found, navigating to shop');
-              this.router.navigate(['/shop']);
-            }
+            // Redirect đến dashboard cho admin/staff
+            console.log('Navigating to dashboard for admin/staff');
+            this.router.navigate(['/dashboard']);
           } else {
             console.log('Login failed - invalid credentials');
             this.handleLoginError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng kiểm tra lại và thử lại!');

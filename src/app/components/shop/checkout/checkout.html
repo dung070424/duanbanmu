@@ -235,6 +235,15 @@
                 </label>
               </div>
 
+              <div class="payment-option">
+                <input type="radio" id="paymentZaloPay" name="paymentMethod" value="zalopay"
+                  [(ngModel)]="paymentMethod" />
+                <label for="paymentZaloPay">
+                  <strong>ZaloPay</strong>
+                  <p>Thanh toán nhanh chóng và an toàn qua ứng dụng ZaloPay.</p>
+                </label>
+              </div>
+
               <!-- Bank Transfer Info -->
               <div *ngIf="paymentMethod === 'transfer'" class="bank-info">
                 <div class="bank-details">
@@ -262,6 +271,49 @@
                     Vui lòng ghi mã giao dịch này vào nội dung chuyển khoản để chúng tôi xác nhận
                     thanh toán.
                   </p>
+                </div>
+              </div>
+
+              <!-- ZaloPay Info -->
+              <div *ngIf="paymentMethod === 'zalopay'" class="zalopay-info">
+                <!-- ZaloPay Banner -->
+                <div class="zalopay-banner">
+                  <div class="zalopay-logo">
+                    <div class="logo-circle"></div>
+                  </div>
+                  <div class="zalopay-brand">
+                    <h3>ZaloPay</h3>
+                    <p>Thanh toán nhanh chóng và an toàn qua ứng dụng ZaloPay.</p>
+                  </div>
+                </div>
+                
+                <div class="zalopay-header">
+                  <h4>Thanh toán qua ZaloPay</h4>
+                </div>
+                <div class="zalopay-qr">
+                  <img [src]="getZaloPayQrUrl()" alt="QR ZaloPay" 
+                       (error)="handleZaloPayQrError($event)" 
+                       (load)="handleZaloPayQrLoad($event)" />
+                  <p class="qr-instruction">
+                    <i class="fas fa-mobile-alt"></i>
+                    Mở ứng dụng ZaloPay để quét mã QR và thanh toán
+                  </p>
+                </div>
+                <div class="transaction-code">
+                  <label>Mã giao dịch (tự động sinh):</label>
+                  <div class="code-display">
+                    <input type="text" [value]="transactionCode" readonly class="code-input" />
+                    <button class="btn-copy" (click)="copyTransactionCode()" title="Sao chép mã">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                  <p class="code-note">
+                    <i class="fas fa-info-circle"></i>
+                    Vui lòng lưu mã giao dịch này để tra cứu đơn hàng sau khi thanh toán.
+                  </p>
+                </div>
+                <div class="zalopay-amount">
+                  <p><strong>Số tiền cần thanh toán:</strong> <span class="amount-highlight">{{ formatCurrency(getTotal()) }}</span></p>
                 </div>
               </div>
             </div>
@@ -586,7 +638,10 @@
                 <div class="info-text">
                   <span class="label">Phương thức</span>
                   <span class="value">
-                    {{ orderSummary.paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt khi nhận hàng'
+                    {{
+                      orderSummary.paymentMethod === 'transfer' ? 'Chuyển khoản ngân hàng' :
+                      orderSummary.paymentMethod === 'zalopay' ? 'ZaloPay' :
+                      'Tiền mặt khi nhận hàng'
                     }}
                   </span>
                 </div>

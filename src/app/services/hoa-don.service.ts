@@ -32,6 +32,11 @@ export class HoaDonService {
         params = params.append('keyword', filterParams.keyword);
       }
       
+      // Add maHoaDon parameter if provided (for searching by invoice code)
+      if (filterParams.maHoaDon) {
+        params = params.append('maHoaDon', filterParams.maHoaDon);
+      }
+      
       // Add filter parameters
       if (filterParams.trangThai) {
         params = params.append('trangThai', filterParams.trangThai);

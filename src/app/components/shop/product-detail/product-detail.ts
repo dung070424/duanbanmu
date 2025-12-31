@@ -13,6 +13,8 @@ import { CustomerService } from '../../../services/customer.service';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
 import { ShopFooterComponent } from '../shared/shop-footer.component';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
+import { NotificationService } from '../shared/notification.service';
+import { NotificationComponent } from '../shared/notification.component';
 
 @Component({
   selector: 'app-product-detail',
@@ -24,6 +26,7 @@ import { ChatbotComponent } from '../chatbot/chatbot.component';
     ShopHeaderComponent,
     ShopFooterComponent,
     ChatbotComponent,
+    NotificationComponent,
   ],
   templateUrl: './product-detail.html',
   styleUrls: ['./product-detail.scss'],
@@ -45,6 +48,17 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   suggestedProducts: SanPhamResponse[] = [];
   loadingSuggestedProducts = false;
 
+  // Confirmation dialog
+  showAddToCartConfirm = false;
+  confirmCartData: {
+    productName: string;
+    quantity: number;
+    price: number;
+    totalPrice: number;
+    imageUrl: string;
+    variantInfo: string;
+  } | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -54,7 +68,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     private hoaDonChoService: HoaDonChoService,
     private authService: AuthService,
     private customerService: CustomerService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -240,18 +255,18 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
   addToCart(): void {
     if (!this.product || !this.selectedVariant) {
-      alert('Vui lòng chọn sản phẩm và biến thể');
+      this.notificationService.warning('Vui lòng chọn sản phẩm và biến thể');
       return;
     }
 
     if (this.selectedQuantity < 1) {
-      alert('Số lượng phải lớn hơn 0');
+      this.notificationService.warning('Số lượng phải lớn hơn 0');
       return;
     }
 
     const stock = parseInt(this.selectedVariant.soLuongTon?.toString() || '0', 10);
     if (stock < this.selectedQuantity) {
-      alert('Số lượng trong kho không đủ');
+      this.notificationService.warning('Số lượng trong kho không đủ');
       return;
     }
 
@@ -264,6 +279,32 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       ? discountedPrice
       : originalPrice;
     const totalPrice = price * this.selectedQuantity;
+
+    // Hiển thị confirmation dialog
+    const variantInfo = [
+      this.selectedVariant.mauSacTen,
+      this.selectedVariant.kichThuocTen
+    ].filter(Boolean).join(' - ') || 'Mặc định';
+
+    this.confirmCartData = {
+      productName: this.product.tenSanPham,
+      quantity: this.selectedQuantity,
+      price: price,
+      totalPrice: totalPrice,
+      imageUrl: this.mainImageUrl,
+      variantInfo: variantInfo
+    };
+    this.showAddToCartConfirm = true;
+    this.cdr.detectChanges();
+  }
+
+  confirmAddToCart(): void {
+    if (!this.product || !this.selectedVariant || !this.confirmCartData) {
+      return;
+    }
+
+    const price = this.confirmCartData.price;
+    const totalPrice = this.confirmCartData.totalPrice;
 
     // Nếu chưa đăng nhập, lưu vào giỏ hàng tạm (localStorage)
     if (!this.authService.isLoggedIn()) {
@@ -301,19 +342,26 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       // Phát sự kiện để header component cập nhật
       window.dispatchEvent(new Event('cartUpdated'));
 
-      alert(`Đã thêm "${this.product.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
+      this.notificationService.success(
+        `Đã thêm "${this.product.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`,
+        'Thêm vào giỏ hàng thành công'
+      );
+      // Đóng dialog sau khi thêm thành công
+      this.closeAddToCartConfirm();
       return;
     }
 
     // Nếu đã đăng nhập, thêm vào giỏ hàng trong DB
     this.getOrCreateCart().then((cartId) => {
       if (!cartId) {
-        alert('Không thể tạo giỏ hàng. Vui lòng thử lại!');
+        this.notificationService.error('Không thể tạo giỏ hàng. Vui lòng thử lại!');
+        this.closeAddToCartConfirm();
         return;
       }
 
       if (!this.selectedVariant || !this.product) {
-        alert('Lỗi: Không tìm thấy thông tin sản phẩm');
+        this.notificationService.error('Lỗi: Không tìm thấy thông tin sản phẩm');
+        this.closeAddToCartConfirm();
         return;
       }
 
@@ -344,7 +392,12 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
           // Phát sự kiện để header component cập nhật
           window.dispatchEvent(new Event('cartUpdated'));
 
-          alert(`Đã thêm "${this.product!.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
+          this.notificationService.success(
+            `Đã thêm "${this.product!.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`,
+            'Thêm vào giỏ hàng thành công'
+          );
+          // Đóng dialog sau khi thêm thành công
+          this.closeAddToCartConfirm();
         },
         error: (error) => {
           console.error('Error adding to cart:', error);
@@ -354,10 +407,18 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
             'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
           // Force change detection sau khi có lỗi
           this.cdr.detectChanges();
-          alert(errorMsg);
+          this.notificationService.error(errorMsg);
+          // Đóng dialog ngay cả khi có lỗi
+          this.closeAddToCartConfirm();
         },
       });
     });
+  }
+
+  closeAddToCartConfirm(): void {
+    this.showAddToCartConfirm = false;
+    this.confirmCartData = null;
+    this.cdr.detectChanges();
   }
 
   getOrCreateCart(): Promise<number | null> {
@@ -503,7 +564,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       error: (error) => {
         console.error('❌ Error creating cart:', error);
         const errorMsg = error.error?.message || error.message || 'Không thể tạo giỏ hàng';
-        alert(`Lỗi: ${errorMsg}`);
+        this.notificationService.error(`Lỗi: ${errorMsg}`);
         resolve(null);
       },
     });
@@ -675,11 +736,54 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
   }
 
   buyNow(): void {
-    // Thêm vào giỏ hàng và chuyển đến checkout
-    this.addToCart();
-    setTimeout(() => {
-      this.router.navigate(['/shop/cart']);
-    }, 500);
+    if (!this.product || !this.selectedVariant) {
+      this.notificationService.warning('Vui lòng chọn sản phẩm và biến thể');
+      return;
+    }
+
+    if (this.selectedQuantity < 1) {
+      this.notificationService.warning('Số lượng phải lớn hơn 0');
+      return;
+    }
+
+    const stock = parseInt(this.selectedVariant.soLuongTon?.toString() || '0', 10);
+    if (stock < this.selectedQuantity) {
+      this.notificationService.warning('Số lượng trong kho không đủ');
+      return;
+    }
+
+    // Use discounted price if available
+    const originalPrice = parseFloat(this.selectedVariant.giaBan?.toString() || '0') || this.product.giaBan || 0;
+    const discountedPrice = this.selectedVariant.giaSauGiam
+      ? parseFloat(this.selectedVariant.giaSauGiam.toString())
+      : null;
+    const price = (discountedPrice != null && discountedPrice < originalPrice)
+      ? discountedPrice
+      : originalPrice;
+    const totalPrice = price * this.selectedQuantity;
+
+    // Tạo temp cart chỉ với sản phẩm này cho "Mua ngay"
+    const buyNowItem = {
+      chiTietSanPhamId: this.selectedVariant.id,
+      productId: this.product.id,
+      productName: this.product.tenSanPham,
+      price: price,
+      quantity: this.selectedQuantity,
+      totalItemPrice: totalPrice,
+      imageUrl: this.mainImageUrl,
+      mauSac: this.selectedVariant.mauSacTen || '',
+      kichThuoc: this.selectedVariant.kichThuocTen || '',
+    };
+
+    // Lưu vào localStorage với key riêng cho "buy now"
+    // Checkout sẽ ưu tiên load từ buy_now_cart nếu có
+    localStorage.setItem('buy_now_cart', JSON.stringify([buyNowItem]));
+    
+    // Lưu flag để checkout biết đây là "mua ngay"
+    localStorage.setItem('is_buy_now', 'true');
+
+    // Chuyển đến checkout ngay
+    this.router.navigate(['/shop/checkout']);
   }
 
   private updateImageFromVariant(variant: ChiTietSanPhamResponse): void {

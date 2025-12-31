@@ -61,7 +61,7 @@ export class CheckoutComponent implements OnInit {
   orderNotes = '';
 
   // Payment method
-  paymentMethod: 'cash' | 'transfer' = 'transfer';
+  paymentMethod: 'cash' | 'transfer' | 'zalopay' = 'transfer';
 
   // Bank transfer info
   bankInfo = {
@@ -71,6 +71,21 @@ export class CheckoutComponent implements OnInit {
     bankCode: 'MBbank',
     template: 'compact2',
   };
+
+  // ZaloPay info
+  zalopayInfo = {
+    merchantId: 'TDK_STORE',
+    appId: 'TDK_STORE_APP',
+    // Số điện thoại đăng ký ZaloPay (bắt buộc cho VietQR)
+    phoneNumber: '0932313815', // Thay bằng số điện thoại ZaloPay thực tế
+  };
+
+  // Flag để tránh retry liên tục khi load QR code
+  zalopayQrErrorCount = 0;
+  zalopayQrLoaded = false;
+  // Cache QR URL để chỉ tạo 1 lần
+  cachedZaloPayQrUrl: string | null = null;
+  previousPaymentMethod: 'cash' | 'transfer' | 'zalopay' = 'transfer';
 
   // Auto-generated transaction code
   transactionCode = '';
@@ -237,9 +252,15 @@ export class CheckoutComponent implements OnInit {
             },
           });
         } else {
-          // Chưa đăng nhập hoặc không có cartId - load từ localStorage
-          console.log('🛒 Loading cart from localStorage (temp_cart)');
-          this.loadTempCart();
+          // Chưa đăng nhập hoặc không có cartId - kiểm tra buy_now_cart trước
+          const isBuyNow = localStorage.getItem('is_buy_now') === 'true';
+          if (isBuyNow) {
+            console.log('🛒 Buy Now mode detected, loading buy_now_cart');
+            this.loadBuyNowCart();
+          } else {
+            console.log('🛒 Loading cart from localStorage (temp_cart)');
+            this.loadTempCart();
+          }
         }
       }
     });
@@ -287,6 +308,76 @@ export class CheckoutComponent implements OnInit {
         console.error('❌ Failed to resolve Customer ID:', err);
       }
     });
+  }
+
+  /**
+   * Load giỏ hàng "Mua ngay" từ localStorage
+   */
+  loadBuyNowCart(): void {
+    console.log('🛒 loadBuyNowCart - Starting...');
+    this.isTempCart = true;
+    this.error = '';
+
+    try {
+      const buyNowCartData = localStorage.getItem('buy_now_cart');
+      console.log(
+        '🛒 loadBuyNowCart - buyNowCartData from localStorage:',
+        buyNowCartData ? 'EXISTS' : 'NOT FOUND'
+      );
+
+      if (buyNowCartData && buyNowCartData.trim() !== '' && buyNowCartData !== 'null') {
+        const parsed = JSON.parse(buyNowCartData);
+        console.log('🛒 loadBuyNowCart - Parsed buyNowCart:', parsed);
+
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.tempCart = parsed;
+          // Tạo HoaDonCho object từ buy now cart
+          this.cart = {
+            id: undefined,
+            maHoaDonCho: `BUYNOW_${Date.now()}`,
+            khachHangId: undefined,
+            danhSachGioHang: this.tempCart.map((item: any) => ({
+              id: undefined,
+              chiTietSanPhamId: item.chiTietSanPhamId,
+              tenSanPham: item.productName || item.tenSanPham || '',
+              soLuong: item.quantity || item.soLuong || 1,
+              donGia: item.price || item.donGia || 0,
+              giamGia: item.giamGia || 0,
+              thanhTien: item.totalItemPrice || item.thanhTien || 0,
+            })),
+            tongSoLuong: this.tempCart.reduce(
+              (sum: number, item: any) => sum + (item.quantity || item.soLuong || 0),
+              0
+            ),
+            tongTien: this.tempCart.reduce(
+              (sum: number, item: any) => sum + (item.totalItemPrice || item.thanhTien || 0),
+              0
+            ),
+            tongGiamGia: 0,
+            thanhTien: this.tempCart.reduce(
+              (sum: number, item: any) => sum + (item.totalItemPrice || item.thanhTien || 0),
+              0
+            ),
+            trangThai: 'DANG_CHO',
+          };
+          console.log('✅ loadBuyNowCart - Loaded buy now cart successfully');
+          console.log('   - Items count:', this.tempCart.length);
+          console.log('   - Total:', this.cart.thanhTien);
+          this.cdr.detectChanges();
+        } else {
+          console.warn('⚠️ loadBuyNowCart - buyNowCart is empty, falling back to temp_cart');
+          this.loadTempCart();
+        }
+      } else {
+        console.warn('⚠️ loadBuyNowCart - No buyNowCart found, falling back to temp_cart');
+        this.loadTempCart();
+      }
+    } catch (error) {
+      console.error('❌ Error loading buy now cart:', error);
+      this.error = 'Không thể tải giỏ hàng. Vui lòng thử lại!';
+      // Fallback to temp cart
+      this.loadTempCart();
+    }
   }
 
   /**
@@ -997,6 +1088,7 @@ export class CheckoutComponent implements OnInit {
     const methodMap: { [key: string]: string } = {
       cash: 'Tiền mặt',
       transfer: 'Chuyển khoản',
+      zalopay: 'ZaloPay',
     };
     return methodMap[method] || method;
   }
@@ -1119,9 +1211,9 @@ export class CheckoutComponent implements OnInit {
       return false;
     }
 
-    // Validate mã giao dịch nếu thanh toán bằng chuyển khoản
+    // Validate mã giao dịch nếu thanh toán bằng chuyển khoản hoặc ZaloPay
     if (
-      this.paymentMethod === 'transfer' &&
+      (this.paymentMethod === 'transfer' || this.paymentMethod === 'zalopay') &&
       (!this.transactionCode || this.transactionCode === '')
     ) {
       this.notificationService.warning('Vui lòng tạo mã giao dịch!');
@@ -1392,7 +1484,7 @@ export class CheckoutComponent implements OnInit {
       trangThai: 'CHO_XAC_NHAN',
       // KHÔNG set nhanVienId - để null = Online order
       // KHÔNG set viTriBanHang - backend sẽ tự động map từ nhanVienId
-      phuongThucThanhToan: this.paymentMethod === 'transfer' ? 'transfer' : 'cash',
+      phuongThucThanhToan: this.paymentMethod === 'transfer' ? 'transfer' : (this.paymentMethod === 'zalopay' ? 'zalopay' : 'cash'),
       // Map danhSachGioHang từ cart hoặc tempCart sang danhSachChiTiet
       danhSachChiTiet: cartItems,
       tongTien: this.getSubtotal(),
@@ -1471,6 +1563,9 @@ export class CheckoutComponent implements OnInit {
               localStorage.removeItem('current_cart_id');
               // Xóa giỏ hàng tạm nếu có
               localStorage.removeItem('temp_cart');
+              // Xóa buy now cart và flag nếu có
+              localStorage.removeItem('buy_now_cart');
+              localStorage.removeItem('is_buy_now');
               // Trigger cart updated event để update cart count
               window.dispatchEvent(new Event('cartUpdated'));
             },
@@ -1482,6 +1577,9 @@ export class CheckoutComponent implements OnInit {
         } else {
           // Xóa giỏ hàng tạm nếu không có cartId
           localStorage.removeItem('temp_cart');
+          // Xóa buy now cart và flag nếu có
+          localStorage.removeItem('buy_now_cart');
+          localStorage.removeItem('is_buy_now');
           // Trigger cart updated event để update cart count
           window.dispatchEvent(new Event('cartUpdated'));
         }
@@ -2177,11 +2275,97 @@ export class CheckoutComponent implements OnInit {
       }.png?addInfo=${encodeURIComponent(description)}${amountQuery}`;
   }
 
+  /**
+   * Lấy URL QR code ZaloPay cố định (static)
+   * Chỉ tạo 1 lần và cache lại để tránh gọi nhiều lần
+   */
+  getZaloPayQrUrl(): string {
+    // Reset cache nếu payment method thay đổi từ zalopay sang method khác
+    if (this.previousPaymentMethod === 'zalopay' && this.paymentMethod !== 'zalopay') {
+      this.cachedZaloPayQrUrl = null;
+      this.zalopayQrErrorCount = 0;
+      this.zalopayQrLoaded = false;
+    }
+    this.previousPaymentMethod = this.paymentMethod;
+
+    // Nếu không phải ZaloPay, trả về empty string
+    if (this.paymentMethod !== 'zalopay') {
+      return '';
+    }
+
+    // Nếu đã có cached URL, trả về luôn (chỉ tạo 1 lần)
+    if (this.cachedZaloPayQrUrl) {
+      return this.cachedZaloPayQrUrl;
+    }
+
+    // Tạo QR URL lần đầu tiên và cache lại
+    // Ưu tiên file từ assets
+    const assetsUrl = '/assets/images/zalopay-qr.png';
+    
+    // Cache URL và trả về
+    this.cachedZaloPayQrUrl = assetsUrl;
+    return this.cachedZaloPayQrUrl;
+  }
+
   copyTransactionCode(): void {
     if (!this.transactionCode) return;
     navigator.clipboard.writeText(this.transactionCode).then(() => {
       this.notificationService.success('Đã sao chép mã giao dịch!');
     });
+  }
+
+  /**
+   * Xử lý lỗi khi load QR code ZaloPay
+   * Chỉ fallback 1 lần và cập nhật cached URL
+   */
+  handleZaloPayQrError(event: any): void {
+    const img = event.target as HTMLImageElement;
+    if (!img) return;
+
+    // Chỉ fallback 1 lần để tránh loop
+    if (this.zalopayQrErrorCount === 0) {
+      this.zalopayQrErrorCount++;
+      console.warn('ZaloPay QR code file not found, trying QR generator fallback...');
+      
+      // Fallback: Sử dụng QR generator với data string ZaloPay
+      const phoneNumber = this.zalopayInfo.phoneNumber || '0932313815';
+      const zaloPayData = `zlp://transfer?phone=${phoneNumber}`;
+      const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(zaloPayData)}&bgcolor=ffffff&color=000000`;
+      
+      // Cập nhật cached URL để lần sau dùng luôn
+      this.cachedZaloPayQrUrl = fallbackUrl;
+      
+      // Chỉ update src nếu URL hiện tại khác với fallback URL
+      if (img.src !== fallbackUrl && !img.src.includes('qrserver.com')) {
+        img.src = fallbackUrl;
+      }
+    } else {
+      // Đã thử fallback rồi, dừng lại để tránh loop
+      console.error('ZaloPay QR code failed to load after fallback. Please add QR code image to assets/images/zalopay-qr.png');
+      // Hiển thị placeholder text thay vì ẩn hoàn toàn
+      const parent = img.parentElement;
+      if (parent && !parent.querySelector('.qr-placeholder')) {
+        img.style.display = 'none';
+        const placeholder = document.createElement('div');
+        placeholder.className = 'qr-placeholder';
+        placeholder.innerHTML = '<i class="fas fa-qrcode"></i><p>Vui lòng thêm file QR code ZaloPay vào assets/images/zalopay-qr.png</p>';
+        parent.appendChild(placeholder);
+      }
+    }
+  }
+
+  /**
+   * Xử lý khi QR code load thành công
+   */
+  handleZaloPayQrLoad(event: any): void {
+    this.zalopayQrLoaded = true;
+    this.zalopayQrErrorCount = 0; // Reset error count khi load thành công
+    // Đảm bảo cached URL đúng với URL đã load thành công
+    const img = event.target as HTMLImageElement;
+    if (img && img.src) {
+      this.cachedZaloPayQrUrl = img.src;
+    }
+    console.log('ZaloPay QR code loaded successfully');
   }
 
   /**
