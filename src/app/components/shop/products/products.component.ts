@@ -12,6 +12,14 @@ import {
   ChiTietSanPhamApiService,
   ChiTietSanPhamResponse,
 } from '../../../services/chi-tiet-san-pham-api.service';
+import {
+  ManufacturerApiService,
+  ManufacturerResponse,
+} from '../../../services/manufacturer-api.service';
+import {
+  MaterialApiService,
+  MaterialResponse,
+} from '../../../services/material-api.service';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
 import { ShopFooterComponent } from '../shared/shop-footer.component';
@@ -36,8 +44,12 @@ export class ShopProductsComponent implements OnInit {
   products: SanPhamResponse[] = [];
   filteredProducts: SanPhamResponse[] = [];
   categories: LoaiMuBaoHiemResponse[] = [];
+  manufacturers: ManufacturerResponse[] = [];
+  materials: MaterialResponse[] = [];
   searchKeyword = '';
   selectedCategory = 'all';
+  selectedManufacturer = 'all';
+  selectedMaterial = 'all';
   isLoading = false;
   errorMessage = '';
   highlightProductId?: number;
@@ -58,6 +70,8 @@ export class ShopProductsComponent implements OnInit {
     private productApiService: ProductApiService,
     private loaiMuBaoHiemService: LoaiMuBaoHiemApiService,
     private chiTietSanPhamService: ChiTietSanPhamApiService,
+    private manufacturerApiService: ManufacturerApiService,
+    private materialApiService: MaterialApiService,
     private router: Router,
     private route: ActivatedRoute,
     private location: Location,
@@ -72,9 +86,13 @@ export class ShopProductsComponent implements OnInit {
 
     // Load query params trước
     this.loadQueryParams();
-    // Load categories và products
+    // Load categories trước
     this.loadCategories();
+    // Load products trước để có dữ liệu extract
     this.loadProducts();
+    // Sau đó load manufacturers và materials (sẽ merge với dữ liệu từ products)
+    this.loadManufacturers();
+    this.loadMaterials();
     // Sau đó mới observe query params để cập nhật khi có thay đổi
     this.observeQueryParams();
   }
@@ -123,6 +141,20 @@ export class ShopProductsComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.products = res?.content ?? [];
+          console.log('Loaded products:', this.products.length);
+          // Log sample product để kiểm tra dữ liệu
+          if (this.products.length > 0) {
+            console.log('Sample product:', {
+              id: this.products[0].id,
+              tenSanPham: this.products[0].tenSanPham,
+              nhaSanXuatId: this.products[0].nhaSanXuatId,
+              nhaSanXuatTen: this.products[0].nhaSanXuatTen,
+              chatLieuVoId: this.products[0].chatLieuVoId,
+              chatLieuVoTen: this.products[0].chatLieuVoTen,
+            });
+          }
+          // Extract unique manufacturers và materials từ products để populate filters
+          this.extractFilterDataFromProducts();
           // Áp dụng filters ngay sau khi load products
           this.applyFilters();
           // Load variant images (async, sẽ apply filters lại sau khi load xong)
@@ -145,13 +177,145 @@ export class ShopProductsComponent implements OnInit {
     this.loaiMuBaoHiemService.getAllActive().subscribe({
       next: (res) => {
         this.categories = res || [];
+        console.log('Loaded categories:', this.categories.length);
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err) => {
+        console.error('Failed to load categories', err);
         this.categories = [];
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private loadManufacturers(): void {
+    this.manufacturerApiService.getAllActive().subscribe({
+      next: (res) => {
+        this.manufacturers = res || [];
+        console.log('Loaded manufacturers from API:', this.manufacturers.length);
+        // Nếu đã có products, merge với dữ liệu từ products
+        if (this.products.length > 0) {
+          this.extractFilterDataFromProducts();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load manufacturers', err);
+        this.manufacturers = [];
+        // Fallback: extract từ products nếu API fail
+        if (this.products.length > 0) {
+          this.extractFilterDataFromProducts();
+        }
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadMaterials(): void {
+    this.materialApiService.getAllActive().subscribe({
+      next: (res) => {
+        this.materials = res || [];
+        console.log('Loaded materials from API:', this.materials.length);
+        // Nếu đã có products, merge với dữ liệu từ products
+        if (this.products.length > 0) {
+          this.extractFilterDataFromProducts();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load materials', err);
+        this.materials = [];
+        // Fallback: extract từ products nếu API fail
+        if (this.products.length > 0) {
+          this.extractFilterDataFromProducts();
+        }
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /**
+   * Extract unique manufacturers và materials từ danh sách sản phẩm
+   * để đảm bảo filters chỉ hiển thị những giá trị thực sự có trong sản phẩm
+   */
+  private extractFilterDataFromProducts(): void {
+    if (!this.products || this.products.length === 0) {
+      return;
+    }
+
+    // Extract unique manufacturers từ products
+    const manufacturerMap = new Map<number, { id: number; ten: string }>();
+    const materialMap = new Map<number, { id: number; tenChatLieu: string }>();
+
+    this.products.forEach((product) => {
+      // Extract manufacturers
+      if (
+        product.nhaSanXuatId !== null &&
+        product.nhaSanXuatId !== undefined &&
+        product.nhaSanXuatTen
+      ) {
+        if (!manufacturerMap.has(product.nhaSanXuatId)) {
+          manufacturerMap.set(product.nhaSanXuatId, {
+            id: product.nhaSanXuatId,
+            ten: product.nhaSanXuatTen,
+          });
+        }
+      }
+
+      // Extract materials
+      if (
+        product.chatLieuVoId !== null &&
+        product.chatLieuVoId !== undefined &&
+        product.chatLieuVoTen
+      ) {
+        if (!materialMap.has(product.chatLieuVoId)) {
+          materialMap.set(product.chatLieuVoId, {
+            id: product.chatLieuVoId,
+            tenChatLieu: product.chatLieuVoTen,
+          });
+        }
+      }
+    });
+
+    // Merge với dữ liệu từ API (nếu có)
+    const extractedManufacturers = Array.from(manufacturerMap.values());
+    const extractedMaterials = Array.from(materialMap.values());
+
+    // Merge manufacturers: ưu tiên dữ liệu từ API, nhưng thêm những cái chỉ có trong products
+    const manufacturerMapFromApi = new Map(
+      this.manufacturers.map((m) => [m.id, m])
+    );
+    extractedManufacturers.forEach((m) => {
+      if (!manufacturerMapFromApi.has(m.id)) {
+        this.manufacturers.push({
+          id: m.id,
+          ten: m.ten,
+          moTa: '',
+          trangThai: true,
+        });
+      }
+    });
+    // Đảm bảo manufacturers được sắp xếp
+    this.manufacturers.sort((a, b) => a.ten.localeCompare(b.ten));
+
+    // Merge materials: ưu tiên dữ liệu từ API, nhưng thêm những cái chỉ có trong products
+    const materialMapFromApi = new Map(
+      this.materials.map((m) => [m.id, m])
+    );
+    extractedMaterials.forEach((m) => {
+      if (!materialMapFromApi.has(m.id)) {
+        this.materials.push({
+          id: m.id,
+          tenChatLieu: m.tenChatLieu,
+          trangThai: true,
+        });
+      }
+    });
+    // Đảm bảo materials được sắp xếp
+    this.materials.sort((a, b) => a.tenChatLieu.localeCompare(b.tenChatLieu));
+
+    console.log('Extracted from products - Manufacturers:', extractedManufacturers.length, 'Materials:', extractedMaterials.length);
+    console.log('Total after merge - Manufacturers:', this.manufacturers.length, 'Materials:', this.materials.length);
   }
 
   applyFilters(): void {
@@ -175,7 +339,19 @@ export class ShopProductsComponent implements OnInit {
         (product.loaiMuBaoHiemTen &&
           product.loaiMuBaoHiemTen.toLowerCase().includes(this.selectedCategory.toLowerCase()));
 
-      return matchesKeyword && matchesCategory;
+      const matchesManufacturer =
+        this.selectedManufacturer === 'all' ||
+        (product.nhaSanXuatId !== undefined &&
+          product.nhaSanXuatId !== null &&
+          String(product.nhaSanXuatId) === this.selectedManufacturer);
+
+      const matchesMaterial =
+        this.selectedMaterial === 'all' ||
+        (product.chatLieuVoId !== undefined &&
+          product.chatLieuVoId !== null &&
+          String(product.chatLieuVoId) === this.selectedMaterial);
+
+      return matchesKeyword && matchesCategory && matchesManufacturer && matchesMaterial;
     });
 
     // Scroll to highlighted product nếu có
@@ -191,6 +367,16 @@ export class ShopProductsComponent implements OnInit {
   }
 
   onCategoryChange(): void {
+    this.applyFilters();
+    this.cdr.detectChanges();
+  }
+
+  onManufacturerChange(): void {
+    this.applyFilters();
+    this.cdr.detectChanges();
+  }
+
+  onMaterialChange(): void {
     this.applyFilters();
     this.cdr.detectChanges();
   }

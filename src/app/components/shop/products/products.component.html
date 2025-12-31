@@ -37,11 +37,20 @@
               placeholder="Tìm tên hoặc mã sản phẩm..." />
           </div>
           <div class="filter-control select-control">
-            <i class="fas fa-layer-group"></i>
-            <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()">
-              <option value="all">Tất cả dòng mũ</option>
-              <option *ngFor="let category of categories" [value]="category.id">
-                {{ category.tenLoai }}
+            <i class="fas fa-industry"></i>
+            <select [(ngModel)]="selectedManufacturer" (change)="onManufacturerChange()">
+              <option value="all">Tất cả nhà sản xuất</option>
+              <option *ngFor="let manufacturer of manufacturers" [value]="manufacturer.id">
+                {{ manufacturer.ten }}
+              </option>
+            </select>
+          </div>
+          <div class="filter-control select-control">
+            <i class="fas fa-shield-alt"></i>
+            <select [(ngModel)]="selectedMaterial" (change)="onMaterialChange()">
+              <option value="all">Tất cả chất liệu vỏ</option>
+              <option *ngFor="let material of materials" [value]="material.id">
+                {{ material.tenChatLieu }}
               </option>
             </select>
           </div>
@@ -86,6 +95,16 @@
                 </span>
               </div>
               <h3 class="product-title">{{ product.tenSanPham }}</h3>
+              <div class="product-info" *ngIf="product.nhaSanXuatTen || product.chatLieuVoTen">
+                <span class="product-manufacturer" *ngIf="product.nhaSanXuatTen">
+                  <i class="fas fa-industry"></i>
+                  {{ product.nhaSanXuatTen }}
+                </span>
+                <span class="product-material" *ngIf="product.chatLieuVoTen">
+                  <i class="fas fa-shield-alt"></i>
+                  {{ product.chatLieuVoTen }}
+                </span>
+              </div>
               <p class="product-desc">
                 {{ product.moTa || 'Chưa có mô tả chi tiết' }}
               </p>
