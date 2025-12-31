@@ -192,7 +192,9 @@ export class ShopProductsComponent implements OnInit {
 
   private loadManufacturers(): void {
     this.manufacturerApiService.getAllActive().subscribe({
+
       next: (res: ManufacturerResponse[]) => {
+
         this.manufacturers = res || [];
         console.log('Loaded manufacturers from API:', this.manufacturers.length);
         // Nếu đã có products, merge với dữ liệu từ products
@@ -215,6 +217,7 @@ export class ShopProductsComponent implements OnInit {
 
   private loadMaterials(): void {
     this.materialApiService.getAllActive().subscribe({
+
       next: (res: MaterialResponse[]) => {
         this.materials = res || [];
         console.log('Loaded materials from API:', this.materials.length);
@@ -340,7 +343,19 @@ export class ShopProductsComponent implements OnInit {
         (product.loaiMuBaoHiemTen &&
           product.loaiMuBaoHiemTen.toLowerCase().includes(this.selectedCategory.toLowerCase()));
 
-      return matchesKeyword && matchesCategory;
+      const matchesManufacturer =
+        this.selectedManufacturer === 'all' ||
+        (product.nhaSanXuatId !== undefined &&
+          product.nhaSanXuatId !== null &&
+          String(product.nhaSanXuatId) === this.selectedManufacturer);
+
+      const matchesMaterial =
+        this.selectedMaterial === 'all' ||
+        (product.chatLieuVoId !== undefined &&
+          product.chatLieuVoId !== null &&
+          String(product.chatLieuVoId) === this.selectedMaterial);
+
+      return matchesKeyword && matchesCategory && matchesManufacturer && matchesMaterial;
     });
 
     // Scroll to highlighted product nếu có
@@ -365,6 +380,16 @@ export class ShopProductsComponent implements OnInit {
   }
 
   onCategoryChange(): void {
+    this.applyFilters();
+    this.cdr.detectChanges();
+  }
+
+  onManufacturerChange(): void {
+    this.applyFilters();
+    this.cdr.detectChanges();
+  }
+
+  onMaterialChange(): void {
     this.applyFilters();
     this.cdr.detectChanges();
   }
