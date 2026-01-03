@@ -61,7 +61,7 @@ export class CheckoutComponent implements OnInit {
   orderNotes = '';
 
   // Payment method
-  paymentMethod: 'cash' | 'transfer' = 'transfer';
+  paymentMethod: 'cash' | 'transfer' | 'vnpay' | 'zalopay' | 'momo' = 'transfer';
 
   // Bank transfer info
   bankInfo = {
@@ -70,6 +70,29 @@ export class CheckoutComponent implements OnInit {
     accountName: 'TDK Store',
     bankCode: 'MBbank',
     template: 'compact2',
+  };
+
+  // VNPay info (Test credentials from PortOne/VNPay Sandbox)
+  vnpayInfo = {
+    testUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+    tmnCode: 'CHAIVN01', // Public Sandbox Code
+    hashSecret: 'A3EFDF90317237A3E2611C87D7C21669' // Key mẫu thường đi cùng 2QXUI4J4
+  };
+
+  // ZaloPay info (Sandbox)
+  zalopayInfo = {
+    appId: 2553,
+    key1: 'PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL',
+    key2: 'kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz',
+    endpoint: 'https://sb-openapi.zalopay.vn/v2/create'
+  };
+
+  // MoMo info (Sandbox)
+  momoInfo = {
+    partnerCode: 'MOMO', // Public Sandbox partner code
+    accessKey: 'F8BBA842ECF85', // Placeholder
+    secretKey: 'K951B6PE1waDMi640xX08PD3vg6EkVlz', // Placeholder
+    endpoint: 'https://test-payment.momo.vn/v2/gateway/api/create'
   };
 
   // Auto-generated transaction code
@@ -997,6 +1020,9 @@ export class CheckoutComponent implements OnInit {
     const methodMap: { [key: string]: string } = {
       cash: 'Tiền mặt',
       transfer: 'Chuyển khoản',
+      vnpay: 'VNPay',
+      zalopay: 'ZaloPay',
+      momo: 'MoMo',
     };
     return methodMap[method] || method;
   }
@@ -1210,9 +1236,541 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
-    // Hiển thị modal xác nhận đơn hàng với đầy đủ thông tin
-    this.showOrderConfirmationScreen();
-    this.error = '';
+    // Xử lý theo phương thức thanh toán
+    if (this.paymentMethod === 'vnpay') {
+      this.payWithVNPay();
+    } else if (this.paymentMethod === 'zalopay') {
+      this.payWithZaloPay();
+    } else if (this.paymentMethod === 'momo') {
+      this.payWithMoMo();
+    } else {
+      // Các phương thức khác (Tiền mặt, CK) thì hiển thị modal xác nhận
+      this.showOrderConfirmationScreen();
+      this.error = '';
+    }
+  }
+
+  payWithVNPay(): void {
+    if (!this.hasCartItems()) {
+      this.notificationService.warning('Giỏ hàng trống!');
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.showOrderConfirmation = false; // Đóng modal confirm nếu đang mở
+
+    // 1. Tạo đơn hàng PENDING trước (giống các payment khác nhưng trạng thái chờ thanh toán)
+    // Tuy nhiên, do chưa có backend xử lý callback từ VNPay, ta sẽ giả lập
+    // Bằng cách redirect user sang trang test VNPay
+
+    // Tính tiền
+    const amount = Math.round(this.getTotal());
+    const txnRef = this.transactionCode || `TDK_${Date.now()}`;
+    const orderInfo = `Thanh toan don hang ${txnRef}`;
+
+    // Lưu thông tin đơn hàng (dùng hàm chung)
+    this.savePendingOrderToStorage('vnpay', txnRef);
+
+    // Thông báo user
+    this.notificationService.info('Đang chuyển hướng sang cổng thanh toán VNPay...');
+
+    // URL Demo Sandbox (cần backend để ký hash bảo mật thực tế)
+    // Ở đây ta dùng bộ tham số test cơ bản
+    const vnpParams: any = {
+      vnp_Version: '2.1.0',
+      vnp_Command: 'pay',
+      vnp_TmnCode: this.vnpayInfo.tmnCode,
+      vnp_Amount: (amount * 100).toString(), // VNPay tính theo vnđ * 100
+      vnp_CurrCode: 'VND',
+      vnp_TxnRef: txnRef,
+      vnp_OrderInfo: orderInfo,
+      vnp_OrderType: 'other',
+      vnp_Locale: 'vn',
+      vnp_ReturnUrl: window.location.origin + '/customer/orders', // Quay về trang đơn hàng
+      vnp_IpAddr: '127.0.0.1',
+      vnp_CreateDate: this.formatDateForVNPay(new Date()),
+    };
+
+    // Tạo query string
+    const queryString = Object.keys(vnpParams)
+      .map(key => `${key}=${encodeURIComponent(vnpParams[key])}`)
+      .join('&');
+
+    // Lưu ý: Thiếu vnp_SecureHash vì frontend không nên giữ secret key
+    // Tuy nhiên với mục đích test demo, ta sẽ mở trang ví dụ hoặc trang sandbox
+    // Vì không thể tạo valid hash ở đây mà không lộ secret, ta sẽ:
+    // 1. Tạo đơn hàng với trạng thái 'PENDING_PAYMENT' (tạm dùng createOrder như thường)
+    // 2. Sau đó mở tab mới sang VNPay
+
+    // Cách tốt nhất hiện tại: Tạo đơn hàng như bình thường (COD) nhưng Log là "Thanh toán VNPay"
+    // Sau đó hiển thị thông báo giả lập
+
+    // Mock redirect sau 1.5s
+    setTimeout(async () => {
+      try {
+        // Tạo Secure Hash
+        // 1. Sắp xếp tham số theo alphabet
+        const sortedParams = this.sortObject(vnpParams);
+
+        // 2. Tạo chuỗi dữ liệu (query string)
+        const serializedParams = Object.keys(sortedParams)
+          .map(key => `${key}=${encodeURIComponent(sortedParams[key])}`)
+          .join('&');
+
+        const secureHash = await this.hmacSHA512(this.vnpayInfo.hashSecret, serializedParams);
+
+        const finalUrl = `${this.vnpayInfo.testUrl}?${serializedParams}&vnp_SecureHash=${secureHash}`;
+
+        console.log('✅ VNPay URL:', finalUrl);
+
+        // Chuyển hướng
+        window.location.href = finalUrl; // Dùng location.href thay vì open tab mới để trải nghiệm liền mạch
+      } catch (e) {
+        console.error('Error generating VNPay URL:', e);
+        this.notificationService.error('Có lỗi khi tạo link thanh toán VNPay');
+      }
+      this.isSubmitting = false;
+    }, 1000); // Giảm delay xuống 1s
+  }
+
+  async payWithZaloPay(): Promise<void> {
+    if (!this.hasCartItems()) {
+      this.notificationService.warning('Giỏ hàng trống!');
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.showOrderConfirmation = false;
+
+    // 1. Chuẩn bị dữ liệu
+    const transID = Math.floor(Math.random() * 1000000);
+    const appTransID = `${new Date().toISOString().slice(2, 10).replace(/-/g, '')}_${transID}`;
+    const amount = Math.round(this.getTotal());
+    const appTime = Date.now();
+    const appUser = "DemoUser";
+
+    // Embed data contains redirecturl
+    const embedData = {
+      redirecturl: window.location.origin + '/customer/orders'
+    };
+
+    const items = [{}]; // Demo item
+
+    // 2. Tạo MAC
+    // app_id|app_trans_id|app_user|amount|app_time|embed_data|item
+    const dataObj = {
+      app_id: this.zalopayInfo.appId,
+      app_user: appUser,
+      app_time: appTime,
+      amount: amount,
+      app_trans_id: appTransID,
+      embed_data: JSON.stringify(embedData),
+      item: JSON.stringify(items),
+      description: `Thanh toan don hang #${transID}`,
+      bank_code: ""
+    };
+
+    const dataStr = `${dataObj.app_id}|${dataObj.app_trans_id}|${dataObj.app_user}|${dataObj.amount}|${dataObj.app_time}|${dataObj.embed_data}|${dataObj.item}`;
+    const mac = await this.hmacSHA256(this.zalopayInfo.key1, dataStr);
+
+    // Save pending order
+    this.savePendingOrderToStorage('zalopay', appTransID);
+
+    this.notificationService.info('Đang kết nối tới ZaloPay...');
+
+    // 3. Gọi API (Lưu ý: Thường sẽ bị CORS nếu gọi từ trình duyệt, nên ta sẽ có fallback)
+    try {
+      const response = await fetch(this.zalopayInfo.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...dataObj,
+          mac: mac
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.return_code === 1) {
+        console.log('✅ ZaloPay Order Created:', result);
+        window.location.href = result.order_url;
+      } else {
+        console.error('❌ ZaloPay Error:', result);
+        this.notificationService.error('Lỗi tạo đơn hàng ZaloPay: ' + result.return_message);
+        this.isSubmitting = false;
+      }
+    } catch (error) {
+      console.warn('⚠️ CORS blocked or API error. Switching to Simulation Mode.', error);
+
+      // Fallback: Mở trang giả lập (vì Sandbox ZaloPay chặn CORS request từ frontend)
+      this.notificationService.info('Đang chuyển hướng sang cổng thanh toán ZaloPay (Mô phỏng)...');
+
+      setTimeout(() => {
+        this.openSimulatedZaloPayGateway(amount, appTransID);
+      }, 1000);
+    }
+  }
+
+  /**
+   * Mở giao diện giả lập cổng thanh toán ZaloPay
+   * (Dùng document.write để giả lập việc chuyển hướng sang trang khác)
+   */
+  openSimulatedZaloPayGateway(amount: number, appTransID: string) {
+    const origin = window.location.origin;
+    const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Thanh toán ZaloPay (Mô phỏng)</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+          .payment-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+          .logo { height: 50px; margin-bottom: 20px; }
+          .merchant { color: #666; font-size: 0.9rem; margin-bottom: 5px; }
+          .amount { font-size: 2rem; font-weight: bold; color: #0068ff; margin-bottom: 20px; }
+          .info { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: left; font-size: 0.9rem; }
+          .info div { display: flex; justify-content: space-between; margin-bottom: 8px; }
+          .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; }
+          .btn-pay { background-color: #0068ff; color: white; }
+          .btn-pay:hover { background-color: #0056d6; }
+          .btn-cancel { background-color: #e4e6eb; color: #333; }
+          .btn-cancel:hover { background-color: #d8dadf; }
+          .sandbox-badge { display: inline-block; background: #ff9800; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-bottom: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="payment-card">
+          <div class="sandbox-badge">SANDBOX SIMULATION</div>
+          <br>
+          <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png" alt="ZaloPay" class="logo">
+          <div class="merchant">Đơn vị chấp nhận thanh toán</div>
+          <h3>Cửa hàng Mũ Bảo Hiểm</h3>
+          <div class="amount">${formattedAmount}</div>
+
+          <div class="info">
+            <div><span>Mã đơn hàng:</span> <strong>${appTransID}</strong></div>
+            <div><span>Nội dung:</span> <span>Thanh toán đơn hàng</span></div>
+            <div style="border-top: 1px dashed #ccc; margin-top: 8px; padding-top: 8px;">
+               <i>Đây là màn hình giả lập vì Sandbox API chặn gọi trực tiếp từ trình duyệt.</i>
+            </div>
+          </div>
+
+          <button class="btn btn-pay" onclick="confirmPayment()">Xác nhận thanh toán</button>
+          <button class="btn btn-cancel" onclick="cancelPayment()">Hủy giao dịch</button>
+        </div>
+
+        <script>
+          function confirmPayment() {
+            document.querySelector('.btn-pay').innerText = 'Đang xử lý...';
+            setTimeout(() => {
+              window.location.href = '${origin}/customer/orders?status=1&apptransid=${appTransID}';
+            }, 1000);
+          }
+          function cancelPayment() {
+             window.location.href = '${origin}/customer/orders?status=0&apptransid=${appTransID}';
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    document.open();
+    document.write(htmlContent);
+    document.close();
+  }
+
+  async payWithMoMo(): Promise<void> {
+    if (!this.hasCartItems()) {
+      this.notificationService.warning('Giỏ hàng trống!');
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.showOrderConfirmation = false;
+
+    // 1. Chuẩn bị dữ liệu
+    const orderId = `${new Date().toISOString().slice(2, 10).replace(/-/g, '')}_${Math.floor(Math.random() * 1000000)}`;
+    const requestId = orderId;
+    const amount = Math.round(this.getTotal());
+    const orderInfo = `Thanh toan don hang #${orderId} qua MoMo`;
+    const redirectUrl = window.location.origin + '/customer/orders';
+    const ipnUrl = window.location.origin + '/customer/orders';
+    const requestType = "captureWallet";
+    const extraData = "";
+
+    // 2. Signature (accessKey=$accessKey&amount=$amount&extraData=$extraData&ipnUrl=$ipnUrl&orderId=$orderId&orderInfo=$orderInfo&partnerCode=$partnerCode&redirectUrl=$redirectUrl&requestId=$requestId&requestType=$requestType)
+    const rawSignature = `accessKey=${this.momoInfo.accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${this.momoInfo.partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+
+    // Create HMAC (using existing SHA256 helper)
+    const signature = await this.hmacSHA256(this.momoInfo.secretKey, rawSignature);
+
+    // Save pending order
+    this.savePendingOrderToStorage('momo', orderId);
+
+    this.notificationService.info('Đang kết nối tới MoMo...');
+
+    // 3. API Call
+    try {
+      const response = await fetch(this.momoInfo.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerCode: this.momoInfo.partnerCode,
+          partnerName: "TDK Store",
+          storeId: "MomoTestStore",
+          requestId: requestId,
+          amount: amount,
+          orderId: orderId,
+          orderInfo: orderInfo,
+          redirectUrl: redirectUrl,
+          ipnUrl: ipnUrl,
+          lang: "vi",
+          requestType: requestType,
+          autoCapture: true,
+          extraData: extraData,
+          orderGroupId: "",
+          signature: signature
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.resultCode === 0) {
+        console.log('✅ MoMo Order Created:', result);
+        window.location.href = result.payUrl;
+      } else {
+        console.error('❌ MoMo Error:', result);
+        // Fallback simulation if signature error (which is expected with placeholder keys) or other error
+        console.warn('⚠️ Switching to MoMo Simulation due to API error.');
+        this.openSimulatedMoMoGateway(amount, orderId);
+      }
+    } catch (error) {
+      console.warn('⚠️ CORS/Network error for MoMo. Switching to Simulation Mode.', error);
+      this.notificationService.info('Đang chuyển hướng sang cổng thanh toán MoMo (Mô phỏng)...');
+      setTimeout(() => {
+        this.openSimulatedMoMoGateway(amount, orderId);
+      }, 1000);
+    }
+  }
+
+  /**
+   * Mở giao diện giả lập cổng thanh toán MoMo
+   */
+  openSimulatedMoMoGateway(amount: number, orderId: string) {
+    const origin = window.location.origin;
+    const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Thanh toán MoMo (Mô phỏng)</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+          .payment-card { background: white; padding: 0; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; overflow: hidden; }
+          .header { background-color: #A50064; padding: 20px; color: white; }
+          .logo { height: 50px; background: white; border-radius: 8px; padding: 5px; }
+          .content { padding: 25px; }
+          .merchant { color: #666; font-size: 0.9rem; margin-bottom: 5px; }
+          .amount { font-size: 2rem; font-weight: bold; color: #A50064; margin-bottom: 20px; }
+          .info { background: #fee9f2; padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: left; font-size: 0.9rem; border: 1px solid #ffcce0; }
+          .info div { display: flex; justify-content: space-between; margin-bottom: 8px; }
+          .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; }
+          .btn-pay { background-color: #A50064; color: white; }
+          .btn-pay:hover { background-color: #8d0055; }
+          .btn-cancel { background-color: #e4e6eb; color: #333; }
+          .btn-cancel:hover { background-color: #d8dadf; }
+          .sandbox-badge { display: inline-block; background: #FFF; color: #A50064; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="payment-card">
+          <div class="header">
+            <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo" class="logo">
+            <br>
+            <div class="sandbox-badge">SANDBOX TEST</div>
+          </div>
+          <div class="content">
+            <div class="merchant">Thanh toán cho</div>
+            <h3>Cửa hàng Mũ Bảo Hiểm</h3>
+            <div class="amount">${formattedAmount}</div>
+            
+            <div class="info">
+              <div><span>Mã đơn hàng:</span> <strong>${orderId}</strong></div>
+              <div><span>Nội dung:</span> <span>Thanh toán đơn hàng</span></div>
+              <div style="border-top: 1px dashed #dca; margin-top: 8px; padding-top: 8px; font-size: 0.85rem; color: #888;">
+                 <i>Màn hình giả lập (Mock Gateway)</i>
+              </div>
+            </div>
+
+            <button class="btn btn-pay" onclick="confirmPayment()">Xác nhận thanh toán</button>
+            <button class="btn btn-cancel" onclick="cancelPayment()">Hủy giao dịch</button>
+          </div>
+        </div>
+
+        <script>
+          function confirmPayment() {
+            document.querySelector('.btn-pay').innerText = 'Đang xử lý...';
+            setTimeout(() => {
+              // MoMo return params: partnerCode, orderId, requestId, amount, orderInfo, orderType, transId, resultCode (0=success), message...
+              window.location.href = '${origin}/customer/orders?resultCode=0&orderId=${orderId}&message=Success';
+            }, 1000);
+          }
+          function cancelPayment() {
+             window.location.href = '${origin}/customer/orders?resultCode=1006&orderId=${orderId}&message=Cancelled';
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    document.open();
+    document.write(htmlContent);
+    document.close();
+  }
+
+  // Refactor: Tách logic lưu pending order ra hàm chung để dùng lại
+  savePendingOrderToStorage(paymentMethod: string, txnRef: string) {
+    // 1. Lấy thông tin giỏ hàng
+    let cartItems: any[] = [];
+    if (this.isTempCart && this.tempCart && this.tempCart.length > 0) {
+      cartItems = this.tempCart
+        .filter((item: any) => item.chiTietSanPhamId != null)
+        .map((item: any) => ({
+          chiTietSanPhamId: item.chiTietSanPhamId || item.productId,
+          tenSanPham: item.productName || '',
+          soLuong: item.quantity || 1,
+          donGia: parseFloat(item.price) || 0,
+          giamGia: 0,
+          thanhTien: item.totalItemPrice || (parseFloat(item.price) || 0) * (item.quantity || 1)
+        }))
+        .filter((item: any) => item.chiTietSanPhamId);
+    } else if (this.cart && this.cart.danhSachGioHang) {
+      cartItems = this.cart.danhSachGioHang
+        .filter((item: any) => item.chiTietSanPhamId != null)
+        .map((item: any) => ({
+          chiTietSanPhamId: item.chiTietSanPhamId,
+          tenSanPham: item.tenSanPham || '',
+          soLuong: item.soLuong || 1,
+          donGia: parseFloat(String(item.donGia)) || 0,
+          giamGia: parseFloat(String(item.giamGia)) || 0,
+          thanhTien: parseFloat(String(item.thanhTien)) || (parseFloat(String(item.donGia)) * (item.soLuong || 1))
+        }));
+    }
+
+    // Backend compatibility: Map 'zalopay' to 'transfer' or 'vnpay' if backend Enum doesn't support 'zalopay'
+    // Để an toàn, ta dùng 'transfer' và ghi chú rõ ràng
+    let backendPaymentMethod = paymentMethod;
+    if (paymentMethod === 'zalopay' || paymentMethod === 'momo') {
+      backendPaymentMethod = 'transfer';
+    }
+
+    const currentUser = this.authService.getCurrentUser();
+
+    // 2. Build hoa don data
+    const hoaDonData = {
+      khachHangId: currentUser ? currentUser.id : null,
+      tenKhachHang: this.billingInfo.firstName + ' ' + this.billingInfo.lastName,
+      soDienThoaiKhachHang: this.billingInfo.phone,
+      emailKhachHang: this.billingInfo.email,
+      diaChiChiTiet: this.billingInfo.address,
+      phuongXa: this.billingInfo.city.split(',')[0]?.trim() || '',
+      quanHuyen: this.billingInfo.city.split(',').length > 1 ? this.billingInfo.city.split(',')[1]?.trim() : '',
+      tinhThanh: this.billingInfo.city.split(',').length > 2 ? this.billingInfo.city.split(',')[2]?.trim() : this.billingInfo.city,
+      loaiHoaDon: 'ONLINE',
+      trangThai: 'CHO_XAC_NHAN',
+      phuongThucThanhToan: backendPaymentMethod,
+      danhSachChiTiet: cartItems,
+      tongTien: this.getSubtotal(),
+      thanhTien: this.getTotal(),
+      tienGiamGia: (this.getDiscount() || 0) + (this.couponDiscount || 0),
+      phiGiaoHang: this.shippingFee || 0,
+      phieuGiamGiaId: this.appliedCoupon?.id || null,
+      phieuGiamGiaIds: this.appliedCoupon ? [this.appliedCoupon.id] : [],
+      soLuongSanPham: this.getTotalItems(),
+      ghiChu: `Thanh toán ${paymentMethod.toUpperCase()}. Mã GD: ${txnRef}. ${this.orderNotes || ''}`
+    };
+
+    // Save to localStorage
+    localStorage.setItem(`pending_${paymentMethod}_order`, JSON.stringify(hoaDonData));
+    // Dùng chung cart id key hoặc riêng
+    localStorage.setItem('pending_vnpay_cart_id', this.cartId ? this.cartId.toString() : ''); // Reuse key for simplicity or make generic
+  }
+
+  // Helper tạo HMAC-SHA256
+  async hmacSHA256(key: string, data: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(key);
+    const msgData = encoder.encode(data);
+
+    const cryptoKey = await window.crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const signature = await window.crypto.subtle.sign(
+      'HMAC',
+      cryptoKey,
+      msgData
+    );
+
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  // Helper để sắp xếp object theo key
+  sortObject(obj: any): any {
+    const sorted: any = {};
+    const keys = Object.keys(obj).sort();
+    keys.forEach(key => {
+      sorted[key] = obj[key];
+    });
+    return sorted;
+  }
+
+  // Helper tạo HMAC-SHA512 (chạy ở browser)
+  async hmacSHA512(key: string, data: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(key);
+    const msgData = encoder.encode(data);
+
+    const cryptoKey = await window.crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-512' },
+      false,
+      ['sign']
+    );
+
+    const signature = await window.crypto.subtle.sign(
+      'HMAC',
+      cryptoKey,
+      msgData
+    );
+
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  formatDateForVNPay(date: Date): string {
+    const year = date.getFullYear();
+    const month = ('0' + (date.getMonth() + 1)).slice(-2);
+    const day = ('0' + date.getDate()).slice(-2);
+    const hours = ('0' + date.getHours()).slice(-2);
+    const minutes = ('0' + date.getMinutes()).slice(-2);
+    const seconds = ('0' + date.getSeconds()).slice(-2);
+    return `${year}${month}${day}${hours}${minutes}${seconds}`;
   }
 
 
@@ -1392,7 +1950,7 @@ export class CheckoutComponent implements OnInit {
       trangThai: 'CHO_XAC_NHAN',
       // KHÔNG set nhanVienId - để null = Online order
       // KHÔNG set viTriBanHang - backend sẽ tự động map từ nhanVienId
-      phuongThucThanhToan: this.paymentMethod === 'transfer' ? 'transfer' : 'cash',
+      phuongThucThanhToan: this.paymentMethod === 'transfer' ? 'transfer' : (this.paymentMethod === 'vnpay' ? 'vnpay' : (this.paymentMethod === 'zalopay' ? 'zalopay' : (this.paymentMethod === 'momo' ? 'momo' : 'cash'))),
       // Map danhSachGioHang từ cart hoặc tempCart sang danhSachChiTiet
       danhSachChiTiet: cartItems,
       tongTien: this.getSubtotal(),

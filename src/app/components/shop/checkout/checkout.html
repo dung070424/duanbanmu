@@ -235,6 +235,43 @@
                 </label>
               </div>
 
+              <div class="payment-option">
+                <input type="radio" id="paymentVNPay" name="paymentMethod" value="vnpay" [(ngModel)]="paymentMethod" />
+                <label for="paymentVNPay">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <strong>Thanh toán qua VNPay</strong>
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png" alt="VNPay"
+                      style="height: 24px;" />
+                  </div>
+                  <p>Thanh toán trực tuyến qua ví VNPay, thẻ ATM hoặc thẻ quốc tế.</p>
+                </label>
+              </div>
+
+              <div class="payment-option">
+                <input type="radio" id="paymentZaloPay" name="paymentMethod" value="zalopay"
+                  [(ngModel)]="paymentMethod" />
+                <label for="paymentZaloPay">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <strong>Thanh toán qua ZaloPay</strong>
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png" alt="ZaloPay"
+                      style="height: 24px;" />
+                  </div>
+                  <p>Thanh toán qua ví điện tử ZaloPay.</p>
+                </label>
+              </div>
+
+              <div class="payment-option">
+                <input type="radio" id="paymentMoMo" name="paymentMethod" value="momo" [(ngModel)]="paymentMethod" />
+                <label for="paymentMoMo">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <strong>Thanh toán qua MoMo</strong>
+                    <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo"
+                      style="height: 24px;" />
+                  </div>
+                  <p>Thanh toán siêu tốc qua ví MoMo.</p>
+                </label>
+              </div>
+
               <!-- Bank Transfer Info -->
               <div *ngIf="paymentMethod === 'transfer'" class="bank-info">
                 <div class="bank-details">
