@@ -63,6 +63,8 @@ export class CheckoutComponent implements OnInit {
   // Payment method
   paymentMethod: 'cash' | 'transfer' | 'vnpay' | 'zalopay' | 'momo' = 'transfer';
 
+  isPaymentVerified: boolean = false; // Flag to indicate payment step is done externally
+
   // Bank transfer info
   bankInfo = {
     bankName: 'MB Bank - Ngân hàng Quân đội',
@@ -201,6 +203,29 @@ export class CheckoutComponent implements OnInit {
       const cartIdParam = params['cartId'] || params['cartid'];
       console.log('🛒 Query params:', params);
       console.log('🛒 cartId from params:', cartIdParam);
+
+      // Check for payment verification from simulation return
+      const paymentVerified = this.route.snapshot.queryParams['paymentVerified'];
+      const paymentMethod = this.route.snapshot.queryParams['method'];
+      if (paymentVerified === 'true') {
+        this.isPaymentVerified = true;
+        if (paymentMethod) {
+          this.paymentMethod = paymentMethod as any;
+        }
+        this.isLoading = false;
+        this.showOrderConfirmation = true;
+        this.notificationService.success('Thanh toán đã được xác nhận. Vui lòng kiểm tra và hoàn tất đơn hàng.');
+
+        // Clean up URL
+        this.router.navigate([], {
+          queryParams: {
+            paymentVerified: null,
+            method: null,
+            orderId: null
+          },
+          queryParamsHandling: 'merge'
+        });
+      }
 
       // Set cartId từ query params hoặc localStorage
       if (cartIdParam) {
@@ -1236,6 +1261,67 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
+    // Check if cart empty
+    if (!this.hasCartItems() && !this.isPaymentVerified) {
+      this.notificationService.warning('Giỏ hàng trống!');
+      return;
+    }
+
+    this.showOrderConfirmationScreen();
+  }
+
+  async placeOrder(): Promise<void> {
+
+    // 1. Kiểm tra giỏ hàng
+    if (!this.hasCartItems() && !this.isPaymentVerified) {
+      this.notificationService.warning('Giỏ hàng trống!');
+      return;
+    }
+
+    // Nếu thanh toán đã được xác thực (từ simulation), bỏ qua logic payment gateway và tạo đơn ngay
+    if (this.isPaymentVerified) {
+      console.log('✅ Payment verified externally. Proceeding to create order directly.');
+      // Lấy pending order từ localStorage
+      let pendingKey = '';
+      if (this.paymentMethod === 'zalopay') pendingKey = 'pending_zalopay_order';
+      else if (this.paymentMethod === 'momo') pendingKey = 'pending_momo_order';
+
+      const pendingOrderStr = localStorage.getItem(pendingKey);
+      if (pendingOrderStr) {
+        try {
+          const hoaDonData = JSON.parse(pendingOrderStr);
+
+          // Loading state
+          this.isSubmitting = true;
+
+          // Gọi service tạo hóa đơn
+          this.hoaDonService.createHoaDon(hoaDonData).subscribe({
+            next: (response) => {
+              this.notificationService.success('Đặt hàng thành công!');
+
+              // Clear storage
+              localStorage.removeItem(pendingKey);
+              localStorage.removeItem('pending_vnpay_cart_id');
+              localStorage.removeItem('temp_cart');
+              window.dispatchEvent(new Event('cartUpdated'));
+
+              // Chuyển hướng tới trang chi tiết đơn hàng
+              this.router.navigate(['/customer/orders'], { queryParams: { newOrderId: response.id } });
+            },
+            error: (err) => {
+              console.error('Create order error:', err);
+              this.notificationService.error('Lỗi khi tạo đơn hàng: ' + (err.error?.message || err.message));
+              this.isSubmitting = false;
+            }
+          });
+          return;
+        } catch (e) {
+          console.error('Error parsing pending order', e);
+          this.notificationService.error('Lỗi dữ liệu đơn hàng đã lưu.');
+        }
+      }
+    }
+
     // Xử lý theo phương thức thanh toán
     if (this.paymentMethod === 'vnpay') {
       this.payWithVNPay();
@@ -1244,9 +1330,16 @@ export class CheckoutComponent implements OnInit {
     } else if (this.paymentMethod === 'momo') {
       this.payWithMoMo();
     } else {
-      // Các phương thức khác (Tiền mặt, CK) thì hiển thị modal xác nhận
-      this.showOrderConfirmationScreen();
-      this.error = '';
+      // Các phương thức khác (Tiền mặt, CK) - Thực hiện việc tạo đơn hàng (đã được confirm qua modal)
+      const currentUser = this.authService.getCurrentUser();
+
+      this.isSubmitting = true;
+      this.saveOrUpdateCustomerAddress().then(() => {
+        this.createInvoice(currentUser);
+      }).catch(err => {
+        this.isSubmitting = false;
+        console.error("Error saving address:", err);
+      });
     }
   }
 
@@ -1468,11 +1561,11 @@ export class CheckoutComponent implements OnInit {
           function confirmPayment() {
             document.querySelector('.btn-pay').innerText = 'Đang xử lý...';
             setTimeout(() => {
-              window.location.href = '${origin}/customer/orders?status=1&apptransid=${appTransID}';
+              window.location.href = '${origin}/shop/checkout?paymentVerified=true&method=zalopay&orderId=${appTransID}';
             }, 1000);
           }
           function cancelPayment() {
-             window.location.href = '${origin}/customer/orders?status=0&apptransid=${appTransID}';
+             window.location.href = '${origin}/shop/checkout?paymentCancelled=true';
           }
         </script>
       </body>
@@ -1618,12 +1711,12 @@ export class CheckoutComponent implements OnInit {
           function confirmPayment() {
             document.querySelector('.btn-pay').innerText = 'Đang xử lý...';
             setTimeout(() => {
-              // MoMo return params: partnerCode, orderId, requestId, amount, orderInfo, orderType, transId, resultCode (0=success), message...
-              window.location.href = '${origin}/customer/orders?resultCode=0&orderId=${orderId}&message=Success';
+            // Redirect back to checkout for final confirmation
+              window.location.href = '${origin}/shop/checkout?paymentVerified=true&method=momo&orderId=${orderId}';
             }, 1000);
           }
           function cancelPayment() {
-             window.location.href = '${origin}/customer/orders?resultCode=1006&orderId=${orderId}&message=Cancelled';
+             window.location.href = '${origin}/shop/checkout?paymentCancelled=true';
           }
         </script>
       </body>
@@ -1774,18 +1867,7 @@ export class CheckoutComponent implements OnInit {
   }
 
 
-  placeOrder(): void {
-    this.isSubmitting = true;
-    this.error = '';
 
-    const currentUser = this.authService.getCurrentUser();
-
-    // Bước 1: Lưu địa chỉ vào DB nếu cần (cho khách hàng đã đăng nhập)
-    this.saveOrUpdateCustomerAddress().then(() => {
-      // Bước 2: Tạo hoá đơn sau khi đã lưu địa chỉ
-      this.createInvoice(currentUser);
-    });
-  }
 
   /**
    * Tạo hoá đơn
