@@ -13,6 +13,7 @@ import { CustomerService } from '../../../services/customer.service';
 import { ShopHeaderComponent } from '../shared/shop-header.component';
 import { ShopFooterComponent } from '../shared/shop-footer.component';
 import { ChatbotComponent } from '../chatbot/chatbot.component';
+import { NotificationService } from '../shared/notification.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -54,7 +55,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
     private hoaDonChoService: HoaDonChoService,
     private authService: AuthService,
     private customerService: CustomerService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -240,18 +242,18 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
 
   addToCart(): void {
     if (!this.product || !this.selectedVariant) {
-      alert('Vui lòng chọn sản phẩm và biến thể');
+      this.notificationService.warning('Vui lòng chọn sản phẩm và biến thể');
       return;
     }
 
     if (this.selectedQuantity < 1) {
-      alert('Số lượng phải lớn hơn 0');
+      this.notificationService.warning('Số lượng phải lớn hơn 0');
       return;
     }
 
     const stock = parseInt(this.selectedVariant.soLuongTon?.toString() || '0', 10);
     if (stock < this.selectedQuantity) {
-      alert('Số lượng trong kho không đủ');
+      this.notificationService.warning('Số lượng trong kho không đủ');
       return;
     }
 
@@ -301,7 +303,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       // Phát sự kiện để header component cập nhật
       window.dispatchEvent(new Event('cartUpdated'));
 
-      alert(`Đã thêm "${this.product.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
+      this.notificationService.success(`Đã thêm "${this.product.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
       return;
     }
 
@@ -313,7 +315,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       }
 
       if (!this.selectedVariant || !this.product) {
-        alert('Lỗi: Không tìm thấy thông tin sản phẩm');
+        this.notificationService.error('Lỗi: Không tìm thấy thông tin sản phẩm');
         return;
       }
 
@@ -344,7 +346,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
           // Phát sự kiện để header component cập nhật
           window.dispatchEvent(new Event('cartUpdated'));
 
-          alert(`Đã thêm "${this.product!.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
+          this.notificationService.success(`Đã thêm "${this.product!.tenSanPham}" (x${this.selectedQuantity}) vào giỏ hàng!`);
         },
         error: (error) => {
           console.error('Error adding to cart:', error);
@@ -354,7 +356,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
             'Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!';
           // Force change detection sau khi có lỗi
           this.cdr.detectChanges();
-          alert(errorMsg);
+          this.notificationService.error(errorMsg);
         },
       });
     });
@@ -503,7 +505,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit {
       error: (error) => {
         console.error('❌ Error creating cart:', error);
         const errorMsg = error.error?.message || error.message || 'Không thể tạo giỏ hàng';
-        alert(`Lỗi: ${errorMsg}`);
+        this.notificationService.error(`Lỗi: ${errorMsg}`);
         resolve(null);
       },
     });

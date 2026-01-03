@@ -433,24 +433,18 @@ export class CartComponent implements OnInit {
     // Nếu là giỏ hàng tạm
     if (this.isTempCart) {
       const tempItem = item as any;
-      if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-        return;
-      }
 
       if (tempItem.chiTietSanPhamId) {
         this.tempCart = this.tempCart.filter((i: any) => i.chiTietSanPhamId !== tempItem.chiTietSanPhamId);
         localStorage.setItem('temp_cart', JSON.stringify(this.tempCart));
         this.updateCartItemsCache();
+        this.notificationService.success('Đã xóa sản phẩm khỏi giỏ hàng');
       }
       return;
     }
 
     // Nếu là giỏ hàng DB
     if (!this.currentHoaDonChoId || !item.id) return;
-
-    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-      return;
-    }
 
     this.hoaDonChoService.removeItemFromCart(
       this.currentHoaDonChoId,
@@ -459,6 +453,7 @@ export class CartComponent implements OnInit {
       next: (updatedCart) => {
         this.cart = updatedCart;
         this.updateCartItemsCache();
+        this.notificationService.success('Đã xóa sản phẩm khỏi giỏ hàng');
       },
       error: (error) => {
         console.error('Error removing item:', error);
