@@ -219,7 +219,8 @@
               <h3>Phương thức thanh toán</h3>
 
               <div class="payment-option">
-                <input type="radio" id="paymentCash" name="paymentMethod" value="cash" [(ngModel)]="paymentMethod" />
+                <input type="radio" id="paymentCash" name="paymentMethod" value="cash" [(ngModel)]="paymentMethod"
+                  (change)="onPaymentMethodChange()" />
                 <label for="paymentCash">
                   <strong>Trả tiền mặt khi nhận hàng</strong>
                   <p>Trả tiền mặt khi giao hàng.</p>
@@ -228,7 +229,7 @@
 
               <div class="payment-option">
                 <input type="radio" id="paymentTransfer" name="paymentMethod" value="transfer"
-                  [(ngModel)]="paymentMethod" />
+                  [(ngModel)]="paymentMethod" (change)="onPaymentMethodChange()" />
                 <label for="paymentTransfer">
                   <strong>Chuyển khoản ngân hàng</strong>
                   <p>Chuyển khoản trực tiếp vào tài khoản ngân hàng của chúng tôi.</p>
@@ -236,7 +237,8 @@
               </div>
 
               <div class="payment-option">
-                <input type="radio" id="paymentVNPay" name="paymentMethod" value="vnpay" [(ngModel)]="paymentMethod" />
+                <input type="radio" id="paymentVNPay" name="paymentMethod" value="vnpay" [(ngModel)]="paymentMethod"
+                  (change)="onPaymentMethodChange()" />
                 <label for="paymentVNPay">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <strong>Thanh toán qua VNPay</strong>
@@ -248,8 +250,8 @@
               </div>
 
               <div class="payment-option">
-                <input type="radio" id="paymentZaloPay" name="paymentMethod" value="zalopay"
-                  [(ngModel)]="paymentMethod" />
+                <input type="radio" id="paymentZaloPay" name="paymentMethod" value="zalopay" [(ngModel)]="paymentMethod"
+                  (change)="onPaymentMethodChange()" />
                 <label for="paymentZaloPay">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <strong>Thanh toán qua ZaloPay</strong>
@@ -261,7 +263,8 @@
               </div>
 
               <div class="payment-option">
-                <input type="radio" id="paymentMoMo" name="paymentMethod" value="momo" [(ngModel)]="paymentMethod" />
+                <input type="radio" id="paymentMoMo" name="paymentMethod" value="momo" [(ngModel)]="paymentMethod"
+                  (change)="onPaymentMethodChange()" />
                 <label for="paymentMoMo">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <strong>Thanh toán qua MoMo</strong>

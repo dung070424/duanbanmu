@@ -207,24 +207,25 @@ export class CheckoutComponent implements OnInit {
       // Check for payment verification from simulation return
       const paymentVerified = this.route.snapshot.queryParams['paymentVerified'];
       const paymentMethod = this.route.snapshot.queryParams['method'];
-      if (paymentVerified === 'true') {
-        this.isPaymentVerified = true;
-        if (paymentMethod) {
-          this.paymentMethod = paymentMethod as any;
-        }
-        this.isLoading = false;
-        this.showOrderConfirmation = true;
-        this.notificationService.success('Thanh toán đã được xác nhận. Vui lòng kiểm tra và hoàn tất đơn hàng.');
 
-        // Clean up URL
-        this.router.navigate([], {
-          queryParams: {
-            paymentVerified: null,
-            method: null,
-            orderId: null
-          },
-          queryParamsHandling: 'merge'
-        });
+      // Check for REAL ZaloPay callback
+      const zaloStatus = this.route.snapshot.queryParams['status'];
+      const zaloAppTransId = this.route.snapshot.queryParams['apptransid'];
+
+      // Check for REAL MoMo callback
+      const momoResultCode = this.route.snapshot.queryParams['resultCode'];
+      const momoOrderId = this.route.snapshot.queryParams['orderId'];
+
+      if (paymentVerified === 'true') {
+        this.handlePaymentVerified(paymentMethod);
+      } else if (zaloStatus === '1' && zaloAppTransId) {
+        console.log('✅ Detected ZaloPay Real Callback');
+        this.paymentMethod = 'zalopay';
+        this.handlePaymentVerified('zalopay');
+      } else if (momoResultCode === '0' && momoOrderId) {
+        console.log('✅ Detected MoMo Real Callback');
+        this.paymentMethod = 'momo';
+        this.handlePaymentVerified('momo');
       }
 
       // Set cartId từ query params hoặc localStorage
@@ -243,7 +244,6 @@ export class CheckoutComponent implements OnInit {
             ? parseInt(currentCartId)
             : null;
         console.log('🛒 cartId from localStorage:', this.cartId);
-
         if (this.cartId) {
           // Có cartId từ localStorage - load từ DB
           console.log('🛒 Loading cart from DB with cartId:', this.cartId);
@@ -1291,6 +1291,12 @@ export class CheckoutComponent implements OnInit {
         try {
           const hoaDonData = JSON.parse(pendingOrderStr);
 
+          // Update payment status fields for verified online payments
+          hoaDonData.ngayThanhToan = new Date().toISOString();
+          // We don't change order status 'trangThai' from 'CHO_XAC_NHAN' as admin still needs to confirm/ship
+
+          console.log('✅ Finalizing verified order with payment date:', hoaDonData.ngayThanhToan);
+
           // Loading state
           this.isSubmitting = true;
 
@@ -1343,6 +1349,77 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
+  /**
+   * Xử lý khi thay đổi phương thức thanh toán
+   * Tự động sinh mã giao dịch/đơn hàng tạm tương ứng với format của cổng thanh toán
+   */
+  onPaymentMethodChange(): void {
+    console.log('💳 Payment method changed to:', this.paymentMethod);
+
+    let newCode = '';
+    const now = new Date();
+
+    if (this.paymentMethod === 'zalopay' || this.paymentMethod === 'momo') {
+      // Format cho ZaloPay/MoMo: YYMMDD_Random (để ngắn gọn và đúng chuẩn ZaloPay)
+      // ZaloPay yêu cầu app_trans_id format: yymmdd_xxxx
+      const dateStr = now.toISOString().slice(2, 10).replace(/-/g, ''); // YYMMDD
+      const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+      newCode = `${dateStr}_${random}`;
+    } else {
+      // Format cho VNPay, Chuyển khoản, Tiền mặt: TDK + Timestamp
+      const timestamp = Date.now().toString().slice(-8);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      newCode = `TDK${timestamp}${random}`;
+    }
+
+    // Cập nhật mã giao dịch hiển thị
+    this.transactionCode = newCode;
+
+    // Cập nhật vào giỏ hàng/đơn tạm nếu có
+    if (this.cart) {
+      this.cart.maHoaDonCho = newCode;
+      console.log('✅ Updated temp order code:', this.cart.maHoaDonCho);
+    } else if (this.isTempCart && this.tempCart) {
+      // Nếu đang dùng temp cart array
+      // Lưu tạm mã này vào biến local để dùng khi tạo đơn
+      console.log('✅ Generated temp code for local cart:', newCode);
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Xử lý khi thanh toán đã được xác thực (từ Simulation hoặc Real Gateway check)
+   */
+  handlePaymentVerified(method: string): void {
+    this.isPaymentVerified = true;
+    if (method) {
+      this.paymentMethod = method as any;
+    }
+
+    // Clean up URL params ngay lập tức để tránh double submit
+    this.router.navigate([], {
+      queryParams: {
+        paymentVerified: null,
+        method: null,
+        orderId: null,
+        status: null,
+        apptransid: null,
+        resultCode: null,
+        message: null
+      },
+      queryParamsHandling: 'merge'
+    });
+
+    this.notificationService.success('Thanh toán thành công. Đang tạo đơn hàng...');
+
+    // Tự động tạo đơn hàng luôn, không cần user bấm xác nhận nữa
+    // Setup timeout nhỏ để đảm bảo UI update
+    setTimeout(() => {
+      this.placeOrder();
+    }, 500);
+  }
+
   payWithVNPay(): void {
     if (!this.hasCartItems()) {
       this.notificationService.warning('Giỏ hàng trống!');
@@ -1358,7 +1435,8 @@ export class CheckoutComponent implements OnInit {
 
     // Tính tiền
     const amount = Math.round(this.getTotal());
-    const txnRef = this.transactionCode || `TDK_${Date.now()}`;
+    // Sử dụng mã được sinh ra khi chọn phương thức thanh toán
+    const txnRef = this.cart?.maHoaDonCho || this.transactionCode || `TDK_${Date.now()}`;
     const orderInfo = `Thanh toan don hang ${txnRef}`;
 
     // Lưu thông tin đơn hàng (dùng hàm chung)
@@ -1436,15 +1514,24 @@ export class CheckoutComponent implements OnInit {
     this.showOrderConfirmation = false;
 
     // 1. Chuẩn bị dữ liệu
-    const transID = Math.floor(Math.random() * 1000000);
-    const appTransID = `${new Date().toISOString().slice(2, 10).replace(/-/g, '')}_${transID}`;
+    // Sử dụng mã đã sinh ra khi chọn phương thức thanh toán (maHoaDonCho)
+    // Nếu không có thì mới sinh mới (fallback)
+    let appTransID = this.cart?.maHoaDonCho;
+
+    // Validate format ZaloPay (YYMMDD_xxxx)
+    const datePrefix = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    if (!appTransID || !appTransID.startsWith(datePrefix)) {
+      const transID = Math.floor(Math.random() * 1000000);
+      appTransID = `${datePrefix}_${transID}`;
+    }
+
     const amount = Math.round(this.getTotal());
     const appTime = Date.now();
     const appUser = "DemoUser";
 
     // Embed data contains redirecturl
     const embedData = {
-      redirecturl: window.location.origin + '/customer/orders'
+      redirecturl: window.location.origin + '/shop/checkout'
     };
 
     const items = [{}]; // Demo item
@@ -1459,7 +1546,7 @@ export class CheckoutComponent implements OnInit {
       app_trans_id: appTransID,
       embed_data: JSON.stringify(embedData),
       item: JSON.stringify(items),
-      description: `Thanh toan don hang #${transID}`,
+      description: `Thanh toan don hang #${appTransID}`,
       bank_code: ""
     };
 
@@ -1587,12 +1674,19 @@ export class CheckoutComponent implements OnInit {
     this.showOrderConfirmation = false;
 
     // 1. Chuẩn bị dữ liệu
-    const orderId = `${new Date().toISOString().slice(2, 10).replace(/-/g, '')}_${Math.floor(Math.random() * 1000000)}`;
+    // Sử dụng mã đã sinh ra khi chọn phương thức thanh toán (maHoaDonCho)
+    let orderId = this.cart?.maHoaDonCho;
+
+    // Validate if empty
+    if (!orderId) {
+      orderId = `${new Date().toISOString().slice(2, 10).replace(/-/g, '')}_${Math.floor(Math.random() * 1000000)}`;
+    }
+
     const requestId = orderId;
     const amount = Math.round(this.getTotal());
     const orderInfo = `Thanh toan don hang #${orderId} qua MoMo`;
-    const redirectUrl = window.location.origin + '/customer/orders';
-    const ipnUrl = window.location.origin + '/customer/orders';
+    const redirectUrl = window.location.origin + '/shop/checkout';
+    const ipnUrl = window.location.origin + '/shop/checkout'; // IPN cũng trỏ về đây hoặc API backend
     const requestType = "captureWallet";
     const extraData = "";
 
@@ -1760,15 +1854,16 @@ export class CheckoutComponent implements OnInit {
     // Backend compatibility: Map 'zalopay' to 'transfer' or 'vnpay' if backend Enum doesn't support 'zalopay'
     // Để an toàn, ta dùng 'transfer' và ghi chú rõ ràng
     let backendPaymentMethod = paymentMethod;
-    if (paymentMethod === 'zalopay' || paymentMethod === 'momo') {
-      backendPaymentMethod = 'transfer';
-    }
+    // if (paymentMethod === 'zalopay' || paymentMethod === 'momo') {
+    //   backendPaymentMethod = 'transfer';
+    // }
 
     const currentUser = this.authService.getCurrentUser();
 
     // 2. Build hoa don data
     const hoaDonData = {
       khachHangId: currentUser ? currentUser.id : null,
+      maHoaDon: this.cart?.maHoaDonCho || txnRef,
       tenKhachHang: this.billingInfo.firstName + ' ' + this.billingInfo.lastName,
       soDienThoaiKhachHang: this.billingInfo.phone,
       emailKhachHang: this.billingInfo.email,

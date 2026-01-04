@@ -2842,8 +2842,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     if (methodLower === 'cash' || methodLower === 'tiền mặt' || methodLower === 'tiền mặt') {
       return 'Tiền mặt';
-    } else if (methodLower === 'transfer' || methodLower === 'chuyển khoản' || methodLower === 'chuyen khoan') {
+    } else if (methodLower === 'transfer' || methodLower === 'chuyển khoản' || methodLower === 'chuyen khoan' || methodLower === 'banking') {
       return 'Chuyển khoản';
+    } else if (methodLower === 'zalopay') {
+      return 'ZaloPay';
+    } else if (methodLower === 'momo') {
+      return 'MoMo';
+    } else if (methodLower === 'vnpay') {
+      return 'VNPay';
     }
 
     // Trả về giá trị gốc nếu không match
@@ -2854,16 +2860,21 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   public getDerivedPaymentStatus(): 'pending' | 'paid' | 'cancelled' {
     const status = this.invoice?.trangThai;
-    if (status === 'HUY') return 'cancelled';
+    if (status === 'HUY' || status === 'DA_HUY') return 'cancelled';
 
-    // Nếu phương thức thanh toán là "Chuyển khoản ngân hàng" => trạng thái thanh toán là "Đã thanh toán"
+    // Nếu phương thức thanh toán là "Chuyển khoản", "ZaloPay", "MoMo" => trạng thái thanh toán là "Đã thanh toán"
     const paymentMethod = this.invoice?.phuongThucThanhToan || '';
     const paymentMethodLower = paymentMethod.toLowerCase();
+
+    // Check for online payment methods
     if (paymentMethodLower === 'transfer' ||
       paymentMethodLower === 'chuyển khoản' ||
       paymentMethodLower === 'chuyen khoan' ||
       paymentMethodLower === 'chuyển khoản ngân hàng' ||
-      paymentMethodLower === 'chuyen khoan ngan hang') {
+      paymentMethodLower === 'chuyen khoan ngan hang' ||
+      paymentMethodLower === 'zalopay' ||
+      paymentMethodLower === 'momo' ||
+      paymentMethodLower === 'vnpay') {
       return 'paid';
     }
 
