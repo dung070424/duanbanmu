@@ -319,9 +319,107 @@ export class CounterSalesComponent implements OnInit {
   }
 
   getOriginalUnitPriceDisplay(item: UICartItem): number {
+    const comparePrice = this.getComparisonPrice(item);
+    if (comparePrice != null) return comparePrice;
+
+    // Fallback to catalog logic if no comparison found
     const original = this.getOriginalUnitPrice(item);
     if (original != null && Number.isFinite(original)) return original;
     return Number(item.unitPrice) || 0;
+  }
+
+  /**
+   * Helper to find the price to compare against.
+   * Logic:
+   * 1. Find all items of same product.
+   * 2. Sort: Priority 1 (Match Catalog Price), Priority 2 (Max ID).
+   * 3. If item is NOT the newest (sameItems[0]) -> It's an old item -> Return null.
+   * 4. If item IS the newest:
+   *    a. If other items exist -> Compare against the 2nd newest (sameItems[1]).
+   *    b. If no other items -> Compare against Catalog.
+   */
+  private getComparisonPrice(item: UICartItem): number | null {
+    if (!this.cart || !this.cart.length) return null;
+
+    // Get all items of same product
+    const sameItems = this.cart.filter(x => x.productId === item.productId);
+
+    // Get Catalog Price to identify the "New" price
+    const catalogPrice = this.getOriginalUnitPrice(item);
+
+    // Sort Logic: Priority 1 - Match Catalog Price; Priority 2 - ID DESC
+    sameItems.sort((a, b) => {
+      const priceA = Number(a.unitPrice) || 0;
+      const priceB = Number(b.unitPrice) || 0;
+      const cp = catalogPrice || 0;
+
+      const aIsCatalog = Math.abs(priceA - cp) < 0.1;
+      const bIsCatalog = Math.abs(priceB - cp) < 0.1;
+
+      if (aIsCatalog && !bIsCatalog) return -1; // A is "Current/New" -> First
+      if (!aIsCatalog && bIsCatalog) return 1;  // B is "Current/New" -> First
+
+      return (b.gioHangChoId || 0) - (a.gioHangChoId || 0);
+    });
+
+    // If this item is NOT the newest
+    if (sameItems[0] !== item) return null;
+
+    // If there is another item (older), compare against it
+    if (sameItems.length > 1) {
+      return Number(sameItems[1].unitPrice);
+    }
+
+    // If solo, compare against Catalog
+    return this.getOriginalUnitPrice(item);
+  }
+
+  /**
+   * Check if item is an "old" version (not the newest in cart)
+   */
+  isOldItem(item: UICartItem): boolean {
+    if (!this.cart || !this.cart.length) return false;
+
+    const sameItems = this.cart.filter(x => x.productId === item.productId);
+    const catalogPrice = this.getOriginalUnitPrice(item);
+
+    // Sort Logic (Must match getComparisonPrice)
+    sameItems.sort((a, b) => {
+      const priceA = Number(a.unitPrice) || 0;
+      const priceB = Number(b.unitPrice) || 0;
+      const cp = catalogPrice || 0;
+
+      const aIsCatalog = Math.abs(priceA - cp) < 0.1;
+      const bIsCatalog = Math.abs(priceB - cp) < 0.1;
+
+      if (aIsCatalog && !bIsCatalog) return -1;
+      if (!aIsCatalog && bIsCatalog) return 1;
+
+      return (b.gioHangChoId || 0) - (a.gioHangChoId || 0);
+    });
+
+    // The first one is Newest. If item is NOT first, it is Old.
+    return sameItems[0] !== item;
+  }
+
+  /**
+   * Tính chênh lệch giá: Giá mới - Giá gốc
+   * > 0: Tăng giá
+   * < 0: Giảm giá
+   * = 0: Không đổi
+   */
+  getPriceDifference(item: UICartItem): number {
+    const comparePrice = this.getComparisonPrice(item);
+    if (comparePrice == null) return 0; // Hide comparison for old items
+
+    const current = Number(item.unitPrice);
+    if (!Number.isFinite(current)) return 0;
+
+    return current - comparePrice;
+  }
+
+  amountAbs(value: number): number {
+    return Math.abs(value);
   }
 
   // Helper method to get image URL from chiTietSanPhamId
@@ -1767,28 +1865,22 @@ export class CounterSalesComponent implements OnInit {
     });
   }
 
-  removeFromCart(productId: number): void {
+  removeFromCart(item: UICartItem): void {
     if (!this.currentHoaDonChoId) {
-      this.cart = this.cart.filter((item) => item.productId !== productId);
+      this.cart = this.cart.filter((c) => c !== item);
       this.calculateCartTotal();
       return;
     }
 
-    // Find the cart item
-    const cartItem = this.cart.find((item) => item.productId === productId);
-    if (!cartItem) {
-      this.showToast('Không tìm thấy sản phẩm trong giỏ hàng', 'warning');
-      return;
-    }
-
     // Get gioHangChoId from cart item (stored when loading/adding)
-    const gioHangChoId = cartItem.gioHangChoId;
+    const gioHangChoId = item.gioHangChoId;
     if (!gioHangChoId) {
       // Fallback: try to reload pending invoice to get fresh data
       this.hoaDonChoService.getHoaDonChoById(this.currentHoaDonChoId).subscribe({
         next: (hoaDonCho: HoaDonCho) => {
+          // Try to match specific item by ID if possible
           const gioHangItem = hoaDonCho.danhSachGioHang?.find(
-            (item) => item.chiTietSanPhamId === productId
+            (g) => g.chiTietSanPhamId === item.productId && g.donGia === item.unitPrice
           );
           if (gioHangItem && gioHangItem.id) {
             this.removeCartItem(
@@ -1807,7 +1899,7 @@ export class CounterSalesComponent implements OnInit {
       return;
     }
 
-    this.removeCartItem(gioHangChoId, cartItem.productId, cartItem.quantity);
+    this.removeCartItem(gioHangChoId, item.productId, item.quantity);
   }
 
   private removeCartItem(
@@ -1846,48 +1938,41 @@ export class CounterSalesComponent implements OnInit {
     });
   }
 
-  updateCartQuantity(productId: number, quantity: string | number): void {
-    if (!this.currentHoaDonChoId) {
-      const item = this.cart.find((item) => item.productId === productId);
-      if (item) {
-        const qty = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
-        item.quantity = Math.max(1, qty);
-        item.totalPrice = item.unitPrice * item.quantity;
-        this.calculateCartTotal();
-      }
-      return;
-    }
-
+  updateCartQuantity(item: UICartItem, quantity: string | number): void {
     const qty = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
     const finalQty = Math.max(1, qty);
 
-    // Get gioHangChoId from cart item
-    const cartItem = this.cart.find((item) => item.productId === productId);
-    if (!cartItem) return;
+    if (!this.currentHoaDonChoId) {
+      item.quantity = finalQty;
+      item.totalPrice = item.unitPrice * item.quantity;
+      this.calculateCartTotal();
+      return;
+    }
 
-    const previousQty = cartItem.quantity;
+    const previousQty = item.quantity;
     if (finalQty === previousQty) {
       return;
     }
     const diff = finalQty - previousQty;
     if (diff > 0) {
-      const availableStock = this.getVariantStock(productId);
+      const availableStock = this.getVariantStock(item.productId);
       if (availableStock < diff) {
         this.showToast(`Không đủ tồn kho. Chỉ còn ${availableStock} sản phẩm.`, 'warning');
         return;
       }
     }
 
-    const gioHangChoId = cartItem.gioHangChoId;
+    const gioHangChoId = item.gioHangChoId;
     if (!gioHangChoId) {
       // Fallback: try to reload pending invoice to get fresh data
       this.hoaDonChoService.getHoaDonChoById(this.currentHoaDonChoId).subscribe({
         next: (hoaDonCho: HoaDonCho) => {
+          // Try to match specific item by ID if possible
           const gioHangItem = hoaDonCho.danhSachGioHang?.find(
-            (item) => item.chiTietSanPhamId === productId
+            (g) => g.chiTietSanPhamId === item.productId && g.donGia === item.unitPrice
           );
           if (gioHangItem && gioHangItem.id) {
-            this.updateCartItemQuantity(gioHangItem.id, finalQty, cartItem.productId, diff);
+            this.updateCartItemQuantity(gioHangItem.id, finalQty, item.productId, diff);
           } else {
             this.showToast('Không tìm thấy ID giỏ hàng để cập nhật', 'error');
           }
@@ -1899,7 +1984,7 @@ export class CounterSalesComponent implements OnInit {
       return;
     }
 
-    this.updateCartItemQuantity(gioHangChoId, finalQty, cartItem.productId, diff);
+    this.updateCartItemQuantity(gioHangChoId, finalQty, item.productId, diff);
   }
 
   private updateCartItemQuantity(

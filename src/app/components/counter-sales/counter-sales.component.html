@@ -72,28 +72,35 @@
                 </td>
                 <td class="text-center">
                   <div class="qty">
-                    <button class="btn-qty" (click)="updateCartQuantity(item.productId, item.quantity - 1)">
+                    <button class="btn-qty" (click)="updateCartQuantity(item, item.quantity - 1)">
                       -
                     </button>
                     <input class="qty-input" [value]="item.quantity"
-                      (change)="updateCartQuantity(item.productId, $event.target.value)" />
-                    <button class="btn-qty" (click)="updateCartQuantity(item.productId, item.quantity + 1)">
+                      (change)="updateCartQuantity(item, $event.target.value)" />
+                    <button class="btn-qty" (click)="updateCartQuantity(item, item.quantity + 1)"
+                      [disabled]="isOldItem(item)">
                       +
                     </button>
                   </div>
                 </td>
                 <td>
-                  <ng-container *ngIf="hasSpecialUnitPrice(item); else normalUnitPrice">
-                    <div class="d-flex flex-column flex-sm-row gap-1 align-items-start align-items-sm-center">
-                      <span class="text-muted text-decoration-line-through">
+                  <!-- Logic hiển thị giá: Nếu có chênh lệch giá -> Hiện so sánh -->
+                  <ng-container *ngIf="getPriceDifference(item) !== 0; else normalPrice">
+                    <div class="d-flex flex-column">
+                      <span class="text-muted text-decoration-line-through small">
                         {{ formatCurrency(getOriginalUnitPriceDisplay(item)) }}
                       </span>
-                      <span class="fw-semibold text-danger">
+                      <span class="fw-bold text-danger">
                         {{ formatCurrency(item.unitPrice) }}
+                      </span>
+                      <span class="small fst-italic"
+                        [ngClass]="getPriceDifference(item) > 0 ? 'text-danger' : 'text-success'">
+                        ({{ getPriceDifference(item) > 0 ? 'Tăng' : 'Giảm' }}
+                        {{ formatCurrency(amountAbs(getPriceDifference(item))) }})
                       </span>
                     </div>
                   </ng-container>
-                  <ng-template #normalUnitPrice>
+                  <ng-template #normalPrice>
                     {{ formatCurrency(item.unitPrice) }}
                   </ng-template>
                 </td>
@@ -101,7 +108,7 @@
                   {{ formatCurrency(item.totalPrice - item.discountAmount) }}
                 </td>
                 <td class="text-center">
-                  <button class="btn-remove" (click)="removeFromCart(item.productId)" title="Xóa">
+                  <button class="btn-remove" (click)="removeFromCart(item)" title="Xóa">
                     <i class="bi bi-trash"></i>
                   </button>
                 </td>
