@@ -370,8 +370,8 @@ export class CounterSalesComponent implements OnInit {
       return Number(sameItems[1].unitPrice);
     }
 
-    // If solo, compare against Catalog
-    return this.getOriginalUnitPrice(item);
+    // If solo, DO NOT compare against Catalog (User request)
+    return null;
   }
 
   /**
