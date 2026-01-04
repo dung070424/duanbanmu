@@ -210,6 +210,12 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    // Set default date filter to today
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+    this.startDate = formattedDate;
+    this.endDate = formattedDate;
+
     this.setupAutoSearch();
     this.loadHoaDon();
     this.loadEmployees(); // Load employees when component initializes
@@ -948,39 +954,39 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
   // QUAN TRỌNG: Đơn hàng chuyển khoản luôn hiển thị "đã thanh toán"
   getInvoicePaymentStatus(invoice: HoaDonDTO): 'pending' | 'paid' | 'cancelled' {
     if (!invoice || !invoice.trangThai) return 'pending';
-    
+
     // Normalize status: cả "HUY" và "DA_HUY" đều được coi là "HUY"
     const normalizedStatus = (invoice.trangThai === 'DA_HUY' || invoice.trangThai === 'HUY') ? 'HUY' : invoice.trangThai;
-    
+
     // Nếu đơn hàng bị hủy, luôn trả về 'cancelled' (ưu tiên cao nhất)
     if (normalizedStatus === 'HUY') return 'cancelled';
-    
+
     // ✅ QUAN TRỌNG: Nếu phương thức thanh toán là chuyển khoản, luôn hiển thị "đã thanh toán"
     if (this.isTransferPayment(invoice.phuongThucThanhToan)) {
       return 'paid';
     }
-    
+
     // Logic cũ: Nếu đã giao hàng thì đã thanh toán
     if (normalizedStatus === 'DA_GIAO_HANG') return 'paid';
-    
+
     return 'pending';
   }
-  
+
   /**
    * Kiểm tra xem phương thức thanh toán có phải là chuyển khoản không
    */
   private isTransferPayment(method?: string | null): boolean {
     if (!method) return false;
-    
+
     const methodLower = method.toLowerCase().trim();
-    
+
     // Kiểm tra các cách viết khác nhau của "chuyển khoản"
-    return methodLower === 'transfer' || 
-           methodLower === 'chuyển khoản' || 
-           methodLower === 'chuyen khoan' ||
-           methodLower.includes('chuyển khoản') ||
-           methodLower.includes('chuyen khoan') ||
-           methodLower.includes('transfer');
+    return methodLower === 'transfer' ||
+      methodLower === 'chuyển khoản' ||
+      methodLower === 'chuyen khoan' ||
+      methodLower.includes('chuyển khoản') ||
+      methodLower.includes('chuyen khoan') ||
+      methodLower.includes('transfer');
   }
 
   getPaymentMethodLabel(method?: string | null): string {
