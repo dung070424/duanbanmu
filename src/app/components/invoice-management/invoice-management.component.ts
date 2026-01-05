@@ -981,12 +981,19 @@ export class InvoiceManagementComponent implements OnInit, OnDestroy {
     const methodLower = method.toLowerCase().trim();
 
     // Kiểm tra các cách viết khác nhau của "chuyển khoản"
+    // Kiểm tra các cách viết khác nhau của "chuyển khoản" và các ví điện tử (đã thanh toán online)
     return methodLower === 'transfer' ||
       methodLower === 'chuyển khoản' ||
       methodLower === 'chuyen khoan' ||
       methodLower.includes('chuyển khoản') ||
       methodLower.includes('chuyen khoan') ||
-      methodLower.includes('transfer');
+      methodLower.includes('transfer') ||
+      methodLower.includes('vnpay') || // Thêm VNPAY
+      methodLower.includes('momo') ||  // Thêm MoMo
+      methodLower.includes('zalopay') || // Thêm ZaloPay
+      methodLower.includes('zalo pay') ||
+      methodLower.includes('ví') ||
+      methodLower.includes('wallet');
   }
 
   getPaymentMethodLabel(method?: string | null): string {
