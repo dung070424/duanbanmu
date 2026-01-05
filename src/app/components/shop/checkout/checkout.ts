@@ -20,6 +20,7 @@ import { ChatbotComponent } from '../chatbot/chatbot.component';
 import { NotificationComponent } from '../shared/notification.component';
 import { NotificationService } from '../shared/notification.service';
 import { environment } from '../../../../environments/environment';
+import * as CryptoJS from 'crypto-js';
 
 @Component({
   selector: 'app-checkout',
@@ -77,8 +78,8 @@ export class CheckoutComponent implements OnInit {
   // VNPay info (Test credentials from PortOne/VNPay Sandbox)
   vnpayInfo = {
     testUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
-    tmnCode: 'CHAIVN01', // Public Sandbox Code
-    hashSecret: 'A3EFDF90317237A3E2611C87D7C21669' // Key mẫu thường đi cùng 2QXUI4J4
+    tmnCode: 'ZUDNOGXR', // Configured from email
+    hashSecret: 'E686EI0FBOPF8IR4D2WHB3AKXM7XX5HC' // Configured from email
   };
 
   // ZaloPay info (Sandbox)
@@ -226,6 +227,13 @@ export class CheckoutComponent implements OnInit {
         console.log('✅ Detected MoMo Real Callback');
         this.paymentMethod = 'momo';
         this.handlePaymentVerified('momo');
+      }
+
+      // Check for VNPAY callback
+      const vnpResponseCode = this.route.snapshot.queryParams['vnp_ResponseCode'];
+      if (vnpResponseCode) {
+        console.log('✅ Detected VNPAY Real Callback');
+        this.handleVNPayCallback(vnpResponseCode, this.route.snapshot.queryParams);
       }
 
       // Set cartId từ query params hoặc localStorage
@@ -1420,6 +1428,82 @@ export class CheckoutComponent implements OnInit {
     }, 500);
   }
 
+  /**
+   * Xử lý callback từ VNPay tại trang Checkout
+   */
+  handleVNPayCallback(responseCode: string, params: any): void {
+    console.log('🔄 Handling VNPay callback at Checkout, code:', responseCode);
+
+    // Clean URL
+    this.router.navigate([], {
+      queryParams: {},
+      replaceUrl: true
+    });
+
+    if (responseCode === '00') {
+      // Success
+      console.log('✅ VNPay Payment Success');
+      this.paymentMethod = 'vnpay'; // Reset method selection
+
+      const pendingOrderDataStr = localStorage.getItem('pending_vnpay_order');
+      if (pendingOrderDataStr) {
+        try {
+          const hoaDonData = JSON.parse(pendingOrderDataStr);
+          const txnRef = params['vnp_TxnRef'];
+
+          // Update note
+          hoaDonData.ghiChu = `${hoaDonData.ghiChu || ''} - GD Thành công (TxnRef: ${txnRef})`;
+
+          this.isSubmitting = true;
+          this.notificationService.info('Đang tạo đơn hàng...');
+
+          // Call API directly like handlePaymentVerified -> placeOrder logic but using preserved data
+          this.hoaDonService.createHoaDon(hoaDonData).subscribe({
+            next: (hoaDon) => {
+              console.log('✅ Order created successfully:', hoaDon.id);
+              this.notificationService.success('Thanh toán thành công! Đơn hàng đã được tạo.');
+
+              // Cleanup
+              localStorage.removeItem('pending_vnpay_order');
+              const cartIdStr = localStorage.getItem('pending_vnpay_cart_id');
+              if (cartIdStr) {
+                const cartId = parseInt(cartIdStr);
+                this.hoaDonChoService.deleteHoaDonCho(cartId).subscribe(() => {
+                  window.dispatchEvent(new Event('cartUpdated'));
+                });
+              }
+              localStorage.removeItem('temp_cart');
+              window.dispatchEvent(new Event('cartUpdated'));
+
+              // Redirect to order detail / lookup
+              this.isSubmitting = false;
+              if (!this.authService.isLoggedIn()) {
+                this.router.navigate(['/customer/orders'], { queryParams: { orderPlaced: 'true' } });
+              } else {
+                this.router.navigate(['/customer/orders'], { queryParams: { newOrderId: hoaDon.id } });
+              }
+            },
+            error: (err) => {
+              console.error('❌ Error creating order after VNPAY payment:', err);
+              this.notificationService.error('Lỗi khi tạo đơn hàng. Vui lòng liên hệ hỗ trợ!');
+              this.isSubmitting = false;
+            }
+          });
+
+        } catch (e) {
+          console.error('Error parsing pending order data:', e);
+          this.notificationService.error('Lỗi dữ liệu đơn hàng!');
+        }
+      } else {
+        this.notificationService.warning('Không tìm thấy thông tin đơn hàng chờ thanh toán.');
+      }
+    } else {
+      // Failed
+      console.log('❌ VNPay Payment Failed or Cancelled');
+      this.notificationService.error('Thanh toán không thành công hoặc đã bị hủy.');
+    }
+  }
+
   payWithVNPay(): void {
     if (!this.hasCartItems()) {
       this.notificationService.warning('Giỏ hàng trống!');
@@ -1427,81 +1511,72 @@ export class CheckoutComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-    this.showOrderConfirmation = false; // Đóng modal confirm nếu đang mở
+    this.showOrderConfirmation = false;
 
-    // 1. Tạo đơn hàng PENDING trước (giống các payment khác nhưng trạng thái chờ thanh toán)
-    // Tuy nhiên, do chưa có backend xử lý callback từ VNPay, ta sẽ giả lập
-    // Bằng cách redirect user sang trang test VNPay
-
-    // Tính tiền
+    // 1. Calculate amount and txnRef
     const amount = Math.round(this.getTotal());
-    // Sử dụng mã được sinh ra khi chọn phương thức thanh toán
     const txnRef = this.cart?.maHoaDonCho || this.transactionCode || `TDK_${Date.now()}`;
     const orderInfo = `Thanh toan don hang ${txnRef}`;
 
-    // Lưu thông tin đơn hàng (dùng hàm chung)
+    // 2. Save pending order
     this.savePendingOrderToStorage('vnpay', txnRef);
 
-    // Thông báo user
     this.notificationService.info('Đang chuyển hướng sang cổng thanh toán VNPay...');
 
-    // URL Demo Sandbox (cần backend để ký hash bảo mật thực tế)
-    // Ở đây ta dùng bộ tham số test cơ bản
+    // 3. Prepare VNPAY Parameters
+    const createDate = this.formatDateForVNPay(new Date());
     const vnpParams: any = {
       vnp_Version: '2.1.0',
       vnp_Command: 'pay',
       vnp_TmnCode: this.vnpayInfo.tmnCode,
-      vnp_Amount: (amount * 100).toString(), // VNPay tính theo vnđ * 100
+      vnp_Amount: (amount * 100).toString(), // Multiplied by 100
       vnp_CurrCode: 'VND',
       vnp_TxnRef: txnRef,
       vnp_OrderInfo: orderInfo,
       vnp_OrderType: 'other',
       vnp_Locale: 'vn',
-      vnp_ReturnUrl: window.location.origin + '/customer/orders', // Quay về trang đơn hàng
-      vnp_IpAddr: '127.0.0.1',
-      vnp_CreateDate: this.formatDateForVNPay(new Date()),
+      vnp_ReturnUrl: window.location.origin + '/shop/checkout',
+      vnp_IpAddr: '127.0.0.1', // Hardcoded as per user instruction for testing
+      vnp_CreateDate: createDate,
     };
 
-    // Tạo query string
-    const queryString = Object.keys(vnpParams)
-      .map(key => `${key}=${encodeURIComponent(vnpParams[key])}`)
-      .join('&');
+    // 4. Generate URL with Signature
+    try {
+      // Sort parameters (returns object with keys and values ALREADY ENCODED)
+      const sortedParams = this.sortObject(vnpParams);
 
-    // Lưu ý: Thiếu vnp_SecureHash vì frontend không nên giữ secret key
-    // Tuy nhiên với mục đích test demo, ta sẽ mở trang ví dụ hoặc trang sandbox
-    // Vì không thể tạo valid hash ở đây mà không lộ secret, ta sẽ:
-    // 1. Tạo đơn hàng với trạng thái 'PENDING_PAYMENT' (tạm dùng createOrder như thường)
-    // 2. Sau đó mở tab mới sang VNPay
+      // Create sign data string (key=value&key=value...)
+      // Note: keys and values in sortedParams are already encoded
+      const signData = Object.keys(sortedParams)
+        .map(key => `${key}=${sortedParams[key]}`)
+        .join('&');
 
-    // Cách tốt nhất hiện tại: Tạo đơn hàng như bình thường (COD) nhưng Log là "Thanh toán VNPay"
-    // Sau đó hiển thị thông báo giả lập
+      // Create Secure Hash using HMAC SHA512 with CryptoJS
+      const secureHash = CryptoJS.HmacSHA512(signData, this.vnpayInfo.hashSecret).toString(CryptoJS.enc.Hex);
 
-    // Mock redirect sau 1.5s
-    setTimeout(async () => {
-      try {
-        // Tạo Secure Hash
-        // 1. Sắp xếp tham số theo alphabet
-        const sortedParams = this.sortObject(vnpParams);
+      // Add SecureHash to params (no need to encode again, it's hex string)
+      // Re-construct query string for URL. 
+      // Important: sortObject returned encoded keys/values.
+      const queryString = Object.keys(sortedParams)
+        .map(key => `${key}=${sortedParams[key]}`)
+        .join('&');
 
-        // 2. Tạo chuỗi dữ liệu (query string)
-        const serializedParams = Object.keys(sortedParams)
-          .map(key => `${key}=${encodeURIComponent(sortedParams[key])}`)
-          .join('&');
+      const finalUrl = `${this.vnpayInfo.testUrl}?${queryString}&vnp_SecureHash=${secureHash}`;
 
-        const secureHash = await this.hmacSHA512(this.vnpayInfo.hashSecret, serializedParams);
+      console.log('✅ VNPay URL:', finalUrl);
 
-        const finalUrl = `${this.vnpayInfo.testUrl}?${serializedParams}&vnp_SecureHash=${secureHash}`;
+      // Redirect
+      // Delay slightly to allow notification to show
+      setTimeout(() => {
+        window.location.href = finalUrl;
+        this.isSubmitting = false;
+      }, 1000);
 
-        console.log('✅ VNPay URL:', finalUrl);
-
-        // Chuyển hướng
-        window.location.href = finalUrl; // Dùng location.href thay vì open tab mới để trải nghiệm liền mạch
-      } catch (e) {
-        console.error('Error generating VNPay URL:', e);
-        this.notificationService.error('Có lỗi khi tạo link thanh toán VNPay');
-      }
+    } catch (e) {
+      console.error('Error generating VNPay URL:', e);
+      this.notificationService.error('Có lỗi khi tạo link thanh toán VNPay: ' + e);
       this.isSubmitting = false;
-    }, 1000); // Giảm delay xuống 1s
+    }
   }
 
   async payWithZaloPay(): Promise<void> {
@@ -1916,13 +1991,21 @@ export class CheckoutComponent implements OnInit {
       .join('');
   }
 
-  // Helper để sắp xếp object theo key
+  // Helper để sắp xếp object theo key (theo logic của VNPAY)
   sortObject(obj: any): any {
-    const sorted: any = {};
-    const keys = Object.keys(obj).sort();
-    keys.forEach(key => {
-      sorted[key] = obj[key];
-    });
+    let sorted: any = {};
+    let str = [];
+    let key;
+    for (key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        str.push(encodeURIComponent(key));
+      }
+    }
+    str.sort();
+    for (key = 0; key < str.length; key++) {
+      let originalKey = decodeURIComponent(str[key]); // Decode back to find value in obj
+      sorted[str[key]] = encodeURIComponent(obj[originalKey]).replace(/%20/g, "+");
+    }
     return sorted;
   }
 
