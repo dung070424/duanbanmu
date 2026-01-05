@@ -760,7 +760,64 @@ export class CounterSalesComponent implements OnInit {
   }
 
   confirmPayment(): void {
-    this.showConfirmPaymentModal = true;
+    if (this.appliedCoupon) {
+      // 1. Validate voucher status from SERVER before opening modal
+      const code = this.appliedCoupon.code;
+      this.phieuGiamGiaService.getPhieuGiamGiaByMaPhieu(code).subscribe({
+        next: (res: any) => {
+          const v = res?.data || res?.result || res;
+
+          if (!v) {
+            this.showToast('Phiếu giảm giá không tồn tại hoặc đã bị xóa.', 'error');
+            this.removeCoupon();
+            return;
+          }
+
+          const now = new Date();
+          const start = new Date(v.ngayBatDau);
+          const end = new Date(v.ngayKetThuc);
+
+          // Check upcoming
+          if (now < start) {
+            const startStr = start.toLocaleString('vi-VN', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            });
+            this.showToast(`Phiếu giảm giá "${v.maPhieu}" chưa bắt đầu (Bắt đầu: ${startStr}). Hệ thống sẽ gỡ bỏ phiếu.`, 'error');
+            this.removeCoupon();
+            return;
+          }
+
+          // Check expired
+          if (now > end) {
+            const endStr = end.toLocaleString('vi-VN', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            });
+            this.showToast(`Phiếu giảm giá "${v.maPhieu}" đã hết hạn (Hết hạn: ${endStr}). Hệ thống sẽ gỡ bỏ phiếu.`, 'error');
+            this.removeCoupon();
+            return;
+          }
+
+          // Check active status
+          if (v.trangThai === false) {
+            this.showToast(`Phiếu giảm giá "${v.maPhieu}" đã bị vô hiệu hóa. Hệ thống sẽ gỡ bỏ phiếu.`, 'error');
+            this.removeCoupon();
+            return;
+          }
+
+          // Valid -> Proceed
+          this.showConfirmPaymentModal = true;
+        },
+        error: (err) => {
+          console.error('Error validating voucher:', err);
+          this.showToast('Lỗi kết nối khi kiểm tra phiếu giảm giá. Vui lòng thử lại.', 'warning');
+        }
+      });
+    } else {
+      // No voucher -> Proceed
+      this.showConfirmPaymentModal = true;
+    }
   }
 
   cancelPaymentConfirmation(): void {
