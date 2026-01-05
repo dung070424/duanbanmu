@@ -87,12 +87,15 @@
                   <!-- Logic hiển thị giá: Nếu có chênh lệch giá -> Hiện so sánh -->
                   <ng-container *ngIf="getPriceDifference(item) !== 0; else normalPrice">
                     <div class="d-flex flex-column">
-                      <span class="text-muted text-decoration-line-through small">
-                        {{ formatCurrency(getOriginalUnitPriceDisplay(item)) }}
-                      </span>
-                      <span class="fw-bold text-danger">
-                        {{ formatCurrency(item.unitPrice) }}
-                      </span>
+                      <div class="d-flex align-items-center flex-wrap gap-1">
+                        <span class="text-muted">
+                          {{ formatCurrency(getOriginalUnitPriceDisplay(item)) }}
+                        </span>
+                        <i class="bi bi-arrow-right text-muted small"></i>
+                        <span class="fw-bold text-danger">
+                          {{ formatCurrency(item.unitPrice) }}
+                        </span>
+                      </div>
                       <span class="small fst-italic"
                         [ngClass]="getPriceDifference(item) > 0 ? 'text-danger' : 'text-success'">
                         ({{ getPriceDifference(item) > 0 ? 'Tăng' : 'Giảm' }}
