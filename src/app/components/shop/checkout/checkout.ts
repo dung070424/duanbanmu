@@ -1937,7 +1937,7 @@ export class CheckoutComponent implements OnInit {
 
     // 2. Build hoa don data
     const hoaDonData = {
-      khachHangId: this.realCustomerId,
+      khachHangId: currentUser ? currentUser.id : null,
       maHoaDon: this.cart?.maHoaDonCho || txnRef,
       tenKhachHang: this.billingInfo.firstName + ' ' + this.billingInfo.lastName,
       soDienThoaiKhachHang: this.billingInfo.phone,
